@@ -22,6 +22,7 @@
             --success: #00ffa3;
             --danger: #ff4d4d;
             --gradient: linear-gradient(135deg, #4fd1ff, #0055ff);
+            --shiny-grad: linear-gradient(90deg, #4fd1ff, #ff007a, #00ffa3, #4fd1ff);
         }
 
         [data-theme="light"] {
@@ -45,19 +46,27 @@
 
         #snow { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
 
+        /* --- 3D ANIMATED BRANDING --- */
+        .brand-animated {
+            font-family: 'Orbitron', sans-serif;
+            background: var(--shiny-grad);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite, float 3s ease-in-out infinite;
+            display: inline-block;
+            text-shadow: 0 10px 20px rgba(79, 209, 255, 0.3);
+        }
+
+        @keyframes shine { to { background-position: 300% center; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
         /* --- TOP BAR --- */
         .top-bar {
             position: fixed; top: 0; width: 100%; height: 70px;
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 5%; background: var(--glass);
             backdrop-filter: blur(25px); border-bottom: 1px solid var(--border); z-index: 2000;
-        }
-
-        .brand {
-            font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; 
-            letter-spacing: 2px; background: var(--gradient);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
         }
 
         .right-menu { display: flex; gap: 12px; align-items: center; }
@@ -68,21 +77,23 @@
             display: flex; align-items: center; justify-content: center; font-size: 18px;
         }
 
-        /* --- PROFESSIONAL ANNOUNCEMENT --- */
+        /* --- SON DAKİKA (ENHANCED) --- */
         .announcement-bar {
-            position: fixed; top: 70px; width: 100%; height: 40px;
-            background: linear-gradient(90deg, rgba(79,209,255,0.1), rgba(255,0,122,0.1));
-            border-bottom: 1px solid var(--border); z-index: 1999;
-            display: flex; align-items: center;
+            position: fixed; top: 70px; width: 100%; height: 45px;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid var(--primary-glow); z-index: 1999;
+            display: flex; align-items: center; overflow: hidden;
         }
         .announcement-label {
-            background: var(--accent); color: white; padding: 0 15px; height: 100%;
-            display: flex; align-items: center; font-size: 11px; font-weight: 900;
-            clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%); z-index: 2;
+            background: var(--accent); color: white; padding: 0 20px; height: 100%;
+            display: flex; align-items: center; font-size: 12px; font-weight: 900;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%); z-index: 5;
+            box-shadow: 5px 0 15px rgba(255,0,122,0.4);
         }
         .announcement-text {
-            white-space: nowrap; font-size: 13px; font-weight: 700; color: var(--text-main);
-            animation: marquee 30s linear infinite; position: absolute;
+            white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--text-main);
+            animation: marquee 25s linear infinite; position: absolute;
+            letter-spacing: 0.5px;
         }
         @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
 
@@ -128,22 +139,16 @@
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             overflow: hidden; backdrop-filter: blur(10px);
         }
-        .game-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, var(--primary-glow), transparent 70%);
-            opacity: 0; transition: 0.4s;
-        }
-        .game-card:hover { transform: translateY(-10px); border-color: var(--primary); }
-        .game-card:hover::before { opacity: 0.1; }
+        .game-card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
 
+        /* 3D Icons Style */
         .game-icon { 
-            font-size: 50px; margin-bottom: 20px; display: inline-block;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+            font-size: 55px; margin-bottom: 20px; display: inline-block;
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
             transition: 0.3s;
         }
-        .game-card:hover .game-icon { transform: scale(1.1) rotate(5deg); }
+        .game-card:hover .game-icon { transform: scale(1.15) rotateY(15deg); }
 
-        /* 3D Game Icons Colors */
         .icon-multiplayer { color: #ff007a; }
         .icon-brain { color: #00ffa3; }
         .icon-premium { color: #ffd700; }
@@ -167,13 +172,12 @@
             background: var(--gradient); color: #fff; font-weight: 800; 
             cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px var(--primary-glow);
         }
-        .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 25px var(--primary-glow); }
 
-        /* --- FOOTER & MISC --- */
-        .btn { padding: 12px 24px; border-radius: 14px; font-weight: 800; cursor: pointer; border: none; transition: 0.3s; }
-        .login-btn { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
-        .register-btn { background: var(--gradient); color: white; }
+        /* Feedback Text Styles */
+        .error-feedback { color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 10px; display: block; }
+        .success-feedback { color: var(--success); font-size: 13px; font-weight: 700; margin-top: 10px; display: block; }
 
+        /* --- FOOTER --- */
         .footer { padding: 60px 20px; text-align: center; border-top: 1px solid var(--border); margin-top: 80px; }
         .social-icons { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
         .social-btn {
@@ -183,10 +187,15 @@
         }
         .social-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-5px); }
 
+        /* Profile Scroll */
+        .profile-scroll {
+            text-align: left; max-height: 350px; overflow-y: auto; padding-right: 10px;
+        }
+        .profile-scroll::-webkit-scrollbar { width: 4px; }
+        .profile-scroll::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
         @media(max-width: 768px) {
             .games-grid { grid-template-columns: repeat(2, 1fr); padding: 0 15px; }
-            .section-title { padding: 30px 20px 15px; }
-            .hero-search { margin-top: 150px !important; }
         }
     </style>
 </head>
@@ -195,11 +204,11 @@
 <canvas id="snow"></canvas>
 
 <div class="top-bar">
-    <div class="brand">PlayMatrix</div>
+    <div class="brand brand-animated">PlayMatrix</div>
     <div class="right-menu">
         <button class="theme-toggle" id="themeToggle"><i class="fa-solid fa-moon"></i></button>
-        <button class="btn login-btn" id="loginBtn">GİRİŞ</button>
-        <button class="btn register-btn" id="regBtn">KAYIT</button>
+        <button class="btn login-btn" id="loginBtn" style="padding:10px 20px; border-radius:12px; background:transparent; color:var(--text-main); border:1px solid var(--border); cursor:pointer;">GİRİŞ</button>
+        <button class="btn register-btn" id="regBtn" style="padding:10px 20px; border-radius:12px; background:var(--gradient); color:white; border:none; cursor:pointer; font-weight:800;">KAYIT</button>
 
         <div class="user-pill" id="userPill">
             <div class="balance-info" style="display:flex; align-items:center;">
@@ -230,7 +239,7 @@
 <div class="announcement-bar">
     <div class="announcement-label">SON DAKİKA</div>
     <div class="announcement-text" id="announcementText">
-        SİSTEM GÜNCELLENDİ: ULTRA PROFESYONEL TASARIM AKTİF EDİLDİ! • HOŞ GELDİNİZ • KAZANMAK İÇİN ÇEVİRİN! • 2026 MATRIX SEZONU BAŞLADI...
+        🚀 SİSTEM GÜNCELLENDİ: 3D Deneyim ve Yeni Profil Özellikleri Aktif! • 🎁 Yeni Üyelere 50.000 MC Hediye Devam Ediyor! • 💎 PlayMatrix Premium Sezonu Başladı...
     </div>
 </div>
 
@@ -245,14 +254,14 @@
     <div class="section-title">Rekabetçi Arenası</div>
     <div class="games-grid">
         <div class="game-card" data-name="Online Pişti" onclick="checkLogin('OnlinePişti.html')">
-            <div class="game-icon icon-multiplayer"><i class="fa-solid fa-trophy"></i></div>
+            <div class="game-icon icon-multiplayer"><i class="fa-solid fa-dice"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Online Pişti</span>
-            <div class="badge auth-badge">YÜKLENİYOR...</div>
+            <div class="badge auth-badge" style="font-size:10px; font-weight:900;">YÜKLENİYOR...</div>
         </div>
         <div class="game-card" data-name="Grid Conquest" onclick="checkLogin('GridConquest.html')">
-            <div class="game-icon icon-multiplayer"><i class="fa-solid fa-clapperboard"></i></div>
+            <div class="game-icon icon-multiplayer"><i class="fa-solid fa-border-all"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Grid Conquest</span>
-            <div class="badge auth-badge">YÜKLENİYOR...</div>
+            <div class="badge auth-badge" style="font-size:10px; font-weight:900;">YÜKLENİYOR...</div>
         </div>
     </div>
 
@@ -261,12 +270,12 @@
         <div class="game-card" data-name="Cyber" onclick="location.href='Cyber.html'">
             <div class="game-icon icon-brain"><i class="fa-solid fa-microchip"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Cyber Master</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="badge" style="color:var(--primary); font-size:10px; font-weight:900;">ÜCRETSİZ</div>
         </div>
         <div class="game-card" data-name="Pattern Master" onclick="location.href='PatternMaster.html'">
             <div class="game-icon icon-brain"><i class="fa-solid fa-brain"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Pattern Master</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="badge" style="color:var(--primary); font-size:10px; font-weight:900;">ÜCRETSİZ</div>
         </div>
     </div>
 
@@ -275,61 +284,80 @@
         <div class="game-card" data-name="Crash" onclick="checkLogin('Crash.html')">
             <div class="game-icon icon-premium"><i class="fa-solid fa-rocket"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Matrix Crash</span>
-            <div class="badge auth-badge">PREMIUM</div>
+            <div class="badge auth-badge" style="color:var(--accent); font-size:10px; font-weight:900;">PREMIUM</div>
         </div>
         <div class="game-card" data-name="Mines" onclick="checkLogin('Mines.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-bomb"></i></div>
+            <div class="game-icon icon-premium"><i class="fa-solid fa-land-mine-on"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Cyber Mines</span>
-            <div class="badge auth-badge">PREMIUM</div>
+            <div class="badge auth-badge" style="color:var(--accent); font-size:10px; font-weight:900;">PREMIUM</div>
         </div>
         <div class="game-card" data-name="BlackJack" onclick="checkLogin('BlackJack.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-spade"></i></div>
+            <div class="game-icon icon-premium"><i class="fa-solid fa-cards"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">BlackJack 21</span>
-            <div class="badge auth-badge">PREMIUM</div>
+            <div class="badge auth-badge" style="color:var(--accent); font-size:10px; font-weight:900;">PREMIUM</div>
         </div>
         <div class="game-card" data-name="Pişti" onclick="checkLogin('Pişti.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-cards-blank"></i></div>
+            <div class="game-icon icon-premium"><i class="fa-solid fa-clone"></i></div>
             <span style="display:block; font-weight:800; margin-bottom:10px;">Klasik Pişti</span>
-            <div class="badge auth-badge">PREMIUM</div>
-        </div>
-    </div>
-
-    <div class="section-title">Eğlence Köşesi</div>
-    <div class="games-grid">
-        <div class="game-card" data-name="Space Pro" onclick="location.href='SpacePro.html'">
-            <div class="game-icon icon-free"><i class="fa-solid fa-shuttle-space"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Space Pro</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
-        </div>
-        <div class="game-card" data-name="Snake Pro" onclick="location.href='SnakePro.html'">
-            <div class="game-icon icon-free"><i class="fa-solid fa-dragon"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Snake Evolution</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
-        </div>
-        <div class="game-card" data-name="Tower Stack" onclick="location.href='TowerStack.html'">
-            <div class="game-icon icon-free"><i class="fa-solid fa-cubes-stacked"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Tower Stack</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="badge auth-badge" style="color:var(--accent); font-size:10px; font-weight:900;">PREMIUM</div>
         </div>
     </div>
 </main>
 
 <footer class="footer">
-    <div class="brand" style="margin-bottom:15px;">PlayMatrix</div>
+    <div class="brand brand-animated" style="margin-bottom:15px; font-size: 24px;">PlayMatrix</div>
     <div class="social-icons">
         <a href="#" class="social-btn"><i class="fa-brands fa-discord"></i></a>
         <a href="https://www.instagram.com/pixel_arena_games" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
         <a href="#" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
     </div>
-    <p style="color:var(--text-dim); font-size:12px; font-weight:600;">© 2026 PlayMatrix Global Network. All Rights Reserved.</p>
+    <p style="color:var(--text-dim); font-size:12px; font-weight:600;">© 2026 <span class="brand-animated" style="font-size:12px;">PLAYMATRIX</span> Global Network.</p>
 </footer>
 
-<div class="modal-overlay" id="alertModal">
+<div class="modal-overlay" id="profileModal">
     <div class="modal-card">
-        <div id="alertIcon" style="font-size: 50px; margin-bottom: 20px;"></div>
-        <h2 id="alertTitle">Sistem Bildirimi</h2>
-        <p id="alertBody" style="color: var(--text-dim); margin-bottom: 25px; font-weight: 600;"></p>
-        <button class="modal-btn" onclick="closeModal('alertModal')">ANLADIM</button>
+        <h2 style="margin-bottom:20px;">Profil Ayarları</h2>
+        <div class="profile-scroll">
+            <label style="font-size:11px; color:var(--text-dim);">E-POSTA ADRESİ</label>
+            <input type="text" id="profEmail" disabled style="width:100%; padding:12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:var(--text-dim); margin-bottom:15px;">
+            
+            <label style="font-size:11px; color:var(--text-dim);">AD SOYAD</label>
+            <input type="text" id="profNameSurname" placeholder="Adınız ve Soyadınız" style="width:100%; padding:12px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
+            
+            <label style="font-size:11px; color:var(--text-dim);">TELEFON NUMARASI</label>
+            <input type="text" id="profPhone" placeholder="05XX XXX XX XX" style="width:100%; padding:12px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
+            
+            <label style="font-size:11px; color:var(--primary); font-weight:800;">AVATAR KOLEKSİYONU</label>
+            <div class="avatar-grid" id="avatarLibrary" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin:10px 0;"></div>
+            <p style="font-size:10px; color:var(--text-dim); margin-top:5px;">* Profilinizi güncellemek için tüm alanları kurallara uygun doldurunuz.</p>
+        </div>
+        <button class="modal-btn" onclick="updateProfile()" style="margin-top:20px;">DEĞİŞİKLİKLERİ KAYDET</button>
+        <p onclick="closeModal('profileModal')" style="margin-top:15px; cursor:pointer; opacity:0.6; font-size:13px;">Kapat</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="wheelModal">
+    <div class="modal-card" style="max-width:500px;">
+        <h2 style="margin-bottom:10px;">Şans Çarkı</h2>
+        <div style="position:relative; width:260px; height:260px; margin:20px auto;">
+            <div style="position:absolute; top:-15px; left:50%; transform:translateX(-50%); width:30px; height:40px; background:var(--accent); clip-path:polygon(50% 100%, 0 0, 100% 0); z-index:100;"></div>
+            <canvas id="wheelCanvas" width="500" height="500" style="width:100%; height:100%; border-radius:50%; border:5px solid var(--border); transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);"></canvas>
+        </div>
+        <div id="wheelResultText" style="height:25px; font-weight:900; color:var(--success);"></div>
+        <button class="modal-btn" id="spinBtn" onclick="spinWheel()">ÜCRETSİZ ÇEVİR</button>
+        <div id="wheelTimer" class="error-feedback" style="min-height:20px;"></div>
+        <p onclick="closeModal('wheelModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Kapat</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="bonusModal">
+    <div class="modal-card">
+        <i class="fa-solid fa-gift" style="font-size:50px; color:var(--primary); margin-bottom:20px;"></i>
+        <h2>Bonus Kod</h2>
+        <input type="text" id="bonusInput" placeholder="KODU GİRİN" style="width:100%; padding:15px; border-radius:15px; background:var(--bg-dark); border:2px dashed var(--primary); color:white; text-align:center; font-weight:900; font-size:18px; margin:20px 0; outline:none;">
+        <div id="promoFeedback" style="min-height:20px;"></div>
+        <button class="modal-btn" onclick="claimBonus()">AKTİF ET</button>
+        <p onclick="closeModal('bonusModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Kapat</p>
     </div>
 </div>
 
@@ -342,56 +370,9 @@
             <input type="email" id="regEmail" placeholder="E-posta Adresi" style="display:none; width:100%; padding:14px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
             <input type="text" id="authUsername" placeholder="Kullanıcı Adı Belirle" style="display:none; width:100%; padding:14px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
         </div>
-        <div id="authErrorMsg" style="color:var(--danger); font-size:12px; margin-bottom:15px; font-weight:700;"></div>
+        <div id="authErrorMsg" class="error-feedback"></div>
         <button class="modal-btn" id="authSubmit">SİSTEME GİRİŞ YAP</button>
         <p id="switchMode" style="margin-top:20px; font-size:13px; cursor:pointer; font-weight:600;">Hesabın yok mu? <span style="color:var(--primary)">Kayıt Ol</span></p>
-        <p onclick="closeModal('authOverlay')" style="margin-top:15px; cursor:pointer; opacity:0.6; font-size:12px;">Kapat</p>
-    </div>
-</div>
-
-<div class="modal-overlay" id="profileModal">
-    <div class="modal-card">
-        <h2 style="margin-bottom:20px;">Kullanıcı Profili</h2>
-        <div style="text-align:left; max-height:300px; overflow-y:auto; padding-right:10px;">
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">E-POSTA</label>
-            <input type="text" id="profEmail" disabled style="width:100%; padding:12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:var(--text-dim); margin-bottom:15px;">
-            
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">AD SOYAD</label>
-            <input type="text" id="profNameSurname" style="width:100%; padding:12px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px;">
-            
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">TELEFON</label>
-            <input type="text" id="profPhone" style="width:100%; padding:12px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px;">
-            
-            <label style="font-size:11px; color:var(--primary); font-weight:800;">AVATARINI SEÇ</label>
-            <div class="avatar-grid" id="avatarLibrary" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin:10px 0;"></div>
-        </div>
-        <button class="modal-btn" onclick="updateProfile()" style="margin-top:20px;">GÜNCELLE</button>
-        <p onclick="closeModal('profileModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Kapat</p>
-    </div>
-</div>
-
-<div class="modal-overlay" id="wheelModal">
-    <div class="modal-card" style="max-width:550px;">
-        <h2 style="margin-bottom:10px;">Şans Çarkı</h2>
-        <div style="position:relative; width:280px; height:280px; margin:20px auto;">
-            <div style="position:absolute; top:-15px; left:50%; transform:translateX(-50%); width:30px; height:40px; background:var(--accent); clip-path:polygon(50% 100%, 0 0, 100% 0); z-index:100;"></div>
-            <canvas id="wheelCanvas" width="500" height="500" style="width:100%; height:100%; border-radius:50%; border:5px solid var(--border); transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);"></canvas>
-        </div>
-        <div id="wheelResultText" style="height:30px; font-weight:900; color:var(--success); margin-bottom:10px;"></div>
-        <button class="modal-btn" id="spinBtn" onclick="spinWheel()">ÜCRETSİZ ÇEVİR</button>
-        <div id="wheelTimer" style="margin-top:15px; font-size:13px; font-weight:700; color:var(--accent);"></div>
-        <p onclick="closeModal('wheelModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Vazgeç</p>
-    </div>
-</div>
-
-<div class="modal-overlay" id="bonusModal">
-    <div class="modal-card">
-        <i class="fa-solid fa-gift" style="font-size:50px; color:var(--primary); margin-bottom:20px;"></i>
-        <h2>Promosyon Kodu</h2>
-        <input type="text" id="bonusInput" placeholder="KODU BURAYA YAZIN" style="width:100%; padding:15px; border-radius:15px; background:var(--bg-dark); border:2px dashed var(--primary); color:white; text-align:center; font-weight:900; font-size:18px; letter-spacing:3px; margin:20px 0; outline:none;">
-        <div id="promoFeedback" style="font-size:12px; margin-bottom:15px; min-height:18px; font-weight:700;"></div>
-        <button class="modal-btn" onclick="claimBonus()">KODU AKTİF ET</button>
-        <p onclick="closeModal('bonusModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Kapat</p>
     </div>
 </div>
 
@@ -413,34 +394,22 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- DARK/LIGHT MODE LOGIC ---
-    const themeBtn = document.getElementById('themeToggle');
-    themeBtn.onclick = () => {
-        const body = document.body;
-        const isDark = body.getAttribute('data-theme') === 'dark';
-        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        themeBtn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-    };
-
-    // --- MODAL SYSTEM ---
+    // MODAL HELPERS
     window.openModal = (id) => { 
         document.getElementById(id).style.display = 'flex';
-        if(id === 'wheelModal') drawWheel();
+        if(id === 'wheelModal') { drawWheel(); checkWheelCooldown(); }
     };
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
 
-    window.showMatrixModal = (title, message, type = 'info') => {
-        const modal = document.getElementById("alertModal");
-        const icon = document.getElementById("alertIcon");
-        document.getElementById("alertTitle").innerText = title;
-        document.getElementById("alertBody").innerText = message;
-        icon.innerHTML = type === 'error' ? '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger)"></i>' : 
-                        type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>' : 
-                        '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>';
-        modal.style.display = 'flex';
+    // THEME
+    document.getElementById('themeToggle').onclick = () => {
+        const body = document.body;
+        const isDark = body.getAttribute('data-theme') === 'dark';
+        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        document.getElementById('themeToggle').innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
     };
 
-    // --- WHEEL LOGIC ---
+    // WHEEL LOGIC
     const rewards = [
         { label: "2.5K", val: 2500, color: "#141a26" },
         { label: "5K", val: 5000, color: "#1e2632" },
@@ -475,17 +444,23 @@
 
     let wheelRotation = 0;
     window.spinWheel = async () => {
+        const timerText = document.getElementById("wheelTimer");
         const userRef = doc(db, "users", auth.currentUser.uid);
         const userDoc = await getDoc(userRef);
         const last = userDoc.data().lastSpin || 0;
-        if(Date.now() - last < 86400000) return showMatrixModal("Bekleme Süresi", "Günde 1 kez çevirebilirsiniz.", "error");
+        
+        if(Date.now() - last < 86400000) {
+            timerText.innerText = "HATA: Henüz yeni hak kazanmadınız!";
+            return;
+        }
 
+        timerText.innerText = "";
         const rand = Math.floor(Math.random() * rewards.length);
         const prize = rewards[rand].val;
         wheelRotation += 3600 + (360 - (rand * 45));
         document.getElementById("wheelCanvas").style.transform = `rotate(${wheelRotation}deg)`;
-        
         document.getElementById("spinBtn").disabled = true;
+
         setTimeout(async () => {
             await updateDoc(userRef, { balance: increment(prize), lastSpin: Date.now() });
             document.getElementById("wheelResultText").innerText = `TEBRİKLER! +${prize} MC`;
@@ -493,7 +468,64 @@
         }, 5000);
     };
 
-    // --- PROFILE & AVATARS ---
+    async function checkWheelCooldown() {
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        const last = userDoc.data().lastSpin || 0;
+        const diff = 86400000 - (Date.now() - last);
+        const timer = document.getElementById("wheelTimer");
+        const btn = document.getElementById("spinBtn");
+        
+        if(diff > 0) {
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            timer.innerText = `KALAN SÜRE: ${h} Saat ${m} Dakika`;
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            timer.innerText = "";
+        }
+    }
+
+    // BONUS LOGIC
+    window.claimBonus = async () => {
+        const code = document.getElementById("bonusInput").value.trim().toUpperCase();
+        const feedback = document.getElementById("promoFeedback");
+        if(!code) return;
+
+        try {
+            const q = query(collection(db, "promocodes"), where("code", "==", code));
+            const qs = await getDocs(q);
+            
+            if(qs.empty) { 
+                feedback.innerText = "GEÇERSİZ PROMOSYON KODU!"; 
+                feedback.className = "error-feedback";
+                return; 
+            }
+            
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            if(userSnap.data().usedPromos?.includes(code)) { 
+                feedback.innerText = "BU KODU DAHA ÖNCE KULLANDINIZ!"; 
+                feedback.className = "error-feedback";
+                return; 
+            }
+            
+            const pData = qs.docs[0].data();
+            await updateDoc(userRef, { 
+                balance: increment(pData.amount), 
+                usedPromos: [...(userSnap.data().usedPromos || []), code] 
+            });
+            feedback.innerText = `BAŞARILI: ${pData.amount} MC HESABINIZA EKLENDİ!`; 
+            feedback.className = "success-feedback";
+        } catch(e) { 
+            feedback.innerText = "SİSTEM HATASI!"; 
+            feedback.className = "error-feedback";
+        }
+    };
+
+    // AVATARS
     const avatarLinks = [
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQwyXlGFYmEebbJwy3udOoiY1aHks5DHDL-LjNe-O2rw&s=10",
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQujzeT1nbxD37pbAAGFoEQYZfH7nHKNHebtVxjQZo1vA&s=10",
@@ -513,7 +545,7 @@
         lib.innerHTML = "";
         avatarLinks.forEach(link => {
             const div = document.createElement("div");
-            div.style = `border-radius:10px; overflow:hidden; cursor:pointer; border:3px solid ${link === current ? 'var(--primary)' : 'transparent'}`;
+            div.style = `border-radius:10px; overflow:hidden; cursor:pointer; border:3px solid ${link === current ? 'var(--primary)' : 'transparent'}; transition:0.2s;`;
             div.innerHTML = `<img src="${link}" style="width:100%; display:block;">`;
             div.onclick = () => {
                 document.querySelectorAll("#avatarLibrary div").forEach(d => d.style.borderColor = 'transparent');
@@ -524,7 +556,7 @@
         });
     }
 
-    // --- AUTH LOGIC ---
+    // AUTH & PROFILE
     let isLogin = true;
     document.getElementById("loginBtn").onclick = () => { isLogin=true; updateAuthUI(); openModal('authOverlay'); };
     document.getElementById("regBtn").onclick = () => { isLogin=false; updateAuthUI(); openModal('authOverlay'); };
@@ -535,7 +567,7 @@
         document.getElementById("regEmail").style.display = isLogin ? "none" : "block";
         document.getElementById("authUsername").style.display = isLogin ? "none" : "block";
         document.getElementById("authEmail").style.display = isLogin ? "block" : "none";
-        document.getElementById("authSubmit").innerText = isLogin ? "GİRİŞ YAP" : "KAYIT OL VE BAŞLA";
+        document.getElementById("authSubmit").innerText = isLogin ? "GİRİŞ YAP" : "KAYIT OL (50.000 MC)";
     }
 
     onAuthStateChanged(auth, async user => {
@@ -585,9 +617,11 @@
             } else {
                 const regEmail = document.getElementById("regEmail").value;
                 const userN = document.getElementById("authUsername").value;
+                if(userN.length < 3) throw new Error("Kullanıcı adı çok kısa!");
                 const res = await createUserWithEmailAndPassword(auth, regEmail, pass);
+                // NEW USER: 50.000 MC RULE
                 await setDoc(doc(db, "users", res.user.uid), {
-                    username: userN, email: regEmail, balance: 50000, lastSpin: 0, avatar: avatarLinks[0]
+                    username: userN, email: regEmail, balance: 50000, lastSpin: 0, avatar: avatarLinks[0], usedPromos: []
                 });
                 closeModal('authOverlay');
             }
@@ -602,55 +636,17 @@
             phone: document.getElementById("profPhone").value,
             avatar: selectedAvatar || avatarLinks[0]
         });
-        showMatrixModal("Başarılı", "Profiliniz güncellendi!", "success");
+        alert("Profil Güncellendi!");
         closeModal('profileModal');
     };
 
-    window.claimBonus = async () => {
-        const code = document.getElementById("bonusInput").value.trim().toUpperCase();
-        const feedback = document.getElementById("promoFeedback");
-        if(!code) return;
-        try {
-            const q = query(collection(db, "promocodes"), where("code", "==", code));
-            const qs = await getDocs(q);
-            if(qs.empty) { feedback.innerText = "GEÇERSİZ KOD!"; feedback.style.color="var(--danger)"; return; }
-            
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            if(userSnap.data().usedPromos?.includes(code)) { feedback.innerText = "ZATEN KULLANILDI!"; return; }
-            
-            const pData = qs.docs[0].data();
-            await updateDoc(userRef, { 
-                balance: increment(pData.amount), 
-                usedPromos: [...(userSnap.data().usedPromos || []), code] 
-            });
-            feedback.innerText = "KOD ONAYLANDI!"; feedback.style.color="var(--success)";
-        } catch(e) { feedback.innerText = "HATA!"; }
-    };
-
-    async function checkWheelCooldown() {
-        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const last = userDoc.data().lastSpin || 0;
-        const diff = 86400000 - (Date.now() - last);
-        const timer = document.getElementById("wheelTimer");
-        const btn = document.getElementById("spinBtn");
-        if(diff > 0) {
-            btn.disabled = true;
-            const h = Math.floor(diff / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            timer.innerText = `Sıradaki Hak: ${h}s ${m}d`;
-        } else {
-            btn.disabled = false;
-            timer.innerText = "Çark Çevrilmeye Hazır!";
-        }
-    }
-
+    // UI CONTROLS
     document.getElementById("avatarTrigger").onclick = (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); };
     window.onclick = () => document.getElementById("userDropdown").classList.remove("active");
     document.getElementById("logoutBtn").onclick = () => signOut(auth);
     window.checkLogin = (url) => { if(!auth.currentUser) openModal('authOverlay'); else location.href = url; };
 
-    // Snow Effect
+    // SNOW
     const canvasSnow = document.getElementById("snow");
     const ctxS = canvasSnow.getContext("2d");
     let particles = [];
@@ -667,7 +663,7 @@
     }
     drawSnow();
 
-    // Search Logic
+    // SEARCH
     document.getElementById('searchInput').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('.game-card').forEach(card => {
