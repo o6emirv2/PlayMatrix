@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PlayMatrix Elite Pişti</title>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --p1: #ff0055; --p2: #00f2ff; --bg: #03050a;
+            --glass: rgba(18, 22, 33, 0.98); --border: #4fd1ff;
+            --primary: #4fd1ff;
+            --danger: #ff3b30; --warning: #ffcc00; --accent: #7d00ff;
+            --btn-main: #4fd1ff; --btn-sec: #ffcc00;
+            --success: #00ffa3;
+            --text-dim: #94a3b8;
+        }
+
+        * { 
+            margin:0; padding:0; box-sizing:border-box; 
+            font-family: 'Rajdhani', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none;
+        }
+        
+        body { 
+            background: var(--bg); color: #e0e0e0; height: 100vh; 
+            overflow: hidden; display: flex; flex-direction: column; 
+            width: 100%; overscroll-behavior: none;
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0;
+        }
+
+        #bg-canvas { 
+            position: fixed; inset: 0; z-index: -1; 
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(79, 209, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(125, 0, 255, 0.15) 0%, transparent 40%),
+                linear-gradient(135deg, #050a14 0%, #03050a 100%);
+            background-size: cover;
+        }
+        
+        .top-bar { 
+            height: 70px; flex-shrink: 0; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; 
+            background: rgba(0,0,0,0.95); border-bottom: 2px solid var(--border); z-index: 1000;
+        }
+        .brand { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; flex-shrink: 1; overflow: hidden; white-space: nowrap; }
+        
+        .right-menu { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+        
+        /* MC COIN ENTEGRASYON STİLLERİ */
+        .user-pill-mini { 
+            display: flex; align-items: center; gap: 8px; 
+            background: rgba(255,255,255,0.05); padding: 5px 12px; 
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .balance-info { display: flex; align-items: center; }
+        .balance-info b { font-size: 14px; color: var(--success); font-family: 'Inter', monospace; font-weight: 700; }
+        .mc-chip {
+            width: 22px; height: 22px;
+            background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
+            border-radius: 50%; margin-left: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 8px; font-weight: 900; color: #fff;
+            box-shadow: 0 0 10px rgba(79, 209, 255, 0.3);
+            border: 1.2px solid rgba(255,255,255,0.2);
+            font-family: 'Inter', sans-serif;
+        }
+
+        #lobbyScreen { 
+            flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 12px; 
+            overflow-y: auto; z-index: 10; touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .search-input { 
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(79, 209, 255, 0.3); 
+            padding: 12px 15px; color: #fff; border-radius: 4px; outline: none;
+            font-size: 16px;
+        }
+        
+        .btn-neon { 
+            background: var(--btn-main); color: #000; border: none; padding: 15px; 
+            font-family: 'Black Ops One'; font-size: 0.85rem; cursor: pointer;
+            clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%); transition: 0.3s;
+            text-align: center; width: 100%;
+        }
+
+        .room-card { 
+            background: var(--glass); border: 1px solid rgba(79, 209, 255, 0.2); border-left: 5px solid var(--border); 
+            padding: 12px; display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 10px; border-radius: 0 8px 8px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .room-info-live { font-size: 0.75rem; color: #aaa; margin-top: 5px; line-height: 1.2; }
+        .live-tag { color: #2ecc71; font-weight: bold; animation: blink 1.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        .chips { display: flex; gap: 8px; justify-content: center; margin: 5px 0; }
+        .chip { 
+            width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; 
+            font-weight:900; cursor:pointer; border: 2px dashed rgba(255,255,255,0.3); font-size: 9px; background: #222;
+            transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: manipulation;
+        }
+        .chip:active { transform: scale(1.3) rotate(15deg); filter: brightness(1.2); }
+
+        .player-heads {
+            width: 100%; display: flex; justify-content: space-around; padding: 10px;
+            background: rgba(0,0,0,0.7); border-bottom: 2px solid #333; z-index: 100;
+        }
+        .p-head { text-align: center; flex: 1; transition: 0.3s; padding: 5px; opacity: 0.4; border-bottom: 3px solid transparent; }
+        .p-head.active { border-bottom: 3px solid var(--border); background: rgba(79, 209, 255, 0.1); opacity: 1; }
+        .p-head .name { font-weight: 700; font-size: 0.75rem; color: var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px; margin: 0 auto; }
+        .p-head .score { font-size: 0.85rem; font-weight: 900; }
+
+        #gameArea { display: none; flex: 1; flex-direction: column; align-items: center; z-index: 5; position: relative; touch-action: none; }
+        
+        .table {
+            width:98%; max-width:620px; height:420px; border-radius:210px; 
+            position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
+            background: radial-gradient(circle at center, #1e9d57 0%, #0a4d23 85%);
+            box-shadow: inset 0 0 150px #000, 0 25px 80px rgba(0,0,0,0.9), 0 0 35px var(--border);
+            border: 12px solid #2d1f14;
+        }
+
+        .table-cards { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:90px; height:125px; }
+        .stack-card { 
+            width:90px; position:absolute; left:0; top:0; border-radius: 8px; 
+            box-shadow: 3px 3px 12px rgba(0,0,0,0.6); background:white; border: 1px solid #ccc;
+        }
+        
+        .hand { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:10px; width: max-content; padding: 15px; bottom: 10px; z-index: 200; }
+        .opp-hand-visual { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:5px; width: max-content; top: 10px; opacity: 0.8; }
+
+        .card { 
+            width:60px; height: 85px; border-radius: 6px; cursor:pointer; transition: 0.3s; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5); background:white; border: 1px solid #fff;
+        }
+        .card.passive { pointer-events: none; opacity: 0.7; transform: scale(0.95); filter: grayscale(0.5); }
+        .card:hover:not(.passive) { transform: translateY(-15px); z-index: 100; }
+        .card-mini { width: 30px; height: 45px; background: white; border-radius: 3px; border: 1px solid #999; }
+
+        .how-to-btn {
+            background: rgba(79, 209, 255, 0.1); border: 1px dashed var(--border); color: var(--border);
+            padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px;
+        }
+        .modal-box { 
+            background: #0d1117; border: 2px solid var(--border); padding: 25px; 
+            width: 100%; max-width: 340px; text-align: center; border-radius: 15px;
+            position: relative; margin-top: -10vh;
+        }
+        .modal-input { 
+            width: 100%; background: #161b22; border: 1px solid #30363d; 
+            padding: 12px; color: #fff; margin-bottom: 15px; text-align: center; 
+            outline: none; border-radius: 8px; font-size: 16px;
+            user-select: text;
+        }
+
+        .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
+
+        #pistiDisplay {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+            font-size: 110px; font-weight: 900; color: #fff; text-align: center;
+            text-shadow: 0 0 30px var(--border), 0 0 60px var(--accent), 0 0 90px #fff;
+            display: none; z-index: 9999; font-family: 'Black Ops One';
+            letter-spacing: 5px;
+        }
+        .pisti-active { animation: pistiTurbo 1.8s forwards; display: block !important; }
+        
+        @keyframes pistiTurbo {
+            0% { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+            30% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%,-50%) scale(3); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="bg-canvas"></div>
+
+    <div class="top-bar">
+        <div class="brand">ELİTE PİŞTİ</div>
+        <div class="right-menu">
+            <div class="user-pill-mini">
+                <div class="balance-info">
+                    <b id="balance">0</b>
+                    <div class="mc-chip">MC</div>
+                </div>
+            </div>
+            
+            <div class="user-pill-mini" style="border-color: var(--warning);">
+                <div class="balance-info">
+                    <b id="bet" style="color:var(--warning)">0</b>
+                    <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">MC</div>
+                </div>
+            </div>
+
+            <button id="navActionBtn" onclick="handleNavAction()" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); cursor:pointer; margin-left: 5px;">ÇIKIŞ</button>
+        </div>
+    </div>
+
+    <div id="lobbyScreen">
+        <input type="text" id="roomSearch" class="search-input" placeholder="MASA ARA...">
+        
+        <div class="chips" id="chipsArea">
+            <div class="chip c-cancel" onclick="cancelBet()" style="background:var(--danger); color:#fff;">İPTAL</div>
+            <div class="chip c100" onclick="addBet(100)" style="background:#fff; color:#000;">100</div>
+            <div class="chip c500" onclick="addBet(500)" style="background:#2ecc71; color:#fff;">500</div>
+            <div class="chip c2000" onclick="addBet(2000)" style="background:#3498db; color:#fff;">2K</div>
+            <div class="chip c10000" onclick="addBet(10000)" style="background:#f1c40f; color:#fff;">10K</div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn-neon" onclick="openCreateModal()">MASA KUR</button>
+            <button class="btn-neon btn-sec" onclick="handleQuickJoin()" style="background:var(--btn-sec);">HIZLI KATIL</button>
+        </div>
+
+        <div id="roomList" style="margin-top:10px"></div>
+
+        <div class="how-to-btn" onclick="openModal('howToModal')">? NASIL OYNANILIR ?</div>
+    </div>
+
+    <div id="gameArea">
+        <div class="player-heads" id="playerHeadsContainer"></div>
+        <div id="waitingStatus" style="position:fixed; top:140px; color:var(--border); background:rgba(0,0,0,0.8); padding:10px 20px; border-radius:10px; display:none; border:1px solid var(--border); z-index: 100;">OYUNCU BEKLENİYOR...</div>
+        <div class="table" id="tableArea">
+            <div class="opp-hand-visual" id="oppHandVisual"></div>
+            <div class="table-cards" id="tableCards"></div>
+            <div class="hand" id="playerHand"></div>
+        </div>
+    </div>
+
+    <div id="pistiDisplay">PİŞTİ!</div>
+
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:var(--border)">🔒 ÖZEL MASA</h3><br>
+            <p style="font-size:0.8rem; margin-bottom:15px; color:#888;">Bu masaya girmek için şifre gereklidir.</p>
+            <input type="password" id="joinRoomPass" class="modal-input" placeholder="Şifreyi Yazınız..." inputmode="text">
+            <div id="passError" class="error-msg">HATALI ŞİFRE! TEKRAR DENEYİN.</div>
+            <button class="btn-neon" onclick="confirmPasswordJoin()">GİRİŞ YAP</button>
+            <button class="btn-neon btn-sec" style="margin-top:10px; background:var(--danger); color:white;" onclick="closeModal('passwordModal')">İPTAL</button>
+        </div>
+    </div>
+
+    <div id="createRoomModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>MASA AYARLARI</h3><br>
+            <input type="text" id="newRoomName" class="modal-input" placeholder="Masa Adı" inputmode="text">
+            <select id="newRoomType" class="modal-input" style="background:#161b22; color:white;">
+                <option value="2-52">2 Kişilik (52 Kart)</option>
+                <option value="2-104">2 Kişilik (104 Kart)</option>
+                <option value="4-104">4 Kişilik (104 Kart)</option>
+            </select>
+            <input type="password" id="newRoomPass" class="modal-input" placeholder="Şifre (Opsiyonel)" inputmode="text">
+            <button class="btn-neon" onclick="confirmCreateRoom()">OLUŞTUR</button>
+            <button class="btn-neon btn-sec" style="margin-top:10px; background:var(--danger); color:white;" onclick="closeModal('createRoomModal')">İPTAL</button>
+        </div>
+    </div>
+
+    <div id="howToModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: left; max-width: 400px; margin-top: 0;">
+            <h3 style="text-align: center; color: var(--border);">NASIL OYNANIR?</h3><br>
+            <p style="font-size: 0.9rem; line-height: 1.4;">
+                • Yerdeki kartla <b>aynı değerde</b> kart atarak yerdeki tüm kartları alırsınız.<br><br>
+                • <b>Vale (J)</b> her zaman yerdeki tüm kartları toplar.<br><br>
+                • Yerde <b>tek bir kart</b> varken aynı değerde kart atılırsa <b>PİŞTİ</b> olur.<br><br>
+                • <b>Yerde tek kart varken (J) ile alınan Pişti sayılmaz.</b><br><br>
+                • <b>Özel Puanlar:</b> Karo 10 (3p), Sinek 2 (2p), Aslar ve Valeler (1p).<br><br>
+                • Oyun sonunda en çok kart toplayan (3p) alır!
+            </p><br>
+            <button class="btn-neon" onclick="closeModal('howToModal')">ANLADIM</button>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-box" style="margin-top: 0;">
+            <h3 id="modalTitle">BİLGİ</h3><br>
+            <p id="modalMsg" style="color:#aaa; margin-bottom:20px;"></p>
+            <button class="btn-neon" onclick="closeModal('infoModal')">TAMAM</button>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+        authDomain: "emirhan-site.firebaseapp.com",
+        projectId: "emirhan-site",
+        storageBucket: "emirhan-site.firebasestorage.app",
+        messagingSenderId: "668871888390",
+        appId: "1:668871888390:web:76568bda84cb1641f7bd87"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const sfx = {
+        chip: new Audio("https://cdn.freesound.org/previews/201/201491_3325145-lq.mp3"),
+        cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
+        win: new Audio("https://cdn.freesound.org/previews/391/391539_5235550-lq.mp3"),
+        pisti: new Audio("https://cdn.freesound.org/previews/476/476178_7879024-lq.mp3") 
+    };
+
+    let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
+    let roomRef = null, myRole = null, gameState = null, inGame = false;
+    let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
+    let isProcessingPlay = false;
+    let lastPistiCount = 0;
+    let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
+
+    const CARD_POINTS = { "D0": 3, "C2": 2 };
+    const normalizeCardVal = (c) => {
+        if (!c) return "";
+        let v = c.substring(0, c.length - 1);
+        return (v === '0') ? '10' : v;
+    };
+
+    const calculatePoints = (cards) => {
+        let p = 0;
+        cards.forEach(c => {
+            if (CARD_POINTS[c]) p += CARD_POINTS[c];
+            else {
+                const val = normalizeCardVal(c);
+                if (val === 'A' || val === 'J') p += 1;
+            }
+        });
+        return p;
+    };
+
+    onAuthStateChanged(auth, user => {
+        if (!user) return;
+        uid = user.uid;
+        userRef = doc(db, "users", uid);
+        if(userUnsub) userUnsub();
+        userUnsub = onSnapshot(userRef, snap => {
+            if(snap.exists()) {
+                const data = snap.data();
+                balance = data.balance || 0;
+                userName = data.username || "Oyuncu";
+                // Bakiyeyi index.html formatında binlik ayraçlı güncelliyoruz
+                document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+            }
+        });
+        cleanZombies();
+        listenLobby();
+    });
+
+    async function cleanZombies() {
+        try {
+            const q = query(collection(db, "rooms"), where("status", "!=", "finished"));
+            const snap = await getDocs(q);
+            const now = Date.now();
+            snap.forEach(async (d) => {
+                const data = d.data();
+                if (data.createdAt && (now - data.createdAt > 1800000)) {
+                    await deleteDoc(doc(db, "rooms", d.id));
+                }
+            });
+        } catch(e) {}
+    }
+
+    document.addEventListener("visibilitychange", async () => {
+        if (document.visibilityState === 'hidden' && inGame && roomRef) {
+            handleDisconnect();
+        }
+    });
+
+    async function handleDisconnect() {
+        if (!roomRef || !inGame) return;
+        const currentRef = roomRef;
+        inGame = false;
+        try {
+            await updateDoc(currentRef, { quitter: uid, quitterName: userName, status: "finished" });
+        } catch(e) {}
+    }
+
+    window.leaveRoom = async () => {
+        if (roomRef && inGame) {
+            await handleDisconnect();
+        }
+        if(roomUnsub) { roomUnsub(); roomUnsub = null; }
+        inGame = false;
+        roomRef = null;
+        document.getElementById("gameArea").style.display = "none";
+        document.getElementById("lobbyScreen").style.display = "flex";
+        document.getElementById("navActionBtn").innerText = "ÇIKIŞ";
+    };
+
+    window.handleNavAction = () => {
+        if (inGame || roomRef) window.leaveRoom();
+        else window.location.href = "index.html";
+    };
+
+    function listenLobby() {
+        if(lobbyUnsub) lobbyUnsub();
+        const q = query(collection(db, "rooms"), orderBy("createdAt", "desc"));
+        lobbyUnsub = onSnapshot(q, (snap) => {
+            const list = document.getElementById("roomList");
+            const filter = document.getElementById("roomSearch").value.toLowerCase();
+            let html = "";
+            const now = Date.now();
+            
+            if(Math.random() < 0.1) cleanZombies();
+
+            snap.forEach(roomDoc => {
+                const data = roomDoc.data();
+                if (data.status === "finished") return; 
+                if (data.name.toLowerCase().includes(filter)) {
+                    const duration = data.createdAt ? Math.floor((now - data.createdAt) / 60000) : 0;
+                    const isPlaying = data.status === "playing";
+                    const maxP = data.type.startsWith("4") ? 4 : 2;
+                    const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
+                    const currentP = pList.length;
+                    
+                    let pNames = `${data.p1_name || '...'}`;
+                    if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
+                    else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
+
+                    html += `
+                        <div class="room-card" style="${isPlaying ? 'border-left-color:#2ecc71;' : ''}">
+                            <div style="flex:1">
+                                <small style="color:var(--border)">${data.name} [${data.type}] (${currentP}/${maxP})</small> 
+                                ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
+                                <b style="font-size:0.8rem; color:#fff;">${pNames}</b>
+                                <div class="room-info-live">
+                                    <span>Bahis: MC ${data.bet.toLocaleString()}</span> | 
+                                    <span>${duration} dk</span>
+                                </div>
+                            </div>
+                            ${(data.status === 'waiting' && currentP < maxP) ? `
+                                <button class="btn-neon" style="width:70px; padding:8px; font-size:0.7rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet})">KATIL</button>
+                            ` : `
+                                <div style="font-size:0.6rem; color:#666; font-weight:bold; text-align:right">MASA<br>DOLU</div>
+                            `}
+                        </div>`;
+                }
+            });
+            list.innerHTML = html || `<div style="text-align:center; padding:20px; color:#555;">Uygun masa yok.</div>`;
+        });
+    }
+
+    window.addBet = (a) => { 
+        if(balance >= a) { 
+            balance -= a; currentBet += a; 
+            sfx.chip.currentTime = 0; sfx.chip.play(); 
+            updateUI(); 
+        } 
+    };
+    window.cancelBet = () => { balance += currentBet; currentBet = 0; sfx.chip.play(); updateUI(); };
+    function updateUI() { document.getElementById("bet").innerText = currentBet.toLocaleString('tr-TR'); }
+
+    window.openCreateModal = () => { openModal('createRoomModal'); };
+
+    window.confirmCreateRoom = async () => {
+        if (currentBet < 100) return showInfoModal("Min 100 MC bahis!", "UYARI");
+        if (isProcessingPlay) return;
+        isProcessingPlay = true;
+
+        const name = document.getElementById("newRoomName").value || "Arena";
+        const type = document.getElementById("newRoomType").value;
+        const pass = document.getElementById("newRoomPass").value || "";
+        const roomId = "room_" + Date.now() + "_" + uid.substring(0,4);
+        roomRef = doc(db, "rooms", roomId);
+        myRole = "p1";
+        
+        const isDouble = type.includes("104");
+        const finalDeck = createShuffledDeck(isDouble);
+
+        try {
+            await runTransaction(db, async (t) => {
+                const uSnap = await t.get(userRef);
+                const curBal = uSnap.data().balance || 0;
+                if(curBal < 0) throw "Yetersiz bakiye!";
+                
+                t.set(roomRef, {
+                    p1: uid, p1_name: userName, bet: currentBet, status: "waiting", name, password: pass, type,
+                    deck: finalDeck, table: [], p1_score: 0, p2_score: 0, p3_score: 0, p4_score: 0,
+                    p1_count: 0, p2_count: 0, p3_count: 0, p4_count: 0,
+                    p1_hand: [], p2_hand: [], p3_hand: [], p4_hand: [], turn: null, quitter: null, 
+                    createdAt: Date.now(), lastCollector: null, pistiSignal: 0
+                });
+                t.update(userRef, { balance });
+            });
+            closeModal('createRoomModal');
+            enterGameView();
+            listenRoom();
+        } catch(e) { showInfoModal(e, "HATA"); } finally { isProcessingPlay = false; }
+    };
+
+    function createShuffledDeck(isDouble) {
+        const s = ["H", "D", "C", "S"], v = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+        let d = []; 
+        s.forEach(x => v.forEach(y => d.push(y + x)));
+        if(isDouble) d = [...d, ...d];
+        for (let i = d.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [d[i], d[j]] = [d[j], d[i]];
+        }
+        return d;
+    }
+
+    window.handleJoin = (rid, pass, bet) => {
+        if(pass) {
+            pendingRoomId = rid; pendingRoomPass = pass; pendingRoomBet = bet;
+            document.getElementById("joinRoomPass").value = "";
+            document.getElementById("passError").style.display = "none";
+            openModal('passwordModal');
+        } else joinRoom(rid, bet);
+    };
+
+    window.confirmPasswordJoin = () => {
+        if(document.getElementById("joinRoomPass").value === pendingRoomPass) {
+            closeModal('passwordModal');
+            joinRoom(pendingRoomId, pendingRoomBet);
+        } else document.getElementById("passError").style.display = "block";
+    };
+
+    async function joinRoom(rid, bet) {
+        if (balance < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
+        if (isProcessingPlay) return;
+        isProcessingPlay = true;
+
+        try {
+            const role = await runTransaction(db, async (transaction) => {
+                const rDoc = await transaction.get(doc(db, "rooms", rid));
+                const uDoc = await transaction.get(userRef);
+                
+                if (!rDoc.exists()) throw "Oda kapandı!";
+                const data = rDoc.data();
+                if(uDoc.data().balance < bet) throw "Bakiye yetersiz!";
+
+                const maxP = data.type.startsWith("4") ? 4 : 2;
+                let assignedRole = null;
+                if (!data.p2) assignedRole = "p2";
+                else if (maxP === 4 && !data.p3) assignedRole = "p3";
+                else if (maxP === 4 && !data.p4) assignedRole = "p4";
+                
+                if (!assignedRole) throw "Oda dolu!";
+                
+                transaction.update(userRef, { balance: increment(-bet) });
+                const updates = { [assignedRole]: uid, [assignedRole + "_name"]: userName };
+                const currentPlayers = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
+                const pCount = currentPlayers.length + 1;
+                
+                if(pCount === maxP) { 
+                    updates.status = "playing"; 
+                    updates.turn = data.p1; 
+                }
+                
+                transaction.update(doc(db, "rooms", rid), updates);
+                return assignedRole;
+            });
+            myRole = role; roomRef = doc(db, "rooms", rid);
+            enterGameView(); listenRoom();
+        } catch(e) { showInfoModal(e, "HATA"); } finally { isProcessingPlay = false; }
+    }
+
+    function enterGameView() {
+        inGame = true;
+        document.getElementById("lobbyScreen").style.display = "none";
+        document.getElementById("gameArea").style.display = "flex";
+        document.getElementById("navActionBtn").innerText = "AYRIL";
+    }
+
+    function listenRoom() {
+        if(roomUnsub) roomUnsub();
+        roomUnsub = onSnapshot(roomRef, async (snap) => {
+            if(!snap.exists()) return;
+            gameState = snap.data();
+            
+            if(gameState.quitter) {
+                const isMe = gameState.quitter === uid;
+                if(!isMe) {
+                    await updateDoc(userRef, { balance: increment(gameState.bet) });
+                    showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN KAPANDI");
+                    inGame = false;
+                    setTimeout(() => window.leaveRoom(), 3000);
+                }
+                return;
+            }
+
+            if(gameState.pistiSignal > lastPistiCount) {
+                lastPistiCount = gameState.pistiSignal;
+                triggerPistiUI();
+            }
+            
+            if (gameState.status === "playing") {
+                document.getElementById("waitingStatus").style.display = "none";
+                const maxP = gameState.type.startsWith("4") ? 4 : 2;
+                const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
+                
+                if (handsEmpty && !isProcessingPlay) {
+                    if (gameState.turn === uid) {
+                        refillHands();
+                    }
+                }
+                render();
+            }
+            if (gameState.status === "finished") handleEnd();
+            renderHeads();
+        });
+    }
+
+    function renderHeads() {
+        const container = document.getElementById("playerHeadsContainer");
+        const maxP = gameState?.type.startsWith("4") ? 4 : 2;
+        let html = "";
+        for(let i=1; i<=maxP; i++) {
+            const pUid = gameState?.[`p${i}`];
+            const pName = gameState?.[`p${i}_name`] || "...";
+            const pScore = gameState?.[`p${i}_score`] || 0;
+            const isActive = gameState?.turn === pUid && gameState?.status === "playing";
+            html += `<div class="p-head ${isActive ? 'active' : ''}"><div class="name">${pUid === uid ? "SİZ" : pName}</div><div class="score">${pScore}</div></div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    async function refillHands() {
+        isProcessingPlay = true;
+        try {
+            await runTransaction(db, async (t) => {
+                const s = await t.get(roomRef);
+                const d = s.data();
+                if (d.status !== "playing") return;
+                const maxP = d.type.startsWith("4") ? 4 : 2;
+                let deck = [...d.deck];
+                let table = [...d.table];
+                let updates = {};
+                const is104 = d.type.includes("104");
+                const fullSize = is104 ? 104 : 52;
+                if (table.length === 0 && deck.length === fullSize) {
+                    updates.table = deck.splice(0, 4);
+                }
+                if (deck.length < maxP * 4 && deck.length < maxP) {
+                    if (table.length > 0 && d.lastCollector) {
+                        let lcRole = null;
+                        for(let i=1; i<=maxP; i++) { if(d[`p${i}`] === d.lastCollector) lcRole = `p${i}`; }
+                        if (lcRole) {
+                            updates[lcRole + "_score"] = increment(calculatePoints(table));
+                            updates[lcRole + "_count"] = increment(table.length);
+                            updates.table = [];
+                        }
+                    }
+                    updates.status = "finished";
+                } else {
+                    for (let i = 1; i <= maxP; i++) {
+                        updates[`p${i}_hand`] = deck.splice(0, 4);
+                    }
+                    updates.deck = deck;
+                }
+                t.update(roomRef, updates);
+            });
+        } catch (e) { console.error("Dağıtım hatası:", e); } finally { isProcessingPlay = false; }
+    }
+
+    async function playCard(idx) {
+        if (gameState.turn !== uid || isProcessingPlay) return;
+        isProcessingPlay = true;
+        try {
+            await runTransaction(db, async (t) => {
+                const s = await t.get(roomRef);
+                const d = s.data();
+                if(d.turn !== uid) throw "Sıra sizde değil!";
+                const hand = [...d[myRole + "_hand"]];
+                const card = hand.splice(idx, 1)[0];
+                let table = [...d.table];
+                let scoreInc = 0, countInc = 0, pistiInc = 0;
+                let lastColl = d.lastCollector;
+                if (table.length > 0) {
+                    const top = table[table.length - 1];
+                    const isVale = normalizeCardVal(card) === "J";
+                    const isSame = normalizeCardVal(card) === normalizeCardVal(top);
+                    if (isSame || isVale) {
+                        if (table.length === 1 && !isVale) { scoreInc = 10; pistiInc = 1; } 
+                        else if (table.length === 1 && isVale && normalizeCardVal(top) === "J") { scoreInc = 20; pistiInc = 1; } 
+                        else { scoreInc = calculatePoints([...table, card]); }
+                        countInc = table.length + 1; table = []; lastColl = uid;
+                    } else table.push(card);
+                } else table.push(card);
+                const maxP = d.type.startsWith("4") ? 4 : 2;
+                const currentNum = parseInt(myRole.at(-1));
+                const nextIdx = (currentNum % maxP) + 1;
+                t.update(roomRef, { [myRole + "_hand"]: hand, table, [myRole + "_score"]: increment(scoreInc), [myRole + "_count"]: increment(countInc), turn: d[`p${nextIdx}`], lastCollector: lastColl, pistiSignal: increment(pistiInc) });
+            });
+            sfx.cardThrow.play();
+        } catch(e) { console.error(e); } finally { isProcessingPlay = false; }
+    }
+
+    function render() {
+        const ph = document.getElementById("playerHand");
+        const tc = document.getElementById("tableCards");
+        const oh = document.getElementById("oppHandVisual");
+        const isMyTurn = gameState.turn === uid;
+        ph.innerHTML = ""; tc.innerHTML = ""; oh.innerHTML = "";
+        (gameState[myRole + "_hand"] || []).forEach((c, i) => {
+            let img = document.createElement("img");
+            img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
+            img.className = "card" + (isMyTurn ? "" : " passive");
+            img.onclick = () => playCard(i);
+            ph.appendChild(img);
+        });
+        const maxP = gameState.type.startsWith("4") ? 4 : 2;
+        let oppTotal = 0;
+        for(let i=1; i<=maxP; i++) if(`p${i}` !== myRole) oppTotal += (gameState[`p${i}_hand`]?.length || 0);
+        for(let i=0; i<Math.min(oppTotal, 12); i++) {
+            let d = document.createElement("div"); d.className = "card-mini"; oh.appendChild(d);
+        }
+        gameState.table.forEach((c, i) => {
+            let img = document.createElement("img");
+            img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
+            img.className = "stack-card";
+            img.style.transform = `translate(${i*1.2}px, ${i*1.2}px) rotate(${i*1.5}deg)`;
+            img.style.zIndex = i;
+            tc.appendChild(img);
+        });
+    }
+
+    async function handleEnd() {
+        if (!inGame) return;
+        inGame = false;
+        const maxP = gameState.type.startsWith("4") ? 4 : 2;
+        let finalScores = [];
+        let counts = [];
+        for(let i=1; i<=maxP; i++) counts.push({role: `p${i}`, count: gameState[`p${i}_count`] || 0});
+        counts.sort((a,b) => b.count - a.count);
+        let bonusRole = (counts[0].count > counts[1].count) ? counts[0].role : null;
+        for(let i=1; i<=maxP; i++) {
+            let total = gameState[`p${i}_score`] || 0;
+            if(`p${i}` === bonusRole) total += 3;
+            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`], score: total, uid: gameState[`p${i}`] });
+        }
+        finalScores.sort((a,b) => b.score - a.score);
+        const winners = finalScores.filter(s => s.score === finalScores[0].score);
+        const isWinner = winners.some(w => w.uid === uid);
+        if(isWinner) {
+            const prize = Math.floor((gameState.bet * maxP) / winners.length);
+            await updateDoc(userRef, { balance: increment(prize) });
+            sfx.win.play();
+            showInfoModal(`TEBRİKLER! MC ${prize} KAZANDINIZ.`, "OYUN BİTTİ");
+        } else {
+            showInfoModal(`KAYBETTİNİZ! Kazanan: ${finalScores[0].name} (${finalScores[0].score} Puan)`, "OYUN BİTTİ");
+        }
+        setTimeout(async () => {
+            if(myRole === "p1") { try { await deleteDoc(roomRef); } catch(e){} }
+            window.leaveRoom();
+        }, 5000);
+    }
+
+    function triggerPistiUI() {
+        sfx.pisti.currentTime = 0; sfx.pisti.play();
+        const p = document.getElementById("pistiDisplay");
+        p.classList.add("pisti-active");
+        setTimeout(() => p.classList.remove("pisti-active"), 1800);
+    }
+
+    window.openModal = (id) => document.getElementById(id).style.display = "flex";
+    window.closeModal = (id) => document.getElementById(id).style.display = "none";
+    window.showInfoModal = (m, t) => { 
+        document.getElementById("modalTitle").innerText = t; 
+        document.getElementById("modalMsg").innerText = m; 
+        openModal('infoModal');
+    };
+
+    window.handleQuickJoin = async () => {
+        const q = query(collection(db, "rooms"), where("status", "==", "waiting"));
+        const snap = await getDocs(q);
+        let found = false;
+        snap.forEach(d => { 
+            const data = d.data();
+            if(!found && !data.password && data.bet <= balance) { 
+                joinRoom(d.id, data.bet); 
+                found = true; 
+            } 
+        });
+        if(!found) showInfoModal("Uygun masa bulunamadı!", "LOBİ");
+    };
+</script>
+</body>
+</html>
