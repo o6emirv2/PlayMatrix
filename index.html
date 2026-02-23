@@ -1,741 +1,903 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlayMatrix | Ultra Experience</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PlayMatrix - Global Gaming Arena</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Orbitron:wght@900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <style>
-        :root {
-            --primary: #4fd1ff;
-            --primary-glow: rgba(79, 209, 255, 0.5);
-            --accent: #ff007a;
-            --bg-dark: #06090f;
-            --card-bg: rgba(20, 26, 38, 0.7);
-            --glass: rgba(6, 9, 15, 0.85);
-            --border: rgba(255, 255, 255, 0.1);
-            --text-main: #f1f5f9;
-            --text-dim: #94a3b8;
-            --success: #00ffa3;
-            --danger: #ff4d4d;
-            --gradient: linear-gradient(135deg, #4fd1ff, #0055ff);
-            --anim-speed: 3s;
-        }
+<style>
+/* === GELİŞMİŞ TEMA DEĞİŞKENLERİ === */
+:root {
+    --primary: #00f0ff;
+    --primary-glow: rgba(0, 240, 255, 0.5);
+    --secondary: #0055ff;
+    --accent: #ff007a;
+    --bg-main: #04060b;
+    --bg-surface: #0a0e17;
+    --glass-bg: rgba(10, 14, 23, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --success: #00ffa3;
+    --danger: #ff4d4d;
+    --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --input-bg: rgba(0, 0, 0, 0.4);
+}
 
-        [data-theme="light"] {
-            --bg-dark: #f0f2f5;
-            --card-bg: #ffffff;
-            --glass: rgba(255, 255, 255, 0.9);
-            --border: rgba(0, 0, 0, 0.1);
-            --text-main: #1e293b;
-            --text-dim: #64748b;
-        }
+/* AYDINLIK MOD DEĞİŞKENLERİ */
+.light-mode {
+    --primary: #0066ff;
+    --primary-glow: rgba(0, 102, 255, 0.3);
+    --secondary: #00ccff;
+    --accent: #ff0055;
+    --bg-main: #f4f7f9;
+    --bg-surface: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --success: #059669;
+    --danger: #dc2626;
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --input-bg: #f1f5f9;
+}
 
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        body { 
-            background: var(--bg-dark); 
-            color: var(--text-main); 
-            overflow-x:hidden; 
-            line-height: 1.6;
-            transition: background 0.3s, color 0.3s;
-        }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', sans-serif; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidden; line-height: 1.6; }
 
-        #snow { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+#snow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.4; mix-blend-mode: screen; }
+.light-mode #snow { opacity: 0.1; filter: invert(1); mix-blend-mode: multiply; }
 
-        /* --- 3D ANIMATED BRANDING --- */
-        .brand-3d {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            position: relative;
-            background: linear-gradient(to right, #4fd1ff, #ff007a, #00ffa3, #4fd1ff);
-            background-size: 300% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 4s linear infinite, float 3s ease-in-out infinite;
-            text-shadow: 0 5px 15px rgba(79, 209, 255, 0.2);
-        }
+/* === ÜST BAR (TAŞMA YAPMAZ, DÜZENLİ) === */
+.top-bar {
+    position: fixed; top: 0; width: 100%; height: 70px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; background: var(--glass-bg);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border-bottom: 1px solid var(--glass-border); z-index: 2000;
+}
 
-        @keyframes shine {
-            to { background-position: 300% center; }
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
+/* === 3D HAREKETLİ VE PARILTILI YAZI EFEKTİ === */
+.brand-3d {
+    font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 900; 
+    color: var(--text-primary); text-transform: uppercase; letter-spacing: 2px;
+    display: inline-block; cursor: pointer;
+    animation: float3d 4s ease-in-out infinite alternate;
+    text-shadow: 0 1px 0 var(--secondary), 0 2px 0 var(--secondary), 0 3px 0 #0033aa,
+                 0 4px 10px var(--primary-glow), 0 0 20px var(--primary-glow);
+    flex-shrink: 0;
+}
+@keyframes float3d {
+    0% { transform: perspective(600px) rotateX(10deg) rotateY(-10deg) translateY(0px); }
+    100% { transform: perspective(600px) rotateX(-5deg) rotateY(15deg) translateY(-4px); 
+           text-shadow: 0 1px 0 var(--secondary), 0 2px 0 var(--secondary), 0 3px 0 #0033aa,
+                        0 10px 20px var(--primary-glow), 0 0 30px var(--primary-glow); }
+}
 
-        /* --- TOP BAR --- */
-        .top-bar {
-            position: fixed; top: 0; width: 100%; height: 70px;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 5%; background: var(--glass);
-            backdrop-filter: blur(25px); border-bottom: 1px solid var(--border); z-index: 2000;
-        }
+.right-menu { display: flex; gap: 12px; align-items: center; }
 
-        .right-menu { display: flex; gap: 12px; align-items: center; }
+/* TEMA BUTONU */
+.theme-btn {
+    background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);
+    width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; 
+    justify-content: center; cursor: pointer; font-size: 16px; transition: 0.3s;
+}
+.theme-btn:hover { background: var(--primary-glow); border-color: var(--primary); transform: rotate(15deg); }
 
-        .theme-toggle {
-            width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--border);
-            background: var(--card-bg); color: var(--text-main); cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
-        }
+/* PROFİL ALANI */
+.user-pill { 
+    display: none; align-items: center; gap: 12px; background: var(--bg-surface); 
+    padding: 5px 5px 5px 15px; border-radius: 50px; border: 1px solid var(--glass-border); 
+    cursor: pointer; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+.user-pill:hover { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+.balance-info { display: flex; align-items: center; }
+.balance-info b { font-size: 14px; color: var(--success); font-family: 'Inter', monospace; font-weight: 800;}
+.mc-chip {
+    width: 26px; height: 26px; background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 50%; margin-left: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 900; color: #fff; box-shadow: 0 0 15px var(--primary-glow);
+    border: 2px solid rgba(255,255,255,0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); padding: 2px; }
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
-        /* --- SON DAKIKA AREA --- */
-        .announcement-bar {
-            position: fixed; top: 70px; width: 100%; height: 45px;
-            background: rgba(6, 9, 15, 0.9);
-            border-bottom: 2px solid var(--primary); z-index: 1999;
-            display: flex; align-items: center; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .announcement-label {
-            background: var(--gradient); color: white; padding: 0 25px; height: 100%;
-            display: flex; align-items: center; font-size: 12px; font-weight: 900;
-            clip-path: polygon(0 0, 90% 0, 100% 100%, 0 100%); z-index: 5;
-            position: relative; box-shadow: 5px 0 15px rgba(0,0,0,0.3);
-        }
-        .announcement-label i { margin-right: 8px; animation: pulse 1.5s infinite; }
-        .announcement-text {
-            white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--text-main);
-            animation: marquee 25s linear infinite; position: absolute;
-            letter-spacing: 1px;
-        }
-        @keyframes marquee { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+/* AÇILIR MENÜ (DROPDOWN) */
+.dropdown {
+    position: absolute; top: 65px; right: 0; width: 240px;
+    background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
+    border-radius: 16px; display: none; flex-direction: column; overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 3000; padding: 8px;
+}
+.dropdown.active { display: flex; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes slideUp { from { opacity:0; transform: translateY(15px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }
+.drop-item { 
+    padding: 12px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; 
+    color: var(--text-primary); font-weight: 600; font-size: 13px; transition: 0.2s; border-radius: 10px; 
+}
+.drop-item i { width: 20px; font-size: 16px; color: var(--primary); text-align: center; }
+.drop-item:hover { background: var(--bg-surface); transform: translateX(5px); color: var(--primary); }
 
-        /* --- USER PILL & DROPDOWN --- */
-        .user-pill { 
-            display: none; align-items: center; gap: 10px; 
-            background: var(--card-bg); padding: 5px 5px 5px 15px; 
-            border-radius: 14px; border: 1px solid var(--border); cursor: pointer; 
-        }
-        .mc-chip {
-            width: 28px; height: 28px; background: var(--gradient);
-            border-radius: 50%; margin-left: 8px; display: flex;
-            align-items: center; justify-content: center; font-size: 10px;
-            font-weight: 900; color: #fff; box-shadow: 0 0 15px var(--primary-glow);
-        }
-        .avatar { width: 34px; height: 34px; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* GENEL BUTONLAR */
+.btn { padding: 10px 20px; border-radius: 12px; border: none; font-weight: 800; font-size: 12px; letter-spacing: 0.5px; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
+.login-btn { background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.login-btn:hover { background: rgba(255,255,255,0.1); }
+.register-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; box-shadow: 0 5px 20px var(--primary-glow); text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.register-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--primary-glow); }
 
-        .dropdown {
-            position: absolute; top: 60px; right: 0; width: 240px;
-            background: var(--glass); border: 1px solid var(--border);
-            backdrop-filter: blur(20px); border-radius: 20px; display: none; 
-            flex-direction: column; padding: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .dropdown.active { display: flex; animation: slideUp 0.3s ease; }
+/* === GELİŞMİŞ DUYURU ALANI === */
+.announcement-bar {
+    position: fixed; top: 70px; width: 100%; height: 38px;
+    background: linear-gradient(90deg, rgba(0,240,255,0.05), rgba(0,85,255,0.1), rgba(0,240,255,0.05));
+    border-bottom: 1px solid var(--glass-border); z-index: 1999; 
+    display: flex; align-items: center; overflow: hidden; box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
+}
+.announcement-icon { position: absolute; left: 15px; z-index: 10; font-size: 14px; color: var(--primary); animation: pulse 1.5s infinite; background: var(--bg-main); padding-right: 10px; box-shadow: 10px 0 10px var(--bg-main); }
+@keyframes pulse { 0% { opacity: 0.6; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.1); text-shadow: 0 0 10px var(--primary); } 100% { opacity: 0.6; transform: scale(0.95); } }
+.announcement-text {
+    white-space: nowrap; font-size: 13px; font-weight: 700; color: var(--text-primary);
+    animation: marquee 30s linear infinite; padding-left: 100%; letter-spacing: 0.5px;
+}
+.announcement-text span { color: var(--primary); font-weight: 900; }
+@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        /* --- CARDS & GRID --- */
-        .section-title {
-            padding: 40px 10% 20px; font-size: 14px; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 3px; color: var(--primary);
-            display: flex; align-items: center; gap: 15px;
-        }
-        .section-title::after { content: ''; flex: 1; height: 2px; background: linear-gradient(90deg, var(--border), transparent); }
+/* ARAMA ALANI */
+.hero-search { margin-top: 150px; padding: 0 20px; text-align: center; position: relative; z-index: 10; }
+.search-container { max-width: 550px; margin: 0 auto; position: relative; }
+.search-container i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 18px; transition: 0.3s; }
+#searchInput {
+    width: 100%; padding: 18px 20px 18px 50px; border-radius: 20px; 
+    background: var(--glass-bg); border: 1px solid var(--glass-border); 
+    color: var(--text-primary); outline: none; font-size: 15px; font-weight: 500;
+    backdrop-filter: blur(10px); transition: all 0.3s ease; box-shadow: var(--card-shadow);
+}
+#searchInput:focus { border-color: var(--primary); box-shadow: 0 0 25px var(--primary-glow); background: var(--bg-surface); }
+#searchInput:focus + i { color: var(--primary); }
 
-        .games-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-            gap: 20px; padding: 0 10%;
-        }
+/* KATEGORİ BAŞLIKLARI */
+.section-title {
+    padding: 40px 10% 20px; font-size: 14px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 3px; color: var(--text-secondary);
+    display: flex; align-items: center; gap: 15px; position: relative; z-index: 10;
+}
+.section-title::before { content: ''; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); }
+.section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--glass-border), transparent); }
 
-        .game-card {
-            background: var(--card-bg); border-radius: 24px; padding: 35px 25px;
-            text-align: center; border: 1px solid var(--border); position: relative;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            overflow: hidden; backdrop-filter: blur(10px);
-        }
-        .game-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, var(--primary-glow), transparent 70%);
-            opacity: 0; transition: 0.4s;
-        }
-        .game-card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .game-card:hover::before { opacity: 0.1; }
+/* === OYUN KARTLARI (PROFESYONEL DÜZEN) === */
+.games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 0 10%; position: relative; z-index: 10; }
+.game-card {
+    background: var(--bg-surface); border-radius: 24px; padding: 35px 20px;
+    text-align: center; border: 1px solid var(--glass-border); position: relative;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer;
+    box-shadow: var(--card-shadow); overflow: hidden;
+}
+.game-card::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%);
+    opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 0;
+}
+.game-card:hover { transform: translateY(-10px); border-color: var(--primary); }
+.game-card:hover::before { opacity: 0.15; }
+.game-icon { font-size: 45px; margin-bottom: 20px; display: block; filter: drop-shadow(0 0 15px var(--primary-glow)); color: var(--primary); position: relative; z-index: 1; transition: 0.3s; }
+.game-card:hover .game-icon { transform: scale(1.1); }
+.game-card span { font-weight: 800; font-size: 17px; display: block; margin-bottom: 12px; color: var(--text-primary); position: relative; z-index: 1; }
 
-        /* Improved 3D Icons */
-        .game-icon { 
-            font-size: 55px; margin-bottom: 20px; display: inline-block;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
-            transition: 0.4s;
-            position: relative;
-        }
-        .game-card:hover .game-icon { transform: scale(1.2) rotateY(15deg); }
+/* ROZETLER */
+.badge { font-size: 10px; font-weight: 900; padding: 6px 12px; border-radius: 8px; display: inline-block; background: rgba(255, 255, 255, 0.05); text-transform: uppercase; transition: all 0.3s ease; letter-spacing: 1px; position: relative; z-index: 1; }
+.badge-free { color: var(--success) !important; background: rgba(0, 255, 163, 0.1) !important; border: 1px solid rgba(0, 255, 163, 0.2); }
+.badge-danger { color: var(--danger) !important; background: rgba(255, 77, 77, 0.1) !important; border: 1px solid rgba(255, 77, 77, 0.2); }
+.badge-success { color: var(--success) !important; background: rgba(0, 255, 163, 0.1) !important; border: 1px solid rgba(0, 255, 163, 0.2); }
 
-        .icon-multiplayer { color: #ff007a; }
-        .icon-brain { color: #00ffa3; }
-        .icon-premium { color: #ffd700; }
-        .icon-free { color: #4fd1ff; }
+/* === FOOTER VE 3D FLOOD ALANI === */
+.footer { background: var(--bg-surface); padding: 50px 20px; border-top: 1px solid var(--glass-border); text-align: center; margin-top: 80px; position: relative; z-index: 10; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); }
+.social-icons { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
+.social-btn {
+    width: 45px; height: 45px; background: var(--bg-main); border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; transition: 0.4s;
+    border: 1px solid var(--glass-border); text-decoration: none; color: var(--text-primary); font-size: 20px;
+}
+.social-btn:hover { background: linear-gradient(135deg, var(--primary), var(--secondary)); transform: translateY(-5px) rotate(10deg); color: #fff; border-color: transparent; box-shadow: 0 10px 20px var(--primary-glow); }
 
-        /* --- MODALS --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
-            display: none; align-items: center; justify-content: center; z-index: 5000;
-        }
-        .modal-card { 
-            width: 90%; max-width: 480px; padding: 35px; border-radius: 30px; 
-            background: var(--card-bg); border: 1px solid var(--border); 
-            text-align: center; position: relative; animation: modalIn 0.4s ease;
-        }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
-        .modal-btn { 
-            width: 100%; padding: 16px; border-radius: 16px; border: none; 
-            background: var(--gradient); color: #fff; font-weight: 800; 
-            cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px var(--primary-glow);
-        }
-        .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 25px var(--primary-glow); }
+/* === PROFESYONEL MODALLAR (GLASSMORPHISM) === */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center; z-index: 5000; opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay.show { opacity: 1; display: flex; }
+.modal-card { 
+    width: 90%; max-width: 420px; padding: 35px 30px; border-radius: 28px; 
+    background: var(--bg-surface); border: 1px solid var(--glass-border); text-align: center; 
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+}
+.modal-overlay.show .modal-card { transform: scale(1); }
+.modal-close-btn { position: absolute; top: 20px; right: 20px; font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: 0.3s; }
+.modal-close-btn:hover { color: var(--danger); transform: rotate(90deg); }
+.modal-card h2 { margin-bottom: 25px; font-size: 24px; font-weight: 900; color: var(--text-primary); letter-spacing: 0.5px; }
+.modal-card input { 
+    width: 100%; padding: 16px; margin-bottom: 15px; border-radius: 14px; 
+    background: var(--input-bg); border: 1px solid var(--glass-border); 
+    color: var(--text-primary); outline: none; text-align: left; font-size: 14px; transition: 0.3s; font-weight: 500;
+}
+.modal-card input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); background: var(--bg-main); }
+.modal-card input:disabled { opacity: 0.6; cursor: not-allowed; }
+.modal-btn { 
+    width: 100%; padding: 16px; border-radius: 14px; border: none; 
+    background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+    color: #fff; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; 
+    box-shadow: 0 8px 20px var(--primary-glow); transition: 0.3s; text-transform: uppercase; margin-top: 10px;
+}
+.modal-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px var(--primary-glow); }
 
-        /* --- FEEDBACK TEXTS --- */
-        .error-text { color: var(--danger); font-size: 13px; font-weight: 700; margin-top: 10px; display: block; }
-        .success-text { color: var(--success); font-size: 13px; font-weight: 700; margin-top: 10px; display: block; }
+/* AVATAR GRID - EKSİKSİZ VE DÜZENLİ */
+.avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; background: var(--input-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); }
+.avatar-item { width: 100%; aspect-ratio: 1/1; border-radius: 12px; cursor: pointer; border: 3px solid transparent; transition: 0.3s; overflow: hidden; position: relative; }
+.avatar-item img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+.avatar-item:hover { transform: scale(1.05); }
+.avatar-item.active { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); transform: scale(1.1); z-index: 2; }
 
-        /* --- FOOTER & MISC --- */
-        .btn { padding: 12px 24px; border-radius: 14px; font-weight: 800; cursor: pointer; border: none; transition: 0.3s; }
-        .login-btn { background: transparent; color: var(--text-main); border: 1px solid var(--border); }
-        .register-btn { background: var(--gradient); color: white; }
+/* PROMO MESAJLARI */
+.promo-msg { font-size: 13px; margin-top: 5px; font-weight: 800; min-height: 20px; letter-spacing: 0.5px; }
+.promo-error { color: var(--danger); text-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
+.promo-success { color: var(--success); text-shadow: 0 0 10px rgba(0, 255, 163, 0.4); }
+.auth-error-area { color: var(--danger); font-size: 13px; font-weight: 800; margin-top: 10px; min-height: 20px; display: block; text-align: center; }
 
-        .footer { padding: 60px 20px; text-align: center; border-top: 1px solid var(--border); margin-top: 80px; }
-        .social-icons { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
-        .social-btn {
-            width: 45px; height: 45px; background: var(--card-bg); border-radius: 15px;
-            display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);
-            color: var(--text-main); font-size: 20px; transition: 0.3s; text-decoration: none;
-        }
-        .social-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-5px); }
+/* ÇARK ALANI - ZARAR GÖRMEDİ, GÜZELLEŞTİRİLDİ */
+.wheel-container { position: relative; width: 280px; height: 280px; margin: 25px auto; }
+#wheelCanvas { 
+    width: 100%; height: 100%; border-radius: 50%; 
+    transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
+    box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 0 10px var(--bg-main), 0 0 20px 10px var(--primary-glow);
+}
+.wheel-pointer { 
+    position: absolute; top: -15px; left: 50%; transform: translateX(-50%); 
+    width: 36px; height: 46px; background: #fff; 
+    clip-path: polygon(50% 100%, 0 0, 100% 0); z-index: 100;
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+}
+.wheel-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 60px; height: 60px; background: var(--bg-main);
+    border: 4px solid var(--primary); border-radius: 50%; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(0,0,0,0.5);
+}
+.wheel-center::after { content: 'SPIN'; color: var(--primary); font-weight: 900; font-size: 14px; letter-spacing: 1px; }
+#wheelResultText { color: var(--success); font-weight: 900; font-size: 16px; margin-top: 20px; min-height: 28px; text-shadow: 0 0 15px rgba(0, 255, 163, 0.4); letter-spacing: 0.5px;}
 
-        @media(max-width: 768px) {
-            .games-grid { grid-template-columns: repeat(2, 1fr); padding: 0 15px; }
-            .section-title { padding: 30px 20px 15px; }
-            .hero-search { margin-top: 150px !important; }
-        }
-    </style>
+/* MOBİL UYUM (TAŞMA ENGELLENDİ) */
+@media(max-width: 768px) {
+    .games-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 15px; }
+    .top-bar { padding: 0 10px; height: 65px; }
+    .brand-3d { font-size: 16px; }
+    .user-pill { padding: 4px 4px 4px 10px; gap: 8px; }
+    .balance-info b { font-size: 12px; }
+    .mc-chip { width: 22px; height: 22px; font-size: 9px; }
+    .avatar { width: 28px; height: 28px; }
+    .btn { padding: 8px 12px; font-size: 10px; }
+    .theme-btn { width: 32px; height: 32px; font-size: 14px; }
+    .announcement-bar { top: 65px; height: 32px; }
+    .announcement-text { font-size: 11px; }
+    .hero-search { margin-top: 130px; }
+    .section-title { padding: 30px 15px 15px; font-size: 12px; }
+    .wheel-container { width: 240px; height: 240px; }
+}
+@media(max-width: 380px) {
+    .games-grid { grid-template-columns: repeat(1, 1fr); }
+    .brand-3d { font-size: 14px; }
+    .right-menu { gap: 6px; }
+    .btn { padding: 6px 8px; font-size: 9px; }
+}
+</style>
 </head>
-<body data-theme="dark">
+<body>
 
 <canvas id="snow"></canvas>
 
 <div class="top-bar">
-    <div class="brand-3d">PlayMatrix</div>
+    <div class="brand-3d" onclick="window.scrollTo({top:0, behavior:'smooth'})">PlayMatrix</div>
     <div class="right-menu">
-        <button class="theme-toggle" id="themeToggle"><i class="fa-solid fa-moon"></i></button>
+        <button class="theme-btn" id="themeToggle" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
         <button class="btn login-btn" id="loginBtn">GİRİŞ</button>
-        <button class="btn register-btn" id="regBtn">KAYIT</button>
+        <button class="btn register-btn" id="regBtn">KAYIT OL</button>
 
         <div class="user-pill" id="userPill">
-            <div class="balance-info" style="display:flex; align-items:center;">
-                <b id="userBalance" style="color:var(--success); font-family: monospace;">0</b>
+            <div class="balance-info">
+                <b id="userBalance">0</b>
                 <div class="mc-chip">MC</div>
             </div>
             <div class="avatar" id="avatarTrigger">
                 <img src="" id="userProfileImg">
             </div>
             <div class="dropdown" id="userDropdown">
-                <div class="drop-item" onclick="openModal('profileModal')" style="padding:12px; cursor:pointer; display:flex; gap:10px; border-radius:12px; transition:0.2s;">
-                    <i class="fa-solid fa-user-gear" style="color:var(--primary)"></i> Profil Ayarları
-                </div>
-                <div class="drop-item" onclick="openModal('wheelModal')" style="padding:12px; cursor:pointer; display:flex; gap:10px; border-radius:12px;">
-                    <i class="fa-solid fa-dharmachakra" style="color:var(--primary)"></i> Şans Çarkı
-                </div>
-                <div class="drop-item" onclick="openModal('bonusModal')" style="padding:12px; cursor:pointer; display:flex; gap:10px; border-radius:12px;">
-                    <i class="fa-solid fa-gift" style="color:var(--primary)"></i> Bonus Kod
-                </div>
-                <div class="drop-item" id="logoutBtn" style="padding:12px; cursor:pointer; display:flex; gap:10px; color:var(--danger); border-top:1px solid var(--border); margin-top:5px;">
-                    <i class="fa-solid fa-power-off"></i> Çıkış Yap
-                </div>
+                <div class="drop-item" onclick="openModal('profileModal')"><i class="fa-solid fa-user-astronaut"></i> Profil Ayarları</div>
+                <div class="drop-item" onclick="openModal('wheelModal')"><i class="fa-solid fa-dharmachakra"></i> Günlük Çark</div>
+                <div class="drop-item" onclick="openModal('bonusModal')"><i class="fa-solid fa-gift"></i> Promosyon Kodu</div>
+                <div class="drop-item" id="logoutBtn" style="color:var(--danger); border-top:1px solid var(--glass-border); margin-top:5px;"><i class="fa-solid fa-power-off"></i> Güvenli Çıkış</div>
             </div>
         </div>
     </div>
 </div>
 
 <div class="announcement-bar">
-    <div class="announcement-label"><i class="fa-solid fa-tower-broadcast"></i> SON DAKİKA</div>
+    <div class="announcement-icon"><i class="fa-solid fa-bolt"></i></div>
     <div class="announcement-text" id="announcementText">
-        ⚡ SİSTEM GÜNCELLENDİ: PlayMatrix v2.0 Aktif! • 🎁 Yeni Üyelere 50.000 MC Hediye! • 🎡 Şans Çarkında Bugün Büyük Ödül 50K MC! • 🏆 Turnuvalar Yakında Başlıyor...
+        🚀 <span>SİSTEM BİLDİRİMİ:</span> PLAYMATRİX'İN YENİ ULTRA PROFESYONEL ARAYÜZÜNE HOŞ GELDİNİZ! • GÜNLÜK ÇARKINIZI ÇEVİREREK <span>50.000 MC</span>'YE KADAR KAZANMAYI UNUTMAYIN! • YENİ MULTIPLAYER OYUNLARIMIZ YOLDA...
     </div>
 </div>
 
-<div class="hero-search" style="margin-top: 160px; padding: 0 20px; text-align:center;">
-    <div class="search-container" style="max-width: 600px; margin: 0 auto; position:relative;">
-        <input type="text" id="searchInput" placeholder="Oyun kütüphanesinde ara..." style="width: 100%; padding: 18px 25px; border-radius: 20px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); outline: none; font-size: 15px; backdrop-filter: blur(10px);">
-        <i class="fa-solid fa-magnifying-glass" style="position:absolute; right:20px; top:50%; transform:translateY(-50%); color:var(--text-dim);"></i>
+<div class="hero-search">
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Favori oyununuzu arayın...">
+        <i class="fa-solid fa-magnifying-glass"></i>
     </div>
 </div>
 
 <main id="games">
-    <div class="section-title">Rekabetçi Arenası</div>
+    <div class="section-title">Multiplayer Arena</div>
     <div class="games-grid">
         <div class="game-card" data-name="Online Pişti" onclick="checkLogin('OnlinePişti.html')">
-            <div class="game-icon icon-multiplayer"><i class="fa-solid fa-trophy"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Online Pişti</span>
-            <div class="badge auth-badge">YÜKLENİYOR...</div>
+            <div class="game-icon"><i class="fa-solid fa-hand-fist"></i></div>
+            <span>Online Pişti</span>
+            <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="Grid Conquest" onclick="checkLogin('GridConquest.html')">
-            <div class="game-icon icon-multiplayer"><i class="fa-solid fa-clapperboard"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Grid Conquest</span>
-            <div class="badge auth-badge">YÜKLENİYOR...</div>
+        <div class="game-card" data-name="Online Grid Conquest" onclick="checkLogin('GridConquest.html')">
+            <div class="game-icon"><i class="fa-solid fa-border-all"></i></div>
+            <span>Grid Conquest</span>
+            <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
     </div>
 
-    <div class="section-title">Zihin Egzersizi</div>
+    <div class="section-title">Zeka & Strateji</div>
     <div class="games-grid">
-        <div class="game-card" data-name="Cyber" onclick="location.href='Cyber.html'">
-            <div class="game-icon icon-brain"><i class="fa-solid fa-microchip"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Cyber Master</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+        <div class="game-card" data-name="loops" onclick="location.href='Cyber.html'">
+            <div class="game-icon"><i class="fa-solid fa-infinity"></i></div>
+            <span>Cyber</span>
+            <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
         <div class="game-card" data-name="Pattern Master" onclick="location.href='PatternMaster.html'">
-            <div class="game-icon icon-brain"><i class="fa-solid fa-brain"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Pattern Master</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="game-icon"><i class="fa-solid fa-shapes"></i></div>
+            <span>Pattern Master</span>
+            <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
     </div>
 
-    <div class="section-title">Yüksek Risk & Premium</div>
+    <div class="section-title">Premium Casino</div>
     <div class="games-grid">
         <div class="game-card" data-name="Crash" onclick="checkLogin('Crash.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-rocket"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Matrix Crash</span>
-            <div class="badge auth-badge">PREMIUM</div>
+            <div class="game-icon"><i class="fa-solid fa-plane-up"></i></div>
+            <span>Crash</span>
+            <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
         <div class="game-card" data-name="Mines" onclick="checkLogin('Mines.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-bomb"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Cyber Mines</span>
-            <div class="badge auth-badge">PREMIUM</div>
+            <div class="game-icon"><i class="fa-solid fa-land-mine-on"></i></div>
+            <span>Mines</span>
+            <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
         <div class="game-card" data-name="BlackJack" onclick="checkLogin('BlackJack.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-spade"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">BlackJack 21</span>
-            <div class="badge auth-badge">PREMIUM</div>
+            <div class="game-icon"><i class="fa-solid fa-diamond"></i></div>
+            <span>BlackJack</span>
+            <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
         <div class="game-card" data-name="Pişti" onclick="checkLogin('Pişti.html')">
-            <div class="game-icon icon-premium"><i class="fa-solid fa-layer-group"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Klasik Pişti</span>
-            <div class="badge auth-badge">PREMIUM</div>
-        </div>
+            <div class="game-icon"><i class="fa-solid fa-clone"></i></div>
+            <span>Pişti</span>
+            <div class="badge auth-badge">GİRİŞ GEREKİR</div>
+        </div>    
     </div>
 
-    <div class="section-title">Eğlence Köşesi</div>
+    <div class="section-title">Arcade Classics</div>
     <div class="games-grid">
         <div class="game-card" data-name="Space Pro" onclick="location.href='SpacePro.html'">
-            <div class="game-icon icon-free"><i class="fa-solid fa-shuttle-space"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Space Pro</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="game-icon"><i class="fa-solid fa-user-astronaut"></i></div>
+            <span>Space Pro</span>
+            <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
         <div class="game-card" data-name="Snake Pro" onclick="location.href='SnakePro.html'">
-            <div class="game-icon icon-free"><i class="fa-solid fa-dragon"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Snake Evolution</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="game-icon"><i class="fa-solid fa-worm"></i></div>
+            <span>Snake Pro</span>
+            <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
         <div class="game-card" data-name="Tower Stack" onclick="location.href='TowerStack.html'">
-            <div class="game-icon icon-free"><i class="fa-solid fa-cubes-stacked"></i></div>
-            <span style="display:block; font-weight:800; margin-bottom:10px;">Tower Stack</span>
-            <div class="badge badge-free">ÜCRETSİZ</div>
+            <div class="game-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <span>Tower Stack</span>
+            <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
     </div>
 </main>
 
 <footer class="footer">
-    <div class="brand-3d" style="margin-bottom:15px; font-size: 20px;">PlayMatrix</div>
+    <div class="brand-3d" style="font-size:26px; margin-bottom: 20px;">PlayMatrix</div>
     <div class="social-icons">
-        <a href="#" class="social-btn"><i class="fa-brands fa-discord"></i></a>
+        <a href="https://t.me/+25bJu1XJssZhYjg8" class="social-btn"><i class="fa-brands fa-discord"></i></a>
         <a href="https://www.instagram.com/pixel_arena_games" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
+        <a href="https://t.me/+25bJu1XJssZhYjg8" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
     </div>
-    <p style="color:var(--text-dim); font-size:12px; font-weight:600;">© 2026 PlayMatrix Global Network. All Rights Reserved.</p>
+    <p style="color:var(--text-secondary); font-size:12px; margin-top: 20px; font-weight: 600;">© 2026 PlayMatrix Global. Tüm Hakları Saklıdır.</p>
 </footer>
 
 <div class="modal-overlay" id="alertModal">
     <div class="modal-card">
-        <div id="alertIcon" style="font-size: 50px; margin-bottom: 20px;"></div>
-        <h2 id="alertTitle">Sistem Bildirimi</h2>
-        <p id="alertBody" style="color: var(--text-dim); margin-bottom: 25px; font-weight: 600;"></p>
-        <button class="modal-btn" onclick="closeModal('alertModal')">ANLADIM</button>
-    </div>
-</div>
-
-<div class="modal-overlay" id="authOverlay">
-    <div class="modal-card">
-        <h2 id="authTitle" style="margin-bottom:25px;">Giriş Yap</h2>
-        <div style="text-align:left;">
-            <input type="text" id="authEmail" placeholder="Kullanıcı Adı veya E-posta" style="width:100%; padding:14px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
-            <input type="password" id="authPassword" placeholder="Şifre" style="width:100%; padding:14px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
-            <input type="email" id="regEmail" placeholder="E-posta Adresi" style="display:none; width:100%; padding:14px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
-            <input type="text" id="authUsername" placeholder="Kullanıcı Adı Belirle" style="display:none; width:100%; padding:14px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px; outline:none;">
-        </div>
-        <div id="authErrorMsg" class="error-text"></div>
-        <button class="modal-btn" id="authSubmit">SİSTEME GİRİŞ YAP</button>
-        <p id="switchMode" style="margin-top:20px; font-size:13px; cursor:pointer; font-weight:600;">Hesabın yok mu? <span style="color:var(--primary)">Kayıt Ol</span></p>
-        <p onclick="closeModal('authOverlay')" style="margin-top:15px; cursor:pointer; opacity:0.6; font-size:12px;">Kapat</p>
+        <div id="alertIcon" style="font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));"></div>
+        <h2 id="alertTitle">Sistem Mesajı</h2>
+        <p id="alertBody" style="color: var(--text-secondary); margin-bottom: 25px; font-size: 15px; font-weight: 500;"></p>
+        <button class="modal-btn" onclick="closeModal('alertModal')">TAMAM</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="profileModal">
     <div class="modal-card">
-        <h2 style="margin-bottom:20px;">Kullanıcı Profili</h2>
-        <div style="text-align:left; max-height:400px; overflow-y:auto; padding-right:10px;">
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">E-POSTA</label>
-            <input type="text" id="profEmail" disabled style="width:100%; padding:12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:var(--text-dim); margin-bottom:15px;">
-            
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">KULLANICI ADI</label>
-            <input type="text" id="profUsername" disabled style="width:100%; padding:12px; border-radius:12px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:var(--text-dim); margin-bottom:15px;">
-
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">AD SOYAD</label>
-            <input type="text" id="profNameSurname" placeholder="Adınız Soyadınız" style="width:100%; padding:12px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px;">
-            
-            <label style="font-size:11px; color:var(--text-dim); margin-left:5px;">TELEFON NUMARASI</label>
-            <input type="text" id="profPhone" placeholder="+90 5xx" style="width:100%; padding:12px; border-radius:12px; background:var(--bg-dark); border:1px solid var(--border); color:white; margin-bottom:15px;">
-            
-            <label style="font-size:11px; color:var(--primary); font-weight:800;">AVATARINI SEÇ</label>
-            <div class="avatar-grid" id="avatarLibrary" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin:10px 0;"></div>
+        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('profileModal')"></i>
+        <h2>Profil Yönetimi</h2>
+        <div style="text-align:left; margin-bottom:15px;">
+            <label style="font-size:12px; color:var(--text-secondary); font-weight:700; margin-left:5px;">Kayıtlı E-posta</label>
+            <input type="text" id="profEmail" disabled>
+            <label style="font-size:12px; color:var(--text-secondary); font-weight:700; margin-left:5px;">İsim Soyisim</label>
+            <input type="text" id="profNameSurname" placeholder="Ad Soyad giriniz">
+            <label style="font-size:12px; color:var(--text-secondary); font-weight:700; margin-left:5px;">Telefon Numarası</label>
+            <input type="text" id="profPhone" placeholder="+90 5xx xxx xx xx">
+            <label style="font-size:12px; color:var(--text-secondary); font-weight:700; margin-left:5px;">Kullanıcı Adı (Kalan Hak: <span id="userChangeCount" style="color:var(--primary)">3</span>)</label>
+            <input type="text" id="profUser" placeholder="Kullanıcı Adı">
         </div>
-        <button class="modal-btn" onclick="updateProfile()" style="margin-top:20px;">GÜNCELLE</button>
-        <p onclick="closeModal('profileModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Kapat</p>
-    </div>
-</div>
-
-<div class="modal-overlay" id="wheelModal">
-    <div class="modal-card" style="max-width:550px;">
-        <h2 style="margin-bottom:10px;">Şans Çarkı</h2>
-        <div style="position:relative; width:280px; height:280px; margin:20px auto;">
-            <div style="position:absolute; top:-15px; left:50%; transform:translateX(-50%); width:30px; height:40px; background:var(--accent); clip-path:polygon(50% 100%, 0 0, 100% 0); z-index:100;"></div>
-            <canvas id="wheelCanvas" width="500" height="500" style="width:100%; height:100%; border-radius:50%; border:5px solid var(--border); transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);"></canvas>
-        </div>
-        <div id="wheelResultText" style="height:30px; font-weight:900; color:var(--success); margin-bottom:10px;"></div>
-        <button class="modal-btn" id="spinBtn" onclick="spinWheel()">ÜCRETSİZ ÇEVİR</button>
-        <div id="wheelFeedback" class="error-text" style="margin-top:10px; display:none;"></div>
-        <div id="wheelTimer" style="margin-top:15px; font-size:13px; font-weight:700; color:var(--accent);"></div>
-        <p onclick="closeModal('wheelModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Vazgeç</p>
+        <div style="text-align: left; font-size: 13px; color: var(--text-primary); font-weight: 900; margin-top: 15px; text-transform:uppercase;">Avatar Seçimi (Eksiksiz)</div>
+        <div class="avatar-grid" id="avatarLibrary"></div>
+        <button class="modal-btn" onclick="updateProfile()">DEĞİŞİKLİKLERİ KAYDET</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="bonusModal">
     <div class="modal-card">
-        <i class="fa-solid fa-gift" style="font-size:50px; color:var(--primary); margin-bottom:20px;"></i>
-        <h2>Promosyon Kodu</h2>
-        <input type="text" id="bonusInput" placeholder="KODU BURAYA YAZIN" style="width:100%; padding:15px; border-radius:15px; background:var(--bg-dark); border:2px dashed var(--primary); color:white; text-align:center; font-weight:900; font-size:18px; letter-spacing:3px; margin:20px 0; outline:none;">
-        <div id="promoFeedback" style="font-size:13px; margin-bottom:15px; min-height:18px; font-weight:700;"></div>
+        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('bonusModal')"></i>
+        <i class="fa-solid fa-gift" style="font-size:50px;color:var(--primary);margin-bottom:15px; filter: drop-shadow(0 0 15px var(--primary-glow));"></i>
+        <h2>Ödül Merkezi</h2>
+        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:15px; font-weight:500;">Sosyal medya hesaplarımızdan aldığınız promosyon kodunu buraya girerek MC bakiyesi kazanabilirsiniz.</p>
+        <input type="text" id="bonusInput" placeholder="PROMO KODU GİRİN" style="text-align: center; font-weight: 900; letter-spacing: 3px; font-size:16px; text-transform:uppercase;">
+        <div id="promoFeedback" class="promo-msg"></div>
         <button class="modal-btn" onclick="claimBonus()">KODU AKTİF ET</button>
-        <p onclick="closeModal('bonusModal')" style="margin-top:15px; cursor:pointer; opacity:0.6;">Kapat</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="wheelModal">
+    <div class="modal-card">
+        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('wheelModal')"></i>
+        <h2>Şans Çarkı</h2>
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <div class="wheel-center"></div>
+            <canvas id="wheelCanvas" width="500" height="500"></canvas>
+        </div>
+        <div id="wheelResultText"></div>
+        <button class="modal-btn" id="spinBtn" onclick="spinWheel()" style="margin-top:20px;">ÜCRETSİZ ÇEVİR</button>
+        <div id="wheelTimer" style="margin-top:15px;font-weight:800;color:var(--text-secondary); font-size: 14px; background:var(--input-bg); padding:10px; border-radius:10px;"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="authOverlay">
+    <div class="modal-card">
+        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('authOverlay')"></i>
+        <div style="font-size:40px; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2 id="authTitle">Sisteme Giriş Yap</h2>
+        <input type="text" id="authEmail" placeholder="E-posta veya Kullanıcı Adı">
+        <input type="password" id="authPassword" placeholder="Güvenli Şifre">
+        <input type="email" id="regEmail" placeholder="E-posta Adresi" style="display:none;">
+        <input type="text" id="authUsername" placeholder="Kullanıcı Adı Belirle" style="display:none;">
+        <div id="authErrorMsg" class="auth-error-area"></div>
+        <button class="modal-btn" id="authSubmit">İŞLEME DEVAM ET</button>
+        <p id="switchMode" style="margin-top:20px;font-size:14px;font-weight:600;cursor:pointer;color:var(--text-secondary);">Hesabın yok mu? <b style="color:var(--primary)">Hemen Kayıt Ol</b></p>
     </div>
 </div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, increment, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc, increment, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-        authDomain:"emirhan-site.firebaseapp.com",
-        projectId:"emirhan-site",
-        storageBucket:"emirhan-site.firebasestorage.app",
-        messagingSenderId:"668871888390",
-        appId:"1:668871888390:web:76568bda84cb1641f7bd87"
-    };
+const firebaseConfig = {
+    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain:"emirhan-site.firebaseapp.com",
+    projectId:"emirhan-site",
+    storageBucket:"emirhan-site.firebasestorage.app",
+    messagingSenderId:"668871888390",
+    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    // --- UTILS & MODALS ---
-    window.openModal = (id) => { 
-        document.getElementById(id).style.display = 'flex';
-        if(id === 'wheelModal') { drawWheel(); checkWheelCooldown(); }
-    };
-    window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; };
-
-    window.showMatrixModal = (title, message, type = 'info') => {
-        const modal = document.getElementById("alertModal");
-        const icon = document.getElementById("alertIcon");
-        document.getElementById("alertTitle").innerText = title;
-        document.getElementById("alertBody").innerText = message;
-        icon.innerHTML = type === 'error' ? '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger)"></i>' : 
-                        type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>' : 
-                        '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>';
-        modal.style.display = 'flex';
-    };
-
-    // --- WHEEL SYSTEM ---
-    const rewards = [
-        { label: "2.5K", val: 2500, color: "#141a26" },
-        { label: "5K", val: 5000, color: "#1e2632" },
-        { label: "7.5K", val: 7500, color: "#141a26" },
-        { label: "12K", val: 12000, color: "#1e2632" },
-        { label: "20K", val: 20000, color: "#141a26" },
-        { label: "25K", val: 25000, color: "#1e2632" },
-        { label: "30K", val: 30000, color: "#141a26" },
-        { label: "50K", val: 50000, color: "#ff007a" }
-    ];
-
-    function drawWheel() {
-        const canvas = document.getElementById("wheelCanvas");
-        const ctx = canvas.getContext("2d");
-        const slice = (2 * Math.PI) / rewards.length;
-        ctx.clearRect(0,0,500,500);
-        rewards.forEach((r, i) => {
-            ctx.beginPath();
-            ctx.fillStyle = r.color;
-            ctx.moveTo(250, 250);
-            ctx.arc(250, 250, 250, i * slice, (i+1) * slice);
-            ctx.fill();
-            ctx.save();
-            ctx.translate(250, 250);
-            ctx.rotate(i * slice + slice/2);
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 30px Plus Jakarta Sans";
-            ctx.fillText(r.label, 120, 10);
-            ctx.restore();
-        });
+// === TEMA YÖNETİMİ (KARANLIK / AYDINLIK) ===
+window.toggleTheme = () => {
+    document.body.classList.toggle('light-mode');
+    const icon = document.querySelector('#themeToggle i');
+    if(document.body.classList.contains('light-mode')) {
+        icon.className = 'fa-solid fa-sun';
+        localStorage.setItem('matrixTheme', 'light');
+    } else {
+        icon.className = 'fa-solid fa-moon';
+        localStorage.setItem('matrixTheme', 'dark');
     }
+};
 
-    let wheelRotation = 0;
-    window.spinWheel = async () => {
-        const feedback = document.getElementById("wheelFeedback");
-        feedback.style.display = "none";
-        
-        try {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            const userDoc = await getDoc(userRef);
-            const last = userDoc.data().lastSpin || 0;
-            
-            if(Date.now() - last < 86400000) {
-                feedback.innerText = "Hata: Günlük çevirme hakkınız henüz dolmadı!";
-                feedback.style.display = "block";
-                return;
-            }
+// Başlangıçta temayı kontrol et
+if(localStorage.getItem('matrixTheme') === 'light') {
+    document.body.classList.add('light-mode');
+    document.querySelector('#themeToggle i').className = 'fa-solid fa-sun';
+}
 
-            const rand = Math.floor(Math.random() * rewards.length);
-            const prize = rewards[rand].val;
-            wheelRotation += 3600 + (360 - (rand * 45));
-            document.getElementById("wheelCanvas").style.transform = `rotate(${wheelRotation}deg)`;
-            document.getElementById("spinBtn").disabled = true;
+// === ÖZEL MODAL ALERT FONKSİYONU (Glassmorphism Uyumlu) ===
+window.showMatrixModal = (title, message, type = 'info') => {
+    const modal = document.getElementById("alertModal");
+    const icon = document.getElementById("alertIcon");
+    document.getElementById("alertTitle").innerText = title;
+    document.getElementById("alertBody").innerText = message;
+    
+    if(type === 'error') {
+        icon.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:var(--danger)"></i>';
+    } else if(type === 'success') {
+        icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>';
+    } else {
+        icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>';
+    }
+    
+    openModal('alertModal');
+};
 
-            setTimeout(async () => {
-                await updateDoc(userRef, { balance: increment(prize), lastSpin: Date.now() });
-                document.getElementById("wheelResultText").innerText = `TEBRİKLER! +${prize} MC`;
-                checkWheelCooldown();
-            }, 5000);
+const rewards = [
+    { label: "2.500 MC", val: 2500, color: "#0a0e17" },
+    { label: "5.000 MC", val: 5000, color: "#111827" },
+    { label: "7.500 MC", val: 7500, color: "#0a0e17" },
+    { label: "12.500 MC", val: 12500, color: "#111827" },
+    { label: "20.000 MC", val: 20000, color: "#0a0e17" },
+    { label: "25.000 MC", val: 25000, color: "#111827" },
+    { label: "30.000 MC", val: 30000, color: "#0a0e17" },
+    { label: "50.000 MC", val: 50000, color: "#111827" }
+];
 
-        } catch(e) { feedback.innerText = "Bir hata oluştu!"; feedback.style.display = "block"; }
-    };
+function drawWheel() {
+    const canvas = document.getElementById("wheelCanvas");
+    if(!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = canvas.width / 2;
+    const sliceAngle = (2 * Math.PI) / rewards.length;
 
-    async function checkWheelCooldown() {
-        if(!auth.currentUser) return;
-        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        const last = userDoc.data().lastSpin || 0;
-        const diff = 86400000 - (Date.now() - last);
-        const timer = document.getElementById("wheelTimer");
-        const btn = document.getElementById("spinBtn");
-        
-        if(diff > 0) {
-            btn.disabled = true;
-            const h = Math.floor(diff / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            timer.innerText = `Sıradaki Hak: ${h}s ${m}d`;
-        } else {
-            btn.disabled = false;
-            timer.innerText = "Çark Çevrilmeye Hazır!";
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+
+    rewards.forEach((reward, i) => {
+        const angle = i * sliceAngle - Math.PI / 2;
+        ctx.beginPath();
+        ctx.fillStyle = reward.color;
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, angle, angle + sliceAngle);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0, 240, 255, 0.3)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = i % 2 === 0 ? "#00f0ff" : "#ffffff";
+        ctx.font = "bold 24px Inter";
+        ctx.fillText(reward.label, radius - 30, 10);
+        ctx.restore();
+    });
+}
+setTimeout(drawWheel, 500);
+
+window.claimBonus = async () => {
+    const input = document.getElementById("bonusInput");
+    const feedback = document.getElementById("promoFeedback");
+    const code = input.value.trim().toUpperCase();
+    if(!code) return;
+    feedback.innerText = "Sistem kontrol ediliyor...";
+    feedback.className = "promo-msg";
+    try {
+        const q = query(collection(db, "promocodes"), where("code", "==", code));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            feedback.innerText = "Hatalı veya süresi dolmuş promosyon kodu!";
+            feedback.classList.add("promo-error");
+            return;
         }
+        const promoDoc = querySnapshot.docs[0];
+        const promoData = promoDoc.data();
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        if (userData.usedPromos && userData.usedPromos.includes(code)) {
+            feedback.innerText = "Bu kodu hesabınızda zaten kullandınız!";
+            feedback.classList.add("promo-error");
+            return;
+        }
+        await updateDoc(userRef, { balance: increment(promoData.amount), usedPromos: [...(userData.usedPromos || []), code] });
+        feedback.innerText = `BAŞARILI! ${promoData.amount.toLocaleString()} MC Bakiyenize Eklendi.`;
+        feedback.classList.add("promo-success");
+        input.value = "";
+    } catch(e) {
+        feedback.innerText = "İşlem sırasında sunucu hatası oluştu!";
+        feedback.classList.add("promo-error");
+    }
+};
+
+let currentRotation = 0;
+window.spinWheel = async () => {
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    const userDoc = await getDoc(userRef);
+    const lastSpin = userDoc.data().lastSpin || 0;
+    
+    if (Date.now() - lastSpin < 86400000) { 
+        showMatrixModal("Erişim Reddedildi", "Şans çarkını günde sadece 1 kez çevirebilirsiniz. Lütfen sürenizin dolmasını bekleyin.", "error"); 
+        return; 
     }
 
-    // --- PROMO CODE SYSTEM ---
-    window.claimBonus = async () => {
-        const code = document.getElementById("bonusInput").value.trim().toUpperCase();
-        const feedback = document.getElementById("promoFeedback");
-        if(!code) { feedback.innerText = "LÜTFEN KOD GİRİN!"; feedback.className = "error-text"; return; }
-        
-        try {
-            const q = query(collection(db, "promocodes"), where("code", "==", code));
+    const wheel = document.getElementById("wheelCanvas");
+    const spinBtn = document.getElementById("spinBtn");
+    const resultText = document.getElementById("wheelResultText");
+    const randomIndex = Math.floor(Math.random() * rewards.length);
+    const prize = rewards[randomIndex].val;
+    const segmentDeg = 360 / rewards.length;
+    const stopAt = 360 - (randomIndex * segmentDeg); 
+    const extraTours = 3600; 
+    currentRotation += extraTours + stopAt;
+    
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+    spinBtn.disabled = true;
+    resultText.innerText = "Kriptografik analiz yapılıyor...";
+    resultText.style.color = "var(--primary)";
+
+    setTimeout(async () => {
+        await updateDoc(userRef, { balance: increment(prize), lastSpin: Date.now() });
+        resultText.innerText = `SİSTEM ONAYLANDI! ${prize.toLocaleString()} MC Aktarıldı.`;
+        resultText.style.color = "var(--success)";
+        checkWheelCooldown();
+    }, 5000);
+};
+
+// EKSİKSİZ AVATAR LİSTESİ
+const avatarLinks = [
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQwyXlGFYmEebbJwy3udOoiY1aHks5DHDL-LjNe-O2rw&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQujzeT1nbxD37pbAAGFoEQYZfH7nHKNHebtVxjQZo1vA&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyFK0ZyigAzwNoA3Ku85fCYQ0jjn9pD4bXb3udeMJoQQ&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfv2hkYWw-qOtoeyAoimv98hwJKq2ubPB5c8oWfw1MNg&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPSbtgxOwnNkjU2HDU-8GsHnbDLDNuVIFhkcrd4iESTQ&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5MxBdQ6TQzrlGQ00a7K0MpnAlR1EtXPP4VQ5r3duMHQ&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-3doyGKL8Ea3WQFJzf_aPS99XileTNMOI_ZK7WvT4ug&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw2iCwjev-ZGXN6qsaRZIVSJiVPyWPtf00l5Vw9fBPDA&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMiWBf7b6BRXfmPP-1cpLoP-R10mmRDcnnGdoo2-X74A&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCHQ_Ivd7XFu1rwSWwxeznD5whsQQyWD4h1XSO7EAT4w&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTEGm7jbVBDgiF_GSrWA_KYGbtblJwJ73YfrQ889Nmug&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRhgnTHC98ig0zq6ZxlbeCsxavfasV1SvTtZwa85aEkZg&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOA0bH63MfODLUkfynGXq_9DzrUFCjdqqJ54SmvLSuow&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRANb8PTeKBJ5kAT8GpIZR94hQm7J770Ai7ViNCpBpp2g&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSB1UgmpZDnWdOm3_mkMmgK2xh4j_pn0n6MRtf9GSoDMw&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS7oK5eLLGyQ-9dlF2u5PJumO-7XXFugKver64cswvAJA&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUkEeAPrAXCyY5kZzvb17-FciLVhiSHq1z0krelJA1SQ&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2foyhD4m6NkAJICHXJDOfhmpFKqRzUSTPHpxzZVOLRw&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmkYygtE4fo-rQ9azwFZcUkZUokE8YYrZhLKZw6UgNiw&s=10",
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5MxBdQ6TQzrlGQ00a7K0MpnAlR1EtXPP4VQ5r3duMHQ&s=10" // 20. avatar (Eksiksiz Grid için)
+];
+
+let selectedAvatar = "";
+function loadAvatars(current) {
+    const container = document.getElementById("avatarLibrary"); container.innerHTML = "";
+    avatarLinks.forEach(link => {
+        const div = document.createElement("div"); div.className = `avatar-item ${link === current ? 'active' : ''}`;
+        div.innerHTML = `<img src="${link}">`;
+        div.onclick = () => { document.querySelectorAll(".avatar-item").forEach(i => i.classList.remove("active")); div.classList.add("active"); selectedAvatar = link; };
+        container.appendChild(div);
+    });
+}
+
+window.updateProfile = async () => {
+    const userRef = doc(db, "users", auth.currentUser.uid);
+    const snap = await getDoc(userRef);
+    const data = snap.data();
+    const newName = document.getElementById("profNameSurname").value.trim();
+    const newPhone = document.getElementById("profPhone").value.trim();
+    const newUser = document.getElementById("profUser").value.trim();
+    let updates = { avatar: selectedAvatar || data.avatar };
+    if (!data.fullName && newName) updates.fullName = newName;
+    if (!data.phone && newPhone) updates.phone = newPhone;
+    if (newUser !== data.username && (data.userChangeCount || 0) < 3) {
+        updates.username = newUser;
+        updates.userChangeCount = (data.userChangeCount || 0) + 1;
+    }
+    await updateDoc(userRef, updates);
+    showMatrixModal("Sistem Güncellemesi", "Profil bilgileriniz ağa başarıyla kaydedildi.", "success");
+    closeModal('profileModal');
+};
+
+onAuthStateChanged(auth, user => {
+    const authBadges = document.querySelectorAll(".auth-badge");
+    if(user) {
+        document.getElementById("loginBtn").style.display="none"; 
+        document.getElementById("regBtn").style.display="none";
+        document.getElementById("userPill").style.display="flex";
+        authBadges.forEach(badge => { badge.innerText = "ARENAYA GİR"; badge.className = "badge auth-badge badge-success"; });
+        onSnapshot(doc(db, "users", user.uid), s => {
+            if(s.exists()) {
+                const data = s.data();
+                document.getElementById("userBalance").innerText = data.balance.toLocaleString();
+                document.getElementById("userProfileImg").src = data.avatar || avatarLinks[0];
+                document.getElementById("profEmail").value = user.email;
+                const nameInp = document.getElementById("profNameSurname");
+                nameInp.value = data.fullName || "";
+                if(data.fullName) nameInp.disabled = true;
+                const phoneInp = document.getElementById("profPhone");
+                phoneInp.value = data.phone || "";
+                if(data.phone) phoneInp.disabled = true;
+                const userInp = document.getElementById("profUser");
+                userInp.value = data.username;
+                document.getElementById("userChangeCount").innerText = 3 - (data.userChangeCount || 0);
+                if((3 - (data.userChangeCount || 0)) <= 0) userInp.disabled = true;
+                loadAvatars(data.avatar);
+            }
+        });
+    } else {
+        document.getElementById("loginBtn").style.display="block"; 
+        document.getElementById("regBtn").style.display="block";
+        document.getElementById("userPill").style.display="none";
+        authBadges.forEach(badge => { badge.innerText = "GİRİŞ GEREKİR"; badge.className = "badge auth-badge badge-danger"; });
+    }
+});
+
+window.openModal = (id) => { 
+    const modal = document.getElementById(id);
+    modal.style.display = 'flex';
+    // Animasyon için kısa gecikme
+    setTimeout(() => { modal.classList.add('show'); }, 10);
+    
+    if(id === 'wheelModal') {
+        drawWheel();
+        document.getElementById("wheelCanvas").style.transform = "rotate(0deg)";
+        currentRotation = 0;
+        document.getElementById("wheelResultText").innerText = "";
+        checkWheelCooldown();
+    }
+};
+
+window.closeModal = (id) => { 
+    const modal = document.getElementById(id);
+    modal.classList.remove('show');
+    // Animasyon bitiminde display none
+    setTimeout(() => { modal.style.display = 'none'; }, 300);
+    
+    if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
+};
+
+async function checkWheelCooldown() {
+    if(!auth.currentUser) return;
+    const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+    const lastSpin = userDoc.data().lastSpin || 0;
+    const diff = 86400000 - (Date.now() - lastSpin);
+    const btn = document.getElementById("spinBtn");
+    const timer = document.getElementById("wheelTimer");
+    if (diff > 0) {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        timer.innerText = `Sistem Bekleme Süresi: ${h} Saat ${m} Dakika`;
+    } else {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        timer.innerText = "Çark Çevirmeye Hazır!";
+    }
+}
+
+let isLogin = true;
+const authOverlay = document.getElementById("authOverlay");
+document.getElementById("loginBtn").onclick = () => { isLogin=true; updateAuthUI(); openModal('authOverlay'); };
+document.getElementById("regBtn").onclick = () => { isLogin=false; updateAuthUI(); openModal('authOverlay'); };
+document.getElementById("switchMode").onclick = () => { isLogin = !isLogin; updateAuthUI(); };
+
+function updateAuthUI() { 
+    document.getElementById("authTitle").innerText = isLogin ? "Sisteme Giriş Yap" : "Ağa Kayıt Ol"; 
+    document.getElementById("authEmail").placeholder = isLogin ? "E-posta veya Kullanıcı Adı" : "E-posta Adresi";
+    document.getElementById("regEmail").style.display = isLogin ? "none" : "block";
+    document.getElementById("authUsername").style.display = isLogin ? "none" : "block"; 
+    document.getElementById("authEmail").style.display = isLogin ? "block" : "none";
+    document.getElementById("authErrorMsg").innerText = "";
+    document.getElementById("switchMode").innerHTML = isLogin ? 'Hesabın yok mu? <b style="color:var(--primary)">Hemen Kayıt Ol</b>' : 'Zaten hesabın var mı? <b style="color:var(--primary)">Giriş Yap</b>';
+}
+
+document.getElementById("authSubmit").onclick = async () => {
+    const errorMsg = document.getElementById("authErrorMsg");
+    const pass = document.getElementById("authPassword").value;
+    errorMsg.innerText = "";
+    try {
+        if(isLogin) {
+            const loginInput = document.getElementById("authEmail").value.trim();
+            let finalEmail = loginInput;
+            if(!loginInput.includes("@")) {
+                const q = query(collection(db, "users"), where("username", "==", loginInput));
+                const qs = await getDocs(q);
+                if(qs.empty) throw new Error("Kullanıcı adı ağda bulunamadı!");
+                finalEmail = qs.docs[0].data().email;
+            }
+            await signInWithEmailAndPassword(auth, finalEmail, pass);
+            closeModal('authOverlay');
+        } else {
+            const email = document.getElementById("regEmail").value.trim();
+            const userN = document.getElementById("authUsername").value.trim();
+            if(!userN || !email || !pass) throw new Error("Lütfen tüm kimlik alanlarını doldurun!");
+            const q = query(collection(db, "users"), where("username", "==", userN));
             const qs = await getDocs(q);
-            if(qs.empty) { feedback.innerText = "GEÇERSİZ KOD!"; feedback.className = "error-text"; return; }
-            
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            const userData = userSnap.data();
-
-            if(userData.usedPromos?.includes(code)) { 
-                feedback.innerText = "BU KODU ZATEN KULLANDINIZ!"; 
-                feedback.className = "error-text"; 
-                return; 
-            }
-            
-            const pData = qs.docs[0].data();
-            await updateDoc(userRef, { 
-                balance: increment(pData.amount), 
-                usedPromos: [...(userData.usedPromos || []), code] 
+            if(!qs.empty) throw new Error("Bu kullanıcı adı başka bir ajan tarafından kullanılıyor!");
+            const res = await createUserWithEmailAndPassword(auth, email, pass);
+            // YENİ KAYITTA 50.000 MC VERİLSİN
+            await setDoc(doc(db, "users", res.user.uid), { 
+                username: userN, email: email, balance: 50000, lastSpin: 0, 
+                userChangeCount: 0, fullName: "", phone: "", avatar: avatarLinks[0], usedPromos: [] 
             });
-            
-            feedback.innerText = `BAŞARILI! +${pData.amount} MC HESABINIZDA.`;
-            feedback.className = "success-text";
-        } catch(e) { feedback.innerText = "HATA OLUŞTU!"; feedback.className = "error-text"; }
-    };
-
-    // --- PROFILE & AVATARS ---
-    const avatarLinks = [
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQwyXlGFYmEebbJwy3udOoiY1aHks5DHDL-LjNe-O2rw&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQujzeT1nbxD37pbAAGFoEQYZfH7nHKNHebtVxjQZo1vA&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQyFK0ZyigAzwNoA3Ku85fCYQ0jjn9pD4bXb3udeMJoQQ&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfv2hkYWw-qOtoeyAoimv98hwJKq2ubPB5c8oWfw1MNg&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRPSbtgxOwnNkjU2HDU-8GsHnbDLDNuVIFhkcrd4iESTQ&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5MxBdQ6TQzrlGQ00a7K0MpnAlR1EtXPP4VQ5r3duMHQ&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-3doyGKL8Ea3WQFJzf_aPS99XileTNMOI_ZK7WvT4ug&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw2iCwjev-ZGXN6qsaRZIVSJiVPyWPtf00l5Vw9fBPDA&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMiWBf7b6BRXfmPP-1cpLoP-R10mmRDcnnGdoo2-X74A&s=10",
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCHQ_Ivd7XFu1rwSWwxeznD5whsQQyWD4h1XSO7EAT4w&s=10"
-    ];
-
-    let selectedAvatar = "";
-    function loadAvatars(current) {
-        const lib = document.getElementById("avatarLibrary");
-        lib.innerHTML = "";
-        avatarLinks.forEach(link => {
-            const div = document.createElement("div");
-            div.style = `border-radius:10px; overflow:hidden; cursor:pointer; border:3px solid ${link === current ? 'var(--primary)' : 'transparent'}`;
-            div.innerHTML = `<img src="${link}" style="width:100%; display:block;">`;
-            div.onclick = () => {
-                document.querySelectorAll("#avatarLibrary div").forEach(d => d.style.borderColor = 'transparent');
-                div.style.borderColor = 'var(--primary)';
-                selectedAvatar = link;
-            };
-            lib.appendChild(div);
-        });
+            closeModal('authOverlay');
+            showMatrixModal("Ağa Hoş Geldiniz!", "Kaydınız başarıyla oluşturuldu. Başlangıç desteği olarak 50.000 MC hesabınıza tanımlandı.", "success");
+        }
+    } catch(e) { 
+        if(e.code === "auth/email-already-in-use") errorMsg.innerText = "Bu e-posta adresi sistemde zaten kayıtlı!";
+        else if(e.code === "auth/wrong-password") errorMsg.innerText = "Kimlik doğrulama başarısız. Hatalı şifre!";
+        else errorMsg.innerText = e.message;
     }
+};
 
-    window.updateProfile = async () => {
-        const u = auth.currentUser;
-        if(!u) return;
-        try {
-            await updateDoc(doc(db, "users", u.uid), {
-                fullName: document.getElementById("profNameSurname").value,
-                phone: document.getElementById("profPhone").value,
-                avatar: selectedAvatar || avatarLinks[0]
-            });
-            showMatrixModal("Başarılı", "Profiliniz başarıyla güncellendi!", "success");
-            closeModal('profileModal');
-        } catch(e) { showMatrixModal("Hata", "Güncelleme yapılamadı."); }
-    };
-
-    // --- AUTH LOGIC ---
-    let isLogin = true;
-    document.getElementById("loginBtn").onclick = () => { isLogin=true; updateAuthUI(); openModal('authOverlay'); };
-    document.getElementById("regBtn").onclick = () => { isLogin=false; updateAuthUI(); openModal('authOverlay'); };
-    document.getElementById("switchMode").onclick = () => { isLogin = !isLogin; updateAuthUI(); };
-
-    function updateAuthUI() {
-        document.getElementById("authTitle").innerText = isLogin ? "Tekrar Hoş Geldin" : "Yeni Hesap Oluştur";
-        document.getElementById("regEmail").style.display = isLogin ? "none" : "block";
-        document.getElementById("authUsername").style.display = isLogin ? "none" : "block";
-        document.getElementById("authEmail").style.display = isLogin ? "block" : "none";
-        document.getElementById("authSubmit").innerText = isLogin ? "GİRİŞ YAP" : "KAYIT OL (50.000 MC)";
+document.getElementById("avatarTrigger").onclick = (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); };
+window.onclick = (e) => {
+    if(!e.target.closest('#userPill')) {
+        document.getElementById("userDropdown").classList.remove("active");
     }
+};
+document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-    onAuthStateChanged(auth, async user => {
-        const badges = document.querySelectorAll(".auth-badge");
-        if(user) {
-            document.getElementById("loginBtn").style.display="none";
-            document.getElementById("regBtn").style.display="none";
-            document.getElementById("userPill").style.display="flex";
-            badges.forEach(b => { b.innerText="OYNA"; b.style.color="var(--success)"; });
-            
-            onSnapshot(doc(db, "users", user.uid), s => {
-                if(s.exists()){
-                    const d = s.data();
-                    document.getElementById("userBalance").innerText = d.balance.toLocaleString();
-                    document.getElementById("userProfileImg").src = d.avatar || avatarLinks[0];
-                    document.getElementById("profEmail").value = user.email;
-                    document.getElementById("profUsername").value = d.username || "MatrixUser";
-                    document.getElementById("profNameSurname").value = d.fullName || "";
-                    document.getElementById("profPhone").value = d.phone || "";
-                    loadAvatars(d.avatar);
-                }
-            });
+// KAR EFEKTİ (Optimize Edildi)
+const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
+function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; }
+window.onresize = resize; resize();
+for(let i=0; i<70; i++) particles.push({x:Math.random()*canvasSnow.width, y:Math.random()*canvasSnow.height, r:Math.random()*2+0.5, d:Math.random()*1+0.5});
+function drawSnow() { 
+    ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height); 
+    ctxS.fillStyle = "rgba(0, 240, 255, 0.4)"; 
+    ctxS.beginPath(); 
+    particles.forEach(p => { 
+        ctxS.moveTo(p.x, p.y); 
+        ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); 
+        p.y += p.d; 
+        if(p.y > canvasSnow.height) p.y = -5; 
+    }); 
+    ctxS.fill(); 
+    requestAnimationFrame(drawSnow); 
+}
+drawSnow();
+
+window.checkLogin = (url) => { 
+    if(!auth.currentUser) {
+        openModal('authOverlay');
+    } else {
+        location.href = url;
+    } 
+};
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('.game-card').forEach(card => {
+        const name = card.getAttribute('data-name').toLowerCase();
+        if(name.includes(term)) {
+            card.style.display = 'block';
+            setTimeout(() => card.style.opacity = '1', 10);
         } else {
-            document.getElementById("loginBtn").style.display="block";
-            document.getElementById("regBtn").style.display="block";
-            document.getElementById("userPill").style.display="none";
-            badges.forEach(b => { b.innerText="KİLİTLİ"; b.style.color="var(--danger)"; });
+            card.style.opacity = '0';
+            setTimeout(() => card.style.display = 'none', 300);
         }
     });
-
-    document.getElementById("authSubmit").onclick = async () => {
-        const emailInput = document.getElementById("authEmail").value.trim();
-        const pass = document.getElementById("authPassword").value;
-        const err = document.getElementById("authErrorMsg");
-        err.innerText = "";
-
-        try {
-            if(isLogin) {
-                let email = emailInput;
-                if(!emailInput.includes("@")) {
-                    const q = query(collection(db, "users"), where("username", "==", emailInput));
-                    const qs = await getDocs(q);
-                    if(qs.empty) throw new Error("Kullanıcı bulunamadı.");
-                    email = qs.docs[0].data().email;
-                }
-                await signInWithEmailAndPassword(auth, email, pass);
-                closeModal('authOverlay');
-            } else {
-                const regEmail = document.getElementById("regEmail").value;
-                const userN = document.getElementById("authUsername").value;
-                if(!userN) throw new Error("Kullanıcı adı gerekli!");
-                
-                const res = await createUserWithEmailAndPassword(auth, regEmail, pass);
-                // NEW USER RULE: 50.000 MC
-                await setDoc(doc(db, "users", res.user.uid), {
-                    username: userN, email: regEmail, balance: 50000, lastSpin: 0, avatar: avatarLinks[0], usedPromos: []
-                });
-                closeModal('authOverlay');
-            }
-        } catch(e) { err.innerText = e.message; }
-    };
-
-    // UI Interactive
-    document.getElementById("avatarTrigger").onclick = (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); };
-    window.onclick = () => document.getElementById("userDropdown").classList.remove("active");
-    document.getElementById("logoutBtn").onclick = () => signOut(auth);
-    window.checkLogin = (url) => { if(!auth.currentUser) openModal('authOverlay'); else location.href = url; };
-
-    // Snow Effect
-    const canvasSnow = document.getElementById("snow");
-    const ctxS = canvasSnow.getContext("2d");
-    let particles = [];
-    function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; }
-    window.onresize = resize; resize();
-    for(let i=0; i<60; i++) particles.push({x:Math.random()*canvasSnow.width, y:Math.random()*canvasSnow.height, r:Math.random()*2+1, d:Math.random()*0.5+0.2});
-    function drawSnow() {
-        ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height);
-        ctxS.fillStyle = "rgba(255,255,255,0.3)";
-        ctxS.beginPath();
-        particles.forEach(p => { ctxS.moveTo(p.x, p.y); ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); p.y += p.d; if(p.y > canvasSnow.height) p.y = -5; });
-        ctxS.fill();
-        requestAnimationFrame(drawSnow);
-    }
-    drawSnow();
-
-    // Theme Logic
-    const themeBtn = document.getElementById('themeToggle');
-    themeBtn.onclick = () => {
-        const body = document.body;
-        const isDark = body.getAttribute('data-theme') === 'dark';
-        body.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        themeBtn.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-    };
-
-    // Search Logic
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        document.querySelectorAll('.game-card').forEach(card => {
-            card.style.display = card.getAttribute('data-name').toLowerCase().includes(term) ? 'block' : 'none';
-        });
-    });
+});
 </script>
 </body>
 </html>
