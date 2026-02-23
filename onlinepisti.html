@@ -290,7 +290,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    // signInAnonymously fonksiyonu eklendi
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -339,20 +340,31 @@
         return p;
     };
 
+    // ADIM 1: Otomatik anonim giriş ve kullanıcı oluşturma mekanizması
     onAuthStateChanged(auth, user => {
-        if (!user) return;
+        if (!user) {
+            signInAnonymously(auth).catch((error) => {
+                console.error("Giriş yapılamadı:", error);
+            });
+            return;
+        }
+
         uid = user.uid;
         userRef = doc(db, "users", uid);
+        
         if(userUnsub) userUnsub();
         userUnsub = onSnapshot(userRef, snap => {
             if(snap.exists()) {
                 const data = snap.data();
                 balance = data.balance || 0;
                 userName = data.username || "Oyuncu";
-                // Bakiyeyi index.html formatında binlik ayraçlı güncelliyoruz
                 document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+            } else {
+                // Kullanıcı yoksa varsayılan değerler ile ilk defa oluştur
+                setDoc(userRef, { balance: 1000, username: "Oyuncu_" + uid.substring(0,4) });
             }
         });
+        
         cleanZombies();
         listenLobby();
     });
@@ -574,10 +586,18 @@
         document.getElementById("navActionBtn").innerText = "AYRIL";
     }
 
+    // ADIM 2: Oda silindiğinde diğer oyuncuların güvenli şekilde çıkarılması
     function listenRoom() {
         if(roomUnsub) roomUnsub();
         roomUnsub = onSnapshot(roomRef, async (snap) => {
-            if(!snap.exists()) return;
+            if(!snap.exists()) {
+                if (inGame) {
+                    window.leaveRoom();
+                    showInfoModal("Oda kurucu tarafından kapatıldı.", "BİLGİ");
+                }
+                return;
+            }
+            
             gameState = snap.data();
             
             if(gameState.quitter) {
@@ -678,6 +698,7 @@
                 let table = [...d.table];
                 let scoreInc = 0, countInc = 0, pistiInc = 0;
                 let lastColl = d.lastCollector;
+                
                 if (table.length > 0) {
                     const top = table[table.length - 1];
                     const isVale = normalizeCardVal(card) === "J";
@@ -689,10 +710,22 @@
                         countInc = table.length + 1; table = []; lastColl = uid;
                     } else table.push(card);
                 } else table.push(card);
+                
                 const maxP = d.type.startsWith("4") ? 4 : 2;
                 const currentNum = parseInt(myRole.at(-1));
                 const nextIdx = (currentNum % maxP) + 1;
-                t.update(roomRef, { [myRole + "_hand"]: hand, table, [myRole + "_score"]: increment(scoreInc), [myRole + "_count"]: increment(countInc), turn: d[`p${nextIdx}`], lastCollector: lastColl, pistiSignal: increment(pistiInc) });
+                
+                // ADIM 3 (Kısmi Optimizasyon): transaction içerisinde mevcut verinin üzerine eklemeler daha kontrollü hale getirilebilir 
+                // ancak Firebase increment bu senaryoda halen geçerli çalışacaktır.
+                t.update(roomRef, { 
+                    [myRole + "_hand"]: hand, 
+                    table, 
+                    [myRole + "_score"]: increment(scoreInc), 
+                    [myRole + "_count"]: increment(countInc), 
+                    turn: d[`p${nextIdx}`], 
+                    lastCollector: lastColl, 
+                    pistiSignal: increment(pistiInc) 
+                });
             });
             sfx.cardThrow.play();
         } catch(e) { console.error(e); } finally { isProcessingPlay = false; }
