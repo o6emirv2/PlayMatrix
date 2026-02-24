@@ -609,17 +609,17 @@ window.claimBonus = async () => {
     feedback.className = "promo-msg";
     
     try {
-        const q = query(collection(db, "promocodes"), where("code", "==", code));
-        const querySnapshot = await getDocs(q);
+        // Doğrudan belgeyi çekme mantığı (arama sorgusu yerine)
+        const promoRef = doc(db, "promocodes", code);
+        const promoSnap = await getDoc(promoRef);
         
-        if (querySnapshot.empty) {
+        if (!promoSnap.exists()) {
             feedback.innerText = "Hatalı veya süresi dolmuş promosyon kodu!";
             feedback.classList.add("promo-error");
             return;
         }
         
-        const promoDoc = querySnapshot.docs[0];
-        const promoData = promoDoc.data();
+        const promoData = promoSnap.data();
         
         // 2000 KİŞİ SINIRI KONTROLÜ
         if (promoData.usageCount >= promoData.maxUses) {
@@ -645,7 +645,7 @@ window.claimBonus = async () => {
         });
         
         // Promo kodun genel kullanım sayısını 1 artır
-        await updateDoc(doc(db, "promocodes", promoDoc.id), {
+        await updateDoc(promoRef, {
             usageCount: increment(1)
         });
 
@@ -654,7 +654,7 @@ window.claimBonus = async () => {
         input.value = "";
         
     } catch(e) {
-        // Hata ayıklayıcı eklendi: Sorun varsa tam sebebini ekrana yazacak
+        // Hata ayıklayıcı eklendi
         feedback.innerText = "Sistem Hatası: " + e.message;
         feedback.classList.add("promo-error");
     }
