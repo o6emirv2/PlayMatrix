@@ -16,78 +16,82 @@
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
+    /* ÜST BAR (Taşma ve Düzen Bozukluğu Giderildi) */
     .top-bar {
-        position:fixed; top:0; width:100%; height:70px;
+        position:fixed; top:0; left:0; right:0; height:70px; /* width %100 yerine left-right 0 kullanıldı */
         display:flex; align-items:center; justify-content:space-between;
-        padding:0 15px; background: rgba(0,0,0,0.95);
+        padding:0 10px; background: rgba(0,0,0,0.95);
         border-bottom: 2px solid #4fd1ff; z-index:1000;
     }
 
     .brand {
-        font-size:1.1rem; font-weight:900; color: #4fd1ff;
-        letter-spacing: 1px; font-family: 'Arial Black', sans-serif;
+        font-size:1rem; font-weight:900; color: #4fd1ff;
+        letter-spacing: 0.5px; font-family: 'Arial Black', sans-serif;
+        white-space: nowrap; flex-shrink: 0;
     }
 
-    .right-menu { display:flex; gap:8px; align-items: center; }
+    .right-menu { 
+        display:flex; gap:6px; align-items: center; 
+        flex-wrap: nowrap; overflow-x: auto; 
+    }
     
     .user-pill-mini { 
-        display: flex; align-items: center; gap: 8px; 
-        background: rgba(255,255,255,0.05); padding: 5px 12px; 
+        display: flex; align-items: center; gap: 5px; 
+        background: rgba(255,255,255,0.05); padding: 5px 8px; 
         border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+        white-space: nowrap; flex-shrink: 0;
     }
     .balance-info { display: flex; align-items: center; }
-    .balance-info b { font-size: 14px; color: #00ffa3; font-family: monospace; font-weight: 700; }
+    .balance-info b { font-size: 13px; color: #00ffa3; font-family: monospace; font-weight: 700; }
     
     .mc-chip {
-        width: 22px; height: 22px;
+        width: 18px; height: 18px;
         background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
-        border-radius: 50%; margin-left: 6px;
+        border-radius: 50%; margin-left: 5px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 8px; font-weight: 900; color: #fff;
+        font-size: 7px; font-weight: 900; color: #fff;
         box-shadow: 0 0 10px rgba(79, 209, 255, 0.3);
-        border: 1.2px solid rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.2);
     }
 
     .back-btn {
-        background: #ff3b30; color: white; text-decoration: none; padding: 8px 12px;
-        border-radius: 4px; font-size: 0.7rem; font-weight: 900;
+        background: #ff3b30; color: white; text-decoration: none; padding: 6px 10px;
+        border-radius: 4px; font-size: 0.7rem; font-weight: 900; flex-shrink: 0;
     }
 
+    /* OYUN ALANI */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
         padding: 85px 0 20px 0; perspective: 1000px; position: relative;
     }
     
     .area { width: 100%; text-align: center; }
-    .dealer-title { font-size: 18px; letter-spacing: 4px; font-weight: 800; color: #d4af37; margin-bottom: 8px; }
+    .dealer-title { font-size: 16px; letter-spacing: 3px; font-weight: 800; color: #d4af37; margin-bottom: 5px; }
     
     .score-badge { 
         background: rgba(0,0,0,0.6); color: #ffd700; padding: 4px 15px; 
-        border-radius: 20px; font-size: 14px; border: 1px solid rgba(255,215,0,0.3); 
+        border-radius: 20px; font-size: 13px; border: 1px solid rgba(255,215,0,0.3); 
         display: inline-block; margin-bottom: 10px; transition: 0.3s;
     }
 
+    /* KART GÖRÜNÜM VE ANİMASYONLARI (Kusursuzlaştırıldı) */
     .cards-wrapper { display: flex; justify-content: center; gap: -20px; min-height: 105px; padding: 0 10px; }
     
-    /* GÜNCELLENMİŞ KART ANİMASYONLARI */
     .card-3d {
         width: 70px; height: 100px; position: relative; transform-style: preserve-3d;
-        /* Başlangıçta ekran dışı ve kapalı */
+        /* Başlangıçta ekranın dışında ve kapalı */
         transform: translate(350px, -250px) rotateZ(35deg) scale(0.4) rotateY(0deg); 
         opacity: 0; margin-left: -30px;
-        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s;
+        transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.4s;
         filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
     }
     .card-3d:first-child { margin-left: 0; }
     
-    /* Doğrudan AÇIK uçarak inme (1, 2 ve 3. kartlar için) */
+    /* AÇIK İNEN KARTLAR (Havada dönerek gelir) */
     .card-3d.landed-open { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); opacity: 1; }
     
-    /* Doğrudan KAPALI uçarak inme (Sadece 4. kart için) */
+    /* KAPALI İNEN KARTLAR (Dönmeden gelir) */
     .card-3d.landed-closed { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(0deg); opacity: 1; }
-    
-    /* Kurupiyer kapalı kartını açarken kullanılacak animasyon */
-    .card-3d.flipped { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); opacity: 1; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
@@ -97,7 +101,7 @@
     .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; transform: rotateY(0deg); }
 
     .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85px; z-index: 10; }
-    #message { font-size: 16px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 10px; text-transform: uppercase;}
+    #message { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 10px; text-transform: uppercase;}
     
     .controls { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; }
     .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: 800; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase;}
@@ -111,13 +115,13 @@
     .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
     .hand-box.active { border: 2px dashed rgba(46, 204, 113, 0.8); background: rgba(0,0,0,0.2); }
 
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; }
-    .chip { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; border: 2px dashed rgba(255,255,255,0.4); box-shadow: 0 5px 15px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.2s; }
+    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .chip { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; border: 2px dashed rgba(255,255,255,0.4); box-shadow: 0 5px 15px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.2s; }
     .c250 { background: #fff; color: #000; }
     .c500 { background: #27ae60; color: #fff; }
     .c1k { background: #e74c3c; color: #fff; }
     .c2k { background: #000; color: #fff; border-color: #ffd700; }
-    .cancel-btn { width: 50px; height: 50px; border-radius: 50%; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; }
+    .cancel-btn { width: 48px; height: 48px; border-radius: 50%; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; }
     .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; }
@@ -205,6 +209,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// OYUN DURUMLARI
 let balance = 0, initialBet = 0, userRef = null;
 let deck = [], dealer = [], dealerHidden = true;
 let playerHands = []; 
@@ -214,6 +219,7 @@ let insuranceBet = 0;
 let gameState = "loading", betCountdown = null, actionTimer = null, isProcessing = false;
 const messageEl = document.getElementById("message");
 
+// --- SES KONTROL ---
 const sounds = {};
 let audioCtx = null;
 async function initAudio() {
@@ -232,7 +238,7 @@ document.getElementById('systemStartBtn').onclick = () => { initAudio(); documen
 
 function playSound(name) {
     if(!audioCtx) return;
-    if(name === 'chip') {
+    if(name === 'chip') { 
         const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
         o.type = 'sine'; o.frequency.setValueAtTime(350, now); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
         o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + 0.05); return;
@@ -259,7 +265,7 @@ window.addBet = (a) => {
     if(initialBet + a > balance) return;
     playSound('chip');
     initialBet += a;
-    document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR');
+    document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); 
     document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
     if(!betCountdown && initialBet >= 250) startBetCountdown();
 };
@@ -318,7 +324,7 @@ function updateScores(){
     document.getElementById("betAmount").innerText = totalBet.toLocaleString('tr-TR');
 }
 
-// GÜNCELLENMİŞ KART ÇİZİM FONKSİYONU
+// YENİ VE KUSURSUZ ANİMASYON FONKSİYONU
 async function draw(hand, divId, isOpen = true){
     playSound('card');
     let card = deck.pop(); 
@@ -329,28 +335,30 @@ async function draw(hand, divId, isOpen = true){
     cardCont.innerHTML = `
         <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png') center/cover"></div>
         <div class="card-face card-back"></div>`;
+    
     document.getElementById(divId).appendChild(cardCont);
     
     return new Promise(resolve => {
+        // Kartı DOM'a ekledikten hemen sonra gideceği yönü (açık/kapalı) atıyoruz
         setTimeout(() => { 
             if(isOpen) {
-                // Eğer açıksa doğrudan uçarken yüzünü döner ve iner
-                cardCont.classList.add("landed-open");
+                cardCont.classList.add("landed-open"); // Doğrudan havada dönüp yüzü açık iner
             } else {
-                // Değilse tamamen kapalı uçar ve kapalı kalır
-                cardCont.classList.add("landed-closed");
+                cardCont.classList.add("landed-closed"); // Havada dönmez, doğrudan kapalı iner
             }
             
+            // İniş animasyonunun (0.6s) bitmesini bekle
             setTimeout(() => {
                 updateScores();
                 resolve();
-            }, 600); // Animasyon süresi kadar bekle
+            }, 600); 
         }, 50);
     });
 }
 
 function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
+// OYUN DAĞITIM SIRASI
 async function startGame(){
     isProcessing = true; gameState = "playing"; 
     document.getElementById("chipsArea").classList.add("disabled");
@@ -369,11 +377,11 @@ async function startGame(){
     try { await updateDoc(userRef, { balance: increment(-initialBet) }); } 
     catch(e) { cancelBet(); return; }
 
-    // DAĞITIM SIRASI VE ŞEKLİ (TAM İSTEDİĞİN GİBİ)
-    await draw(playerHands[0].cards, "hand0", true);   // 1. Oyuncu (AÇIK)
-    await draw(dealer, "dealerCards", true);           // 2. Kurupiyer (AÇIK)
-    await draw(playerHands[0].cards, "hand0", true);   // 3. Oyuncu (AÇIK)
-    await draw(dealer, "dealerCards", false);          // 4. Kurupiyer (KAPALI)
+    // TAM İSTEDİĞİN SIRA:
+    await draw(playerHands[0].cards, "hand0", true);   // 1. Oyuncu AÇIK
+    await draw(dealer, "dealerCards", true);           // 2. Kurupiyer AÇIK
+    await draw(playerHands[0].cards, "hand0", true);   // 3. Oyuncu AÇIK
+    await draw(dealer, "dealerCards", false);          // 4. Kurupiyer KAPALI
 
     if(dealer[0].value === 1 && balance >= initialBet / 2) {
         messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
@@ -401,14 +409,10 @@ async function checkInitialBlackjack() {
 
     if(pScore === 21 || dScore === 21) {
         dealerHidden = false;
-        
-        // Blackjack durumunda kurupiyerin kapalı kartını aç
         const hiddenCard = document.getElementById("dealerCards").children[1];
         if (hiddenCard) {
-            hiddenCard.classList.remove("landed-closed");
-            hiddenCard.classList.add("flipped");
+            hiddenCard.classList.replace("landed-closed", "landed-open"); // Kapalı kartı aç
         }
-        
         updateScores();
         await delay(1000);
         endGameLogic();
@@ -454,7 +458,6 @@ function hideControls() {
 document.getElementById("hit").onclick = async () => {
     if(isProcessing) return; isProcessing = true; hideControls();
     
-    // Sonradan çekilen oyuncu kartları her zaman AÇIK olur
     await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
     
     if(getScore(playerHands[currentHandIdx].cards).total >= 21) {
@@ -497,6 +500,7 @@ document.getElementById("split").onclick = async () => {
     hand0Div.lastChild.remove();
     document.getElementById("hand1-box").style.display = "flex";
     
+    // Split için eklenen kart açık görünür
     const cardCont = document.createElement("div");
     cardCont.className = "card-3d landed-open";
     cardCont.innerHTML = `<div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(splitCard.value)}${splitCard.suit}.png') center/cover"></div><div class="card-face card-back"></div>`;
@@ -519,11 +523,10 @@ async function nextHandOrDealer() {
 async function dealerTurn(){
     gameState = "dealer_turn"; dealerHidden = false;
     
-    // 4. Kartı (KAPALI olanı) bul ve animasyonla AÇ
+    // Kurupiyerin 4. (kapalı) kartını bul ve aç
     const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
     if(cards[1] && cards[1].classList.contains('landed-closed')) {
-        cards[1].classList.remove('landed-closed');
-        cards[1].classList.add("flipped"); 
+        cards[1].classList.replace("landed-closed", "landed-open");
         playSound('card'); 
         await delay(600);
     }
@@ -533,7 +536,6 @@ async function dealerTurn(){
     
     if(!allBust) {
         while(getScore(dealer).total < 17 || isSoft17(dealer)) {
-            // Kurupiyerin sonradan çektiği kartlar AÇIK olarak iner
             await draw(dealer, "dealerCards", true);
         }
     }
