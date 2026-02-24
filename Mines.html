@@ -3,8 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>PlayMatrix Mines</title>
-    <script>
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix Mines | Ücretsiz Online Mayın Oyunu ve Casino</title>
+<meta name="description" content="PlayMatrix Mines oyna! Elmasları bul, mayınlardan kaç ve çarpanı artırarak MC kazan. Ücretsiz, kesintisiz online casino ve mayın tarlası heyecanına hemen katıl.">
+<meta name="keywords" content="mines oyna, online mayın tarlası, casino oyunları, ücretsiz mines, PlayMatrix, mc kazan, mayın oyunu, şans oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#020408">
+<link rel="canonical" href="https://playmatrix.com.tr/Mines.html">
+
+<meta property="og:title" content="PlayMatrix Mines | Elmasları Bul, MC Kazan">
+<meta property="og:description" content="Mayınlara basmadan elmasları topla, çarpanını artır ve kazancını anında çek. Heyecan dolu Mines oyunu seni bekliyor!">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/mines-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/Mines.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix Mines Oyna">
+<meta name="twitter:description" content="Şansını ve sezgilerini test et. Mayınlardan kaç, elmasları bularak MC bakiyeni katla!">
+
+<script>
     if (window.history.replaceState) {
         // Mines.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
@@ -17,6 +37,12 @@
     html,body{
         height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
         background: #020408; color:white;
+    }
+
+    /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+    .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
     }
 
     /* TOP BAR */
@@ -213,17 +239,19 @@
 </head>
 <body>
 
+<h1 class="sr-only">PlayMatrix Mines - Ücretsiz Online Mayın Oyunu ve Casino</h1>
+
 <div id="sys-start-overlay" class="start-overlay">
     <div class="start-modal">
         <h2 style="font-family:'Orbitron', sans-serif; color:#4fd1ff; font-size: 24px; margin-bottom: 10px; text-shadow: 0 0 15px rgba(79,209,255,0.5);">MİNES PROTOKOLÜ</h2>
         <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px;">Sesleri ve oyun motorunu aktifleştirmek için sistemi başlatın.</p>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-size: 16px; cursor: pointer;">SİSTEMİ BAŞLAT</button>
+        <button id="systemStartBtn" aria-label="Oyunu Başlat" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-size: 16px; cursor: pointer;">SİSTEMİ BAŞLAT</button>
     </div>
 </div>
 
-<div class="top-bar">
+<header class="top-bar">
     <div class="brand">MİNES</div>
-    <div class="right-menu">
+    <nav class="right-menu" aria-label="Kullanıcı Menüsü">
         <div class="user-pill-mini">
             <div class="balance-info">
                 <b id="userBalance">0</b>
@@ -238,28 +266,30 @@
             </div>
         </div>
 
-        <a href="index.html" class="back-btn">GERİ</a>
-    </div>
-</div>
+        <a href="index.html" class="back-btn" aria-label="Ana Sayfaya Dön">GERİ</a>
+    </nav>
+</header>
 
-<div class="container">
+<main class="container">
     <div class="mines-header">
-        <div style="font-weight: 800; color: #4fd1ff; font-size: 14px; letter-spacing: 0.5px;">MULTIPLIER: <span id="multiplierDisplay" style="color:white;">1.00x</span></div>
-        <div style="color:#aaa; font-size: 12px; font-weight: 700;">MAYIN: <span id="mineDisplay" style="color:#ff2a4d;">1</span></div>
+        <div style="font-weight: 800; color: #4fd1ff; font-size: 14px; letter-spacing: 0.5px;">MULTIPLIER: <span id="multiplierDisplay" style="color:white;" aria-live="polite">1.00x</span></div>
+        <div style="color:#aaa; font-size: 12px; font-weight: 700;">MAYIN: <span id="mineDisplay" style="color:#ff2a4d;">3</span></div>
     </div>
-    <div id="grid"></div>
+    
+    <div id="grid" role="grid" aria-label="Mines Oyun Tahtası"></div>
+    
     <div class="bet-panel">
-        <input type="number" id="bet" placeholder="Bahis Miktarı" value="250" inputmode="numeric">
-        <select id="mineCount"></select>
-        <button id="startBtn">MC KULLAN</button>
+        <input type="number" id="bet" placeholder="Bahis Miktarı" value="250" inputmode="numeric" aria-label="Bahis Miktarını Girin">
+        <select id="mineCount" aria-label="Mayın Sayısını Seçin"></select>
+        <button id="startBtn" aria-label="Bahsi Başlat veya Çek">MC KULLAN</button>
     </div>
-</div>
+</main>
 
-<div id="alertModal" class="modal-overlay">
+<div id="alertModal" class="modal-overlay" aria-hidden="true" aria-live="assertive">
     <div class="modal-content">
         <div class="modal-icon" id="modalIcon">⚠️</div>
         <div class="modal-text" id="modalMsg">Hata oluştu.</div>
-        <button class="modal-btn" onclick="closeModal()">TAMAM</button>
+        <button class="modal-btn" onclick="closeModal()" aria-label="Kapat">TAMAM</button>
     </div>
 </div>
 
@@ -382,6 +412,8 @@ function createGrid() {
         let tile = document.createElement("div");
         tile.classList.add("tile", "active-hover");
         tile.dataset.index = i;
+        tile.setAttribute("role", "button"); // SEO ERİŞİLEBİLİRLİK EKLENTİSİ
+        tile.setAttribute("aria-label", `Taş ${i+1}`); // SEO ERİŞİLEBİLİRLİK EKLENTİSİ
         tile.addEventListener("click", () => handleTileClick(i, tile));
         gridEl.appendChild(tile);
         tileElements.push(tile);
