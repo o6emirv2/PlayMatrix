@@ -3,7 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>PlayMatrix Snake Pro</title>
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix Snake Pro | Retro Yılan Oyunu Oyna</title>
+<meta name="description" content="PlayMatrix Snake Pro ile nostaljiye dön! Klasik yılan oyununu modern ve hızlandırılmış versiyonuyla oyna, en yüksek skoru yap, reflekslerini test et. Ücretsiz tarayıcı oyunu.">
+<meta name="keywords" content="yılan oyunu, snake oyna, klasik snake oyunu, nokia yılan oyunu, retro oyunlar, PlayMatrix, ücretsiz beceri oyunu, tarayıcı oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#03050a">
+<link rel="canonical" href="https://playmatrix.com.tr/SnakePro.html">
+
+<meta property="og:title" content="PlayMatrix Snake Pro | Klasik Yılan Oyunu">
+<meta property="og:description" content="Nostaljik yeşil ekran, hızlanan oyun yapısı ve elmalar... En uzun yılanı sen yapabilir misin? Hemen oyna!">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/snake-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/SnakePro.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix Snake Pro Oyna">
+<meta name="twitter:description" content="Klasik yılan oyunu deneyimini ücretsiz olarak telefonunda veya bilgisayarında yaşa.">
+
 <script>
     if (window.history.replaceState) {
         // SnakePro.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
@@ -39,52 +59,66 @@ body {
     display: flex; flex-direction: column;
 }
 
+/* SEO İÇİN GİZLİ H1 SINIFI */
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+}
+
 /* --- ÜST BAR --- */
 .top-bar {
     width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between;
     padding: 0 20px; background: rgba(10, 15, 30, 0.9); backdrop-filter: blur(15px);
-    border-bottom: 1px solid var(--border); z-index: 100;
+    border-bottom: 1px solid rgba(79, 209, 255, 0.2); z-index: 100;
 }
 
 .back-btn {
-    color: white; text-decoration: none; font-size: 10px; padding: 8px 12px; border-radius: 8px;
-    background: #1e2642; border: 1px solid rgba(255,255,255,0.1);
+    color: var(--primary); text-decoration: none; font-size: 10px; padding: 8px 12px; border-radius: 8px;
+    background: rgba(79, 209, 255, 0.1); border: 1px solid rgba(79, 209, 255, 0.3); transition: 0.2s;
 }
+.back-btn:active { transform: scale(0.95); background: rgba(79, 209, 255, 0.2); }
 
 .brand {
     font-size: 14px; font-weight: 900; letter-spacing: 1px;
     background: linear-gradient(90deg, var(--primary), #fff);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 10px rgba(79, 209, 255, 0.4);
 }
 
 /* --- OYUN ALANI --- */
-.main-container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px; }
+.main-container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px; width: 100%;}
 
 .console {
     width: 100%; max-width: 350px; background: #2a2f3a; padding: 20px; border-radius: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid #444;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.1); 
+    border: 1px solid #444; position: relative;
 }
 
 .score-panel {
     display: flex; justify-content: space-between; background: #8bac0f;
     padding: 8px; font-size: 8px; color: var(--nokia-dark); border-bottom: 2px solid var(--nokia-dark);
+    border-top-left-radius: 4px; border-top-right-radius: 4px;
 }
 
-.screen-container { position: relative; background: var(--nokia-screen); border: 8px solid #111; overflow: hidden; }
+.screen-container { 
+    position: relative; background: var(--nokia-screen); border: 8px solid #111; 
+    border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; overflow: hidden; 
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5); /* Retro ekran derinliği */
+}
 
 canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 
 /* --- KONTROLLER --- */
-.controls { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 12px; margin-top: 20px; }
+.controls { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 12px; margin-top: 25px; }
 
 .btn {
-    aspect-ratio: 1/1; background: #1e222a; border-radius: 50%; display: flex;
+    aspect-ratio: 1/1; background: linear-gradient(145deg, #242933, #1e222a); border-radius: 50%; display: flex;
     justify-content: center; align-items: center; color: #888; font-size: 20px;
-    border: none; box-shadow: 0 5px 0 #111; cursor: pointer;
+    border: 1px solid #333; box-shadow: 0 6px 0 #111, inset 0 2px 5px rgba(255,255,255,0.05); cursor: pointer;
     touch-action: none; /* Buton bazlı zoom engelleme */
 }
 
-.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #111; color: var(--primary); }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #111; color: var(--primary); background: #1a1d24; }
 
 .btn-up { grid-column: 2; }
 .btn-left { grid-column: 1; }
@@ -92,9 +126,9 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .btn-right { grid-column: 3; }
 
 .overlay {
-    position: absolute; inset: 0; background: var(--nokia-screen); display: flex;
+    position: absolute; inset: 0; background: rgba(155, 188, 15, 0.85); display: flex;
     flex-direction: column; justify-content: center; align-items: center;
-    z-index: 10; text-align: center; cursor: pointer;
+    z-index: 10; text-align: center; cursor: pointer; backdrop-filter: blur(2px);
 }
 
 .blink { animation: blinker 1s linear infinite; }
@@ -103,42 +137,45 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 </head>
 <body>
 
-<div class="top-bar">
-    <a href="index.html" class="back-btn">GERİ</a>
+<h1 class="sr-only">PlayMatrix Snake Pro - Retro Nostaljik Yılan Oyunu</h1>
+
+<header class="top-bar">
+    <a href="index.html" class="back-btn" aria-label="Ana Sayfaya Dön">GERİ</a>
     <div class="brand">Snake Pro</div>
     <div style="width:50px;"></div>
-</div>
+</header>
 
-<div class="main-container">
-    <div class="console">
-        <div class="score-panel">
+<main class="main-container">
+    <div class="console" aria-label="Oyun Konsolu">
+        
+        <div class="score-panel" aria-live="polite">
             <span>SCORE:<span id="score">0</span></span>
             <span>BEST:<span id="high">0</span></span>
         </div>
 
         <div class="screen-container">
-            <canvas id="game" width="300" height="300"></canvas>
+            <canvas id="game" width="300" height="300" aria-label="Yılan Oyunu Alanı"></canvas>
             
-            <div id="startup" class="overlay">
-                <div style="font-size:16px; color:var(--nokia-dark); margin-bottom:15px;">SNAKE PRO</div>
+            <div id="startup" class="overlay" role="button" aria-label="Oyunu Başlat">
+                <div style="font-size:16px; color:var(--nokia-dark); margin-bottom:15px; text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">SNAKE PRO</div>
                 <div class="blink" style="font-size:8px; color:var(--nokia-dark);">BAŞLAMAK İÇİN DOKUN</div>
             </div>
 
-            <div id="gameover" class="overlay" style="display:none;">
-                <div style="font-size:14px; color:var(--nokia-dark);">EYVAH!</div>
+            <div id="gameover" class="overlay" style="display:none;" role="button" aria-label="Tekrar Oyna">
+                <div style="font-size:14px; color:var(--nokia-dark); text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">EYVAH!</div>
                 <div id="finalScore" style="font-size:10px; color:var(--nokia-dark); margin: 10px 0;"></div>
                 <div class="blink" style="font-size:7px; color:var(--nokia-dark);">TEKRAR DENE</div>
             </div>
         </div>
 
-        <div class="controls">
-            <button class="btn btn-up" id="btn-UP">↑</button>
-            <button class="btn btn-left" id="btn-LEFT">←</button>
-            <button class="btn btn-down" id="btn-DOWN">↓</button>
-            <button class="btn btn-right" id="btn-RIGHT">→</button>
+        <div class="controls" aria-label="Yön Kontrolleri">
+            <button class="btn btn-up" id="btn-UP" aria-label="Yukarı Git">↑</button>
+            <button class="btn btn-left" id="btn-LEFT" aria-label="Sola Git">←</button>
+            <button class="btn btn-down" id="btn-DOWN" aria-label="Aşağı Git">↓</button>
+            <button class="btn btn-right" id="btn-RIGHT" aria-label="Sağa Git">→</button>
         </div>
     </div>
-</div>
+</main>
 
 <script>
 const canvas = document.getElementById("game");
