@@ -69,16 +69,25 @@
 
     .cards-wrapper { display: flex; justify-content: center; gap: -20px; min-height: 105px; padding: 0 10px; }
     
+    /* GÜNCELLENMİŞ KART ANİMASYONLARI */
     .card-3d {
         width: 70px; height: 100px; position: relative; transform-style: preserve-3d;
-        transform: translate(350px, -250px) rotateZ(35deg) scale(0.4); opacity: 0; margin-left: -30px;
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
+        /* Başlangıçta ekran dışı ve kapalı */
+        transform: translate(350px, -250px) rotateZ(35deg) scale(0.4) rotateY(0deg); 
+        opacity: 0; margin-left: -30px;
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.4s;
         filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
     }
     .card-3d:first-child { margin-left: 0; }
     
-    .card-3d.landed { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(0deg); opacity: 1; }
-    .card-3d.flipped { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); transition: transform 0.5s ease-out; }
+    /* Doğrudan AÇIK uçarak inme (1, 2 ve 3. kartlar için) */
+    .card-3d.landed-open { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); opacity: 1; }
+    
+    /* Doğrudan KAPALI uçarak inme (Sadece 4. kart için) */
+    .card-3d.landed-closed { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(0deg); opacity: 1; }
+    
+    /* Kurupiyer kapalı kartını açarken kullanılacak animasyon */
+    .card-3d.flipped { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); opacity: 1; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
@@ -98,7 +107,6 @@
     #split { background: #9b59b6; box-shadow: 0 4px #8e44ad; }
     .btn:active { transform: translateY(3px); box-shadow: 0 1px #000 !important; }
 
-    /* Split Alanı için Bölünmüş Ekran CSS */
     .hands-container { display: flex; justify-content: center; gap: 20px; width: 100%; transition: 0.3s; }
     .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
     .hand-box.active { border: 2px dashed rgba(46, 204, 113, 0.8); background: rgba(0,0,0,0.2); }
@@ -197,17 +205,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// OYUN DURUMLARI
 let balance = 0, initialBet = 0, userRef = null;
 let deck = [], dealer = [], dealerHidden = true;
-let playerHands = []; // Birden fazla eli tutmak için array (Split için)
+let playerHands = []; 
 let currentHandIdx = 0; 
 let insuranceBet = 0;
 
 let gameState = "loading", betCountdown = null, actionTimer = null, isProcessing = false;
 const messageEl = document.getElementById("message");
 
-// --- SES KONTROL ---
 const sounds = {};
 let audioCtx = null;
 async function initAudio() {
@@ -226,7 +232,7 @@ document.getElementById('systemStartBtn').onclick = () => { initAudio(); documen
 
 function playSound(name) {
     if(!audioCtx) return;
-    if(name === 'chip') { /* Sentetik çip sesi */
+    if(name === 'chip') {
         const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
         o.type = 'sine'; o.frequency.setValueAtTime(350, now); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
         o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + 0.05); return;
@@ -234,7 +240,6 @@ function playSound(name) {
     if(sounds[name]) { const s = audioCtx.createBufferSource(); s.buffer = sounds[name]; s.connect(audioCtx.destination); s.start(0); }
 }
 
-// --- FİREBASE (BAKİYE SENKRONİZASYONU DÜZELTİLDİ) ---
 onAuthStateChanged(auth, user => {
     if(!user) { signInAnonymously(auth); return; }
     userRef = doc(db, "users", user.uid);
@@ -254,7 +259,7 @@ window.addBet = (a) => {
     if(initialBet + a > balance) return;
     playSound('chip');
     initialBet += a;
-    document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); // Sadece görsel düşüş
+    document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
     if(!betCountdown && initialBet >= 250) startBetCountdown();
 };
@@ -276,14 +281,13 @@ function startBetCountdown(){
     }, 1000);
 }
 
-// --- 8 DESTE OLUŞTURMA (HİLE MOTORU KALDIRILDI) ---
 function createDeck(){
     const s=["H","D","C","S"], v=[1,2,3,4,5,6,7,8,9,10,11,12,13];
     deck = [];
-    for(let i=0; i<8; i++) { // 8 Deste (416 Kart)
+    for(let i=0; i<8; i++) { 
         for(let d=0; d<4; d++) s.forEach(x => v.forEach(y => deck.push({suit:x, value:y})));
     }
-    deck.sort(() => Math.random() - 0.5); // Gerçekçi Karıştırma
+    deck.sort(() => Math.random() - 0.5); 
 }
 
 function cardVal(v){ return {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}[v] || v; }
@@ -295,7 +299,6 @@ function getScore(hand) {
     return { total: t, aces: a };
 }
 
-// Soft 17 Kontrolü
 function isSoft17(hand) {
     let { total, aces } = getScore(hand);
     return total === 17 && aces > 0;
@@ -310,16 +313,15 @@ function updateScores(){
         getScore(dealer).total;
     document.getElementById("dealerScore").innerText = dScore;
     
-    // Toplam Bahsi Göster
     let totalBet = insuranceBet;
     playerHands.forEach(h => totalBet += h.bet);
     document.getElementById("betAmount").innerText = totalBet.toLocaleString('tr-TR');
 }
 
-// --- KUSURSUZ ASENKRON ÇİZİM ---
+// GÜNCELLENMİŞ KART ÇİZİM FONKSİYONU
 async function draw(hand, divId, isOpen = true){
     playSound('card');
-    let card = deck.pop(); // HİLESİZ DÜRÜST ÇEKİM
+    let card = deck.pop(); 
     hand.push(card);
     
     const cardCont = document.createElement("div");
@@ -330,19 +332,25 @@ async function draw(hand, divId, isOpen = true){
     document.getElementById(divId).appendChild(cardCont);
     
     return new Promise(resolve => {
-        setTimeout(async () => { 
-            cardCont.classList.add("landed");
-            await delay(300);
-            if(isOpen) { cardCont.classList.add("flipped"); await delay(300); }
-            updateScores();
-            resolve();
+        setTimeout(() => { 
+            if(isOpen) {
+                // Eğer açıksa doğrudan uçarken yüzünü döner ve iner
+                cardCont.classList.add("landed-open");
+            } else {
+                // Değilse tamamen kapalı uçar ve kapalı kalır
+                cardCont.classList.add("landed-closed");
+            }
+            
+            setTimeout(() => {
+                updateScores();
+                resolve();
+            }, 600); // Animasyon süresi kadar bekle
         }, 50);
     });
 }
 
 function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
-// --- OYUN BAŞLANGICI ---
 async function startGame(){
     isProcessing = true; gameState = "playing"; 
     document.getElementById("chipsArea").classList.add("disabled");
@@ -358,30 +366,28 @@ async function startGame(){
     document.getElementById("controls").style.display = "none";
     createDeck(); 
     
-    // Veritabanından bahis düşüşü BURADA güvenle yapılır.
     try { await updateDoc(userRef, { balance: increment(-initialBet) }); } 
     catch(e) { cancelBet(); return; }
 
-    await draw(playerHands[0].cards, "hand0", true); 
-    await draw(dealer, "dealerCards", true);
-    await draw(playerHands[0].cards, "hand0", true); 
-    await draw(dealer, "dealerCards", false); 
+    // DAĞITIM SIRASI VE ŞEKLİ (TAM İSTEDİĞİN GİBİ)
+    await draw(playerHands[0].cards, "hand0", true);   // 1. Oyuncu (AÇIK)
+    await draw(dealer, "dealerCards", true);           // 2. Kurupiyer (AÇIK)
+    await draw(playerHands[0].cards, "hand0", true);   // 3. Oyuncu (AÇIK)
+    await draw(dealer, "dealerCards", false);          // 4. Kurupiyer (KAPALI)
 
-    // SİGORTA KONTROLÜ
     if(dealer[0].value === 1 && balance >= initialBet / 2) {
         messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
         document.getElementById("insurance-controls").style.display = "flex";
-        return; // Sigorta kararı beklenir
+        return; 
     }
     
     checkInitialBlackjack();
 }
 
-// --- SİGORTA BUTONLARI ---
 document.getElementById("ins-yes").onclick = async () => {
     document.getElementById("insurance-controls").style.display = "none";
     insuranceBet = initialBet / 2;
-    await updateDoc(userRef, { balance: increment(-insuranceBet) }); // Sigortayı düş
+    await updateDoc(userRef, { balance: increment(-insuranceBet) }); 
     checkInitialBlackjack();
 };
 document.getElementById("ins-no").onclick = () => {
@@ -395,7 +401,14 @@ async function checkInitialBlackjack() {
 
     if(pScore === 21 || dScore === 21) {
         dealerHidden = false;
-        document.getElementById("dealerCards").children[1].classList.add("flipped");
+        
+        // Blackjack durumunda kurupiyerin kapalı kartını aç
+        const hiddenCard = document.getElementById("dealerCards").children[1];
+        if (hiddenCard) {
+            hiddenCard.classList.remove("landed-closed");
+            hiddenCard.classList.add("flipped");
+        }
+        
         updateScores();
         await delay(1000);
         endGameLogic();
@@ -405,7 +418,6 @@ async function checkInitialBlackjack() {
     }
 }
 
-// --- AKSİYONLAR VE UI KONTROLÜ ---
 function showControls() {
     document.getElementById("hand0-box").classList.remove("active");
     document.getElementById("hand1-box").classList.remove("active");
@@ -417,7 +429,6 @@ function showControls() {
     document.getElementById("controls").style.display = "flex";
     document.getElementById("double").style.display = (cards.length === 2 && balance >= hand.bet) ? "block" : "none";
     
-    // Split: Kart uzunluğu 2 ise ve değerleri (10, J, Q, K dahil) eşitse
     let val1 = cards[0] ? (cards[0].value > 10 ? 10 : cards[0].value) : 0;
     let val2 = cards[1] ? (cards[1].value > 10 ? 10 : cards[1].value) : 0;
     document.getElementById("split").style.display = (cards.length === 2 && val1 === val2 && balance >= hand.bet && playerHands.length === 1) ? "block" : "none";
@@ -443,6 +454,7 @@ function hideControls() {
 document.getElementById("hit").onclick = async () => {
     if(isProcessing) return; isProcessing = true; hideControls();
     
+    // Sonradan çekilen oyuncu kartları her zaman AÇIK olur
     await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
     
     if(getScore(playerHands[currentHandIdx].cards).total >= 21) {
@@ -460,7 +472,6 @@ const stand = () => {
 };
 document.getElementById("stand").onclick = stand;
 
-// DOUBLE DOWN (İKİYE KATLAMA)
 document.getElementById("double").onclick = async () => {
     if(isProcessing) return; isProcessing = true; hideControls();
     
@@ -473,29 +484,24 @@ document.getElementById("double").onclick = async () => {
     nextHandOrDealer();
 };
 
-// SPLIT (BÖLME)
 document.getElementById("split").onclick = async () => {
     if(isProcessing) return; isProcessing = true; hideControls();
     
     let bet = playerHands[0].bet;
-    await updateDoc(userRef, { balance: increment(-bet) }); // Yeni el için bahis
+    await updateDoc(userRef, { balance: increment(-bet) }); 
     
-    // İkinci eli oluştur
     let splitCard = playerHands[0].cards.pop();
     playerHands.push({ cards: [splitCard], bet: bet, status: 'playing' });
     
-    // Görsel DOM düzenlemesi
     let hand0Div = document.getElementById("hand0");
     hand0Div.lastChild.remove();
     document.getElementById("hand1-box").style.display = "flex";
     
-    // Çıkarılan kartı hand1'e manuel çiz
     const cardCont = document.createElement("div");
-    cardCont.className = "card-3d landed flipped";
+    cardCont.className = "card-3d landed-open";
     cardCont.innerHTML = `<div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(splitCard.value)}${splitCard.suit}.png') center/cover"></div><div class="card-face card-back"></div>`;
     document.getElementById("hand1").appendChild(cardCont);
     
-    // 1. Ele yeni kart
     await draw(playerHands[0].cards, "hand0", true);
     isProcessing = false; showControls();
 };
@@ -503,29 +509,31 @@ document.getElementById("split").onclick = async () => {
 async function nextHandOrDealer() {
     if(currentHandIdx + 1 < playerHands.length) {
         currentHandIdx++;
-        await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true); // 2. el için zorunlu kart
+        await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
         isProcessing = false; showControls();
     } else {
         dealerTurn();
     }
 }
 
-// --- KURUPIYER ALGORİTMASI ---
 async function dealerTurn(){
     gameState = "dealer_turn"; dealerHidden = false;
     
+    // 4. Kartı (KAPALI olanı) bul ve animasyonla AÇ
     const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-    if(cards[1] && !cards[1].classList.contains('flipped')) {
-        cards[1].classList.add("flipped"); playSound('card'); await delay(500);
+    if(cards[1] && cards[1].classList.contains('landed-closed')) {
+        cards[1].classList.remove('landed-closed');
+        cards[1].classList.add("flipped"); 
+        playSound('card'); 
+        await delay(600);
     }
     updateScores(); await delay(500);
 
-    // Eğer oyuncunun tüm elleri patladıysa kurupiyer kart çekmez.
     let allBust = playerHands.every(h => getScore(h.cards).total > 21);
     
     if(!allBust) {
-        // HİLESİZ SOFT 17 KURALI (17 ise ve Soft ise çeker, Hard 17'de kalır, 16'da mecburen çeker)
         while(getScore(dealer).total < 17 || isSoft17(dealer)) {
+            // Kurupiyerin sonradan çektiği kartlar AÇIK olarak iner
             await draw(dealer, "dealerCards", true);
         }
     }
@@ -538,12 +546,10 @@ async function endGameLogic(){
     let dTotal = getScore(dealer).total;
     let totalWin = 0;
     
-    // Sigorta Ödemesi Kontrolü
     if(insuranceBet > 0 && dTotal === 21 && dealer.length === 2) {
-        totalWin += insuranceBet * 3; // Sigorta 2:1 öder (+ kendi yatırdığı)
+        totalWin += insuranceBet * 3; 
     }
 
-    // Her el için kazanç hesapla
     for(let i=0; i<playerHands.length; i++) {
         let hand = playerHands[i];
         let pTotal = getScore(hand.cards).total;
@@ -556,11 +562,11 @@ async function endGameLogic(){
         } else if (dTotal > 21) {
             totalWin += hand.bet * 2;
         } else if (isPlayerBJ && !isDealerBJ) {
-            totalWin += Math.floor(hand.bet * 2.5); // BJ 3:2 öder
+            totalWin += Math.floor(hand.bet * 2.5); 
         } else if (pTotal > dTotal) {
             totalWin += hand.bet * 2;
         } else if (pTotal === dTotal) {
-            totalWin += hand.bet; // Berabere (Push)
+            totalWin += hand.bet; 
         }
     }
 
