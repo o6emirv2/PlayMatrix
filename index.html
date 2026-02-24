@@ -609,7 +609,6 @@ window.claimBonus = async () => {
     feedback.className = "promo-msg";
     
     try {
-        // Doğrudan belgeyi çekme mantığı (arama sorgusu yerine)
         const promoRef = doc(db, "promocodes", code);
         const promoSnap = await getDoc(promoRef);
         
@@ -618,6 +617,46 @@ window.claimBonus = async () => {
             feedback.classList.add("promo-error");
             return;
         }
+        
+        const promoData = promoSnap.data();
+        
+        // DÜZELTME 1: maxUses yerine kota yazıldı
+        if (promoData.usageCount >= promoData.kota) {
+            feedback.innerText = "Maalesef bu kodun kullanım limiti (2.000 kişi) dolmuştur!";
+            feedback.classList.add("promo-error");
+            return;
+        }
+
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        
+        if (userData.usedPromos && userData.usedPromos.includes(code)) {
+            feedback.innerText = "Bu kodu hesabınızda zaten kullandınız!";
+            feedback.classList.add("promo-error");
+            return;
+        }
+        
+        // DÜZELTME 2: amount yerine odul_miktari yazıldı
+        await updateDoc(userRef, { 
+            balance: increment(promoData.odul_miktari), 
+            usedPromos: [...(userData.usedPromos || []), code] 
+        });
+        
+        await updateDoc(promoRef, {
+            usageCount: increment(1)
+        });
+
+        // DÜZELTME 3: amount yerine odul_miktari yazıldı
+        feedback.innerText = `BAŞARILI! ${promoData.odul_miktari.toLocaleString()} MC Bakiyenize Eklendi.`;
+        feedback.classList.add("promo-success");
+        input.value = "";
+        
+    } catch(e) {
+        feedback.innerText = "Sistem Hatası: " + e.message;
+        feedback.classList.add("promo-error");
+    }
+};
         
         const promoData = promoSnap.data();
         
