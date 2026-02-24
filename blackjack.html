@@ -188,7 +188,7 @@
     .disabled { opacity: 0.5; pointer-events: none; filter: brightness(0.6); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
-    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 350px; padding: 25px; text-align: center; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3); }
+    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 380px; padding: 25px; text-align: center; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3); }
     .rules-text { font-size: 13px; color: #ccc; margin-bottom: 20px; text-align: left; line-height: 1.6; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; }
 </style>
 </head>
@@ -198,8 +198,11 @@
     <div class="modal-content">
         <h2 style="color:#d4af37; margin-bottom: 15px; letter-spacing: 2px; font-family: 'Times New Roman', Times, serif;">VIP LÜKS CASINO</h2>
         <div class="rules-text">
-            Blackjack'te amaç, 21'i geçmeden Kurupiyer'den daha yüksek bir skora ulaşmaktır.<br><br>
-            <span style="color: #ff4b4b; font-weight: bold;">ÖNEMLİ UYARI:</span> Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız bahis (MC) iadesi <b>kesinlikle yapılmayacaktır.</b>
+            <b>VIP Blackjack (21) Kuralları:</b><br>
+            • Amacınız, kartlarınızın toplam değerini 21'e ulaştırmak veya 21'i geçmeden krupiyeden daha yüksek bir skor elde etmektir.<br>
+            • 21'i geçerseniz anında kaybedersiniz (PATLADI).<br>
+            • <b>Kart Değerleri:</b> Vale (J), Kız (Q), Papaz (K) 10 değerindedir. As (A) durumuna göre 1 veya 11 sayılır.<br><br>
+            <span style="color: #ff4b4b; font-weight: bold;">ÖNEMLİ UYARI:</span> Lütfen stabil bir internet kullanın. Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız MC <b>kesinlikle iade edilmeyecektir.</b>
         </div>
         <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.4); text-transform: uppercase;">Masaya Otur</button>
     </div>
@@ -216,7 +219,7 @@
             <div class="balance-info"><b id="betAmount" style="color:#ffcc00">0</b></div>
             <div class="mc-chip" style="background: orange; box-shadow: 0 0 8px rgba(255, 165, 0, 0.4);">MC</div>
         </div>
-        <a href="#" class="back-btn">ÇIKIŞ</a>
+        <a href="https://playmatrix.com.tr" class="back-btn">ÇIKIŞ</a>
     </div>
 </div>
 
@@ -228,7 +231,7 @@
     </div>
 
     <div class="action-area">
-        <div id="message">BAHİS YAPIN (MİN: 250)</div>
+        <div id="message">MC KULLAN (MİN: 250)</div>
         <div class="controls" id="controls">
             <button id="hit" class="btn">ÇEK</button>
             <button id="stand" class="btn">KAL</button>
@@ -298,11 +301,9 @@ async function initAudio() {
     
     // Sesleri belleğe yükle
     const urls = {
-        // Tamamen gerçekçi, kısa sürtünme/şırrak şeklinde iskambil dağıtma sesi
         card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',   
         win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
         lose: 'https://assets.mixkit.co/active_storage/sfx/2043/2043-preview.mp3',
-        // Tok ve gergin bir saat tiki (geri sayım)
         tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',   
         chip: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'
     };
@@ -317,7 +318,7 @@ async function initAudio() {
     }
 }
 
-// iOS İÇİN HAYATİ ADIM: İlk tıklama ile ses motorunu canlandırma
+// iOS İÇİN HAYATİ ADIM
 document.getElementById('systemStartBtn').addEventListener('click', async () => { 
     await initAudio(); 
     if (audioCtx.state === 'suspended') {
@@ -343,7 +344,6 @@ function playSound(name) {
     const source = audioCtx.createBufferSource();
     source.buffer = sounds[name];
     
-    // Kart sesi için çok hafif hız (pitch) değişimi - her kartın farklı hissettirmesi için
     if (name === 'card') {
         source.playbackRate.value = 0.95 + Math.random() * 0.1; 
     }
@@ -383,7 +383,7 @@ window.cancelBet = () => {
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = "0";
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
-    messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
+    messageEl.innerText = "MC KULLAN (MİN: 250)";
 };
 
 function startBetCountdown(){
@@ -543,8 +543,10 @@ function showControls() {
 function startActionTimer(){
     let s = 10; messageEl.style.display = "block"; messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick');
     if (actionTimer) clearInterval(actionTimer);
+    
+    // Geri sayımın tamamında ses çıksın diye koşulu kaldırdık
     actionTimer = setInterval(() => {
-        s--; if(s > 0) { messageEl.innerText = `KARAR SÜRESİ (${s})`; if(s<=3) playSound('tick'); } 
+        s--; if(s > 0) { messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick'); } 
         else { clearInterval(actionTimer); stand(); }
     }, 1000);
 }
@@ -700,7 +702,7 @@ function resetBoard() {
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("chipsArea").classList.remove("disabled");
     
-    messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
+    messageEl.innerText = "MC KULLAN (MİN: 250)";
     isProcessing = false; gameState = "betting";
 }
 </script>
