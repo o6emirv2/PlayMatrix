@@ -3,13 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PlayMatrix Elite Pişti</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>PlayMatrix Elite Pişti | Gerçek Oyuncularla Canlı Pişti Oyna</title>
+    <meta name="description" content="PlayMatrix Elite Pişti oyna! Gerçek rakiplere karşı online masalara otur, kartları topla, pişti yap ve MC bakiyeni katla. Hiçbir şey indirmeden anında canlı oyna!">
+    <meta name="keywords" content="pişti oyna, online pişti, ücretsiz kart oyunu, canlı pişti, PlayMatrix, mc kazan, arkadaşlarınla oyna, kağıt oyunları, casino">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Turkish">
+    <meta name="theme-color" content="#050711">
+    <link rel="canonical" href="https://playmatrix.com.tr/OnlinePisti.html">
+
+    <meta property="og:title" content="PlayMatrix Elite Pişti | Canlı Kart Oyunu">
+    <meta property="og:description" content="Kendi özel masanı kur veya hızlıca bir masaya katıl. Kartları at, pişti yap ve zafere ulaş!">
+    <meta property="og:image" content="https://playmatrix.com.tr/assets/pisti-promo.jpg">
+    <meta property="og:url" content="https://playmatrix.com.tr/OnlinePisti.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Elite Pişti Oyna">
+    <meta name="twitter:description" content="Gerçek rakiplerle kıyasıya pişti mücadelesine katıl, kazancını katla!">
+
     <script>
     if (window.history.replaceState) {
         // OnlinePisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
-</script>
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -34,6 +55,12 @@
             overflow: hidden; display: flex; flex-direction: column; 
             width: 100%; overscroll-behavior: none;
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        }
+
+        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
         }
 
         #bg-canvas { 
@@ -250,15 +277,17 @@
 </head>
 <body>
 
-    <div id="bg-canvas">
+    <h1 class="sr-only">PlayMatrix Elite Pişti - Canlı Online Kart Oyunu</h1>
+
+    <div id="bg-canvas" aria-label="Hareketli Arka Plan">
         <div class="bg-orb orb-1"></div>
         <div class="bg-orb orb-2"></div>
         <div class="bg-orb orb-3"></div>
     </div>
 
-    <div class="top-bar">
+    <header class="top-bar">
         <div class="brand">ELİTE PİŞTİ</div>
-        <div class="right-menu">
+        <nav class="right-menu" aria-label="Oyuncu Paneli">
             <div class="user-pill-mini">
                 <div class="balance-info">
                     <b id="balance">0</b>
@@ -273,15 +302,15 @@
                 </div>
             </div>
 
-            <button id="navActionBtn" onclick="handleNavAction()">ÇIKIŞ</button>
-        </div>
-    </div>
+            <button id="navActionBtn" onclick="handleNavAction()" aria-label="Oyundan Çıkış Yap">ÇIKIŞ</button>
+        </nav>
+    </header>
 
-    <div id="lobbyScreen">
-        <input type="text" id="roomSearch" class="search-input" placeholder="MASA ARA...">
+    <main id="lobbyScreen">
+        <input type="text" id="roomSearch" class="search-input" placeholder="MASA ARA..." aria-label="Pişti Masası Ara">
         
-        <div class="chips" id="chipsArea">
-            <div class="chip" onclick="cancelBet()" style="background:var(--danger); color:#fff; border-color: rgba(255,255,255,0.4);">İPTAL</div>
+        <div class="chips" id="chipsArea" aria-label="Bahis Çipleri">
+            <div class="chip" onclick="cancelBet()" style="background:var(--danger); color:#fff; border-color: rgba(255,255,255,0.4);" aria-label="Bahsi İptal Et">İPTAL</div>
             <div class="chip" onclick="addBet(100)" style="background:#e0e0e0; color:#000;">100</div>
             <div class="chip" onclick="addBet(500)" style="background:#2ecc71; color:#fff;">500</div>
             <div class="chip" onclick="addBet(2000)" style="background:#3498db; color:#fff;">2K</div>
@@ -289,55 +318,55 @@
         </div>
 
         <div style="display:flex; gap:12px; margin-top:5px;">
-            <button class="btn-neon" onclick="openCreateModal()">MASA KUR</button>
-            <button class="btn-neon btn-fast-join" onclick="handleQuickJoin()">HIZLI MASA</button>
+            <button class="btn-neon" onclick="openCreateModal()" aria-label="Yeni Masa Kur">MASA KUR</button>
+            <button class="btn-neon btn-fast-join" onclick="handleQuickJoin()" aria-label="Hızlı Masaya Katıl">HIZLI MASA</button>
         </div>
 
-        <div id="roomList" style="margin-top:10px"></div>
+        <div id="roomList" style="margin-top:10px" aria-live="polite"></div>
 
-        <div class="how-to-btn" onclick="openModal('howToModal')">NASIL OYNANIR ?</div>
-    </div>
+        <div class="how-to-btn" onclick="openModal('howToModal')" aria-label="Nasıl Oynanır Rehberi">NASIL OYNANIR ?</div>
+    </main>
 
-    <div id="gameArea">
+    <div id="gameArea" aria-label="Oyun Masası">
         <div class="player-heads" id="playerHeadsContainer"></div>
-        <div id="waitingStatus" style="position:fixed; top:150px; color:var(--success); background:rgba(0,0,0,0.85); padding:12px 25px; border-radius:25px; display:none; border:1px solid var(--success); z-index: 100; font-weight: bold; box-shadow: 0 5px 15px rgba(0,255,136,0.2);">OYUNCU BEKLENİYOR...</div>
+        <div id="waitingStatus" aria-live="polite" style="position:fixed; top:150px; color:var(--success); background:rgba(0,0,0,0.85); padding:12px 25px; border-radius:25px; display:none; border:1px solid var(--success); z-index: 100; font-weight: bold; box-shadow: 0 5px 15px rgba(0,255,136,0.2);">OYUNCU BEKLENİYOR...</div>
         
-        <div class="table" id="tableArea">
+        <div class="table" id="tableArea" role="region" aria-label="Ortadaki Kartlar">
             <div class="opp-hand-visual" id="oppHandVisual"></div>
             <div class="table-cards" id="tableCards"></div>
-            <div class="hand" id="playerHand"></div>
+            <div class="hand" id="playerHand" aria-label="Senin Kartların"></div>
         </div>
     </div>
 
-    <div id="pistiDisplay">PİŞTİ!</div>
+    <div id="pistiDisplay" aria-hidden="true">PİŞTİ!</div>
 
-    <div id="passwordModal" class="modal-overlay">
+    <div id="passwordModal" class="modal-overlay" aria-hidden="true">
         <div class="modal-box">
             <h3 style="color:var(--warning)">🔒 ÖZEL MASA</h3><br>
             <p style="font-size:0.85rem; margin-bottom:15px; color:#888;">Bu masaya girmek için şifre gereklidir.</p>
-            <input type="password" id="joinRoomPass" class="modal-input" placeholder="Şifreyi Yazınız..." inputmode="text">
+            <input type="password" id="joinRoomPass" class="modal-input" placeholder="Şifreyi Yazınız..." inputmode="text" aria-label="Oda Şifresi">
             <div id="passError" class="error-msg">HATALI ŞİFRE! TEKRAR DENEYİN.</div>
             <button class="btn-neon" onclick="confirmPasswordJoin()">GİRİŞ YAP</button>
             <button class="btn-neon" style="margin-top:12px; background:var(--danger); color:white; box-shadow:none;" onclick="closeModal('passwordModal')">İPTAL</button>
         </div>
     </div>
 
-    <div id="createRoomModal" class="modal-overlay">
+    <div id="createRoomModal" class="modal-overlay" aria-hidden="true">
         <div class="modal-box">
             <h3 style="color:var(--border)">MASA AYARLARI</h3><br>
-            <input type="text" id="newRoomName" class="modal-input" placeholder="Masa Adı" inputmode="text">
-            <select id="newRoomType" class="modal-input">
+            <input type="text" id="newRoomName" class="modal-input" placeholder="Masa Adı" inputmode="text" aria-label="Masa Adı Belirle">
+            <select id="newRoomType" class="modal-input" aria-label="Oyuncu ve Kart Sayısı">
                 <option value="2-52">2 Kişilik (52 Kart)</option>
                 <option value="2-104">2 Kişilik (104 Kart)</option>
                 <option value="4-104">4 Kişilik (104 Kart)</option>
             </select>
-            <input type="password" id="newRoomPass" class="modal-input" placeholder="Şifre (İsteğe Bağlı)" inputmode="text">
+            <input type="password" id="newRoomPass" class="modal-input" placeholder="Şifre (İsteğe Bağlı)" inputmode="text" aria-label="Masa Şifresi Belirle">
             <button class="btn-neon" onclick="confirmCreateRoom()">OLUŞTUR</button>
             <button class="btn-neon" style="margin-top:12px; background:var(--danger); color:white; box-shadow:none;" onclick="closeModal('createRoomModal')">İPTAL</button>
         </div>
     </div>
 
-    <div id="howToModal" class="modal-overlay">
+    <div id="howToModal" class="modal-overlay" aria-hidden="true">
         <div class="modal-box" style="text-align: left; max-width: 400px; margin-top: 0;">
             <h3 style="text-align: center; color: var(--border);">NASIL OYNANIR?</h3><br>
             <p style="font-size: 0.95rem; line-height: 1.6; color:#ddd;">
@@ -351,7 +380,7 @@
         </div>
     </div>
 
-    <div id="infoModal" class="modal-overlay">
+    <div id="infoModal" class="modal-overlay" aria-hidden="true" aria-live="assertive">
         <div class="modal-box" style="margin-top: 0;">
             <h3 id="modalTitle" style="color:var(--success)">BİLGİ</h3><br>
             <p id="modalMsg" style="color:#ccc; margin-bottom:25px; font-size: 1.1rem; line-height:1.4;"></p>
@@ -476,7 +505,6 @@
         } catch(e) {}
     }
 
-    // YENİLEME/KAPATMA ANINDA GÜVENLİ ÇIKIŞ (F5 Koruması)
     window.onbeforeunload = function() {
         if (inGame && roomRef) handleDisconnect();
     };
@@ -765,7 +793,6 @@
         playSound(sfx.cardThrow); 
         const playedCard = gameState[myRole + "_hand"][idx];
         
-        // OPTIMISTIC UI: Gecikmeyi gizle, arayüzü anında güncelle!
         gameState[myRole + "_hand"].splice(idx, 1);
         gameState.table.push(playedCard);
         gameState.turn = "processing"; 
@@ -809,6 +836,7 @@
         myHand.forEach((c, i) => {
             let img = document.createElement("img");
             img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
+            img.alt = `Eldeki Kart ${i+1}`; 
             img.className = "card" + (isMyTurn ? "" : " passive");
             if(isNewDeal) {
                 img.classList.add("anim-deal-p");
@@ -831,8 +859,8 @@
         gameState.table.forEach((c, i) => {
             let img = document.createElement("img");
             img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
+            img.alt = "Yerdeki Kart";
             img.className = "stack-card";
-            // Titreme sorununu çözmek için son kart hariç açıyı sabitliyoruz, böylece yeniden çizimde flicker olmuyor
             img.style.transform = `translate(${i*1.5}px, ${i*1.5}px) rotate(${i*2.5}deg)`;
             img.style.zIndex = i;
             tc.appendChild(img);
