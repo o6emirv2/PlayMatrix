@@ -6,7 +6,6 @@
 <title>PlayMatrix</title>
 <script>
     if (window.history.replaceState) {
-        // index.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
 </script>
@@ -620,49 +619,14 @@ window.claimBonus = async () => {
         
         const promoData = promoSnap.data();
         
-        // DÜZELTME 1: maxUses yerine kota yazıldı
-        if (promoData.usageCount >= promoData.kota) {
-            feedback.innerText = "Maalesef bu kodun kullanım limiti (2.000 kişi) dolmuştur!";
-            feedback.classList.add("promo-error");
-            return;
-        }
-
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        
-        if (userData.usedPromos && userData.usedPromos.includes(code)) {
-            feedback.innerText = "Bu kodu hesabınızda zaten kullandınız!";
-            feedback.classList.add("promo-error");
-            return;
-        }
-        
-        // DÜZELTME 2: amount yerine odul_miktari yazıldı
-        await updateDoc(userRef, { 
-            balance: increment(promoData.odul_miktari), 
-            usedPromos: [...(userData.usedPromos || []), code] 
-        });
-        
-        await updateDoc(promoRef, {
-            usageCount: increment(1)
-        });
-
-        // DÜZELTME 3: amount yerine odul_miktari yazıldı
-        feedback.innerText = `BAŞARILI! ${promoData.odul_miktari.toLocaleString()} MC Bakiyenize Eklendi.`;
-        feedback.classList.add("promo-success");
-        input.value = "";
-        
-    } catch(e) {
-        feedback.innerText = "Sistem Hatası: " + e.message;
-        feedback.classList.add("promo-error");
-    }
-};
-        
-        const promoData = promoSnap.data();
+        // Firebase veritabanındaki isimleri (usageCount, kullanilan, vb.) garantiye alan kontrol:
+        const currentUses = promoData.usageCount || promoData.kullanilan || 0;
+        const maxUses = promoData.kota || 2000;
+        const odul = promoData.odul_miktari || 0;
         
         // 2000 KİŞİ SINIRI KONTROLÜ
-        if (promoData.usageCount >= promoData.maxUses) {
-            feedback.innerText = "Maalesef bu kodun kullanım limiti (2.000 kişi) dolmuştur!";
+        if (currentUses >= maxUses) {
+            feedback.innerText = "Maalesef bu kodun kullanım limiti (" + maxUses + " kişi) dolmuştur!";
             feedback.classList.add("promo-error");
             return;
         }
@@ -677,23 +641,23 @@ window.claimBonus = async () => {
             return;
         }
         
-        // Kullanıcıya bakiyeyi ekle ve kullanılmış kodlar listesine yaz
+        // Kullanıcıya bakiyeyi ekle
         await updateDoc(userRef, { 
-            balance: increment(promoData.amount), 
+            balance: increment(odul), 
             usedPromos: [...(userData.usedPromos || []), code] 
         });
         
-        // Promo kodun genel kullanım sayısını 1 artır
+        // Promo kodun genel kullanım sayısını 1 artır (Hem usageCount hem kullanilanı artırıyorum ki karışıklık olmasın)
         await updateDoc(promoRef, {
-            usageCount: increment(1)
+            usageCount: increment(1),
+            kullanilan: increment(1)
         });
 
-        feedback.innerText = `BAŞARILI! ${promoData.amount.toLocaleString()} MC Bakiyenize Eklendi.`;
+        feedback.innerText = `BAŞARILI! ${odul.toLocaleString()} MC Bakiyenize Eklendi.`;
         feedback.classList.add("promo-success");
         input.value = "";
         
     } catch(e) {
-        // Hata ayıklayıcı eklendi
         feedback.innerText = "Sistem Hatası: " + e.message;
         feedback.classList.add("promo-error");
     }
