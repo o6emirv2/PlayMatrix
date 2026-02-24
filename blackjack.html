@@ -96,7 +96,7 @@
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden;
         border-radius: 6px;
-        box-shadow: -3px 3px 10px rgba(0,0,0,0.6); /* Masa derinliği için gölge */
+        box-shadow: -3px 3px 10px rgba(0,0,0,0.6); 
     }
 
     .card-front { background: white; transform: rotateY(180deg); }
@@ -234,16 +234,12 @@ async function initAudio() {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContext();
     
-    // iOS için kullanıcı etkileşimiyle motoru canlandırma
-    if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-    }
-
+    // Sesleri belleğe yükle
     const urls = {
-        card: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',   // Kart dağıtma sesi
-        win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',    // Casino Win (Çip/Jeton Sesi)
+        card: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3',   // Keskin, gerçekçi kağıt sürtünme/dağıtma sesi
+        win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',    // Çip / Jeton kazanma sesi
         lose: 'https://assets.mixkit.co/active_storage/sfx/2043/2043-preview.mp3',   // Bust / Kaybetme sesi
-        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',   // Geri sayım
+        tick: 'https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3',   // Tok, saat benzeri geri sayım sesi
         chip: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'    // Çip masaya koyma
     };
     
@@ -257,16 +253,40 @@ async function initAudio() {
     }
 }
 
-document.getElementById('systemStartBtn').onclick = async () => { 
+// iOS İÇİN HAYATİ ADIM: İlk tıklama ile ses motorunu canlandırma
+document.getElementById('systemStartBtn').addEventListener('click', async () => { 
     await initAudio(); 
+    if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+    }
+    
+    // Sesi tetiklemek ve iOS kısıtlamasını kalıcı kırmak için kısa boş bir ses çalıyoruz
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+
     document.getElementById('sys-start-overlay').style.display='none'; 
-};
+});
 
 function playSound(name) {
     if(!audioCtx || !sounds[name]) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume(); // Ekstra güvenlik
+    
+    // iOS uyku moduna geri dönerse tekrar uyandır
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
     const source = audioCtx.createBufferSource();
     source.buffer = sounds[name];
+    
+    // KART SESİ İÇİN ÖZEL PITCH EFEKTİ (Daha Gerçekçi)
+    if (name === 'card') {
+        // Kart sesinin perdesini %10 oranında rastgele değiştirerek farklı kart hissi yarat
+        source.playbackRate.value = 0.9 + Math.random() * 0.2; 
+    }
+
     source.connect(audioCtx.destination);
     source.start(0);
 }
@@ -288,7 +308,7 @@ onAuthStateChanged(auth, user => {
 window.addBet = (a) => {
     if(gameState !== "betting" || isProcessing) return;
     if(initialBet + a > balance) return;
-    playSound('chip'); // Gerçek çip sesi
+    playSound('chip'); 
     initialBet += a;
     document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); 
     document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
@@ -351,7 +371,7 @@ function updateScores(){
 }
 
 async function draw(hand, divId, isOpen = true){
-    playSound('card'); // Gerçek kart sesi
+    playSound('card'); 
     let card = deck.pop(); 
     hand.push(card);
     
@@ -487,7 +507,6 @@ document.getElementById("hit").onclick = async () => {
     }
 };
 
-// Hoisting riskini önlemek için fonksiyon olarak tanımlandı
 function stand() { 
     if(isProcessing) return; isProcessing = true; hideControls();
     playerHands[currentHandIdx].status = 'stand';
@@ -507,7 +526,6 @@ document.getElementById("double").onclick = async () => {
     nextHandOrDealer();
 };
 
-// DÜZELTİLMİŞ SPLIT MANTIĞI
 document.getElementById("split").onclick = async () => {
     if(isProcessing) return; isProcessing = true; hideControls();
     
@@ -527,7 +545,6 @@ document.getElementById("split").onclick = async () => {
     document.getElementById("hand1").appendChild(cardCont);
     
     await delay(300);
-    // Böldüğümüz iki ele de kurallara uygun olarak anında birer kart veriyoruz
     await draw(playerHands[0].cards, "hand0", true);
     await draw(playerHands[1].cards, "hand1", true);
     
@@ -598,11 +615,11 @@ async function endGameLogic(){
 
     if(totalWin > 0) {
         messageEl.innerText = "KAZANCINIZ: " + totalWin; 
-        if(didWin) playSound('win'); // Eğer iade değil de net kazançsa kazanma sesi
+        if(didWin) playSound('win');
         try { await updateDoc(userRef, { balance: increment(totalWin) }); } catch(e){}
     } else {
         messageEl.innerText = "KAYBETTİNİZ!"; 
-        playSound('lose'); // Bust / Kaybetme sesi
+        playSound('lose'); 
     }
     
     await delay(3500);
