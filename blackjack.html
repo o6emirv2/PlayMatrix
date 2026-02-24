@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PlayMatrix VIP BlackJack</title>
+<title>PlayMatrix BlackJack</title>
 
 <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
@@ -16,77 +16,66 @@
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR */
+    /* ÜST BAR VE MC COIN ENTEGRASYONU */
     .top-bar {
-        position:fixed; top:0; left:0; right:0; height:70px; 
+        position:fixed; top:0; width:100%; height:70px;
         display:flex; align-items:center; justify-content:space-between;
-        padding:0 10px; background: rgba(0,0,0,0.95);
+        padding:0 15px; background: rgba(0,0,0,0.95);
         border-bottom: 2px solid #4fd1ff; z-index:1000;
     }
 
     .brand {
-        font-size:1rem; font-weight:900; color: #4fd1ff;
-        letter-spacing: 0.5px; font-family: 'Arial Black', sans-serif;
-        white-space: nowrap; flex-shrink: 0;
+        font-size:1.1rem; font-weight:900; color: #4fd1ff;
+        letter-spacing: 1px; font-family: 'Black Ops One', sans-serif;
     }
 
-    .right-menu { 
-        display:flex; gap:6px; align-items: center; 
-        flex-wrap: nowrap; overflow-x: auto; 
-    }
+    .right-menu { display:flex; gap:8px; align-items: center; }
     
     .user-pill-mini { 
-        display: flex; align-items: center; gap: 5px; 
-        background: rgba(255,255,255,0.05); padding: 5px 8px; 
+        display: flex; align-items: center; gap: 8px; 
+        background: rgba(255,255,255,0.05); padding: 5px 12px; 
         border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-        white-space: nowrap; flex-shrink: 0;
     }
     .balance-info { display: flex; align-items: center; }
-    .balance-info b { font-size: 13px; color: #00ffa3; font-family: monospace; font-weight: 700; }
+    .balance-info b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; }
     
     .mc-chip {
-        width: 18px; height: 18px;
+        width: 22px; height: 22px;
         background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
-        border-radius: 50%; margin-left: 5px;
+        border-radius: 50%; margin-left: 6px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 7px; font-weight: 900; color: #fff;
+        font-size: 8px; font-weight: 900; color: #fff;
         box-shadow: 0 0 10px rgba(79, 209, 255, 0.3);
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1.2px solid rgba(255,255,255,0.2);
     }
 
     .back-btn {
-        background: #ff3b30; color: white; text-decoration: none; padding: 6px 10px;
-        border-radius: 4px; font-size: 0.7rem; font-weight: 900; flex-shrink: 0;
+        background: #ff3b30; color: white; text-decoration: none; padding: 8px 12px;
+        border-radius: 4px; font-size: 0.7rem; font-weight: 900;
+        clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
     }
 
-    /* OYUN ALANI */
+    /* OYUN ALANI STİLLERİ - KORUNDU */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
-        padding: 85px 0 20px 0; perspective: 1000px; position: relative;
+        padding: 85px 0 20px 0;
+        perspective: 1000px;
     }
     
     .area { width: 100%; text-align: center; }
-    .dealer-title { font-size: 16px; letter-spacing: 3px; font-weight: 800; color: #d4af37; margin-bottom: 5px; }
-    
-    .score-badge { 
-        background: rgba(0,0,0,0.6); color: #ffd700; padding: 4px 15px; 
-        border-radius: 20px; font-size: 13px; border: 1px solid rgba(255,215,0,0.3); 
-        display: inline-block; margin-bottom: 10px; transition: 0.3s;
-    }
+    .dealer-title { font-size: 18px; letter-spacing: 4px; font-weight: 800; color: #d4af37; margin-bottom: 8px; }
+    .score-badge { background: rgba(0,0,0,0.6); color: #ffd700; padding: 4px 15px; border-radius: 20px; font-size: 14px; border: 1px solid rgba(255,215,0,0.3); display: inline-block; margin-bottom: 10px; }
 
-    .cards-wrapper { display: flex; justify-content: center; gap: -20px; min-height: 105px; padding: 0 10px; }
+    .cards-wrapper { display: flex; justify-content: center; gap: 8px; min-height: 105px; padding: 0 10px; }
     
-    /* İSTENİLEN KART ANİMASYONU (Eski Dosyadan Birebir Alındı) */
     .card-3d {
         width: 70px; height: 100px;
         position: relative;
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(35deg) scale(0.4);
-        opacity: 0; margin-left: -30px;
+        opacity: 0;
         transition: transform 1.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s;
-        filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
     }
-    .card-3d:first-child { margin-left: 0; }
 
     .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
     .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.8s ease-in-out; }
@@ -95,107 +84,93 @@
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden;
         border-radius: 8px;
-        border: 1px solid rgba(255,255,255,0.8);
-        background: white;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.6);
     }
 
-    .card-front { transform: rotateY(180deg); }
+    .card-front { background: white; transform: rotateY(180deg); }
     .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
 
-    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85px; z-index: 10; }
-    #message { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 10px; text-transform: uppercase;}
-    
-    .controls { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; }
-    .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: 800; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase;}
+    #message { font-size: 20px; font-weight: 900; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); height: 35px; }
+
+    .controls { display: none; gap: 15px; justify-content: center; margin-bottom: 10px; }
+    .btn { padding: 12px 25px; border-radius: 10px; border: none; font-weight: 800; font-size: 15px; color: white; cursor: pointer; }
     #hit { background: #2ecc71; box-shadow: 0 4px #27ae60; }
     #stand { background: #e74c3c; box-shadow: 0 4px #c0392b; }
-    #double { background: #f39c12; box-shadow: 0 4px #d68910; }
-    #split { background: #9b59b6; box-shadow: 0 4px #8e44ad; }
-    .btn:active { transform: translateY(3px); box-shadow: 0 1px #000 !important; }
 
-    .hands-container { display: flex; justify-content: center; gap: 20px; width: 100%; transition: 0.3s; }
-    .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
-    .hand-box.active { border: 2px dashed rgba(46, 204, 113, 0.8); background: rgba(0,0,0,0.2); }
-
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; }
-    .chip { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; border: 2px dashed rgba(255,255,255,0.4); box-shadow: 0 5px 15px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.2s; }
+    .chips-area { display: flex; justify-content: center; gap: 10px; padding-bottom: 40px; align-items: center; }
+    .chip {
+        width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 900; font-size: 15px; border: 2px dashed rgba(255,255,255,0.4);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.2s;
+    }
     .c250 { background: #fff; color: #000; }
     .c500 { background: #27ae60; color: #fff; }
     .c1k { background: #e74c3c; color: #fff; }
     .c2k { background: #000; color: #fff; border-color: #ffd700; }
-    .cancel-btn { width: 48px; height: 48px; border-radius: 50%; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; }
+    
+    .cancel-btn {
+        width: 58px; height: 58px; border-radius: 50%; background: #c0392b; color: white;
+        display: flex; align-items: center; justify-content: center; font-weight: 800;
+        font-size: 11px; cursor: pointer; border: 2px solid #e74c3c;
+    }
     .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
-
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-    .modal-content { background: #111; border: 1px solid #d4af37; border-radius: 20px; width: 85%; max-width: 320px; padding: 30px; text-align: center; }
 </style>
 </head>
 <body>
-
-<div id="sys-start-overlay" class="modal-overlay">
-    <div class="modal-content">
-        <h2 style="color:#d4af37; margin-bottom: 20px;">VIP CASINO</h2>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: #d4af37; color: #000; font-weight: 900; cursor: pointer;">MASAYA OTUR</button>
-    </div>
-</div>
 
 <div class="top-bar">
     <div class="brand">BLACKJACK</div>
     <div class="right-menu">
         <div class="user-pill-mini">
-            <div class="balance-info"><b id="balance">0</b><div class="mc-chip">MC</div></div>
+            <div class="balance-info">
+                <b id="balance">0</b>
+                <div class="mc-chip">MC</div>
+            </div>
         </div>
+        
         <div class="user-pill-mini" style="border-color: #ffcc00;">
-            <div class="balance-info"><b id="betAmount" style="color:#ffcc00">0</b><div class="mc-chip" style="background: orange;">MC</div></div>
+            <div class="balance-info">
+                <b id="bet" style="color:#ffcc00">0</b>
+                <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">MC</div>
+            </div>
         </div>
-        <a href="#" class="back-btn">ÇIKIŞ</a>
+
+        <a href="index.html" class="back-btn">ÇIKIŞ</a>
     </div>
 </div>
 
 <div class="game-container">
     <div class="area">
-        <div class="dealer-title">KURUPİYER</div>
+        <div class="dealer-title">KURUPİER</div>
         <div class="score-badge">Toplam: <span id="dealerScore">0</span></div>
         <div id="dealerCards" class="cards-wrapper"></div>
     </div>
 
-    <div class="action-area">
-        <div id="message">BAHİS YAPIN (MİN: 250)</div>
+    <div class="area">
+        <div id="message">MC KULLAN</div>
         <div class="controls" id="controls">
-            <button id="hit" class="btn">ÇEK</button>
+            <button id="hit" class="btn">KART ÇEK</button>
             <button id="stand" class="btn">KAL</button>
-            <button id="double" class="btn">2X</button>
-            <button id="split" class="btn">BÖL</button>
-        </div>
-        <div class="controls" id="insurance-controls">
-            <button id="ins-yes" class="btn" style="background:#2ecc71;">EVET</button>
-            <button id="ins-no" class="btn" style="background:#e74c3c;">HAYIR</button>
         </div>
     </div>
 
-    <div class="hands-container" id="playerArea">
-        <div class="hand-box active" id="hand0-box">
-            <div id="hand0" class="cards-wrapper"></div>
-            <div class="score-badge">Toplam: <span id="score0">0</span></div>
-        </div>
-        <div class="hand-box" id="hand1-box" style="display:none;">
-            <div id="hand1" class="cards-wrapper"></div>
-            <div class="score-badge">Toplam: <span id="score1">0</span></div>
-        </div>
+    <div class="area">
+        <div id="playerCards" class="cards-wrapper"></div>
+        <div class="score-badge">Toplam: <span id="playerScore">0</span></div>
     </div>
 
     <div class="chips-area" id="chipsArea">
-        <div class="cancel-btn" onclick="cancelBet()">İPTAL</div>
-        <div class="chip c250" onclick="addBet(250)">250</div>
-        <div class="chip c500" onclick="addBet(500)">500</div>
-        <div class="chip c1k" onclick="addBet(1000)">1K</div>
-        <div class="chip c2k" onclick="addBet(2000)">2K</div>
+        <div class="cancel-btn" id="cancelBet" onclick="cancelBet()">İPTAL</div>
+        <div class="chip c250" id="chip250" onclick="addBet(250)">250</div>
+        <div class="chip c500" id="chip500" onclick="addBet(500)">500</div>
+        <div class="chip c1k" id="chip1k" onclick="addBet(1000)">1K</div>
+        <div class="chip c2k" id="chip2k" onclick="addBet(2000)">2K</div>
     </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -211,391 +186,220 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let balance = 0, initialBet = 0, userRef = null;
-let deck = [], dealer = [], dealerHidden = true;
-let playerHands = []; 
-let currentHandIdx = 0; 
-let insuranceBet = 0;
+let audioCtx = null, balance = 0, bet = 0, userRef = null;
+let gameState = "loading", betCountdown = null, actionTimer = null;
+let deck = [], player = [], dealer = [], dealerHidden = true;
 
-let gameState = "loading", betCountdown = null, actionTimer = null, isProcessing = false;
 const messageEl = document.getElementById("message");
 
-const sounds = {};
-let audioCtx = null;
-async function initAudio() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const urls = {
-        card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-        win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-        lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3',
-        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'
-    };
-    for (const [name, url] of Object.entries(urls)) {
-        fetch(url).then(r => r.arrayBuffer()).then(b => audioCtx.decodeAudioData(b)).then(d => sounds[name] = d);
-    }
+function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
 }
-document.getElementById('systemStartBtn').onclick = () => { initAudio(); document.getElementById('sys-start-overlay').style.display='none'; };
 
-function playSound(name) {
-    if(!audioCtx) return;
-    if(name === 'chip') { 
-        const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(350, now); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-        o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + 0.05); return;
+function playSound(type) {
+    initAudio();
+    const now = audioCtx.currentTime;
+
+    const playOsc = (freq, type, gainVal, startTime, stopTime, ramp=false) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, startTime);
+        if(ramp) o.frequency.exponentialRampToValueAtTime(ramp, stopTime);
+        g.gain.setValueAtTime(gainVal, startTime);
+        g.gain.linearRampToValueAtTime(0.0001, stopTime);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(startTime); o.stop(stopTime);
+    };
+
+    if(type === 'card') {
+        const frictionBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+        const frictionData = frictionBuffer.getChannelData(0);
+        for (let i = 0; i < frictionBuffer.length; i++) frictionData[i] = Math.random() * 2 - 1;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = frictionBuffer;
+        const frictionFilter = audioCtx.createBiquadFilter();
+        frictionFilter.type = 'lowpass';
+        frictionFilter.frequency.setValueAtTime(1500, now);
+        const frictionGain = audioCtx.createGain();
+        frictionGain.gain.setValueAtTime(0.04, now);
+        noise.connect(frictionFilter);
+        frictionFilter.connect(frictionGain);
+        frictionGain.connect(audioCtx.destination);
+        noise.start();
     }
-    if(sounds[name]) { const s = audioCtx.createBufferSource(); s.buffer = sounds[name]; s.connect(audioCtx.destination); s.start(0); }
+
+    if(type==='chip') playOsc(240, 'sine', 0.3, now, now + 0.08, 80);
+    if(type==='win') [523, 659, 783, 1046].forEach((f, i) => playOsc(f, 'sine', 0.1, now + i*0.1, now + i*0.1 + 0.3));
+    if(type==='lose') playOsc(130, 'sawtooth', 0.2, now, now + 0.5, 40);
 }
 
 onAuthStateChanged(auth, user => {
-    if(!user) { signInAnonymously(auth); return; }
+    if(!user) return;
     userRef = doc(db, "users", user.uid);
-    onSnapshot(userRef, s => {
-        if(s.exists()) {
-            balance = s.data().balance || 0;
-            if(gameState === "loading" || gameState === "betting") {
-                document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-                if(gameState === "loading") gameState = "betting";
-            }
-        }
+    onSnapshot(userRef, snap => {
+        balance = snap.data().balance || 0;
+        document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+        if(gameState === "loading") gameState = "betting";
     });
 });
 
-window.addBet = (a) => {
-    if(gameState !== "betting" || isProcessing) return;
-    if(initialBet + a > balance) return;
+window.addBet = (amount) => {
+    if(gameState !== "betting" || balance < amount) return;
+    if(bet + amount > 20000) return;
     playSound('chip');
-    initialBet += a;
-    document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); 
-    document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
-    if(!betCountdown && initialBet >= 250) startBetCountdown();
+    bet += amount; balance -= amount;
+    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+    document.getElementById("bet").innerText = bet.toLocaleString('tr-TR');
+    if(!betCountdown && bet >= 250) startBetCountdown();
 };
 
 window.cancelBet = () => {
-    if(gameState !== "betting" || initialBet === 0 || isProcessing) return;
-    initialBet = 0; playSound('chip');
+    if(gameState !== "betting" || bet === 0) return;
+    balance += bet; bet = 0;
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-    document.getElementById("betAmount").innerText = "0";
+    document.getElementById("bet").innerText = 0;
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
-    messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
+    messageEl.innerText = "MC KULLAN";
 };
 
 function startBetCountdown(){
-    let s = 5; messageEl.innerText = `BAŞLIYOR (${s})`; playSound('tick');
+    let s = 5;
+    messageEl.innerText = "BAŞLIYOR: " + s;
     betCountdown = setInterval(() => {
-        s--; if(s > 0) { messageEl.innerText = `BAŞLIYOR (${s})`; playSound('tick'); } 
-        else { clearInterval(betCountdown); betCountdown = null; startGame(); }
+        s--;
+        if(s > 0) messageEl.innerText = "BAŞLIYOR: " + s;
+        else { clearInterval(betCountdown); betCountdown = null; messageEl.innerText = ""; startGame(); }
     }, 1000);
 }
+
+async function startGame(){
+    if(bet < 250) { messageEl.innerText = "MİNİMUM 250 MC!"; return; }
+    gameState = "playing";
+    document.getElementById("chipsArea").classList.add("disabled");
+    document.getElementById("dealerCards").innerHTML = "";
+    document.getElementById("playerCards").innerHTML = "";
+    player = []; dealer = []; dealerHidden = true;
+    createDeck();
+    await updateDoc(userRef, { balance: balance });
+
+    await draw(player, "playerCards"); await delay(1000);
+    await draw(dealer, "dealerCards"); await delay(1000);
+    await draw(player, "playerCards"); await delay(1000);
+    await draw(dealer, "dealerCards", true);
+
+    if(total(player) === 21) { messageEl.innerText = "BLACKJACK!"; await delay(1200); dealerTurn(true); }
+    else { messageEl.innerText = ""; document.getElementById("controls").style.display = "flex"; startActionTimer(); }
+}
+
+async function draw(hand, divId, hidden=false){
+    playSound('card');
+    let card = getSmartCard(divId === "dealerCards");
+    hand.push(card);
+    const cardCont = document.createElement("div");
+    cardCont.className = "card-3d";
+    cardCont.innerHTML = `<div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png') center/cover"></div><div class="card-face card-back"></div>`;
+    document.getElementById(divId).appendChild(cardCont);
+    setTimeout(() => { cardCont.classList.add("show"); if(!hidden) setTimeout(() => cardCont.classList.add("flipped"), 600); }, 50);
+    updateScores();
+}
+
+function cardVal(v){ let m = {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}; return m[v] || v; }
 
 function createDeck(){
     const s=["H","D","C","S"], v=[1,2,3,4,5,6,7,8,9,10,11,12,13];
-    deck = [];
-    for(let i=0; i<8; i++) { 
-        for(let d=0; d<4; d++) s.forEach(x => v.forEach(y => deck.push({suit:x, value:y})));
-    }
-    deck.sort(() => Math.random() - 0.5); 
+    deck = []; s.forEach(x => v.forEach(y => deck.push({suit:x, value:y})));
+    deck.sort(() => Math.random() - 0.5);
 }
 
-function cardVal(v){ return {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}[v] || v; }
-
-function getScore(hand) {
-    let t = 0, a = 0;
-    hand.forEach(c => { let v = c.value > 10 ? 10 : (c.value === 1 ? 11 : c.value); if(v === 11) a++; t += v; });
-    while(t > 21 && a > 0) { t -= 10; a--; }
-    return { total: t, aces: a };
-}
-
-function isSoft17(hand) {
-    let { total, aces } = getScore(hand);
-    return total === 17 && aces > 0;
+function total(h){
+    let t=0, a=0;
+    h.forEach(c => { let v = c.value > 10 ? 10 : (c.value === 1 ? 11 : c.value); if(v===11) a++; t += v; });
+    while(t > 21 && a > 0){ t -= 10; a--; }
+    return t;
 }
 
 function updateScores(){
-    for(let i=0; i<playerHands.length; i++) {
-        document.getElementById(`score${i}`).innerText = getScore(playerHands[i].cards).total;
+    document.getElementById("playerScore").innerText = total(player);
+    if(dealer.length === 0) document.getElementById("dealerScore").innerText = "0";
+    else document.getElementById("dealerScore").innerText = dealerHidden ? (dealer[0].value > 10 ? 10 : (dealer[0].value === 1 ? 11 : dealer[0].value)) : total(dealer);
+}
+
+function getSmartCard(isDealer) {
+    let cheatChance = bet >= 10000 ? 0.85 : (bet >= 5000 ? 0.60 : (bet >= 1000 ? 0.30 : 0));
+    if (isDealer && Math.random() < cheatChance) {
+        const dScore = total(dealer);
+        const pScore = total(player);
+        let bestIdx = deck.findIndex(c => {
+            let v = c.value > 10 ? 10 : (c.value === 1 ? 11 : c.value);
+            return dScore + v <= 21 && (dScore + v > pScore || dScore + v >= 17);
+        });
+        if (bestIdx !== -1) return deck.splice(bestIdx, 1)[0];
     }
-    let dScore = (dealerHidden && dealer.length > 0) ? 
-        (dealer[0].value > 10 ? 10 : (dealer[0].value === 1 ? 11 : dealer[0].value)) : 
-        getScore(dealer).total;
-    document.getElementById("dealerScore").innerText = dScore;
-    
-    let totalBet = insuranceBet;
-    playerHands.forEach(h => totalBet += h.bet);
-    document.getElementById("betAmount").innerText = totalBet.toLocaleString('tr-TR');
-}
-
-// İSTENİLEN ORİJİNAL KART ÇİZİM FONKSİYONU
-async function draw(hand, divId, isOpen = true){
-    playSound('card');
-    let card = deck.pop(); 
-    hand.push(card);
-    
-    const cardCont = document.createElement("div");
-    cardCont.className = "card-3d";
-    cardCont.innerHTML = `
-        <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png') center/cover"></div>
-        <div class="card-face card-back"></div>`;
-    
-    document.getElementById(divId).appendChild(cardCont);
-    
-    return new Promise(resolve => {
-        setTimeout(() => { 
-            cardCont.classList.add("show"); // Kart masaya iner
-            
-            if(isOpen) {
-                setTimeout(() => {
-                    cardCont.classList.add("flipped"); // İnme animasyonu bitince açılır
-                }, 600);
-            }
-            
-            setTimeout(() => {
-                updateScores();
-                resolve();
-            }, isOpen ? 1200 : 700); // Açılacaksa dönme süresini de bekle
-        }, 50);
-    });
-}
-
-function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
-
-async function startGame(){
-    isProcessing = true; gameState = "playing"; 
-    document.getElementById("chipsArea").classList.add("disabled");
-    document.getElementById("dealerCards").innerHTML = "";
-    document.getElementById("hand0").innerHTML = "";
-    document.getElementById("hand1").innerHTML = "";
-    document.getElementById("hand1-box").style.display = "none";
-    
-    playerHands = [{ cards: [], bet: initialBet, status: 'playing' }];
-    currentHandIdx = 0; dealer = []; dealerHidden = true; insuranceBet = 0;
-    
-    messageEl.innerText = "DAĞITILIYOR...";
-    document.getElementById("controls").style.display = "none";
-    createDeck(); 
-    
-    try { await updateDoc(userRef, { balance: increment(-initialBet) }); } 
-    catch(e) { cancelBet(); return; }
-
-    // DAĞITIM SIRASI
-    await draw(playerHands[0].cards, "hand0", true);   // 1. Oyuncu AÇIK
-    await draw(dealer, "dealerCards", true);           // 2. Kurupiyer AÇIK
-    await draw(playerHands[0].cards, "hand0", true);   // 3. Oyuncu AÇIK
-    await draw(dealer, "dealerCards", false);          // 4. Kurupiyer KAPALI
-
-    if(dealer[0].value === 1 && balance >= initialBet / 2) {
-        messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
-        document.getElementById("insurance-controls").style.display = "flex";
-        return; 
-    }
-    
-    checkInitialBlackjack();
-}
-
-document.getElementById("ins-yes").onclick = async () => {
-    document.getElementById("insurance-controls").style.display = "none";
-    insuranceBet = initialBet / 2;
-    await updateDoc(userRef, { balance: increment(-insuranceBet) }); 
-    checkInitialBlackjack();
-};
-document.getElementById("ins-no").onclick = () => {
-    document.getElementById("insurance-controls").style.display = "none";
-    checkInitialBlackjack();
-};
-
-async function checkInitialBlackjack() {
-    let pScore = getScore(playerHands[0].cards).total;
-    let dScore = getScore(dealer).total;
-
-    if(pScore === 21 || dScore === 21) {
-        dealerHidden = false;
-        const hiddenCard = document.getElementById("dealerCards").children[1];
-        if (hiddenCard && !hiddenCard.classList.contains("flipped")) {
-            hiddenCard.classList.add("flipped"); // Kapalı kartı aç
-        }
-        updateScores();
-        await delay(1000);
-        endGameLogic();
-    } else {
-        isProcessing = false;
-        showControls();
-    }
-}
-
-function showControls() {
-    document.getElementById("hand0-box").classList.remove("active");
-    document.getElementById("hand1-box").classList.remove("active");
-    document.getElementById(`hand${currentHandIdx}-box`).classList.add("active");
-
-    let hand = playerHands[currentHandIdx];
-    let cards = hand.cards;
-    
-    document.getElementById("controls").style.display = "flex";
-    document.getElementById("double").style.display = (cards.length === 2 && balance >= hand.bet) ? "block" : "none";
-    
-    let val1 = cards[0] ? (cards[0].value > 10 ? 10 : cards[0].value) : 0;
-    let val2 = cards[1] ? (cards[1].value > 10 ? 10 : cards[1].value) : 0;
-    document.getElementById("split").style.display = (cards.length === 2 && val1 === val2 && balance >= hand.bet && playerHands.length === 1) ? "block" : "none";
-
-    startActionTimer();
+    return deck.pop();
 }
 
 function startActionTimer(){
-    let s = 10; messageEl.style.display = "block"; messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick');
-    if (actionTimer) clearInterval(actionTimer);
+    let s = 10;
+    messageEl.innerText = "KARAR (" + s + ")";
     actionTimer = setInterval(() => {
-        s--; if(s > 0) { messageEl.innerText = `KARAR SÜRESİ (${s})`; if(s<=3) playSound('tick'); } 
-        else { clearInterval(actionTimer); stand(); }
+        s--;
+        if(s > 0) messageEl.innerText = "KARAR (" + s + ")";
+        else { clearInterval(actionTimer); actionTimer = null; stand(); }
     }, 1000);
 }
 
-function hideControls() {
-    if(actionTimer) clearInterval(actionTimer);
-    document.getElementById("controls").style.display = "none";
-    messageEl.innerText = "";
-}
-
 document.getElementById("hit").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; hideControls();
-    
-    await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
-    
-    if(getScore(playerHands[currentHandIdx].cards).total >= 21) {
-        playerHands[currentHandIdx].status = 'bust';
-        nextHandOrDealer();
-    } else { 
-        isProcessing = false; showControls(); 
-    }
+    if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
+    document.getElementById("controls").style.display = "none";
+    await draw(player, "playerCards");
+    if(total(player) >= 21) dealerTurn();
+    else { document.getElementById("controls").style.display = "flex"; startActionTimer(); }
 };
 
 const stand = () => { 
-    if(isProcessing) return; isProcessing = true; hideControls();
-    playerHands[currentHandIdx].status = 'stand';
-    nextHandOrDealer(); 
+    if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
+    document.getElementById("controls").style.display="none"; 
+    dealerTurn(); 
 };
 document.getElementById("stand").onclick = stand;
 
-document.getElementById("double").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; hideControls();
-    
-    let bet = playerHands[currentHandIdx].bet;
-    await updateDoc(userRef, { balance: increment(-bet) });
-    playerHands[currentHandIdx].bet *= 2; updateScores();
-    
-    await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
-    playerHands[currentHandIdx].status = getScore(playerHands[currentHandIdx].cards).total > 21 ? 'bust' : 'stand';
-    nextHandOrDealer();
-};
-
-document.getElementById("split").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; hideControls();
-    
-    let bet = playerHands[0].bet;
-    await updateDoc(userRef, { balance: increment(-bet) }); 
-    
-    let splitCard = playerHands[0].cards.pop();
-    playerHands.push({ cards: [splitCard], bet: bet, status: 'playing' });
-    
-    let hand0Div = document.getElementById("hand0");
-    hand0Div.lastChild.remove();
-    document.getElementById("hand1-box").style.display = "flex";
-    
-    const cardCont = document.createElement("div");
-    cardCont.className = "card-3d show flipped"; // Split edilen kart doğrudan masada ve açık kalır
-    cardCont.innerHTML = `<div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(splitCard.value)}${splitCard.suit}.png') center/cover"></div><div class="card-face card-back"></div>`;
-    document.getElementById("hand1").appendChild(cardCont);
-    
-    await draw(playerHands[0].cards, "hand0", true);
-    isProcessing = false; showControls();
-};
-
-async function nextHandOrDealer() {
-    if(currentHandIdx + 1 < playerHands.length) {
-        currentHandIdx++;
-        await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
-        isProcessing = false; showControls();
-    } else {
-        dealerTurn();
-    }
-}
-
-async function dealerTurn(){
-    gameState = "dealer_turn"; dealerHidden = false;
-    
+async function dealerTurn(isBJ = false){
+    dealerHidden = false;
     const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-    if(cards[1] && !cards[1].classList.contains('flipped')) {
-        cards[1].classList.add("flipped");
-        playSound('card'); 
-        await delay(800);
-    }
-    updateScores(); await delay(500);
-
-    let allBust = playerHands.every(h => getScore(h.cards).total > 21);
-    
-    if(!allBust) {
-        while(getScore(dealer).total < 17 || isSoft17(dealer)) {
-            await draw(dealer, "dealerCards", true);
-        }
-    }
-    
-    endGameLogic();
+    if(cards[1]) cards[1].classList.add("flipped");
+    updateScores();
+    await delay(1200);
+    if(!isBJ && total(player) <= 21){ while(total(dealer) < 17){ await draw(dealer, "dealerCards"); await delay(1200); } }
+    endGame();
 }
 
-async function endGameLogic(){
-    gameState = "resolving";
-    let dTotal = getScore(dealer).total;
-    let totalWin = 0;
+async function endGame(){
+    let p=total(player), d=total(dealer), m=0, txt="";
+    if(p>21) { txt="PATLADIN!"; }
+    else if(d>21 || p>d) { 
+        if(p === 21 && player.length === 2) { txt="BLACKJACK!"; m=2.5; }
+        else { txt="KAZANDIN!"; m=2; }
+        playSound('win'); 
+    }
+    else if(d>p) { txt="KAYBETTİN"; }
+    else { txt="BERABERE"; m=1; }
     
-    if(insuranceBet > 0 && dTotal === 21 && dealer.length === 2) {
-        totalWin += insuranceBet * 3; 
-    }
-
-    for(let i=0; i<playerHands.length; i++) {
-        let hand = playerHands[i];
-        let pTotal = getScore(hand.cards).total;
-        
-        let isPlayerBJ = (pTotal === 21 && hand.cards.length === 2 && playerHands.length === 1);
-        let isDealerBJ = (dTotal === 21 && dealer.length === 2);
-
-        if(pTotal > 21) { 
-            document.getElementById(`score${i}`).innerText += " (PATLADI)";
-        } else if (dTotal > 21) {
-            totalWin += hand.bet * 2;
-        } else if (isPlayerBJ && !isDealerBJ) {
-            totalWin += Math.floor(hand.bet * 2.5); 
-        } else if (pTotal > dTotal) {
-            totalWin += hand.bet * 2;
-        } else if (pTotal === dTotal) {
-            totalWin += hand.bet; 
-        }
-    }
-
-    if(totalWin > 0) {
-        messageEl.innerText = "KAZANCINIZ: " + totalWin; playSound('win');
-        try { await updateDoc(userRef, { balance: increment(totalWin) }); } catch(e){}
-    } else {
-        messageEl.innerText = "KAYBETTİNİZ!"; playSound('lose');
-    }
-    
-    await delay(4000);
-    resetBoard();
-}
-
-function resetBoard() {
+    if(m>0) await updateDoc(userRef, { balance: increment(Math.floor(bet*m)) });
+    messageEl.innerText = txt;
+    await delay(3000);
     document.getElementById("dealerCards").innerHTML = "";
-    document.getElementById("hand0").innerHTML = "";
-    document.getElementById("hand1").innerHTML = "";
-    document.getElementById("hand1-box").style.display = "none";
+    document.getElementById("playerCards").innerHTML = "";
     document.getElementById("dealerScore").innerText = "0";
-    document.getElementById("score0").innerText = "0";
-    document.getElementById("hand0-box").classList.remove("active");
-    
-    initialBet = 0; document.getElementById("betAmount").innerText = "0";
-    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+    document.getElementById("playerScore").innerText = "0";
+    bet = 0; document.getElementById("bet").innerText = 0;
+    gameState = "betting";
     document.getElementById("chipsArea").classList.remove("disabled");
-    
-    messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
-    isProcessing = false; gameState = "betting";
+    messageEl.innerText = "MC KULLAN";
 }
+
+function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 </script>
 </body>
 </html>
