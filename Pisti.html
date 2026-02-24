@@ -3,7 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>PlayMatrix Pişti</title>
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix Pişti | Ücretsiz Kart Oyunu ve Casino</title>
+<meta name="description" content="PlayMatrix Pişti oyna! Akıllı krupiyere karşı şansını ve yeteneğini test et. Hemen masaya otur, kartlarını at, pişti yap ve anında MC kazan. İndirmesiz bedava casino oyunu.">
+<meta name="keywords" content="pişti oyna, botlara karşı pişti, ücretsiz kart oyunu, tek kişilik pişti, casino oyunu, PlayMatrix, mc kazan, tarayıcı oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#03050a">
+<link rel="canonical" href="https://playmatrix.com.tr/Pisti.html">
+
+<meta property="og:title" content="PlayMatrix Pişti | Krupiyere Karşı Oyna">
+<meta property="og:description" content="Taktiklerini konuştur, pişti yap ve MC bakiyeni ikiye katla! Kesintisiz kart oyunu heyecanı PlayMatrix'te.">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/pisti-single-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/Pisti.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix Pişti Oyunu">
+<meta name="twitter:description" content="Gerçekçi kart deneyimiyle bilgisayara karşı pişti oyna, kazandıkça katla!">
+
 <script>
     if (window.history.replaceState) {
         // Pisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
@@ -23,6 +43,12 @@
         height:100vh; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
         background:#03050a; color:white; display:flex; flex-direction:column; align-items:center;
     }
+
+    /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+    .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+    }
     
     /* --- GÜNCELLENEN MC COIN ÜST BAR TASARIMI --- */
     .top-bar{
@@ -39,7 +65,6 @@
 
     .right-menu{display:flex;gap:6px;align-items:center;}
     
-    /* OnlinePişti.html'den aktarılan MC stili */
     .user-pill-mini { 
         display: flex; align-items: center; gap: 8px; 
         background: rgba(255,255,255,0.05); padding: 5px 10px; 
@@ -77,7 +102,7 @@
         border-bottom: 0;
     }
 
-    h1 { margin-top:80px; font-size: 18px; letter-spacing: 1px; color: rgba(255,255,255,0.8); }
+    .page-title-visible { margin-top:80px; font-size: 18px; letter-spacing: 1px; color: rgba(255,255,255,0.8); font-weight: bold; }
     .score-board { margin: 8px 0; font-weight: bold; color: #ffcc00; font-size: 14px; background: rgba(0,0,0,0.3); padding: 4px 15px; border-radius: 20px; }
 
     .table {
@@ -152,9 +177,11 @@
 </head>
 <body>
 
-<div class="top-bar">
+<h1 class="sr-only">PlayMatrix Pişti - Krupiyere Karşı Kart Oyunu</h1>
+
+<header class="top-bar">
     <div class="brand">PİŞTİ</div>
-    <div class="right-menu">
+    <nav class="right-menu" aria-label="Oyuncu Paneli">
         <div class="user-pill-mini">
             <div class="balance-info">
                 <b id="balance">0</b>
@@ -169,37 +196,39 @@
             </div>
         </div>
         
-        <a href="index.html" class="back-btn">GERİ</a>
+        <a href="index.html" class="back-btn" aria-label="Ana Sayfaya Dön">GERİ</a>
+    </nav>
+</header>
+
+<main style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+    <div class="page-title-visible"></div>
+    <div class="score-board" aria-live="polite">SİZ: <span id="ps">0</span> — KRUPIER: <span id="cs">0</span></div>
+
+    <div class="table" id="tableArea" role="region" aria-label="Pişti Masası">
+        <div class="computer" id="computerHand" aria-label="Bilgisayarın Kartları"></div>
+        <div class="table-cards" id="tableCards" aria-label="Ortadaki Kartlar"></div>
+        <div class="hand" id="playerHand" aria-label="Senin Kartların"></div>
     </div>
-</div>
 
-<h1></h1>
-<div class="score-board">SİZ: <span id="ps">0</span> — KRUPIER: <span id="cs">0</span></div>
+    <div id="pistiDisplay" aria-hidden="true">PİŞTİ!</div>
 
-<div class="table" id="tableArea">
-    <div class="computer" id="computerHand"></div>
-    <div class="table-cards" id="tableCards"></div>
-    <div class="hand" id="playerHand"></div>
-</div>
-
-<div id="pistiDisplay">PİŞTİ!</div>
-
-<div class="modal-overlay" id="modalOverlay">
-    <div class="modal-content">
-        <div class="modal-msg" id="modalMsg">-</div>
-        <button class="modal-btn" onclick="closeModal()">TAMAM</button>
+    <div class="modal-overlay" id="modalOverlay" aria-hidden="true" aria-live="assertive">
+        <div class="modal-content">
+            <div class="modal-msg" id="modalMsg">-</div>
+            <button class="modal-btn" onclick="closeModal()" aria-label="Kapat">TAMAM</button>
+        </div>
     </div>
-</div>
 
-<div class="chips" id="chipsArea">
-    <div class="chip c-cancel" onclick="cancelBet()">İPTAL</div>
-    <div class="chip c100" id="chip100" onclick="addBet(100)">100</div>
-    <div class="chip c500" id="chip500" onclick="addBet(500)">500</div>
-    <div class="chip c2000" id="chip2000" onclick="addBet(2000)">2K</div>
-    <div class="chip c10000" id="chip10000" onclick="addBet(10000)">10K</div>
-</div>
+    <div class="chips" id="chipsArea" aria-label="Bahis Çipleri">
+        <div class="chip c-cancel" onclick="cancelBet()" aria-label="Bahsi İptal Et">İPTAL</div>
+        <div class="chip c100" id="chip100" onclick="addBet(100)">100</div>
+        <div class="chip c500" id="chip500" onclick="addBet(500)">500</div>
+        <div class="chip c2000" id="chip2000" onclick="addBet(2000)">2K</div>
+        <div class="chip c10000" id="chip10000" onclick="addBet(10000)">10K</div>
+    </div>
 
-<button class="start-btn" id="startBtn" onclick="unlockAudioAndStart()">MASAYA OTUR</button>
+    <button class="start-btn" id="startBtn" onclick="unlockAudioAndStart()" aria-label="Masaya Otur ve Başla">MASAYA OTUR</button>
+</main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -350,6 +379,7 @@ function render() {
         let img = document.createElement("img");
         img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
         img.className = "card";
+        img.alt = `Sizin Kartınız ${i+1}`;
         img.onclick = () => play(i);
         ph.appendChild(img);
     });
@@ -357,12 +387,14 @@ function render() {
         let img = document.createElement("img");
         img.src = "https://deckofcardsapi.com/static/img/back.png";
         img.className = "card";
+        img.alt = "Bilgisayarın Kartı";
         ch.appendChild(img);
     });
     table.forEach((c, i) => {
         let img = document.createElement("img");
         img.src = c === "BACK" ? "https://deckofcardsapi.com/static/img/back.png" : `https://deckofcardsapi.com/static/img/${c}.png`;
         img.className = "stack-card";
+        img.alt = "Yerdeki Kart";
         img.style.transform = `rotate(${i * 2}deg) translate(${i}px, ${i}px)`;
         img.style.zIndex = i;
         tc.appendChild(img);
