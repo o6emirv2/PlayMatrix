@@ -44,7 +44,6 @@
         .btn-neon:disabled { opacity: 0.3; cursor: not-allowed; }
         .btn-sec { background: var(--btn-sec); }
 
-        /* YENİ PROFESYONEL LOBİ KART TASARIMI */
         .room-card { 
             background: var(--glass); border: 1px solid rgba(255, 204, 0, 0.2); border-left: 5px solid var(--border); 
             padding: 15px; display: flex; justify-content: space-between; align-items: center; 
@@ -155,13 +154,23 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // TÜM SESLER GERÇEKÇİ EFEKTLERLE GÜNCELLENDİ
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
-        game: new Audio('https://cdn.pixabay.com/download/audio/2021/11/24/audio_907cdbc3ad.mp3'),
-        tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3')
+        game: new Audio('https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3'), // Daha heyecanlı savaş müziği
+        tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
+        rain: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3'), // Gerçek Yağmur Sesi
+        thunder: new Audio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek Sesi
     };
-    sfx.lobby.loop = true; sfx.game.loop = true;
-    sfx.lobby.volume = 0.4; sfx.game.volume = 0.5; sfx.tap.volume = 0.8;
+    sfx.lobby.loop = true; 
+    sfx.game.loop = true; 
+    sfx.rain.loop = true; // Yağmur sürekli yağar
+    
+    sfx.lobby.volume = 0.4; 
+    sfx.game.volume = 0.4; 
+    sfx.tap.volume = 0.8;
+    sfx.rain.volume = 0.5;
+    sfx.thunder.volume = 0.8;
 
     let audioUnlocked = false;
     const unlockAudio = () => {
@@ -178,8 +187,10 @@
     let unsubLobby = null, unsubGame = null;
     let localCells = {}; 
     let lastClickTime = 0;
+    
+    let currentScene = 'lobby'; // Lobi ve Oyun animasyonlarını ayırmak için
+    let lightningTimer = null; // Şimşek döngüsünü kontrol etmek için
 
-    // ÖZEL MODAL ALERT FONKSİYONU
     window.showModalAlert = (title, msg, onConfirmCallback) => {
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMsg').innerText = msg;
@@ -187,7 +198,6 @@
         const okBtn = document.getElementById('alertOkBtn');
         const cancelBtn = document.getElementById('alertCancelBtn');
         
-        // Eğer bir işlem yapılacaksa İptal butonunu göster, yoksa gizle (sadece bilgi amaçlı)
         cancelBtn.style.display = onConfirmCallback ? 'block' : 'none';
 
         okBtn.onclick = () => {
@@ -220,56 +230,88 @@
         });
     };
 
-    // --- YENİ YAĞMUR VE ŞİMŞEK EFEKTİ ---
+    // --- SAHNEYE (LOBİ vs OYUN) GÖRE ANİMASYON SİSTEMİ ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
-    let particles = [];
-    let lightningFlash = 0; // Şimşek sayacı
+    let lobbyParticles = [];
+    let rainParticles = [];
+    let lightningFlash = 0;
 
     function initParticles() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        particles = Array.from({length: 120}, () => ({ 
+        // Lobi Parçacıkları (Yavaş, Sakin)
+        lobbyParticles = Array.from({length: 60}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
-            l: Math.random() * 20 + 10, // Yağmur damlası uzunluğu
-            s: Math.random() * 15 + 10, // Yağmur düşme hızı
-            w: Math.random() * 1.5 + 0.5  // Yağmur kalınlığı
+            r: Math.random() * 2, 
+            s: Math.random() * 0.5 
         }));
 
-        // 15 Saniyede Bir Şimşek Çakması İçin Döngü
-        setInterval(() => { lightningFlash = 3; }, 15000); 
+        // Gerçekçi Yağmur Damlaları (Hızlı, İnce, Saydam)
+        rainParticles = Array.from({length: 150}, () => ({ 
+            x: Math.random() * canvas.width, 
+            y: Math.random() * canvas.height, 
+            l: Math.random() * 25 + 15, // Damla boyu
+            s: Math.random() * 20 + 15, // Düşme hızı
+            w: Math.random() * 1.5 + 0.5, // Kalınlık
+            o: Math.random() * 0.4 + 0.1 // Saydamlık
+        }));
+    }
+
+    // RASTGELE GÖK GÜRÜLTÜSÜ VE ŞİMŞEK SİSTEMİ
+    function triggerLightning() {
+        if (currentScene !== 'game') return; // Sadece oyundaysa çalışır
+        lightningFlash = 3; 
+        if (audioUnlocked) {
+            sfx.thunder.currentTime = 0;
+            sfx.thunder.play().catch(()=>{});
+        }
+        // 8 ile 18 saniye arası rastgele bir sürede tekrar çakar
+        lightningTimer = setTimeout(triggerLightning, Math.random() * 10000 + 8000);
     }
 
     function drawBg() {
-        // Arkada iz bırakan siyahlık (Hareket hissi verir)
-        ctx.fillStyle = 'rgba(3, 5, 10, 0.4)'; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // ŞİMŞEK EFEKTİ ÇİZİMİ
-        if (lightningFlash > 0) {
-            ctx.fillStyle = `rgba(220, 240, 255, ${Math.random() * 0.4 + 0.1})`;
+        if (currentScene === 'lobby') {
+            // LOBİ EKRANI: SAKİN NEON
+            ctx.fillStyle = '#03050a'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            lightningFlash--;
-        }
+            ctx.fillStyle = 'rgba(0, 242, 255, 0.2)';
+            lobbyParticles.forEach(p => { 
+                p.y -= p.s; 
+                if(p.y < 0) p.y = canvas.height; 
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); 
+            });
+        } else if (currentScene === 'game') {
+            // OYUN EKRANI: ŞİDDETLİ YAĞMUR VE ŞİMŞEK
+            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Arkada hareket hissi bırakan karanlık
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // ŞİMŞEK ÇAKMA GÖRSELİ
+            if (lightningFlash > 0) {
+                ctx.fillStyle = `rgba(230, 240, 255, ${Math.random() * 0.6 + 0.2})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                lightningFlash--;
+            }
 
-        // Yağmur Çizimi
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.6)';
-        ctx.lineCap = 'round';
-        particles.forEach(p => { 
-            p.y += p.s; 
-            p.x -= p.s * 0.2; // Hafif rüzgar açısı (sola doğru yatık)
-            
-            if(p.y > canvas.height) { 
-                p.y = -20; 
-                p.x = Math.random() * canvas.width + 50; 
-            } 
-            
-            ctx.beginPath(); 
-            ctx.lineWidth = p.w;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - p.l * 0.2, p.y - p.l);
-            ctx.stroke(); 
-        });
+            // Gerçekçi Yağmur Çizimi
+            ctx.lineCap = 'round';
+            rainParticles.forEach(p => { 
+                ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; 
+                p.y += p.s; 
+                p.x -= p.s * 0.1; // Rüzgardan dolayı hafif yatık
+                
+                if(p.y > canvas.height) { 
+                    p.y = -20; 
+                    p.x = Math.random() * canvas.width + 50; 
+                } 
+                
+                ctx.beginPath(); 
+                ctx.lineWidth = p.w;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p.x - p.l * 0.1, p.y - p.l);
+                ctx.stroke(); 
+            });
+        }
         requestAnimationFrame(drawBg);
     }
     initParticles(); drawBg();
@@ -301,15 +343,13 @@
                 const r = d.data();
                 if(r.p1 === uid || r.status === 'terminated') return;
                 
-                // ZOMBİ ODA TEMİZLİĞİ: 65 Saniyeden eskiyse veritabanından tamamen SİL
                 if(r.status === 'waiting' && r.createdAt) {
                     const ageMs = now - r.createdAt.toMillis();
                     if(ageMs > 65000) {
                         deleteDoc(doc(db, "conquest_rooms", d.id)).catch(()=>{});
-                        return; // Ekrana çizme
+                        return; 
                     }
                     
-                    // PROFESYONEL LOBİ KARTI OLUŞTURMA
                     count++;
                     const ageSec = Math.floor(ageMs / 1000);
                     const timeStr = ageSec < 5 ? "Az önce" : `${ageSec} saniye önce`;
@@ -331,7 +371,6 @@
                         </div>`;
                     list.appendChild(card);
                 } else if(r.status === 'playing') {
-                    // Dolu/Oynanan odaları gösterme kısmını dilersen aktif tutabilirsin
                     count++;
                     const card = document.createElement('div');
                     card.className = "room-card";
@@ -360,9 +399,7 @@
         let target = null;
         rooms.forEach(card => { if(card.innerText.includes('🔓') && !card.innerText.includes('MEŞGUL')) target = card; });
         if(target) target.querySelector('button').click();
-        else {
-            window.showModalAlert("ARENA BULUNAMADI", "Uygun şifresiz arena bulunamadı. Kendi arenanı kur.");
-        }
+        else window.showModalAlert("ARENA BULUNAMADI", "Uygun şifresiz arena bulunamadı. Kendi arenanı kur.");
     };
 
     window.showPrivateSettings = () => { window.toggleModal('roomTypeModal', false); window.toggleModal('privateSettingsModal', true); };
@@ -402,11 +439,22 @@
         enterGame(id);
     }
 
+    // OYUNA GİRİŞ - SES VE GÖRSEL GEÇİŞLERİ
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
-        sfx.lobby.pause(); sfx.game.currentTime = 0; 
-        if(audioUnlocked) sfx.game.play().catch(()=>{});
         
+        // Sesleri ve Sahneyi Oyuna Göre Ayarla
+        currentScene = 'game';
+        sfx.lobby.pause(); 
+        sfx.game.currentTime = 0; 
+        sfx.rain.currentTime = 0;
+        
+        if (audioUnlocked) {
+            sfx.game.play().catch(()=>{});
+            sfx.rain.play().catch(()=>{}); // Yağmur sesini başlat
+        }
+        triggerLightning(); // Şimşek döngüsünü başlat
+
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('game-view').style.display = 'flex';
         
@@ -430,7 +478,6 @@
             const d = snap.data();
             localCells = d.cells || {}; 
             
-            // AYRILAN RAKİP KONTROLÜ (NATIVE ALERT KALDIRILDI)
             if(d.status === 'terminated' && !isFin) {
                 isFin = true;
                 window.showModalAlert("BAĞLANTI KOPTU", "Rakip savaş alanından kaçtı!", window.leaveToHome);
@@ -465,7 +512,6 @@
             });
             document.getElementById('s1').innerText = s1; document.getElementById('s2').innerText = s2;
 
-            // ERKEN BİTİŞ KONTROLÜ (Tüm Alanlar Ele Geçirildiyse)
             if(d.status === 'playing' && myRole === 'p1') {
                 if (s1 === 36 || s2 === 36) {
                     updateDoc(doc(db, "conquest_rooms", id), { timer: 0, status: 'finished' });
