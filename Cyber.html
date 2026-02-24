@@ -3,15 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PlayMatrix Cyber</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>PlayMatrix Cyber | Ücretsiz Online Zeka ve Bulmaca Oyunu</title>
+    <meta name="description" content="PlayMatrix Cyber'da sistemlere sız, nöron bağlantılarını kur ve zekanı test et. Hemen ücretsiz oyna, en yüksek düğüme (node) ulaş ve şifreleri kır!">
+    <meta name="keywords" content="cyber oyun, zeka oyunu, bulmaca oyunu, ücretsiz oyun oyna, siber güvenlik oyunu, hacker oyunu, mantık oyunu, PlayMatrix, tarayıcı oyunları">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Turkish">
+    <meta name="theme-color" content="#03050a">
+    <link rel="canonical" href="https://playmatrix.com.tr/Cyber.html">
+
+    <meta property="og:title" content="PlayMatrix Cyber | Zeka ve Strateji Oyunu">
+    <meta property="og:description" content="Nöron ağlarını birleştir, sistemleri hackle ve zekanı sına! En yüksek seviyeye kim ulaşacak?">
+    <meta property="og:image" content="https://playmatrix.com.tr/assets/cyber-promo.jpg">
+    <meta property="og:url" content="https://playmatrix.com.tr/Cyber.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Cyber Oyna">
+    <meta name="twitter:description" content="Bağlantıları kur ve matrisi çözmeye hemen başla. Ücretsiz tarayıcı oyunu!">
+
     <script>
     if (window.history.replaceState) {
         // Cyber.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
-</script>
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
             --primary: #00ffa3;
@@ -33,6 +55,12 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
         }
 
         /* --- NÖRON AĞI ARKA PLANI --- */
@@ -164,26 +192,28 @@
 </head>
 <body>
 
-    <canvas id="neural-canvas"></canvas>
+    <h1 class="sr-only">PlayMatrix Cyber - Zeka ve Mantık Oyunu</h1>
 
-    <div class="top-bar">
-        <div class="brand"><i class="fa-solid fa-microchip"></i> CYBER</div>
-        <div class="level-info">
+    <canvas id="neural-canvas" aria-label="Nöron Ağı Arka Planı"></canvas>
+
+    <header class="top-bar">
+        <div class="brand"><i class="fa-solid fa-microchip" aria-hidden="true"></i> CYBER</div>
+        <div class="level-info" aria-live="polite">
             NODE: <span id="level-num">1</span>
             <span class="best-score-badge">EN İYİ: <span id="best-score">1</span></span>
         </div>
-        <a href="index.html" class="exit-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
-    </div>
+        <a href="index.html" class="exit-btn" aria-label="Ana Sayfaya Dön"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i></a>
+    </header>
 
-    <div id="game-wrapper">
-        <div id="grid"></div>
+    <main id="game-wrapper">
+        <div id="grid" aria-label="Oyun Bulmaca Izgarası"></div>
 
-        <div id="win-overlay" class="overlay" style="display:none;">
+        <div id="win-overlay" class="overlay" style="display:none;" aria-live="assertive">
             <div class="modal">
                 <span id="win-status">[DURUM: BAŞARILI]</span>
                 <h2 id="win-title" style="color:var(--primary); font-family: Montserrat;">SİSTEM SIZILDI</h2>
                 <p id="win-desc" style="margin-top:10px; opacity:0.7; font-size: 14px;">Nöron bağlantıları başarıyla kuruldu.</p>
-                <button class="btn" onclick="nextLevel()">SONRAKİ NODE</button>
+                <button class="btn" onclick="nextLevel()" aria-label="Sonraki Seviyeye Geç">SONRAKİ NODE</button>
             </div>
         </div>
 
@@ -191,10 +221,10 @@
             <div class="modal">
                 <h2 style="color:var(--primary); font-family: Montserrat;">BAĞLANTIYI KUR</h2>
                 <p style="margin-top:10px; opacity:0.7; font-size: 14px;">Zihnini odakla ve tüm devreleri merkeze bağla.</p>
-                <button class="btn" onclick="initAudioAndStart()">SİSTEMİ AÇ</button>
+                <button class="btn" onclick="initAudioAndStart()" aria-label="Oyunu Başlat">SİSTEMİ AÇ</button>
             </div>
         </div>
-    </div>
+    </main>
 
 <script>
     // --- NÖRON ARKA PLAN ANİMASYONU ---
@@ -346,6 +376,9 @@
         for (let i = 0; i < gridSize * gridSize; i++) {
             const tileDiv = document.createElement('div');
             tileDiv.className = 'tile';
+            // SEO Erişilebilirliği için buton özelliği eklendi
+            tileDiv.setAttribute('role', 'button');
+            tileDiv.setAttribute('aria-label', `Düğüm ${i+1}`);
             
             const type = Math.floor(Math.random() * 2); 
             const targetRotation = 0; 
