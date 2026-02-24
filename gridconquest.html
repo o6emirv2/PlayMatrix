@@ -169,8 +169,8 @@
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
-        rain: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3'), // Gerçek Yağmur Sesi
-        thunder: new Audio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek Sesi
+        rain: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3'), // Gerçek Şiddetli Yağmur Sesi
+        thunder: new Audio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek & Gök Gürültüsü Sesi
     };
     
     sfx.lobby.loop = true; 
@@ -178,7 +178,7 @@
     
     sfx.lobby.volume = 0.4; 
     sfx.tap.volume = 0.8;
-    sfx.rain.volume = 0.7; // Yağmur sesi artırıldı
+    sfx.rain.volume = 0.8; // Yağmur sesi artırıldı
     sfx.thunder.volume = 1.0; // Şimşek gücü maksimum yapıldı
 
     let audioUnlocked = false;
@@ -200,6 +200,7 @@
     let currentScene = 'lobby'; 
     let lightningTimer = null; 
 
+    // ÖZEL MODAL ALERT FONKSİYONU
     window.showModalAlert = (title, msg, onConfirmCallback) => {
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMsg').innerText = msg;
@@ -220,14 +221,15 @@
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
     };
 
-    // --- PROFESYONEL LOBİYE DÖNÜŞ (SAYFA YENİLEME OLMADAN) ---
+    // --- PROFESYONEL LOBİYE DÖNÜŞ (SAYFA YENİLEME OLMADAN - SPA MANTIĞI) ---
     window.leaveToHome = async () => {
         if (curRoomId) {
+            // Dinleyicileri ve zamanlayıcıları temizle
             if (unsubGame) unsubGame();
             if (timerInt) clearInterval(timerInt);
             if (lightningTimer) clearTimeout(lightningTimer);
             try {
-                // Oyundan çıkıldığı için odayı terminated yap ve sil
+                // Oyundan çıkıldığı için odayı sonlandır ve sil
                 await updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
                 await deleteDoc(doc(db, "conquest_rooms", curRoomId));
             } catch (e) {}
@@ -249,7 +251,7 @@
             sfx.lobby.play().catch(()=>{});
         }
         
-        // Arayüzü Lobideki Haline Getir
+        // Arayüzü Lobideki Haline Getir (Sayfa Refresh Olmaz)
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('lobby').style.display = 'flex';
         window.toggleModal('resultModal', false);
@@ -473,10 +475,11 @@
         enterGame(id);
     }
 
-    // OYUNA GİRİŞ 
+    // OYUNA GİRİŞ - SES VE GÖRSEL GEÇİŞLERİ
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
         
+        // Sesleri ve Sahneyi Oyuna Göre Ayarla
         currentScene = 'game';
         sfx.lobby.pause(); 
         sfx.rain.currentTime = 0;
