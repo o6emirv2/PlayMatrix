@@ -121,6 +121,7 @@
         cursor: default;
     }
 
+    /* Oyun bitince açılmayanları soluk göstermek için */
     .tile.dimmed-diamond {
         background: rgba(22, 29, 54, 0.3);
         border-color: rgba(39, 60, 143, 0.2);
@@ -171,6 +172,7 @@
     .start-active{ background: linear-gradient(180deg, #00d2ad 0%, #00b894 100%) !important; box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3); }
     .is-lose{ background: linear-gradient(180deg, #ff7675 0%, #d63031 100%) !important; box-shadow: 0 4px 15px rgba(214, 48, 49, 0.3); }
 
+    /* UYARI / BİLGİ MODALI */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
@@ -294,13 +296,14 @@ async function initAudio() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         
-        // Sessiz frekans tetikleyici (iOS için)
+        // Sessiz frekans tetikleyici (iOS / Chrome Autoplay Policy için)
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer;
         source.connect(audioCtx.destination);
         source.start(0);
 
+        // Uzak ses dosyaları
         const urls = {
             bet: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
             open: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',
@@ -312,11 +315,14 @@ async function initAudio() {
                 const res = await fetch(url);
                 const buf = await res.arrayBuffer();
                 sounds[name] = await audioCtx.decodeAudioData(buf);
-            } catch (e) {}
+            } catch (e) {
+                console.warn(`Ses yüklenemedi: ${name}`, e);
+            }
         }
-    } catch (e) { console.error("Ses yüklenemedi:", e); }
+    } catch (e) { console.error("Ses sistemi başlatılamadı:", e); }
 }
 
+// Sistemi Başlat Butonu Tıklaması
 document.getElementById('systemStartBtn').addEventListener('click', () => {
     initAudio();
     document.getElementById('sys-start-overlay').style.display = 'none';
@@ -337,7 +343,7 @@ let betAmount = 0;
 let mineTotal = 1;
 let currentMultiplier = 1.00;
 let gameActive = false;
-let isProcessing = false; // Firebase işlemi sürerken kilitleme
+let isProcessing = false; // Firestore işlemleri sürerken Race Condition'ı engeller
 let tileElements = [];
 
 // DOM Elementleri
@@ -350,12 +356,16 @@ const betInput = document.getElementById("bet");
 const mineDisplay = document.getElementById("mineDisplay");
 const multiplierDisplay = document.getElementById("multiplierDisplay");
 
-// Mayın Sayısı Seçenekleri (1-24)
+// Mayın Sayısı Seçeneklerini Oluştur (1-24)
 for(let i=1; i<=24; i++){
     let opt = document.createElement("option");
     opt.value = i; opt.text = i + " MAYIN";
     mineSelect.appendChild(opt);
 }
+// 3 mayın default olsun
+mineSelect.value = 3;
+mineDisplay.innerText = "3";
+
 mineSelect.addEventListener("change", () => mineDisplay.innerText = mineSelect.value);
 
 // Izgarayı Oluştur
@@ -372,11 +382,11 @@ function createGrid() {
     }
 }
 
-// Çarpan Hesaplama (Daha Adil ve Sabit Kademe)
+// Çarpan Hesaplama (Matematiksel Olasılık + Kasa Payı)
 function calculateMultiplier(nMines, nOpened) {
     if(nOpened === 0) return 1.00;
     
-    // Güvenli kare kalmadıysa hesaplama (24 mayın, 1 açılış vb.)
+    // Açılacak taş kalmadıysa
     if (25 - nMines - nOpened < 0) return 0;
 
     let probability = 1;
@@ -386,22 +396,22 @@ function calculateMultiplier(nMines, nOpened) {
     
     // Kasa %3 Avantajı (House Edge)
     let mult = (1 / probability) * 0.97;
-    return Math.floor(mult * 100) / 100; // 2 ondalık
+    return Math.floor(mult * 100) / 100; // Sonucu 2 ondalıklı hale getir (Örn: 1.15)
 }
 
 // OYUNU BAŞLAT / KAZANCI ÇEK BUTONU
 startBtn.addEventListener("click", async () => {
-    if (isProcessing) return; // Kilitliyse tıklanamaz
+    if (isProcessing) return; // İşlem bitene kadar tıklanamaz (Güvenlik)
     if (!auth.currentUser) return;
     const userRef = doc(db, "users", auth.currentUser.uid);
 
-    // DURUM 1: OYUN AKTİFSE (KAZANCI ÇEK)
+    // DURUM 1: OYUN ZATEN AKTİFSE (KAZANCI ÇEKME İŞLEMİ)
     if (gameActive) {
-        if (opened === 0) return; // Hiç taş açılmadıysa çekilemez
+        if (opened === 0) return; // Hiç taş açılmadıysa boş yere çekilemez
         
         isProcessing = true;
         startBtn.disabled = true;
-        gameActive = false;
+        gameActive = false; // Oyunu hemen kitle ki başka taşa basamasın
         
         const winAmount = Math.floor(betAmount * currentMultiplier);
         
@@ -411,7 +421,7 @@ startBtn.addEventListener("click", async () => {
                 t.update(userRef, { balance: snap.data().balance + winAmount });
             });
             playSound("win");
-            revealAllMines(false); // Kazandı, mayınları sönük göster
+            revealAllMines(false); // Kazanıldı, mayınları inandırıcı şekilde sönük göster
             showModal(`TEBRİKLER! ${winAmount.toLocaleString('tr-TR')} MC KAZANDINIZ.`, true);
         } catch (e) {
             console.error("Para çekme hatası:", e);
@@ -422,7 +432,7 @@ startBtn.addEventListener("click", async () => {
         return;
     }
 
-    // DURUM 2: YENİ OYUN BAŞLAT (BAHİS YAP)
+    // DURUM 2: YENİ OYUN BAŞLAT (BAHİS YAPMA İŞLEMİ)
     betAmount = parseInt(betInput.value);
     
     if(isNaN(betAmount) || betAmount < 100) {
@@ -446,13 +456,13 @@ startBtn.addEventListener("click", async () => {
         
         playSound("bet");
         
-        // Oyun Değişkenlerini Sıfırla
+        // Oyun Değişkenlerini Sıfırla ve Başlat
         opened = 0; 
         currentMultiplier = 1.00;
         mineTotal = parseInt(mineSelect.value);
         multiplierDisplay.innerText = "1.00x";
         
-        createGrid(); // Temiz tahta
+        createGrid(); // Tahtayı yenile
         
         gameActive = true;
         betInput.disabled = true; 
@@ -472,36 +482,37 @@ startBtn.addEventListener("click", async () => {
 
 // TAŞA TIKLAMA VE KASA ALGORİTMASI (Schrödinger'in Mayını)
 function handleTileClick(index, tile) {
+    // Oyun aktif değilse, işlem sürüyorsa veya taş zaten açıksa yoksay
     if (!gameActive || isProcessing || tile.classList.contains("open")) return;
     
-    // KASA ALGORİTMASI: Gerçekten mayın olup olmadığına TIKLANDIĞI AN karar verilir.
-    // Eğer kasa oyuncunun kaybetmesini istiyorsa, bu taşa tıkladığında anında mayın çıkarır.
+    // --- KASA (HOUSE) ALGORİTMASI ---
+    // Mayınlar en baştan dizilmez! Oyuncu taşa tıkladığı AN o taşın mayın olup olmadığına karar verilir.
+    // Bu yöntem, "Öğeyi İncele (F12)" üzerinden hile yapılmasını %100 engeller.
     
     let isMineHit = false;
     let crashChance = 0;
 
-    // Kademeli zorluk: Mayın sayısı ve açılan taş sayısına göre patlama riskini hesapla
     const remainingTiles = 25 - opened;
-    const baseRisk = mineTotal / remainingTiles;
+    const baseRisk = mineTotal / remainingTiles; // Normal matematiksel ihtimal
     
-    // Kasayı Koruma Formülü: Yüksek çarpanlara ulaştıkça patlama ihtimali YAPAY olarak artırılır.
+    // Kasayı Koruma: Çarpan çok yükselirse veya mayın sayısı çoksa patlama ihtimalini "Yapay (Hileli)" olarak artır.
     if (opened > 0) {
-        if (currentMultiplier > 10.0) crashChance = baseRisk + 0.35; // 10x'ten sonra çok riskli
-        else if (currentMultiplier > 5.0) crashChance = baseRisk + 0.20; // 5x'ten sonra riskli
-        else if (currentMultiplier > 2.5) crashChance = baseRisk + 0.05; // 2.5x sonrası hafif riskli
-        else crashChance = baseRisk; // Başlangıçta normal ihtimal
+        if (currentMultiplier >= 10.0) crashChance = baseRisk + 0.35; // %35 Ekstra patlama şansı (Çok Riskli)
+        else if (currentMultiplier >= 4.0) crashChance = baseRisk + 0.15; // %15 Ekstra şans
+        else if (currentMultiplier >= 2.0) crashChance = baseRisk + 0.05; // %5 Ekstra şans
+        else crashChance = baseRisk; // Başlangıç seviyelerinde normal adil ihtimal
     } else {
-        crashChance = baseRisk; // İlk tıklamada şeffaf ihtimal
+        crashChance = baseRisk; // İlk tıklama her zaman normale en yakın ihtimaldir
     }
 
-    // Zarı At
+    // Zar Atışı
     if (Math.random() < crashChance) {
         isMineHit = true;
     }
 
-    // --- SONUÇ ---
+    // --- TIKLAMA SONUCU ---
     if (isMineHit) {
-        // KAYBETTİ
+        // MAYINA BASTI VE KAYBETTİ
         gameActive = false;
         playSound("explode");
         
@@ -513,11 +524,12 @@ function handleTileClick(index, tile) {
         startBtn.classList.remove("start-active");
         startBtn.classList.add("is-lose");
         
-        revealAllMines(true, index); // Diğer mayınların yerini (rastgele) göster
-        setTimeout(resetGame, 2500);
+        revealAllMines(true, index); // Geri kalan mayınları ekrana rastgele inandırıcı şekilde diz
+        
+        setTimeout(resetGame, 2500); // 2.5 sn sonra oyunu sıfırla
         
     } else {
-        // BAŞARILI, TAŞ AÇILDI
+        // GÜVENLİ TAŞ - ELMAS ÇIKTI
         opened++;
         tile.classList.add("open");
         tile.innerHTML = "💎";
@@ -530,19 +542,19 @@ function handleTileClick(index, tile) {
         const currentWin = Math.floor(betAmount * currentMultiplier);
         startBtn.innerText = `ÇEK (MC ${currentWin.toLocaleString('tr-TR')})`;
         
-        // Eğer tüm güvenli taşlar açıldıysa otomatik kazandır (Maksimum kazanç)
+        // Eğer tüm güvenli taşlar açıldıysa (Oyunu tamamen bitirdiyse) otomatik olarak kazancı çek
         if (opened === (25 - mineTotal)) {
-            startBtn.click(); // Otomatik çekimi tetikle
+            startBtn.click(); 
         }
     }
 }
 
-// OYUN BİTTİĞİNDE TAHTAYI GÖSTER (Sahte Mayın Dağıtımı)
+// OYUN BİTTİĞİNDE TAHTAYI İNANDIRICI ŞEKİLDE DOLDUR (Sahte Mayın Dağıtımı)
 function revealAllMines(isLoss, hitIndex = -1) {
     let fakeMines = [];
-    if (isLoss) fakeMines.push(hitIndex); // Patlayan mayın listede olsun
+    if (isLoss) fakeMines.push(hitIndex); // Patlayan ana mayın listemizde olsun
     
-    // Kalan mayınları tahtaya rastgele serpiştir ki inandırıcı olsun
+    // Kalan mayınları tahtadaki açılmamış, boş yerlere rastgele dağıtıyoruz
     while (fakeMines.length < mineTotal) {
         let r = Math.floor(Math.random() * 25);
         if (!fakeMines.includes(r) && !tileElements[r].classList.contains("open")) {
@@ -550,22 +562,25 @@ function revealAllMines(isLoss, hitIndex = -1) {
         }
     }
 
+    // Tüm tahtayı görsel olarak güncelle
     tileElements.forEach((tile, i) => {
         tile.classList.remove("active-hover");
-        if (tile.classList.contains("open")) return; // Açık elmaslara dokunma
+        if (tile.classList.contains("open")) return; // Zaten açık olan elmaslara dokunma
         
         if (fakeMines.includes(i)) {
-            if (i !== hitIndex) {
+            if (i !== hitIndex) { // Patlamayan (gösterilen) mayınlar
                 tile.innerHTML = "💣";
-                tile.classList.add("dimmed-mine"); // Sönük mayın
+                tile.classList.add("dimmed-mine");
             }
         } else {
+            // Mayın olmayan kalan kapalı taşlar sönük elmas olur
             tile.innerHTML = "💎";
-            tile.classList.add("dimmed-diamond"); // Sönük elmas
+            tile.classList.add("dimmed-diamond");
         }
     });
 }
 
+// OYUNU İLK (BEKLEME) HALİNE DÖNDÜR
 function resetGame() {
     isProcessing = false;
     gameActive = false;
@@ -575,15 +590,16 @@ function resetGame() {
     startBtn.classList.remove("start-active", "is-lose");
     currentBetText.innerText = "0";
     multiplierDisplay.innerText = "1.00x";
-    createGrid(); // Tahtayı temizle ve bekleme moduna geç
+    createGrid(); 
 }
 
-// Bakiye Dinleyicisi
+// FİREBASE KULLANICI DİNLEYİCİSİ (Bakiye Güncelleme)
 onAuthStateChanged(auth, user => {
     if (!user) {
-        signInAnonymously(auth); // Eğer giriş yoksa anonim giriş yap
+        signInAnonymously(auth); // Kullanıcı yoksa otomatik misafir oluştur (Test için)
         return;
     }
+    // Bakiyeyi anlık olarak dinle ve UI'a yansıt
     onSnapshot(doc(db, "users", user.uid), snap => {
         if (snap.exists()) {
             const bal = snap.data().balance || 0;
@@ -592,6 +608,7 @@ onAuthStateChanged(auth, user => {
     });
 });
 
+// Sayfa yüklendiğinde ilk ızgarayı oluştur
 createGrid();
 </script>
 </body>
