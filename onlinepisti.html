@@ -7,11 +7,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #03060f;
+            --bg: #03060f; /* Daha derin, premium koyu mavi/siyah */
             --glass: rgba(20, 25, 35, 0.85); 
             --border: #4fd1ff;
+            --primary: #4fd1ff;
             --danger: #ff3b30; --warning: #ffcc00; --accent: #7d00ff;
+            --btn-main: #4fd1ff; --btn-sec: #ffcc00;
             --success: #00ffa3;
+            --text-dim: #94a3b8;
             --table-green: radial-gradient(circle at center, #2e8f59 0%, #114223 100%);
             --table-wood: #3e2723;
         }
@@ -27,16 +30,16 @@
             background: var(--bg); color: #e0e0e0; height: 100vh; 
             overflow: hidden; display: flex; flex-direction: column; 
             width: 100%; overscroll-behavior: none;
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0;
         }
 
-        /* PROFESYONEL LOBİ ARKA PLANI */
+        /* LOBİ ARKA PLANI PROFESYONEL */
         #bg-canvas { 
             position: fixed; inset: 0; z-index: -1; 
             background: 
                 radial-gradient(circle at 15% 50%, rgba(79, 209, 255, 0.08) 0%, transparent 50%),
                 radial-gradient(circle at 85% 30%, rgba(125, 0, 255, 0.08) 0%, transparent 50%),
-                url('data:image/svg+xml;utf8,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><path d="M0 40L40 0H20L0 20M40 40V20L20 40" fill="rgba(255,255,255,0.01)"/></svg>'),
                 linear-gradient(135deg, #02050a 0%, #060a12 100%);
         }
         
@@ -47,7 +50,7 @@
         }
         .brand { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(79, 209, 255, 0.5); }
         
-        .right-menu { display: flex; gap: 8px; align-items: center; }
+        .right-menu { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         
         .user-pill-mini { 
             display: flex; align-items: center; gap: 8px; 
@@ -69,7 +72,8 @@
 
         #lobbyScreen { 
             flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 15px; 
-            overflow-y: auto; z-index: 10; -webkit-overflow-scrolling: touch;
+            overflow-y: auto; z-index: 10; touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
         }
 
         .search-input { 
@@ -87,15 +91,14 @@
         }
         .btn-neon:active { transform: scale(0.96); }
 
-        /* PROFESYONEL ODA KARTLARI */
+        /* PROFESYONEL ODA KARTLARI (GLASSMORPHISM) */
         .room-card { 
             background: linear-gradient(145deg, rgba(20,25,35,0.9), rgba(10,12,18,0.95)); 
             border: 1px solid rgba(255,255,255,0.05); border-left: 5px solid var(--border); 
             padding: 15px; display: flex; justify-content: space-between; align-items: center; 
             margin-bottom: 12px; border-radius: 10px; 
             box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            backdrop-filter: blur(10px);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); backdrop-filter: blur(10px);
         }
         .room-card:active { transform: scale(0.98); border-left-width: 8px; }
 
@@ -109,6 +112,7 @@
             font-weight:900; cursor:pointer; font-size: 11px; background: #222;
             box-shadow: 0 5px 15px rgba(0,0,0,0.6), inset 0 3px 6px rgba(255,255,255,0.2);
             border: 3px dashed rgba(0,0,0,0.5); transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: manipulation;
         }
         .chip:active { transform: scale(1.2) rotate(15deg); filter: brightness(1.3); }
 
@@ -124,7 +128,7 @@
 
         #gameArea { display: none; flex: 1; flex-direction: column; align-items: center; z-index: 5; position: relative; touch-action: none; }
         
-        /* GERÇEKÇİ PİŞTİ MASASI */
+        /* GERÇEKÇİ PİŞTİ MASASI TASARIMI */
         .table {
             width: 96%; max-width: 650px; height: 450px; border-radius: 225px; 
             position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
@@ -135,7 +139,6 @@
                 0 30px 60px rgba(0,0,0,0.9);
             border: 16px solid var(--table-wood);
         }
-        /* Masanın İç Çizgisi ve Logosu */
         .table::before {
             content: ''; position: absolute; inset: 20px; 
             border-radius: 200px; border: 2px dashed rgba(255,255,255,0.15);
@@ -167,11 +170,11 @@
 
         /* KART DAĞITMA ANİMASYONLARI */
         @keyframes dealPlayer {
-            0% { opacity: 0; transform: translate(0, -200px) scale(0.3) rotate(45deg); }
+            0% { opacity: 0; transform: translate(0, -250px) scale(0.3) rotate(45deg); }
             100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
         }
         @keyframes dealOpponent {
-            0% { opacity: 0; transform: translate(0, 200px) scale(0.3) rotate(-45deg); }
+            0% { opacity: 0; transform: translate(0, 250px) scale(0.3) rotate(-45deg); }
             100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
         }
         .anim-deal-p { animation: dealPlayer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
@@ -190,7 +193,7 @@
         .modal-box { 
             background: linear-gradient(145deg, #11151d, #090b0f); border: 1px solid rgba(79, 209, 255, 0.3); 
             padding: 30px; width: 100%; max-width: 350px; text-align: center; border-radius: 16px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative; margin-top: -10vh;
         }
         .modal-input { 
             width: 100%; background: #050608; border: 1px solid #222a35; 
@@ -199,7 +202,7 @@
         }
         .modal-input:focus { border-color: var(--border); }
 
-        .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
+        .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
 
         #pistiDisplay {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
@@ -328,7 +331,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -357,14 +360,17 @@
     let audioUnlocked = false;
     function unlockAudio() {
         if(audioUnlocked) return;
-        for (let key in sfx) {
-            sfx[key].volume = 0; // Sesleri sessize alıp çalmayı başlatıp durduruyoruz (Kilit açılır)
-            sfx[key].play().then(() => {
-                sfx[key].pause();
-                sfx[key].currentTime = 0;
-                sfx[key].volume = 1; // Asıl ses seviyesine geri getir
-            }).catch(e => {});
-        }
+        Object.values(sfx).forEach(audio => {
+            audio.volume = 0; // Sesleri sessize alıp çalmayı başlatıp durduruyoruz (Kilit açılır)
+            let promise = audio.play();
+            if(promise !== undefined) {
+                promise.then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.volume = 1; // Asıl ses seviyesine geri getir
+                }).catch(e => {});
+            }
+        });
         audioUnlocked = true;
         document.removeEventListener('click', unlockAudio);
         document.removeEventListener('touchstart', unlockAudio);
@@ -376,13 +382,18 @@
     function playSound(audioObj) {
         if(!audioObj) return;
         audioObj.currentTime = 0;
-        audioObj.play().catch(e => console.warn("Ses engellendi: ", e));
+        let promise = audioObj.play();
+        if(promise !== undefined) {
+            promise.catch(e => console.warn("Ses engellendi: ", e));
+        }
     }
 
     let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
     let roomRef = null, myRole = null, gameState = null, inGame = false;
     let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
-    let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
+    let isProcessingPlay = false;
+    let lastHandLength = 0; // Animasyon tespiti için eklendi
+    let lastPistiCount = 0;
     let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
 
     const CARD_POINTS = { "D0": 3, "C2": 2 };
@@ -391,6 +402,7 @@
         let v = c.substring(0, c.length - 1);
         return (v === '0') ? '10' : v;
     };
+
     const calculatePoints = (cards) => {
         let p = 0;
         cards.forEach(c => {
@@ -403,58 +415,95 @@
         return p;
     };
 
+    // OTURUM YÖNETİMİ & BAKİYE GÜNCELLEMESİ
     onAuthStateChanged(auth, user => {
-        if (!user) { signInAnonymously(auth).catch(e => console.error(e)); return; }
-        uid = user.uid; userRef = doc(db, "users", uid);
+        if (!user) {
+            signInAnonymously(auth).catch(e => console.error("Giriş hatası:", e));
+            return;
+        }
+
+        uid = user.uid;
+        userRef = doc(db, "users", uid);
+        
         if(userUnsub) userUnsub();
         userUnsub = onSnapshot(userRef, snap => {
             if(snap.exists()) {
-                const data = snap.data(); let dbBalance = data.balance || 0;
-                if (currentBet > dbBalance) { currentBet = 0; document.getElementById("bet").innerText = "0"; }
+                const data = snap.data();
+                let dbBalance = data.balance || 0;
+                
+                if (currentBet > dbBalance) {
+                    currentBet = 0;
+                    document.getElementById("bet").innerText = "0";
+                }
+                
                 balance = dbBalance - currentBet;
                 userName = data.username || ("Oyuncu_" + uid.substring(0,4));
                 document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-            } else setDoc(userRef, { balance: 1000, username: "Oyuncu_" + uid.substring(0,4) });
+            } else {
+                setDoc(userRef, { balance: 1000, username: "Oyuncu_" + uid.substring(0,4) });
+            }
         });
-        cleanZombies(); listenLobby();
+        
+        cleanZombies();
+        listenLobby();
     });
 
     async function cleanZombies() {
         try {
             const q = query(collection(db, "rooms"));
-            const snap = await getDocs(q); const now = Date.now();
+            const snap = await getDocs(q);
+            const now = Date.now();
             snap.forEach(async (d) => {
-                if (d.data().createdAt && (now - d.data().createdAt > 1800000)) await deleteDoc(doc(db, "rooms", d.id));
+                const data = d.data();
+                if (data.createdAt && (now - data.createdAt > 1800000)) {
+                    await deleteDoc(doc(db, "rooms", d.id));
+                }
             });
         } catch(e) {}
     }
 
-    document.addEventListener("visibilitychange", async () => { if (document.visibilityState === 'hidden' && inGame && roomRef) handleDisconnect(); });
+    document.addEventListener("visibilitychange", async () => {
+        if (document.visibilityState === 'hidden' && inGame && roomRef) {
+            handleDisconnect();
+        }
+    });
 
     async function handleDisconnect() {
         if (!roomRef) return;
+        const currentRef = roomRef;
         inGame = false;
         try {
             if (gameState && gameState.status === "waiting") {
-                if (myRole === "p1") await deleteDoc(roomRef);
-                else await updateDoc(roomRef, { [myRole]: null, [myRole + "_name"]: null });
+                if (myRole === "p1") {
+                    await deleteDoc(currentRef);
+                } else {
+                    await updateDoc(currentRef, { [myRole]: null, [myRole + "_name"]: null });
+                }
             } else if (gameState && gameState.status === "playing") {
-                await updateDoc(roomRef, { quitter: uid, quitterName: userName, status: "finished" });
+                await updateDoc(currentRef, { quitter: uid, quitterName: userName, status: "finished" });
             }
         } catch(e) {}
     }
 
     window.leaveRoom = async () => {
-        if (roomRef && inGame) await handleDisconnect();
+        if (roomRef && inGame) {
+            await handleDisconnect();
+        }
         if(roomUnsub) { roomUnsub(); roomUnsub = null; }
-        inGame = false; roomRef = null; lastHandLength = 0; currentBet = 0;
+        inGame = false;
+        roomRef = null;
+        lastHandLength = 0; // Animasyon izleyiciyi sıfırla
+        currentBet = 0;
         document.getElementById("bet").innerText = "0";
         document.getElementById("gameArea").style.display = "none";
         document.getElementById("lobbyScreen").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "ÇIKIŞ";
     };
 
-    window.handleNavAction = () => { if (inGame || roomRef) window.leaveRoom(); else window.location.href = "index.html"; };
+    window.handleNavAction = () => {
+        if (inGame || roomRef) window.leaveRoom();
+        else window.location.href = "index.html";
+    };
 
     function listenLobby() {
         if(lobbyUnsub) lobbyUnsub();
@@ -462,7 +511,9 @@
         lobbyUnsub = onSnapshot(q, (snap) => {
             const list = document.getElementById("roomList");
             const filter = document.getElementById("roomSearch").value.toLowerCase();
-            let html = ""; const now = Date.now();
+            let html = "";
+            const now = Date.now();
+            
             if(Math.random() < 0.1) cleanZombies();
 
             snap.forEach(roomDoc => {
@@ -473,6 +524,7 @@
                     const isPlaying = data.status === "playing";
                     const maxP = data.type.startsWith("4") ? 4 : 2;
                     const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
+                    const currentP = pList.length;
                     
                     let pNames = `${data.p1_name || '...'}`;
                     if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
@@ -481,16 +533,18 @@
                     html += `
                         <div class="room-card" style="${isPlaying ? 'border-left-color:#00ffa3;' : ''}">
                             <div style="flex:1">
-                                <small style="color:var(--border); font-weight:bold;">${data.name} [${data.type}] (${pList.length}/${maxP})</small> 
+                                <small style="color:var(--border); font-weight:bold;">${data.name} [${data.type}] (${currentP}/${maxP})</small> 
                                 ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
                                 <b style="font-size:0.85rem; color:#fff;">${pNames}</b>
                                 <div class="room-info-live">
                                     <span style="color:#ffcc00">Bahis: ${data.bet.toLocaleString()} MC</span> | <span>${duration} dk</span>
                                 </div>
                             </div>
-                            ${(data.status === 'waiting' && pList.length < maxP) ? `
+                            ${(data.status === 'waiting' && currentP < maxP) ? `
                                 <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet})">KATIL</button>
-                            ` : `<div style="font-size:0.7rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
+                            ` : `
+                                <div style="font-size:0.7rem; color:#666; font-weight:bold; text-align:right">DOLU</div>
+                            `}
                         </div>`;
                 }
             });
@@ -498,17 +552,22 @@
         });
     }
 
+    // BAHİS FONKSİYONLARI (Gerçek Ses)
     window.addBet = (a) => { 
-        if (!Number.isInteger(a) || a <= 0) return; 
+        if (!Number.isInteger(a) || a <= 0) return;
         if(balance >= a) { 
-            currentBet += a; balance -= a; 
-            playSound(sfx.chip); updateUI(); 
+            currentBet += a; 
+            balance -= a; 
+            playSound(sfx.chip); // GERÇEK ÇİP SESİ
+            updateUI(); 
             document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
         } 
     };
     window.cancelBet = () => { 
-        if(currentBet > 0) playSound(sfx.chip);
-        balance += currentBet; currentBet = 0; updateUI(); 
+        if(currentBet > 0) playSound(sfx.chip); // GERÇEK ÇİP SESİ
+        balance += currentBet; 
+        currentBet = 0; 
+        updateUI(); 
         document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     };
     function updateUI() { document.getElementById("bet").innerText = currentBet.toLocaleString('tr-TR'); }
@@ -516,7 +575,7 @@
     window.openCreateModal = () => { openModal('createRoomModal'); };
 
     window.confirmCreateRoom = async () => {
-        if (!Number.isInteger(currentBet) || currentBet < 100) return showInfoModal("Min 100 MC bahis yapmalısınız!", "UYARI");
+        if (!Number.isInteger(currentBet) || currentBet < 100) return showInfoModal("Geçersiz veya min 100 MC bahis olmalı!", "UYARI");
         if (isProcessingPlay) return;
         isProcessingPlay = true;
 
@@ -524,7 +583,8 @@
         const type = document.getElementById("newRoomType").value;
         const pass = document.getElementById("newRoomPass").value || "";
         const roomId = "room_" + Date.now() + "_" + uid.substring(0,4);
-        roomRef = doc(db, "rooms", roomId); myRole = "p1";
+        roomRef = doc(db, "rooms", roomId);
+        myRole = "p1";
         
         const isDouble = type.includes("104");
         const finalDeck = createShuffledDeck(isDouble);
@@ -532,23 +592,33 @@
         try {
             await runTransaction(db, async (t) => {
                 const uSnap = await t.get(userRef);
-                if((uSnap.data().balance || 0) < currentBet) throw "Yetersiz bakiye!";
+                const curBal = uSnap.data().balance || 0;
+                if(curBal < currentBet) throw "Yetersiz bakiye!";
+                
                 t.set(roomRef, {
                     p1: uid, p1_name: userName, bet: currentBet, status: "waiting", name, password: pass, type,
-                    deck: finalDeck, table: [], p1_score: 0, p2_score: 0, p3_score: 0, p4_score: 0, p1_count: 0, p2_count: 0, p3_count: 0, p4_count: 0,
-                    p1_hand: [], p2_hand: [], p3_hand: [], p4_hand: [], turn: null, quitter: null, createdAt: Date.now(), lastCollector: null, pistiSignal: 0
+                    deck: finalDeck, table: [], p1_score: 0, p2_score: 0, p3_score: 0, p4_score: 0,
+                    p1_count: 0, p2_count: 0, p3_count: 0, p4_count: 0,
+                    p1_hand: [], p2_hand: [], p3_hand: [], p4_hand: [], turn: null, quitter: null, 
+                    createdAt: Date.now(), lastCollector: null, pistiSignal: 0
                 });
                 t.update(userRef, { balance: increment(-currentBet) });
             });
-            closeModal('createRoomModal'); enterGameView(); listenRoom();
+            closeModal('createRoomModal');
+            enterGameView();
+            listenRoom();
         } catch(e) { showInfoModal(e, "HATA"); } finally { isProcessingPlay = false; }
     };
 
     function createShuffledDeck(isDouble) {
         const s = ["H", "D", "C", "S"], v = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
-        let d = []; s.forEach(x => v.forEach(y => d.push(y + x)));
+        let d = []; 
+        s.forEach(x => v.forEach(y => d.push(y + x)));
         if(isDouble) d = [...d, ...d];
-        for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+        for (let i = d.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [d[i], d[j]] = [d[j], d[i]];
+        }
         return d;
     }
 
@@ -563,7 +633,8 @@
 
     window.confirmPasswordJoin = () => {
         if(document.getElementById("joinRoomPass").value === pendingRoomPass) {
-            closeModal('passwordModal'); joinRoom(pendingRoomId, pendingRoomBet);
+            closeModal('passwordModal');
+            joinRoom(pendingRoomId, pendingRoomBet);
         } else document.getElementById("passError").style.display = "block";
     };
 
@@ -577,31 +648,42 @@
             const role = await runTransaction(db, async (transaction) => {
                 const rDoc = await transaction.get(doc(db, "rooms", rid));
                 const uDoc = await transaction.get(userRef);
+                
                 if (!rDoc.exists()) throw "Oda kapandı veya bulunamadı!";
                 const data = rDoc.data();
                 if(uDoc.data().balance < bet) throw "Bakiye yetersiz!";
+
                 const maxP = data.type.startsWith("4") ? 4 : 2;
                 let assignedRole = null;
                 if (!data.p2) assignedRole = "p2";
                 else if (maxP === 4 && !data.p3) assignedRole = "p3";
                 else if (maxP === 4 && !data.p4) assignedRole = "p4";
+                
                 if (!assignedRole) throw "Oda dolu!";
                 
                 transaction.update(userRef, { balance: increment(-bet) });
                 const updates = { [assignedRole]: uid, [assignedRole + "_name"]: userName };
-                const pCount = [data.p1, data.p2, data.p3, data.p4].filter(p => p).length + 1;
+                const currentPlayers = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
+                const pCount = currentPlayers.length + 1;
                 
-                if(pCount === maxP) { updates.status = "playing"; updates.turn = data.p1; }
+                if(pCount === maxP) { 
+                    updates.status = "playing"; 
+                    updates.turn = data.p1; 
+                }
+                
                 transaction.update(doc(db, "rooms", rid), updates);
                 return assignedRole;
             });
-            myRole = role; roomRef = doc(db, "rooms", rid); currentBet = bet; updateUI();
+            myRole = role; roomRef = doc(db, "rooms", rid);
+            currentBet = bet;
+            updateUI();
             enterGameView(); listenRoom();
         } catch(e) { showInfoModal(e, "HATA"); } finally { isProcessingPlay = false; }
     }
 
     function enterGameView() {
-        inGame = true; lastHandLength = 0;
+        inGame = true;
+        lastHandLength = 0; // Animasyon için sıfırla
         document.getElementById("lobbyScreen").style.display = "none";
         document.getElementById("gameArea").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "AYRIL";
@@ -611,35 +693,42 @@
         if(roomUnsub) roomUnsub();
         roomUnsub = onSnapshot(roomRef, async (snap) => {
             if(!snap.exists()) {
-                if (inGame) { window.leaveRoom(); showInfoModal("Masa kapatıldı.", "BİLGİ"); }
+                if (inGame) {
+                    window.leaveRoom();
+                    showInfoModal("Oda bağlantısı koptu veya kurucu ayrıldı.", "BİLGİ");
+                }
                 return;
             }
+            
             gameState = snap.data();
             
             if(gameState.quitter) {
-                if(gameState.quitter !== uid) {
+                const isMe = gameState.quitter === uid;
+                if(!isMe) {
                     await updateDoc(userRef, { balance: increment(gameState.bet) });
-                    showInfoModal(`${gameState.quitterName} kaçtı! Bahis iade edildi.`, "OYUN İPTAL");
-                    inGame = false; setTimeout(() => window.leaveRoom(), 3000);
+                    showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL EDİLDİ");
+                    inGame = false;
+                    setTimeout(() => window.leaveRoom(), 3000);
                 }
                 return;
             }
 
             if(gameState.pistiSignal > lastPistiCount) {
                 lastPistiCount = gameState.pistiSignal;
-                playSound(sfx.pisti);
-                const p = document.getElementById("pistiDisplay");
-                p.classList.remove("pisti-active"); void p.offsetWidth; p.classList.add("pisti-active");
+                triggerPistiUI();
             }
             
             if (gameState.status === "playing") {
                 document.getElementById("waitingStatus").style.display = "none";
                 const maxP = gameState.type.startsWith("4") ? 4 : 2;
                 const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
-                if (handsEmpty && !isProcessingPlay && gameState.turn === uid) refillHands();
+                
+                if (handsEmpty && !isProcessingPlay) {
+                    if (gameState.turn === uid) {
+                        refillHands();
+                    }
+                }
                 render();
-            } else {
-                document.getElementById("waitingStatus").style.display = "block";
             }
             if (gameState.status === "finished") handleEnd();
             renderHeads();
@@ -648,11 +737,14 @@
 
     function renderHeads() {
         const container = document.getElementById("playerHeadsContainer");
-        const maxP = gameState?.type.startsWith("4") ? 4 : 2; let html = "";
+        const maxP = gameState?.type.startsWith("4") ? 4 : 2;
+        let html = "";
         for(let i=1; i<=maxP; i++) {
-            const pUid = gameState?.[`p${i}`], pName = gameState?.[`p${i}_name`] || "...";
+            const pUid = gameState?.[`p${i}`];
+            const pName = gameState?.[`p${i}_name`] || "...";
+            const pScore = gameState?.[`p${i}_score`] || 0;
             const isActive = gameState?.turn === pUid && gameState?.status === "playing";
-            html += `<div class="p-head ${isActive ? 'active' : ''}"><div class="name">${pUid === uid ? "SİZ" : pName}</div><div class="score">${gameState?.[`p${i}_score`] || 0}</div></div>`;
+            html += `<div class="p-head ${isActive ? 'active' : ''}"><div class="name">${pUid === uid ? "SİZ" : pName}</div><div class="score">${pScore}</div></div>`;
         }
         container.innerHTML = html;
     }
@@ -661,13 +753,20 @@
         isProcessingPlay = true;
         try {
             await runTransaction(db, async (t) => {
-                const d = (await t.get(roomRef)).data();
+                const s = await t.get(roomRef);
+                const d = s.data();
                 if (d.status !== "playing") return;
-                const maxP = d.type.startsWith("4") ? 4 : 2;
-                let deck = [...d.deck], table = [...d.table], updates = {};
-                const fullSize = d.type.includes("104") ? 104 : 52;
                 
-                if (table.length === 0 && deck.length === fullSize) updates.table = deck.splice(0, 4);
+                const maxP = d.type.startsWith("4") ? 4 : 2;
+                let deck = [...d.deck];
+                let table = [...d.table];
+                let updates = {};
+                const is104 = d.type.includes("104");
+                const fullSize = is104 ? 104 : 52;
+                
+                if (table.length === 0 && deck.length === fullSize) {
+                    updates.table = deck.splice(0, 4);
+                }
                 
                 if (deck.length < maxP * 4 && deck.length < maxP) {
                     if (table.length > 0 && d.lastCollector) {
@@ -678,14 +777,17 @@
                             updates[lcRole + "_count"] = increment(table.length);
                         }
                     }
-                    updates.table = []; updates.status = "finished";
+                    updates.table = [];
+                    updates.status = "finished";
                 } else {
-                    for (let i = 1; i <= maxP; i++) updates[`p${i}_hand`] = deck.splice(0, 4);
+                    for (let i = 1; i <= maxP; i++) {
+                        updates[`p${i}_hand`] = deck.splice(0, 4);
+                    }
                     updates.deck = deck;
                 }
                 t.update(roomRef, updates);
             });
-        } catch (e) {} finally { isProcessingPlay = false; }
+        } catch (e) { console.error("Dağıtım hatası:", e); } finally { isProcessingPlay = false; }
     }
 
     async function playCard(idx) {
@@ -693,17 +795,23 @@
         isProcessingPlay = true;
         try {
             await runTransaction(db, async (t) => {
-                const d = (await t.get(roomRef)).data();
+                const s = await t.get(roomRef);
+                const d = s.data();
+                
                 if(d.turn !== uid) throw "Sıra sizde değil!";
                 const hand = [...d[myRole + "_hand"]];
-                if (idx < 0 || idx >= hand.length) throw "Geçersiz Kart!";
+                if (idx < 0 || idx >= hand.length) throw "Geçersiz Kart! (Hile Koruması)";
                 
                 const card = hand.splice(idx, 1)[0];
-                let table = [...d.table], scoreInc = 0, countInc = 0, pistiInc = 0, lastColl = d.lastCollector;
+                let table = [...d.table];
+                let scoreInc = 0, countInc = 0, pistiInc = 0;
+                let lastColl = d.lastCollector;
                 
                 if (table.length > 0) {
-                    const top = table[table.length - 1], isVale = normalizeCardVal(card) === "J";
-                    if (normalizeCardVal(card) === normalizeCardVal(top) || isVale) {
+                    const top = table[table.length - 1];
+                    const isVale = normalizeCardVal(card) === "J";
+                    const isSame = normalizeCardVal(card) === normalizeCardVal(top);
+                    if (isSame || isVale) {
                         if (table.length === 1 && !isVale) { scoreInc = 10; pistiInc = 1; } 
                         else if (table.length === 1 && isVale && normalizeCardVal(top) === "J") { scoreInc = 20; pistiInc = 1; } 
                         else { scoreInc = calculatePoints([...table, card]); }
@@ -712,21 +820,32 @@
                 } else table.push(card);
                 
                 const maxP = d.type.startsWith("4") ? 4 : 2;
-                const nextIdx = (parseInt(myRole.at(-1)) % maxP) + 1;
-                t.update(roomRef, { [myRole + "_hand"]: hand, table, [myRole + "_score"]: increment(scoreInc), [myRole + "_count"]: increment(countInc), turn: d[`p${nextIdx}`], lastCollector: lastColl, pistiSignal: increment(pistiInc) });
+                const currentNum = parseInt(myRole.at(-1));
+                const nextIdx = (currentNum % maxP) + 1;
+                
+                t.update(roomRef, { 
+                    [myRole + "_hand"]: hand, 
+                    table, 
+                    [myRole + "_score"]: increment(scoreInc), 
+                    [myRole + "_count"]: increment(countInc), 
+                    turn: d[`p${nextIdx}`], 
+                    lastCollector: lastColl, 
+                    pistiSignal: increment(pistiInc) 
+                });
             });
-            playSound(sfx.cardThrow);
-        } catch(e) {} finally { isProcessingPlay = false; }
+            playSound(sfx.cardThrow); // GERÇEK KART ATMA SESİ
+        } catch(e) { console.error(e); } finally { isProcessingPlay = false; }
     }
 
     function render() {
-        const ph = document.getElementById("playerHand"), tc = document.getElementById("tableCards"), oh = document.getElementById("oppHandVisual");
+        const ph = document.getElementById("playerHand");
+        const tc = document.getElementById("tableCards");
+        const oh = document.getElementById("oppHandVisual");
+        const isMyTurn = gameState.turn === uid;
         ph.innerHTML = ""; tc.innerHTML = ""; oh.innerHTML = "";
         
+        // GERÇEKÇİ KART DAĞITMA ANİMASYONU MANTIĞI
         const myHand = gameState[myRole + "_hand"] || [];
-        const isMyTurn = gameState.turn === uid;
-        
-        // GERÇEKÇİ KART DAĞITMA ANİMASYONU KONTROLÜ
         const isNewDeal = (myHand.length > 0 && lastHandLength === 0);
         lastHandLength = myHand.length;
 
@@ -734,20 +853,29 @@
             let img = document.createElement("img");
             img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
             img.className = "card" + (isMyTurn ? "" : " passive");
+            
+            // Eğer yeni bir el dağıtıldıysa animasyon ve senkronize ses ekle
             if(isNewDeal) {
                 img.classList.add("anim-deal-p");
                 img.style.animationDelay = `${i * 0.15}s`;
-                setTimeout(() => playSound(sfx.deal), i * 150); // Sesleri senkronize dağıt
+                setTimeout(() => playSound(sfx.deal), (i * 150) + 50); // Ses dağıtım animasyonuna eşlik eder
             }
+            
             img.onclick = () => playCard(i);
             ph.appendChild(img);
         });
 
-        const maxP = gameState.type.startsWith("4") ? 4 : 2; let oppTotal = 0;
+        const maxP = gameState.type.startsWith("4") ? 4 : 2;
+        let oppTotal = 0;
         for(let i=1; i<=maxP; i++) if(`p${i}` !== myRole) oppTotal += (gameState[`p${i}_hand`]?.length || 0);
+        
         for(let i=0; i<Math.min(oppTotal, 12); i++) {
-            let d = document.createElement("div"); d.className = "card-mini"; 
-            if(isNewDeal) { d.classList.add("anim-deal-o"); d.style.animationDelay = `${i * 0.1}s`; }
+            let d = document.createElement("div"); 
+            d.className = "card-mini"; 
+            if(isNewDeal) {
+                d.classList.add("anim-deal-o");
+                d.style.animationDelay = `${i * 0.1}s`;
+            }
             oh.appendChild(d);
         }
 
@@ -762,21 +890,24 @@
     }
 
     async function handleEnd() {
-        if (!inGame) return; inGame = false;
+        if (!inGame) return;
+        inGame = false;
         const maxP = gameState.type.startsWith("4") ? 4 : 2;
-        let finalScores = [], counts = [];
+        let finalScores = [];
+        let counts = [];
         for(let i=1; i<=maxP; i++) counts.push({role: `p${i}`, count: gameState[`p${i}_count`] || 0});
         counts.sort((a,b) => b.count - a.count);
         let bonusRole = (counts[0].count > (counts[1]?.count || -1)) ? counts[0].role : null;
         for(let i=1; i<=maxP; i++) {
             let total = gameState[`p${i}_score`] || 0;
             if(`p${i}` === bonusRole) total += 3;
-            finalScores.push({ name: gameState[`p${i}_name`], score: total, uid: gameState[`p${i}`] });
+            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`], score: total, uid: gameState[`p${i}`] });
         }
         finalScores.sort((a,b) => b.score - a.score);
         const winners = finalScores.filter(s => s.score === finalScores[0].score);
+        const isWinner = winners.some(w => w.uid === uid);
         
-        if(winners.some(w => w.uid === uid)) {
+        if(isWinner) {
             const prize = Math.floor((gameState.bet * maxP) / winners.length);
             await updateDoc(userRef, { balance: increment(prize) });
             playSound(sfx.win); // GERÇEK KAZANÇ SESİ
@@ -788,23 +919,35 @@
         setTimeout(async () => {
             if(myRole === "p1") { try { await deleteDoc(roomRef); } catch(e){} }
             window.leaveRoom();
-        }, 6000);
+        }, 5000);
+    }
+
+    function triggerPistiUI() {
+        playSound(sfx.pisti); // GERÇEK PİŞTİ SESİ
+        const p = document.getElementById("pistiDisplay");
+        p.classList.remove("pisti-active");
+        void p.offsetWidth; // Animasyonu baştan tetiklemek için trick
+        p.classList.add("pisti-active");
     }
 
     window.openModal = (id) => document.getElementById(id).style.display = "flex";
     window.closeModal = (id) => document.getElementById(id).style.display = "none";
     window.showInfoModal = (m, t) => { 
         document.getElementById("modalTitle").innerText = t; 
-        document.getElementById("modalMsg").innerHTML = m; 
+        document.getElementById("modalMsg").innerText = m; 
         openModal('infoModal');
     };
 
     window.handleQuickJoin = async () => {
-        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting")));
+        const q = query(collection(db, "rooms"), where("status", "==", "waiting"));
+        const snap = await getDocs(q);
         let found = false;
         snap.forEach(d => { 
             const data = d.data();
-            if(!found && !data.password && data.bet <= balance) { joinRoom(d.id, data.bet); found = true; } 
+            if(!found && !data.password && data.bet <= balance) { 
+                joinRoom(d.id, data.bet); 
+                found = true; 
+            } 
         });
         if(!found) showInfoModal("Uygun masa bulunamadı!", "LOBİ");
     };
