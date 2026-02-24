@@ -102,7 +102,7 @@
 
         @media (max-width: 400px) { .x-value { font-size: 55px; } .bottom-panel { height: 210px; } }
 
-        /* YENİ: SİSTEM BAŞLATMA OVERLAY EKRANI */
+        /* YENİ: SİSTEM BAŞLATMA OVERLAY EKRANI (SES KİLİDİ İÇİN) */
         .start-overlay {
             position: fixed; inset: 0; background: rgba(2,4,10,0.95);
             display: flex; align-items: center; justify-content: center;
@@ -186,7 +186,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- YENİ PROFESYONEL SES SİSTEMİ (Autoplay Policy Çözümü) ---
+    // --- PROFESYONEL SES SİSTEMİ (Autoplay Policy Kırıcı) ---
     let audioCtx = null;
     let authReady = false;
     let gameStarted = false;
@@ -201,7 +201,7 @@
                 audioCtx.resume();
             }
             
-            // Tarayıcıyı (Özellikle iOS) ses çalmaya zorlamak için sessiz bir tetikleyici oluştur
+            // Tarayıcıyı (Özellikle iOS) ses çalmaya zorlamak için sessiz frekans
             const buffer = audioCtx.createBuffer(1, 1, 22050);
             const source = audioCtx.createBufferSource();
             source.buffer = buffer;
@@ -215,10 +215,9 @@
     // OYUNU BAŞLAT BUTONU
     document.getElementById('systemStartBtn').addEventListener('click', () => {
         initAudio(); // Ses kilidini kır
-        document.getElementById('start-overlay').style.display = 'none'; // Ekranı gizle
+        document.getElementById('start-overlay').style.display = 'none'; 
         gameStarted = true; // Oyun motoruna izin ver
         
-        // Eğer Firebase giriş yaptıysa ve oyun bekliyorsa hemen döngüyü başlat
         if(authReady && phase === "WAITING") {
             startNewRound();
         }
@@ -227,7 +226,7 @@
     function playSfx(type) {
         if(!audioCtx) return;
         if(audioCtx.state === 'suspended') audioCtx.resume();
-        if(audioCtx.state !== 'running') return; // Güvenlik kontrolü
+        if(audioCtx.state !== 'running') return; 
 
         const now = audioCtx.currentTime;
         
@@ -236,17 +235,17 @@
             o.connect(g); g.connect(audioCtx.destination);
             o.type = 'triangle';
             o.frequency.setValueAtTime(500, now); 
-            g.gain.setValueAtTime(0.3, now); // Sesi Yükselttim
+            g.gain.setValueAtTime(0.3, now); 
             g.gain.exponentialRampToValueAtTime(0.01, now + 0.1); 
             o.start(now); o.stop(now + 0.1);
         }
         if(type==='crash') { 
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
             o.connect(g); g.connect(audioCtx.destination);
-            o.type = 'sawtooth'; // Mobil hoparlörler için daha iyi bir ses türü
+            o.type = 'sawtooth'; 
             o.frequency.setValueAtTime(300, now); 
             o.frequency.exponentialRampToValueAtTime(50, now + 0.5);
-            g.gain.setValueAtTime(0.5, now); // Sesi Yükselttim
+            g.gain.setValueAtTime(0.5, now); 
             g.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
             o.start(now); o.stop(now + 0.5);
         }
@@ -256,7 +255,7 @@
                 o.connect(g); g.connect(audioCtx.destination);
                 o.type = 'square'; 
                 o.frequency.setValueAtTime(800 + (i * 400), now + d);
-                g.gain.setValueAtTime(0.2, now + d); // Sesi Yükselttim
+                g.gain.setValueAtTime(0.2, now + d); 
                 g.gain.exponentialRampToValueAtTime(0.01, now + d + 0.2);
                 o.start(now + d); o.stop(now + d + 0.2);
             });
@@ -267,7 +266,7 @@
             o.type = 'sine'; 
             o.frequency.setValueAtTime(600, now);
             o.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-            g.gain.setValueAtTime(0.3, now); // Sesi Yükselttim
+            g.gain.setValueAtTime(0.3, now); 
             g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
             o.start(now); o.stop(now + 0.15);
         }
@@ -287,6 +286,8 @@
     let lineProgress = 0; 
     let countdownTimer = null;
     let flightFrameId = null; 
+    
+    // GÜVENLİK KİLİTLERİ (Race Condition Önlemi)
     let isProcessing1 = false;
     let isProcessing2 = false;
 
@@ -306,6 +307,7 @@
             ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
         });
 
+        // DİNAMİK ÇİZGİ ÇİZİMİ
         if(phase === "FLYING") {
             ctx.save();
             ctx.shadowBlur = 15; ctx.shadowColor = "#4fd1ff";
@@ -343,28 +345,28 @@
             } else {
                 const e = 100;
                 const h = Math.random() * e;
-                return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100); // %15 Normal İzin
+                return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100); // %15 Şanslı
             }
         } else {
             const e = 100;
             const h = Math.random() * e;
             let point = Math.max(1.00, Math.floor(100 * e / (e - h)) / 100);
             if (Math.random() < 0.60) {
-                point += (Math.random() * 12 + 3); // %60 Suni Yemleme Çarpanı Ekle
+                point += (Math.random() * 12 + 3); // %60 Yemleme Çarpanı
             }
             return point;
         }
     }
 
     onAuthStateChanged(auth, user => {
-        authReady = true; // Firebase bağlantısı hazır
+        authReady = true; 
         if(user) {
             userRef = doc(db, "users", user.uid);
             onSnapshot(userRef, snap => {
                 if(snap.exists()) {
                     balance = snap.data().balance || 0;
                     document.getElementById('balance').innerText = balance.toLocaleString('tr-TR');
-                    // Kullanıcı tıkladıysa ve oyun bekliyorsa başlat
+                    // Kullanıcı başlata tıkladıysa ve oyun bekliyorsa
                     if(gameStarted && phase === "WAITING") startNewRound();
                 }
             });
@@ -448,8 +450,6 @@
     }
 
     async function handleBet(box, isAuto = false) {
-        if(!isAuto) initAudio(); // Herhangi bir butona basılırsa ses sistemini garantiye al
-        
         if (box === 1 && isProcessing1) return;
         if (box === 2 && isProcessing2) return;
 
