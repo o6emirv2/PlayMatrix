@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PlayMatrix VIP BlackJack</title>
+<title>PlayMatrix VIP LÜKS BlackJack</title>
 
 <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
@@ -11,13 +11,12 @@
     body {
         height:100vh; width: 100vw; overflow:hidden;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto, Helvetica, Arial, sans-serif;
-        /* ULTRA LÜKS CASINO MASASI: Zümrüt yeşili merkez, siyah kenarlar ve hafif altın yansıma */
         background: radial-gradient(circle at 50% -20%, rgba(212,175,55,0.15) 0%, transparent 50%),
                     radial-gradient(circle at 50% 50%, #0d5c2e 0%, #073b1c 60%, #031c0c 100%);
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR (Taşma Korumalı & Lüks Tasarım) */
+    /* ÜST BAR */
     .top-bar {
         position:fixed; top:0; left:0; right:0; height:65px; 
         display:flex; align-items:center; justify-content:space-between;
@@ -28,17 +27,16 @@
     }
 
     .brand {
-        font-size: clamp(0.9rem, 4vw, 1.1rem); /* Ekrana göre küçülür */
+        font-size: clamp(0.9rem, 4vw, 1.1rem); 
         font-weight:900; color: #d4af37;
-        letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; /* Daha klasik ve lüks bir font */
+        letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; 
         white-space: nowrap; flex-shrink: 0;
         text-shadow: 0 2px 4px rgba(0,0,0,1);
     }
 
-    /* Sağ Menü - Taşma Kontrolü */
     .right-menu { 
         display:flex; gap:5px; align-items: center; 
-        flex-wrap: nowrap; overflow: hidden; /* Taşmayı gizle */
+        flex-wrap: nowrap; overflow: hidden; 
         justify-content: flex-end; flex: 1; margin-left: 10px;
     }
     
@@ -46,20 +44,12 @@
         display: flex; align-items: center; gap: 4px; 
         background: linear-gradient(145deg, #222, #111); padding: 4px 8px; 
         border-radius: 15px; border: 1px solid rgba(212,175,55,0.4); 
-        white-space: nowrap; flex-shrink: 1; /* Gerektiğinde daralabilir */
-        min-width: 0; /* Flexbox içinde taşmayı önlemek için kritik */
+        white-space: nowrap; flex-shrink: 1; 
+        min-width: 0; 
     }
     
-    .balance-info { 
-        display: flex; align-items: center; 
-        overflow: hidden; /* Bakiyeler çok uzarsa gizle */
-    }
-    
-    .balance-info b { 
-        font-size: clamp(11px, 3.5vw, 13px); color: #00ffa3; 
-        font-family: monospace; font-weight: 700; 
-        text-overflow: ellipsis; overflow: hidden; /* Uzun rakamları ... ile kes */
-    }
+    .balance-info { display: flex; align-items: center; overflow: hidden; }
+    .balance-info b { font-size: clamp(11px, 3.5vw, 13px); color: #00ffa3; font-family: monospace; font-weight: 700; text-overflow: ellipsis; overflow: hidden; }
     
     .mc-chip {
         width: 16px; height: 16px; flex-shrink: 0;
@@ -67,8 +57,7 @@
         border-radius: 50%; margin-left: 4px;
         display: flex; align-items: center; justify-content: center;
         font-size: 6px; font-weight: 900; color: #fff;
-        box-shadow: 0 0 8px rgba(79, 209, 255, 0.4);
-        border: 1px solid rgba(255,255,255,0.4);
+        box-shadow: 0 0 8px rgba(79, 209, 255, 0.4); border: 1px solid rgba(255,255,255,0.4);
     }
 
     .back-btn {
@@ -82,17 +71,16 @@
     /* OYUN ALANI */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
-        padding: 80px 0 20px 0; perspective: 1200px; position: relative;
+        padding: 80px 0 20px 0; perspective: 1200px; position: relative; 
+        overflow-y: auto; /* Kartlar çok çoğalırsa dikey kaydırma sağlar */
     }
     
     .area { width: 100%; text-align: center; }
     
-    /* Lüks Krupiyer Başlığı */
     .dealer-title { 
         font-size: 14px; letter-spacing: 4px; font-weight: 900; 
         color: #d4af37; margin-bottom: 5px; 
-        text-shadow: 0 2px 4px rgba(0,0,0,0.9); 
-        font-family: 'Times New Roman', Times, serif;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Times New Roman', Times, serif;
     }
     
     .score-badge { 
@@ -103,39 +91,41 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.1);
     }
 
-    /* KART GÖRÜNÜM VE ANİMASYONLARI */
-    .cards-wrapper { display: flex; justify-content: center; gap: -20px; min-height: 105px; padding: 0 10px; }
+    /* KART GÖRÜNÜM VE ANİMASYONLARI (Taşma Düzeltmesi) */
+    .cards-wrapper { 
+        display: flex; justify-content: center; flex-wrap: wrap; /* Kartlar sığmazsa alt satıra geçer */
+        gap: 5px; /* Üst üste binmeyi azaltarak netliği artırdık */
+        margin-left: -15px; /* Hafif içe geçme efekti için negatif marj */
+        min-height: 105px; padding: 0 10px; 
+    }
     
     .card-3d {
-        width: 70px; height: 100px;
+        width: 65px; height: 95px; /* Kartları bir tık küçülttük ki ekrana sığsınlar */
         position: relative;
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(35deg) scale(0.4);
         opacity: 0;
-        /* Daha keskin ve hızlı dağıtma animasyonu */
+        margin-left: -20px; /* Kartların üst üste binme efekti */
         transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
     }
+    .card-3d:first-child { margin-left: 0; } /* İlk kart normal dursun */
 
     .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
     .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.5s ease-in-out; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%;
-        backface-visibility: hidden;
-        border-radius: 6px;
-        box-shadow: -4px 4px 12px rgba(0,0,0,0.7); /* Derin lüks gölge */
+        backface-visibility: hidden; border-radius: 6px; box-shadow: -4px 4px 12px rgba(0,0,0,0.7); 
     }
 
     .card-front { background: white; transform: rotateY(180deg); }
-    /* Şık casino kart arkası */
     .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
 
-    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85px; z-index: 10; }
+    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; z-index: 10; margin-top: 10px;}
     
     #message { 
-        font-size: 14px; font-weight: 900; color: #fff; 
-        text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; 
-        text-transform: uppercase; 
+        font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); 
+        margin-bottom: 10px; text-transform: uppercase; 
         background: linear-gradient(90deg, transparent, rgba(0,0,0,0.7), transparent); 
         padding: 5px 30px; border-radius: 5px; letter-spacing: 1px;
     }
@@ -153,39 +143,41 @@
     #stand { background: linear-gradient(to bottom, #e74c3c, #c0392b); border-color: #922b21;}
     #double { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; border-color: #b7950b;}
     #split { background: linear-gradient(to bottom, #9b59b6, #8e44ad); border-color: #76448a;}
-    .btn:active { transform: translateY(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 2px rgba(0,0,0,0.4); }
+    .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 2px rgba(0,0,0,0.4); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
-    .hands-container { display: flex; justify-content: center; gap: 20px; width: 100%; transition: 0.3s; }
+    /* BÖLÜNMÜŞ ELLER DÜZENİ */
+    .hands-container { 
+        display: flex; justify-content: center; flex-wrap: wrap; /* İki el oluştuğunda dar ekranda alt alta inmesini sağlar */
+        gap: 15px; width: 100%; transition: 0.3s; 
+    }
     .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
     .hand-box.active { 
-        border: 2px solid #d4af37; 
-        background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); 
+        border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); 
         box-shadow: 0 0 20px rgba(212,175,55,0.2), inset 0 0 15px rgba(212,175,55,0.1); 
     }
 
-    /* ÇİPLER LÜKS TASARIM */
-    .chips-area { display: flex; justify-content: center; gap: 10px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    /* ÇİPLER LÜKS VE BENZERSİZ TASARIM */
+    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; transition: opacity 0.3s;}
     .chip { 
-        width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
         font-weight: 900; font-size: 13px; cursor: pointer; transition: transform 0.1s; 
-        /* Altın varaklı çip kenarları */
-        border: 4px dashed #d4af37; 
-        box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8); 
+        border: 4px dashed #d4af37; box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8); 
     }
     .chip:active { transform: scale(0.9); }
-    .c250 { background: radial-gradient(circle, #e0e0e0 30%, #999 90%); color: #000; }
-    .c500 { background: radial-gradient(circle, #2ecc71 30%, #1e8449 90%); color: #fff; border-color: #fff; }
-    .c1k { background: radial-gradient(circle, #e74c3c 30%, #922b21 90%); color: #fff; border-color: #fff; }
-    .c2k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; }
+    /* Renkler Birbirinden Tamamen Ayrıldı */
+    .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;} /* Gri/Beyaz */
+    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; border-color: #fff;} /* Yeşil */
+    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; border-color: #fff;} /* Kırmızı */
+    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; border-color: #fff;} /* Mavi */
+    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; border-color: #d4af37;} /* Mor */
+    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;} /* Siyah/Altın */
     
     .cancel-btn { 
-        width: 50px; height: 50px; border-radius: 50%; 
-        background: linear-gradient(to bottom, #555, #222); color: white; 
-        display: flex; align-items: center; justify-content: center; 
-        font-weight: 800; font-size: 10px; cursor: pointer; 
+        width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; 
+        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; 
         border: 2px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); 
     }
-    .disabled { opacity: 0.5; pointer-events: none; filter: brightness(0.6); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
     .modal-content { background: linear-gradient(to bottom, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 380px; padding: 25px; text-align: center; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3); }
@@ -257,12 +249,12 @@
 
     <div class="chips-area" id="chipsArea">
         <div class="cancel-btn" onclick="cancelBet()">SİL</div>
-       <div class="chip c500" onclick="addBet(1000)">1K</div>
-        <div class="chip c250" onclick="addBet(3000)">3K</div>
-        <div class="chip c500" onclick="addBet(5000)">5K</div>
-        <div class="chip c1k" onclick="addBet(15000)">15K</div>
-        <div class="chip c2k" onclick="addBet(20000)">20K</div>
-       <div class="chip c500" onclick="addBet(50000)">50K</div>
+        <div class="chip c1k" onclick="addBet(1000)">1K</div>
+        <div class="chip c3k" onclick="addBet(3000)">3K</div>
+        <div class="chip c5k" onclick="addBet(5000)">5K</div>
+        <div class="chip c15k" onclick="addBet(15000)">15K</div>
+        <div class="chip c20k" onclick="addBet(20000)">20K</div>
+        <div class="chip c50k" onclick="addBet(50000)">50K</div>
     </div>
 </div>
 
@@ -301,7 +293,6 @@ async function initAudio() {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContext();
     
-    // Sesleri belleğe yükle
     const urls = {
         card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',   
         win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
@@ -320,7 +311,6 @@ async function initAudio() {
     }
 }
 
-// iOS İÇİN HAYATİ ADIM
 document.getElementById('systemStartBtn').addEventListener('click', async () => { 
     await initAudio(); 
     if (audioCtx.state === 'suspended') {
@@ -338,18 +328,11 @@ document.getElementById('systemStartBtn').addEventListener('click', async () => 
 
 function playSound(name) {
     if(!audioCtx || !sounds[name]) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-
     const source = audioCtx.createBufferSource();
     source.buffer = sounds[name];
-    
-    if (name === 'card') {
-        source.playbackRate.value = 0.95 + Math.random() * 0.1; 
-    }
-
+    if (name === 'card') source.playbackRate.value = 0.95 + Math.random() * 0.1; 
     source.connect(audioCtx.destination);
     source.start(0);
 }
@@ -375,7 +358,7 @@ window.addBet = (a) => {
     initialBet += a;
     document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); 
     document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
-    if(!betCountdown && initialBet >= 250) startBetCountdown();
+    if(!betCountdown && initialBet >= 1000) startBetCountdown();
 };
 
 window.cancelBet = () => {
@@ -385,7 +368,7 @@ window.cancelBet = () => {
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = "0";
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
-    messageEl.innerText = "MC KULLAN (MİN: 250)";
+    messageEl.innerText = "MC KULLAN (MİN: 1K)";
 };
 
 function startBetCountdown(){
@@ -462,9 +445,20 @@ async function draw(hand, divId, isOpen = true){
 
 function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
+// BUTONLARI KİLİTLEME FONKSİYONU (SPAM/ÇİFT TIK KORUMASI)
+function setControlsDisabled(disabled) {
+    const btns = document.querySelectorAll('.controls .btn');
+    btns.forEach(btn => {
+        btn.disabled = disabled;
+    });
+}
+
 async function startGame(){
     isProcessing = true; gameState = "playing"; 
-    document.getElementById("chipsArea").classList.add("disabled");
+    
+    // OYUN BAŞLAYINCA ÇİPLERİ GİZLE
+    document.getElementById("chipsArea").style.display = "none";
+    
     document.getElementById("dealerCards").innerHTML = "";
     document.getElementById("hand0").innerHTML = "";
     document.getElementById("hand1").innerHTML = "";
@@ -475,10 +469,11 @@ async function startGame(){
     
     messageEl.innerText = "DAĞITILIYOR...";
     document.getElementById("controls").style.display = "none";
+    setControlsDisabled(true);
     createDeck(); 
     
     try { await updateDoc(userRef, { balance: increment(-initialBet) }); } 
-    catch(e) { cancelBet(); return; }
+    catch(e) { cancelBet(); document.getElementById("chipsArea").style.display = "flex"; return; }
 
     await draw(playerHands[0].cards, "hand0", true);
     await draw(dealer, "dealerCards", true);
@@ -488,6 +483,7 @@ async function startGame(){
     if(dealer[0].value === 1 && balance >= initialBet / 2) {
         messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
         document.getElementById("insurance-controls").style.display = "flex";
+        setControlsDisabled(false);
         return; 
     }
     
@@ -495,12 +491,14 @@ async function startGame(){
 }
 
 document.getElementById("ins-yes").onclick = async () => {
+    if(isProcessing) return; isProcessing = true; setControlsDisabled(true);
     document.getElementById("insurance-controls").style.display = "none";
     insuranceBet = initialBet / 2;
     await updateDoc(userRef, { balance: increment(-insuranceBet) }); 
     checkInitialBlackjack();
 };
 document.getElementById("ins-no").onclick = () => {
+    if(isProcessing) return; isProcessing = true; setControlsDisabled(true);
     document.getElementById("insurance-controls").style.display = "none";
     checkInitialBlackjack();
 };
@@ -533,6 +531,8 @@ function showControls() {
     let cards = hand.cards;
     
     document.getElementById("controls").style.display = "flex";
+    setControlsDisabled(false); // İşlem bitti, butonları aktif et
+    
     document.getElementById("double").style.display = (cards.length === 2 && balance >= hand.bet) ? "block" : "none";
     
     let val1 = cards[0] ? (cards[0].value > 10 ? 10 : cards[0].value) : 0;
@@ -546,7 +546,6 @@ function startActionTimer(){
     let s = 10; messageEl.style.display = "block"; messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick');
     if (actionTimer) clearInterval(actionTimer);
     
-    // Geri sayımın tamamında ses çıksın diye koşulu kaldırdık
     actionTimer = setInterval(() => {
         s--; if(s > 0) { messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick'); } 
         else { clearInterval(actionTimer); stand(); }
@@ -555,12 +554,14 @@ function startActionTimer(){
 
 function hideControls() {
     if(actionTimer) clearInterval(actionTimer);
+    setControlsDisabled(true); // Tıklandığı an kilitlenir (Çift Tık Engeli)
     document.getElementById("controls").style.display = "none";
     messageEl.innerText = "";
 }
 
 document.getElementById("hit").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; hideControls();
+    if(isProcessing) return; 
+    isProcessing = true; hideControls();
     
     await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
     
@@ -573,14 +574,16 @@ document.getElementById("hit").onclick = async () => {
 };
 
 function stand() { 
-    if(isProcessing) return; isProcessing = true; hideControls();
+    if(isProcessing) return; 
+    isProcessing = true; hideControls();
     playerHands[currentHandIdx].status = 'stand';
     nextHandOrDealer(); 
 }
 document.getElementById("stand").onclick = stand;
 
 document.getElementById("double").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; hideControls();
+    if(isProcessing) return; 
+    isProcessing = true; hideControls();
     
     let bet = playerHands[currentHandIdx].bet;
     await updateDoc(userRef, { balance: increment(-bet) });
@@ -592,7 +595,8 @@ document.getElementById("double").onclick = async () => {
 };
 
 document.getElementById("split").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; hideControls();
+    if(isProcessing) return; 
+    isProcessing = true; hideControls();
     
     let bet = playerHands[0].bet;
     await updateDoc(userRef, { balance: increment(-bet) }); 
@@ -700,11 +704,13 @@ function resetBoard() {
     document.getElementById("score0").innerText = "0";
     document.getElementById("hand0-box").classList.remove("active");
     
+    // OYUN BİTİNCE ÇİPLERİ GERİ GETİR
+    document.getElementById("chipsArea").style.display = "flex";
+    
     initialBet = 0; document.getElementById("betAmount").innerText = "0";
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-    document.getElementById("chipsArea").classList.remove("disabled");
     
-    messageEl.innerText = "MC KULLAN (MİN: 250)";
+    messageEl.innerText = "MC KULLAN (MİN: 1K)";
     isProcessing = false; gameState = "betting";
 }
 </script>
