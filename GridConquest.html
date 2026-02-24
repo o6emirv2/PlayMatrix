@@ -3,13 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PlayMatrix Neon Conquest</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>PlayMatrix Neon Conquest | Çok Oyunculu Alan Ele Geçirme Oyunu</title>
+    <meta name="description" content="Neon Conquest oyna! Rakiplerinle online arenada kapış, stratejini konuştur ve saniyeler içinde alanı ele geçirerek zafer kazan. Ücretsiz çok oyunculu (multiplayer) tarayıcı oyunu.">
+    <meta name="keywords" content="neon oyunlar, alan ele geçirme, multiplayer oyun, çok oyunculu oyun, ücretsiz strateji oyunu, PlayMatrix, online arena, tarayıcı oyunu">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Turkish">
+    <meta name="theme-color" content="#03050a">
+    <link rel="canonical" href="https://playmatrix.com.tr/GridConquest.html">
+
+    <meta property="og:title" content="PlayMatrix Neon Conquest | Online Strateji">
+    <meta property="og:description" content="Kendi arenanı kur veya hızlı savaşa katıl! Rakibinin rengini silip tüm ızgarayı ele geçir. Hemen ücretsiz oyna.">
+    <meta property="og:image" content="https://playmatrix.com.tr/assets/neon-conquest-promo.jpg">
+    <meta property="og:url" content="https://playmatrix.com.tr/GridConquest.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Neon Conquest'te Savaşı Kazan">
+    <meta name="twitter:description" content="Gerçek zamanlı çok oyunculu arenada rakiplerine karşı hızını test et!">
+
     <script>
     if (window.history.replaceState) {
         // GridConquest.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
-</script>
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -26,6 +47,12 @@
             touch-action: manipulation; 
         }
         body { background: var(--bg); color: #e0e0e0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+
+        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+        }
 
         #bg-canvas { position: fixed; inset: 0; z-index: -1; background: #000; }
 
@@ -77,7 +104,7 @@
         #timer-display { font-family: 'Black Ops One'; font-size: 1.5rem; color: var(--warning); border: 2px solid var(--warning); border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; }
 
         .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 95vw; max-width: 400px; margin: auto; padding: 10px; }
-        .cell { aspect-ratio: 1/1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: 0.15s; }
+        .cell { aspect-ratio: 1/1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: 0.15s; cursor: pointer; }
         .cell.p1 { background: var(--p1); box-shadow: 0 0 15px var(--p1); }
         .cell.p2 { background: var(--p2); box-shadow: 0 0 15px var(--p2); }
 
@@ -97,40 +124,44 @@
 </head>
 <body>
 
-    <canvas id="bg-canvas"></canvas>
+    <h1 class="sr-only">PlayMatrix Neon Conquest - Çok Oyunculu Strateji Oyunu</h1>
 
-    <div class="header">
+    <canvas id="bg-canvas" aria-label="Arka Plan Animasyonu"></canvas>
+
+    <header class="header">
         <div class="user-badge" id="meName">YÜKLENİYOR...</div>
         <div class="logo">NEON CONQUEST</div>
-        <button onclick="window.handleExit()" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">AYRIL</button>
-    </div>
+        <button onclick="window.handleExit()" aria-label="Oyundan Çıkış Yap" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); cursor:pointer;">AYRIL</button>
+    </header>
 
-    <div id="lobby">
+    <main id="lobby">
         <div class="search-container">
-            <input type="text" id="roomSearch" class="search-input" placeholder="ARENA ARA..." oninput="window.filterRooms()">
+            <input type="text" id="roomSearch" class="search-input" placeholder="ARENA ARA..." aria-label="Açık Arenaları Ara" oninput="window.filterRooms()">
         </div>
-        <button class="btn-neon" id="createRoomBtn" disabled onclick="window.toggleModal('roomTypeModal', true)">ARENA OLUŞTUR</button>
-        <button class="btn-neon btn-sec" id="quickJoinBtn" disabled onclick="window.quickJoin()">HIZLI SAVAŞ</button>
+        <button class="btn-neon" id="createRoomBtn" disabled onclick="window.toggleModal('roomTypeModal', true)" aria-label="Yeni Arena Oluştur">ARENA OLUŞTUR</button>
+        <button class="btn-neon btn-sec" id="quickJoinBtn" disabled onclick="window.quickJoin()" aria-label="Hızlı Savaşa Katıl">HIZLI SAVAŞ</button>
         <div id="emptyLobbyMsg" style="text-align: center; margin-top: 50px; opacity: 0.3; font-family: 'Black Ops One'; letter-spacing: 5px;">LOBİ BOŞ</div>
-        <div id="roomList"></div>
-    </div>
+        <div id="roomList" aria-live="polite"></div>
+    </main>
 
-    <button class="how-to-btn" onclick="window.toggleModal('helpModal', true)">Nasıl Oynanılır ?</button>
+    <button class="how-to-btn" onclick="window.toggleModal('helpModal', true)" aria-label="Oyun Nasıl Oynanır Rehberi">Nasıl Oynanılır ?</button>
 
-    <div id="game-view">
+    <div id="game-view" aria-label="Savaş Arenası">
         <div class="game-hud">
-            <div style="color:var(--p1); text-align:center;"><small id="n1">-</small><div class="score-num" id="s1">0</div></div>
-            <div id="timer-display">60</div>
-            <div style="color:var(--p2); text-align:center;"><small id="n2">-</small><div class="score-num" id="s2">0</div></div>
+            <div style="color:var(--p1); text-align:center;"><small id="n1">-</small><div class="score-num" id="s1" aria-label="1. Oyuncu Skoru">0</div></div>
+            <div id="timer-display" aria-live="polite" aria-label="Kalan Süre">60</div>
+            <div style="color:var(--p2); text-align:center;"><small id="n2">-</small><div class="score-num" id="s2" aria-label="2. Oyuncu Skoru">0</div></div>
         </div>
-        <div class="grid" id="grid"></div>
+        <div class="grid" id="grid" role="grid" aria-label="Ele Geçirilecek Alanlar"></div>
     </div>
 
-    <div id="roomTypeModal" class="modal"><div class="modal-box"><h3>ARENA TİPİ</h3><button class="btn-neon" style="width:100%; margin-bottom:12px;" onclick="window.createArena(false)">AÇIK ARENA</button><button class="btn-neon btn-sec" style="width:100%" onclick="window.showPrivateSettings()">KİLİTLİ ARENA</button><p onclick="window.toggleModal('roomTypeModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">İPTAL</p></div></div>
-    <div id="privateSettingsModal" class="modal"><div class="modal-box"><h3>ARENA KURULUMU</h3><input type="number" id="customRoomCode" class="modal-input" placeholder="ODA NO (Min 3 Sayı)"><input type="number" id="customRoomPass" class="modal-input" placeholder="ŞİFRE (Min 5 Sayı)"><div id="createError" class="error-text">HATA: SAYI KURALLARINA UYUN!</div><button class="btn-neon" style="width:100%" onclick="window.createArena(true)">OLUŞTUR</button><p onclick="window.toggleModal('privateSettingsModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">GERİ</p></div></div>
-    <div id="passwordEntryModal" class="modal"><div class="modal-box"><h3>ŞİFRE GEREKLİ</h3><input type="number" id="joinRoomPassInput" class="modal-input" placeholder="ŞİFREYİ GİRİN"><div id="passError" class="error-text">HATA: ŞİFRE YANLIŞ!</div><button class="btn-neon" id="confirmJoinPass" style="width:100%">GİRİŞ YAP</button><button class="btn-neon btn-sec" style="width:100%; margin-top:10px;" onclick="window.toggleModal('passwordEntryModal', false)">İPTAL</button></div></div>
+    <div id="roomTypeModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ARENA TİPİ</h3><button class="btn-neon" style="width:100%; margin-bottom:12px;" onclick="window.createArena(false)">AÇIK ARENA</button><button class="btn-neon btn-sec" style="width:100%" onclick="window.showPrivateSettings()">KİLİTLİ ARENA</button><p onclick="window.toggleModal('roomTypeModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">İPTAL</p></div></div>
     
-    <div id="alertModal" class="modal">
+    <div id="privateSettingsModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ARENA KURULUMU</h3><input type="number" id="customRoomCode" class="modal-input" placeholder="ODA NO (Min 3 Sayı)" aria-label="Oda Numarası"><input type="number" id="customRoomPass" class="modal-input" placeholder="ŞİFRE (Min 5 Sayı)" aria-label="Oda Şifresi"><div id="createError" class="error-text">HATA: SAYI KURALLARINA UYUN!</div><button class="btn-neon" style="width:100%" onclick="window.createArena(true)">OLUŞTUR</button><p onclick="window.toggleModal('privateSettingsModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">GERİ</p></div></div>
+    
+    <div id="passwordEntryModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ŞİFRE GEREKLİ</h3><input type="number" id="joinRoomPassInput" class="modal-input" placeholder="ŞİFREYİ GİRİN" aria-label="Oda Giriş Şifresi"><div id="passError" class="error-text">HATA: ŞİFRE YANLIŞ!</div><button class="btn-neon" id="confirmJoinPass" style="width:100%">GİRİŞ YAP</button><button class="btn-neon btn-sec" style="width:100%; margin-top:10px;" onclick="window.toggleModal('passwordEntryModal', false)">İPTAL</button></div></div>
+    
+    <div id="alertModal" class="modal" aria-live="assertive">
         <div class="modal-box">
             <h3 id="alertTitle">UYARI</h3>
             <p id="alertMsg" style="color:#aaa; margin-bottom:20px; font-weight:700;"></p>
@@ -139,9 +170,9 @@
         </div>
     </div>
 
-    <div id="helpModal" class="modal"><div class="modal-box"><h3>OYUN REHBERİ</h3><p style="color:#aaa; font-size:0.95rem; line-height:1.7; text-align:left; border-left: 2px solid var(--border); padding-left: 15px;">• Dokunduğun kare senin rengine döner.<br>• Rakibin karesine dokunarak onu ele geçir.<br>• Tüm alanı ele geçiren veya süre bitiminde en çok alana sahip olan kazanır!</p><button class="btn-neon" style="width:100%; margin-top:25px;" onclick="window.toggleModal('helpModal', false)">ANLADIM</button></div></div>
+    <div id="helpModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>OYUN REHBERİ</h3><p style="color:#aaa; font-size:0.95rem; line-height:1.7; text-align:left; border-left: 2px solid var(--border); padding-left: 15px;">• Dokunduğun kare senin rengine döner.<br>• Rakibin karesine dokunarak onu ele geçir.<br>• Tüm alanı ele geçiren veya süre bitiminde en çok alana sahip olan kazanır!</p><button class="btn-neon" style="width:100%; margin-top:25px;" onclick="window.toggleModal('helpModal', false)">ANLADIM</button></div></div>
     
-    <div id="resultModal" class="modal">
+    <div id="resultModal" class="modal" aria-live="assertive">
         <div class="modal-box">
             <div id="winnerLabel" class="result-header">ZAFER</div>
             <div class="final-score">
@@ -171,12 +202,11 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // MÜZİK YOK! SADECE LOBİ, YAĞMUR, ŞİMŞEK VE TIKLAMA SESİ
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
-        rain: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_73d9136e05.mp3'), // Şiddetli Gerçek Yağmur
-        thunder: new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek / Gök Gürültüsü
+        rain: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_73d9136e05.mp3'), 
+        thunder: new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_924ebc01e6.mp3') 
     };
     
     sfx.lobby.loop = true; 
@@ -187,7 +217,6 @@
     sfx.rain.volume = 1.0; 
     sfx.thunder.volume = 1.0; 
 
-    // IOS SES KİLİDİ (Ekrana ilk dokunuşta her şeyi hazırlayıp kapatır)
     let audioUnlocked = false;
     const unlockAudio = () => {
         if (!audioUnlocked) {
@@ -234,18 +263,14 @@
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
     };
 
-    // AYRIL BUTONUNUN YÖNETİMİ
     window.handleExit = () => {
         if (currentScene === 'game') {
-            // Eğer oyundaysa, kullanıcıya uyarı göster ve Lobiye dön
             window.showModalAlert('ONAY', 'Savaş alanından ayrılıp lobiye dönmek istediğine emin misin?', window.leaveToLobby);
         } else {
-            // Eğer zaten lobideyken tıklarsa playmatrix'e yönlendir
             window.location.href = "https://playmatrix.com.tr";
         }
     };
 
-    // SPA MANTIĞI İLE LOBİYE DÖNÜŞ (SAYFA YENİLENMEZ)
     window.leaveToLobby = async () => {
         if (curRoomId) {
             if (unsubGame) unsubGame();
@@ -264,7 +289,6 @@
         currentScene = 'lobby';
         lightningFlash = 0;
         
-        // SADECE LOBİ SESİNİ AÇ, YAĞMURU VE GÜRÜLTÜYÜ KAPAT
         sfx.rain.pause();
         sfx.thunder.pause();
         if (audioUnlocked) {
@@ -287,7 +311,6 @@
         });
     };
 
-    // --- SAHNE ANİMASYONLARI ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let lobbyParticles = [];
@@ -314,11 +337,10 @@
         }));
     }
 
-    // ŞİMŞEK ÇAKMASI VE GÖK GÜRÜLTÜSÜ SENKRONİZASYONU
     function triggerLightning() {
         if (currentScene !== 'game') return; 
         
-        lightningFlash = 3; // Ekrana parlama
+        lightningFlash = 3; 
         
         if (audioUnlocked) {
             sfx.thunder.currentTime = 0;
@@ -493,7 +515,6 @@
         enterGame(id);
     }
 
-    // OYUNA GİRİŞ İŞLEMİ (Müzik Yok, Sadece Şiddetli Yağmur)
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
         
@@ -513,7 +534,11 @@
         
         const g = document.getElementById('grid'); g.innerHTML = "";
         for(let i=0; i<36; i++) {
-            const c = document.createElement('div'); c.className = 'cell';
+            const c = document.createElement('div'); 
+            c.className = 'cell';
+            c.setAttribute('role', 'button');
+            c.setAttribute('aria-label', `Alan ${i+1}`);
+            
             c.onclick = () => { 
                 const now = Date.now();
                 if(canPlay && !isFin && (now - lastClickTime > 150) && localCells[i] !== myRole) { 
