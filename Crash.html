@@ -3,17 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>PlayMatrix Crash</title>
-<script>
-    if (window.history.replaceState) {
-        // Crash.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
-        window.history.replaceState(null, null, "/");
-    }
-</script>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>PlayMatrix Crash | Ücretsiz Online Katlama ve Casino Oyunu</title>
+    <meta name="description" content="PlayMatrix Crash oyna! Şansını dene, grafiğin yükselişini izle ve patlamadan önce MC'ni katlayarak çek. Kesintisiz, ücretsiz ve online casino deneyimi seni bekliyor.">
+    <meta name="keywords" content="crash oyunu, online crash, katlama oyunu, ücretsiz casino, PlayMatrix, mc kazan, tarayıcı oyunları, kripto oyun">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Turkish">
+    <meta name="theme-color" content="#02040a">
+    <link rel="canonical" href="https://playmatrix.com.tr/Crash.html">
+
+    <meta property="og:title" content="PlayMatrix Crash | Online Katlama Oyunu">
+    <meta property="og:description" content="Grafik patlamadan önce kazancını çek, MC'ni anında katla! PlayMatrix'te kesintisiz Crash heyecanına katıl.">
+    <meta property="og:image" content="https://playmatrix.com.tr/assets/crash-promo.jpg">
+    <meta property="og:url" content="https://playmatrix.com.tr/Crash.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Crash Oyna">
+    <meta name="twitter:description" content="Bahsini yap, x değerini izle ve zamanında çıkarak MC kazanmaya başla!">
+
+    <script>
+        if (window.history.replaceState) {
+            // Crash.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
+            window.history.replaceState(null, null, "/");
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; }
         body { background: #02040a; color: white; height: 100vh; overflow: hidden; }
+
+        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+        }
 
         /* ÜST BAR VE MC COIN TASARIMI */
         .top-bar {
@@ -123,17 +149,19 @@
 </head>
 <body>
 
+<h1 class="sr-only">PlayMatrix Crash - Ücretsiz Online Katlama Oyunu</h1>
+
 <div id="start-overlay" class="start-overlay">
     <div class="start-modal">
         <h2 style="font-family:'Orbitron'; color:#4fd1ff; font-size: 24px; margin-bottom: 10px; text-shadow: 0 0 15px rgba(79,209,255,0.5);">CRASH PROTOKOLÜ</h2>
         <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px; font-family: 'Inter';">Sesleri ve oyun motorunu aktifleştirmek için sistemi başlatın.</p>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-family: 'Orbitron'; font-size: 16px; cursor: pointer; text-transform: uppercase;">SİSTEMİ BAŞLAT</button>
+        <button id="systemStartBtn" aria-label="Sistemi Başlat" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-family: 'Orbitron'; font-size: 16px; cursor: pointer; text-transform: uppercase;">SİSTEMİ BAŞLAT</button>
     </div>
 </div>
 
-<div class="top-bar">
+<header class="top-bar">
     <div class="brand">CRASH</div>
-    <div class="right-menu">
+    <nav class="right-menu" aria-label="Üst Menü">
         <div class="user-pill-mini">
             <div class="balance-info">
                 <b id="balance">0</b>
@@ -147,32 +175,46 @@
                 <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">MC</div>
             </div>
         </div>
-        <button class="back-btn" onclick="window.history.back()">GERİ</button>
-    </div>
-</div>
+        <button class="back-btn" onclick="window.history.back()" aria-label="Geri Dön">GERİ</button>
+    </nav>
+</header>
 
-<div class="history" id="history"></div>
+<main>
+    <div class="history" id="history" aria-label="Geçmiş Çarpanlar"></div>
 
-<div class="game-container">
-    <canvas id="gameCanvas"></canvas>
-    <div class="multiplier-display">
-        <div class="status-text" id="statusText">SİSTEM HAZIRLANIR...</div>
-        <div class="x-value" id="multiplier">1.00x</div>
+    <div class="game-container">
+        <canvas id="gameCanvas" aria-label="Crash Oyun Ekranı"></canvas>
+        <div class="multiplier-display" aria-live="polite">
+            <div class="status-text" id="statusText">SİSTEM HAZIRLANIR...</div>
+            <div class="x-value" id="multiplier">1.00x</div>
+        </div>
     </div>
-</div>
 
-<div class="bottom-panel">
-    <div class="bet-card">
-        <input type="number" id="betInput1" value="100">
-        <div class="auto-row"><span>OTO</span><label class="switch"><input type="checkbox" id="autoSwitch1"><span class="slider"></span></label></div>
-        <button id="btn1" class="main-btn btn-bet">MC KULLAN</button>
+    <div class="bottom-panel">
+        <div class="bet-card">
+            <input type="number" id="betInput1" value="100" aria-label="1. Bahis Miktarı">
+            <div class="auto-row">
+                <span>OTO</span>
+                <label class="switch">
+                    <input type="checkbox" id="autoSwitch1" aria-label="1. Otomatik Bahis">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button id="btn1" class="main-btn btn-bet" aria-label="Birinci Bahsi Yap">MC KULLAN</button>
+        </div>
+        <div class="bet-card">
+            <input type="number" id="betInput2" value="200" aria-label="2. Bahis Miktarı">
+            <div class="auto-row">
+                <span>OTO</span>
+                <label class="switch">
+                    <input type="checkbox" id="autoSwitch2" aria-label="2. Otomatik Bahis">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button id="btn2" class="main-btn btn-bet" aria-label="İkinci Bahsi Yap">MC KULLAN</button>
+        </div>
     </div>
-    <div class="bet-card">
-        <input type="number" id="betInput2" value="200">
-        <div class="auto-row"><span>OTO</span><label class="switch"><input type="checkbox" id="autoSwitch2"><span class="slider"></span></label></div>
-        <button id="btn2" class="main-btn btn-bet">MC KULLAN</button>
-    </div>
-</div>
+</main>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
