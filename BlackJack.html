@@ -3,7 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PlayMatrix VIP LÜKS BlackJack</title>
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix VIP Lüks BlackJack | Ücretsiz Online Casino 21 Oyna</title>
+<meta name="description" content="PlayMatrix VIP Lüks Blackjack oyna! Şansını dene, 21'i bul, krupiyeyi yen ve anında MC kazan. Kesintisiz ve indirmesiz online casino deneyimi seni bekliyor.">
+<meta name="keywords" content="blackjack oyna, online blackjack, ücretsiz casino, 21 oyna, PlayMatrix, VIP casino, tarayıcı oyunları, mc kazan">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#0d5c2e">
+<link rel="canonical" href="https://playmatrix.com.tr/BlackJack.html">
+
+<meta property="og:title" content="PlayMatrix VIP Lüks Blackjack Oyna">
+<meta property="og:description" content="21'e ulaş, krupiyeyi alt et ve binlerce MC kazan! PlayMatrix'te kesintisiz casino heyecanına hemen katıl.">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/blackjack-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/BlackJack.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix VIP Blackjack Oyna">
+<meta name="twitter:description" content="Masaya otur, kartlarını çek ve 21'i bularak MC kazanmaya başla!">
 
 <script>
     if (window.history.replaceState) {
@@ -33,7 +52,9 @@
         box-shadow: 0 4px 20px rgba(0,0,0,0.8);
     }
 
-    .brand {
+    /* SEO H1 İÇİN STİL GÜNCELLEMESİ */
+    h1.brand {
+        margin: 0; padding: 0;
         font-size: clamp(0.9rem, 4vw, 1.1rem); 
         font-weight:900; color: #d4af37;
         letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; 
@@ -203,13 +224,13 @@
             • <b>Kart Değerleri:</b> Vale (J), Kız (Q), Papaz (K) 10 değerindedir. As (A) durumuna göre 1 veya 11 sayılır.<br><br>
             <span style="color: #ff4b4b; font-weight: bold;">ÖNEMLİ UYARI:</span> Lütfen stabil bir internet kullanın. Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız MC <b>kesinlikle iade edilmeyecektir.</b>
         </div>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.4); text-transform: uppercase;">Masaya Otur</button>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.4); text-transform: uppercase;" aria-label="Oyuna Başla">Masaya Otur</button>
     </div>
 </div>
 
-<div class="top-bar">
-    <div class="brand">VIP BLACKJACK</div>
-    <div class="right-menu">
+<header class="top-bar">
+    <h1 class="brand">VIP BLACKJACK</h1>
+    <nav class="right-menu" aria-label="Kullanıcı Menüsü">
         <div class="user-pill-mini">
             <div class="balance-info"><b id="balance">0</b></div>
             <div class="mc-chip">MC</div>
@@ -218,11 +239,11 @@
             <div class="balance-info"><b id="betAmount" style="color:#ffcc00">0</b></div>
             <div class="mc-chip" style="background: orange; box-shadow: 0 0 8px rgba(255, 165, 0, 0.4);">MC</div>
         </div>
-        <a href="https://playmatrix.com.tr" class="back-btn">ÇIKIŞ</a>
-    </div>
-</div>
+        <a href="https://playmatrix.com.tr" class="back-btn" aria-label="Ana Sayfaya Dön">ÇIKIŞ</a>
+    </nav>
+</header>
 
-<div class="game-container">
+<main class="game-container">
     <div class="area">
         <div class="dealer-title">KURUPİYER</div>
         <div class="score-badge">Toplam: <span id="dealerScore">0</span></div>
@@ -230,16 +251,16 @@
     </div>
 
     <div class="action-area">
-        <div id="message">MC KULLAN (MİN: 1K)</div>
+        <div id="message" aria-live="polite">MC KULLAN (MİN: 1K)</div>
         <div class="controls" id="controls">
-            <button id="hit" class="btn">ÇEK</button>
-            <button id="stand" class="btn">KAL</button>
-            <button id="double" class="btn">2X</button>
-            <button id="split" class="btn">BÖL</button>
+            <button id="hit" class="btn" aria-label="Kart Çek">ÇEK</button>
+            <button id="stand" class="btn" aria-label="Dur">KAL</button>
+            <button id="double" class="btn" aria-label="Bahsi İkiye Katla">2X</button>
+            <button id="split" class="btn" aria-label="Kartları Böl">BÖL</button>
         </div>
         <div class="controls" id="insurance-controls">
-            <button id="ins-yes" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);">EVET</button>
-            <button id="ins-no" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);">HAYIR</button>
+            <button id="ins-yes" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);" aria-label="Sigorta Al">EVET</button>
+            <button id="ins-no" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);" aria-label="Sigorta Alma">HAYIR</button>
         </div>
     </div>
 
@@ -254,8 +275,8 @@
         </div>
     </div>
 
-    <div class="chips-area" id="chipsArea">
-        <div class="cancel-btn" onclick="cancelBet()">SİL</div>
+    <div class="chips-area" id="chipsArea" aria-label="Bahis Çipleri">
+        <div class="cancel-btn" onclick="cancelBet()" aria-label="Bahsi Temizle">SİL</div>
         <div class="chip c1k" onclick="addBet(1000)">1K</div>
         <div class="chip c3k" onclick="addBet(3000)">3K</div>
         <div class="chip c5k" onclick="addBet(5000)">5K</div>
@@ -263,7 +284,7 @@
         <div class="chip c20k" onclick="addBet(20000)">20K</div>
         <div class="chip c50k" onclick="addBet(50000)">50K</div>
     </div>
-</div>
+</main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
