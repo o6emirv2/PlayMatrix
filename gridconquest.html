@@ -96,7 +96,7 @@
     <div class="header">
         <div class="user-badge" id="meName">YÜKLENİYOR...</div>
         <div class="logo">NEON CONQUEST</div>
-        <button onclick="window.showModalAlert('ONAY', 'Savaş alanından ayrılmak istediğine emin misin?', window.leaveToHome)" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">AYRIL</button>
+        <button onclick="window.handleExit()" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">AYRIL</button>
     </div>
 
     <div id="lobby">
@@ -143,7 +143,7 @@
                 <div style="font-family:'Black Ops One'">VS</div>
                 <div class="score-box" id="finalS2">0</div>
             </div>
-            <button class="btn-neon" style="width:100%" onclick="window.leaveToHome()">LOBİYE DÖN</button>
+            <button class="btn-neon" style="width:100%" onclick="window.leaveToLobby()">LOBİYE DÖN</button>
         </div>
     </div>
 
@@ -165,24 +165,23 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // KESİNLİKLE OYUN MÜZİĞİ YOK! SADECE DOĞAL SESLER
+    // MÜZİK YOK! SADECE LOBİ, YAĞMUR, ŞİMŞEK VE TIKLAMA SESİ
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
-        rain: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_73d9136e05.mp3'), // Şiddetli Gerçek Yağmur Sesi
+        rain: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_73d9136e05.mp3'), // Şiddetli Gerçek Yağmur
         thunder: new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek / Gök Gürültüsü
     };
     
     sfx.lobby.loop = true; 
     sfx.rain.loop = true; 
     
-    // GÜÇLÜ SES AYARLARI
     sfx.lobby.volume = 0.4; 
     sfx.tap.volume = 0.8;
     sfx.rain.volume = 1.0; 
     sfx.thunder.volume = 1.0; 
 
-    // IOS SES KİLİDİ AÇICI (Sorunsuz çalışması için tüm sesleri başlatıp anında durdurur)
+    // IOS SES KİLİDİ (Ekrana ilk dokunuşta her şeyi hazırlayıp kapatır)
     let audioUnlocked = false;
     const unlockAudio = () => {
         if (!audioUnlocked) {
@@ -229,8 +228,19 @@
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
     };
 
-    // --- PÜRÜZSÜZ LOBİYE DÖNÜŞ (SAYFA ASLA YENİLENMEZ) ---
-    window.leaveToHome = async () => {
+    // AYRIL BUTONUNUN YÖNETİMİ
+    window.handleExit = () => {
+        if (currentScene === 'game') {
+            // Eğer oyundaysa, kullanıcıya uyarı göster ve Lobiye dön
+            window.showModalAlert('ONAY', 'Savaş alanından ayrılıp lobiye dönmek istediğine emin misin?', window.leaveToLobby);
+        } else {
+            // Eğer zaten lobideyken tıklarsa playmatrix'e yönlendir
+            window.location.href = "https://playmatrix.com.tr";
+        }
+    };
+
+    // SPA MANTIĞI İLE LOBİYE DÖNÜŞ (SAYFA YENİLENMEZ)
+    window.leaveToLobby = async () => {
         if (curRoomId) {
             if (unsubGame) unsubGame();
             if (timerInt) clearInterval(timerInt);
@@ -241,7 +251,6 @@
             } catch (e) {}
         }
         
-        // Verileri Sıfırla
         curRoomId = null;
         isFin = false;
         canPlay = false;
@@ -249,7 +258,7 @@
         currentScene = 'lobby';
         lightningFlash = 0;
         
-        // OYUN SESLERİNİ SUSTUR, LOBİYİ AÇ
+        // SADECE LOBİ SESİNİ AÇ, YAĞMURU VE GÜRÜLTÜYÜ KAPAT
         sfx.rain.pause();
         sfx.thunder.pause();
         if (audioUnlocked) {
@@ -257,7 +266,6 @@
             sfx.lobby.play().catch(()=>{});
         }
         
-        // EKRANI PÜRÜZSÜZ DEĞİŞTİR (Sayfa yenileme kodu (location.href) tamamen silindi)
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('lobby').style.display = 'flex';
         window.toggleModal('resultModal', false);
@@ -273,7 +281,7 @@
         });
     };
 
-    // --- SAHNEYE (LOBİ vs OYUN) GÖRE ANİMASYON SİSTEMİ ---
+    // --- SAHNE ANİMASYONLARI ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let lobbyParticles = [];
@@ -282,7 +290,7 @@
 
     function initParticles() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        // Lobi Ekranı Parçacıkları
+        
         lobbyParticles = Array.from({length: 60}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
@@ -290,7 +298,6 @@
             s: Math.random() * 0.5 
         }));
 
-        // Şiddetli Yağmur Damlaları (Oyun İçi)
         rainParticles = Array.from({length: 150}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
@@ -301,13 +308,12 @@
         }));
     }
 
-    // TAM SENKRONİZE GÖK GÜRÜLTÜSÜ VE ŞİMŞEK ÇAKMASI
+    // ŞİMŞEK ÇAKMASI VE GÖK GÜRÜLTÜSÜ SENKRONİZASYONU
     function triggerLightning() {
-        if (currentScene !== 'game') return; // Lobiye dönüldüyse iptal et
+        if (currentScene !== 'game') return; 
         
-        lightningFlash = 3; 
+        lightningFlash = 3; // Ekrana parlama
         
-        // Gök gürültüsünü tam ekran parlarken patlat
         if (audioUnlocked) {
             sfx.thunder.currentTime = 0;
             sfx.thunder.play().catch(()=>{});
@@ -327,17 +333,15 @@
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); 
             });
         } else if (currentScene === 'game') {
-            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Karanlık ve kasvetli fırtına rengi
+            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // ŞİMŞEK PARLAMASI
             if (lightningFlash > 0) {
                 ctx.fillStyle = `rgba(230, 240, 255, ${Math.random() * 0.6 + 0.2})`;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 lightningFlash--;
             }
 
-            // Yağmur Çizimi
             ctx.lineCap = 'round';
             rainParticles.forEach(p => { 
                 ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; 
@@ -483,22 +487,19 @@
         enterGame(id);
     }
 
-    // OYUNA GİRİŞ İŞLEMİ (Müzik Yok, Sadece Yağmur)
+    // OYUNA GİRİŞ İŞLEMİ (Müzik Yok, Sadece Şiddetli Yağmur)
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
         
         currentScene = 'game';
         
-        // Lobi müziğini durdur
         sfx.lobby.pause(); 
         sfx.rain.currentTime = 0;
         
-        // Sadece Şiddetli Yağmuru Başlat
         if (audioUnlocked) {
             sfx.rain.play().catch(()=>{}); 
         }
         
-        // Şimşek / Gök gürültüsü döngüsünü tetikle
         triggerLightning(); 
 
         document.getElementById('lobby').style.display = 'none';
@@ -520,13 +521,13 @@
         }
 
         unsubGame = onSnapshot(doc(db, "conquest_rooms", id), snap => {
-            if(!snap.exists()) { if(!isFin) window.leaveToHome(); return; }
+            if(!snap.exists()) { if(!isFin) window.leaveToLobby(); return; }
             const d = snap.data();
             localCells = d.cells || {}; 
             
             if(d.status === 'terminated' && !isFin) {
                 isFin = true;
-                window.showModalAlert("BAĞLANTI KOPTU", "Rakip savaş alanından kaçtı!", window.leaveToHome);
+                window.showModalAlert("BAĞLANTI KOPTU", "Rakip savaş alanından kaçtı!", window.leaveToLobby);
                 return;
             }
 
