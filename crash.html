@@ -196,7 +196,7 @@
                 o.connect(g); g.connect(audioCtx.destination); o.start(now + d); o.stop(now + d + 0.2);
             });
         }
-        if(type==='bet') { // Yeni eklenen bahis sesi
+        if(type==='bet') { 
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
             o.type = 'sine'; o.frequency.setValueAtTime(600, now);
             o.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
@@ -211,16 +211,14 @@
     
     // OYUN DURUM DEĞİŞKENLERİ
     let multiplier = 1.00;
-    let phase = "WAITING"; // WAITING, COUNTDOWN, FLYING, CRASHED
+    let phase = "WAITING"; 
     let balance = 0;
     let userRef = null;
     let activeBet1 = 0, activeBet2 = 0;
     let auto1 = false, auto2 = false;
     let lineProgress = 0; 
     let countdownTimer = null;
-    let flightFrameId = null; // Uçuş animasyonunu durdurmak için
-    
-    // GÜVENLİK KİLİTLERİ (Asenkron işlemler devam ederken butona basılmasını engeller)
+    let flightFrameId = null; 
     let isProcessing1 = false;
     let isProcessing2 = false;
 
@@ -234,14 +232,12 @@
         ctx.fillStyle = "#02050e"; ctx.fillRect(0,0,width,height);
         ctx.fillStyle = "white";
         
-        // Yıldız Hareketi
         stars.forEach(s => {
             s.y += (phase === "FLYING" ? multiplier * 0.4 : 0.2);
             if(s.y > height) s.y = 0;
             ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
         });
 
-        // Dinamik Çizgi Çizimi
         if(phase === "FLYING") {
             ctx.save();
             ctx.shadowBlur = 15; ctx.shadowColor = "#4fd1ff";
@@ -249,7 +245,7 @@
             
             const startX = 0, startY = height;
             const cpX = width * 0.5;
-            const cpY = height * (1 - (multiplier / 10)); // Çarpan arttıkça eğri yukarı kalkar
+            const cpY = height * (1 - (multiplier / 10)); 
             const endX = width * (0.85 + (lineProgress * 0.15));
             const endY = height * (0.8 - (lineProgress * 0.6));
             
@@ -266,11 +262,39 @@
     }
     draw();
 
+    // --- KASA HER ZAMAN KAZANIR ALGORİTMASI ---
     function generateCrashPoint() {
-        if (Math.random() < 0.03) return 1.00;
-        const e = 100;
-        const h = Math.random() * e;
-        return Math.max(1.00, Math.floor(100 * e / (e - h)) / 100);
+        const totalActiveBet = activeBet1 + activeBet2;
+
+        if (totalActiveBet > 0) {
+            // DURUM 1: OYUNCU BAHİS YAPTI (Acımasız Kasa Mantığı)
+            let chance = Math.random();
+            
+            if (chance < 0.45) {
+                // %45 İhtimalle oyuncu kaçamadan patlar (1.00x - 1.15x arası)
+                return 1.00 + (Math.random() * 0.15);
+            } else if (chance < 0.85) {
+                // %40 İhtimalle heyecanlandırıp düşükte patlar (1.15x - 1.50x arası)
+                return 1.15 + (Math.random() * 0.35);
+            } else {
+                // %15 İhtimalle oyuncuya umut vermek için yüksek çarpan izni verir
+                const e = 100;
+                const h = Math.random() * e;
+                return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100);
+            }
+        } else {
+            // DURUM 2: OYUNCU İZLEMEDE (Yemleme / Bait Mantığı)
+            // Oyuncu bahis yapmadığında bilerek yüksek çarpanlar gösterilir.
+            const e = 100;
+            const h = Math.random() * e;
+            let point = Math.max(1.00, Math.floor(100 * e / (e - h)) / 100);
+            
+            // %60 ihtimalle normalin üstüne suni çarpan ekle (3x ile 15x arası ekstra)
+            if (Math.random() < 0.60) {
+                point += (Math.random() * 12 + 3);
+            }
+            return point;
+        }
     }
 
     onAuthStateChanged(auth, user => {
@@ -280,13 +304,11 @@
                 if(snap.exists()) {
                     balance = snap.data().balance || 0;
                     document.getElementById('balance').innerText = balance.toLocaleString('tr-TR');
-                    // Kullanıcı yüklendiğinde oyun bekliyorsa başlat
                     if(phase === "WAITING") startNewRound();
                 }
             });
         } else {
             signInAnonymously(auth);
-            // Anonim giriş yapıldığında bekle ve başlat
             setTimeout(() => { if(phase === "WAITING") startNewRound(); }, 3000);
         }
     });
@@ -303,12 +325,10 @@
         document.getElementById('betInput1').disabled = false;
         document.getElementById('betInput2').disabled = false;
         
-        // Önceki timer varsa temizle
         if (countdownTimer) clearInterval(countdownTimer);
         
         updateUI();
 
-        // Otomatik Bahis Kontrolü
         if(auto1 && activeBet1 === 0) handleBet(1, true); 
         if(auto2 && activeBet2 === 0) handleBet(2, true);
 
@@ -332,19 +352,19 @@
         document.getElementById('betInput2').disabled = true;
 
         let startTime = Date.now();
+        // Uçuş başlarken hedef belirlenir (Yem veya Kasa mantığıyla)
         let crashPoint = generateCrashPoint();
         
         if (flightFrameId) cancelAnimationFrame(flightFrameId);
 
         const tick = () => {
-            if(phase !== "FLYING") return; // Güvenlik kontrolü
+            if(phase !== "FLYING") return; 
             
             const elapsed = (Date.now() - startTime) / 1000;
             multiplier = 1 + (Math.pow(elapsed * 0.18, 1.35));
             if(lineProgress < 1) lineProgress += 0.002; 
             
             if(multiplier >= crashPoint) {
-                // ÇARPIŞMA (CRASH) DURUMU
                 phase = "CRASHED";
                 playSfx('crash');
                 document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
@@ -353,14 +373,12 @@
                 
                 addHistory(multiplier);
                 
-                // Kaybedilen bahisleri sıfırla
                 activeBet1 = 0; 
                 activeBet2 = 0;
                 
                 updateUI();
                 setTimeout(startNewRound, 4000);
             } else {
-                // UÇUŞ DEVAM EDİYOR
                 document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
                 updateUI();
                 flightFrameId = requestAnimationFrame(tick);
@@ -372,7 +390,6 @@
     async function handleBet(box, isAuto = false) {
         unlockAudio();
         
-        // İşlem zaten devam ediyorsa yeni tıklamayı yoksay (Güvenlik)
         if (box === 1 && isProcessing1) return;
         if (box === 2 && isProcessing2) return;
 
@@ -383,18 +400,16 @@
 
         let currentActive = (box === 1) ? activeBet1 : activeBet2;
 
-        // KİLİDİ AKTİF ET
         if(box === 1) isProcessing1 = true;
         if(box === 2) isProcessing2 = true;
-        updateUI(); // Kilitliyken UI'ı güncelle (butonları disable yap)
+        updateUI(); 
 
         try {
-            // DURUM 1: Geri sayım aşamasında yeni bahis yapılıyor
             if(phase === "COUNTDOWN" && currentActive === 0 && balance >= amount) {
                 if(userRef) {
                     await updateDoc(userRef, { balance: increment(-amount) });
                 } else {
-                    balance -= amount; // Sadece test amaçlı, gerçekte userRef hep olmalı
+                    balance -= amount; 
                 }
                 
                 if(box === 1) activeBet1 = amount; 
@@ -402,7 +417,6 @@
                 
                 if(!isAuto) playSfx('bet');
             } 
-            // DURUM 2: Geri sayım aşamasında bahsi iptal et
             else if (phase === "COUNTDOWN" && currentActive > 0) {
                  if(userRef) {
                     await updateDoc(userRef, { balance: increment(currentActive) });
@@ -413,9 +427,7 @@
                 if(box === 1) activeBet1 = 0; 
                 if(box === 2) activeBet2 = 0;
             }
-            // DURUM 3: Uçuş sırasında kazancı çek (Cashout)
             else if(phase === "FLYING" && currentActive > 0) {
-                // Kazanç o anki multiplier üzerinden hesaplanır
                 const win = Math.floor(currentActive * multiplier);
                 
                 if(userRef) {
@@ -432,7 +444,6 @@
         } catch (error) {
             console.error("Bahis işleminde hata:", error);
         } finally {
-            // KİLİDİ KALDIR
             if(box === 1) isProcessing1 = false;
             if(box === 2) isProcessing2 = false;
             updateUI();
@@ -445,7 +456,6 @@
             const active = (boxNum === 1) ? activeBet1 : activeBet2;
             const isProcessing = (boxNum === 1) ? isProcessing1 : isProcessing2;
 
-            // Eğer işlem sürüyorsa butonları tamamen dondur
             if (isProcessing) {
                 b.disabled = true;
                 b.innerText = "İşleniyor...";
