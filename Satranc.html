@@ -1,344 +1,172 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlayMatrix | Geliştirme Aşaması</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<title>PlayMatrix | Neon Chess Arena</title>
+    <style>
+        :root {
+            --primary: #00f0ff;
+            --primary-glow: rgba(0, 240, 255, 0.4);
+            --bg-main: #04060b;
+            --glass: rgba(10, 14, 23, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
 
-<style>
-:root {
-    --primary: #00f0ff;
-    --primary-glow: rgba(0, 240, 255, 0.6);
-    --secondary: #0055ff;
-    --accent: #ff007a;
-    --bg-main: #04060b;
-    --bg-surface: rgba(10, 14, 23, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --text-primary: #ffffff;
-    --text-secondary: #94a3b8;
-    --success: #00ffa3;
-    --danger: #ff4d4d;
-    --board-dark: rgba(0, 85, 255, 0.2);
-    --board-light: rgba(255, 255, 255, 0.03);
-    --highlight: rgba(0, 240, 255, 0.5);
-    --check-highlight: rgba(255, 0, 122, 0.6);
-}
+        body {
+            background: var(--bg-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
-body { background: radial-gradient(circle at top, #0a1128 0%, var(--bg-main) 100%); color: var(--text-primary); overflow-x: hidden; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        /* Arkaplan Matrix Efekti (Opsiyonel Görsellik) */
+        .bg-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            filter: blur(150px);
+            opacity: 0.15;
+            animation: move 10s infinite alternate;
+        }
+        @keyframes move { from { transform: translate(-50%, -50%); } to { transform: translate(50%, 50%); } }
 
-/* === ÜST BAR (TAŞMA ENGELLENDİ) === */
-.top-bar { 
-    width: 100%; height: 70px; display: flex; align-items: center; justify-content: space-between; 
-    padding: 0 15px; background: rgba(4, 6, 11, 0.9); backdrop-filter: blur(20px); 
-    border-bottom: 1px solid var(--glass-border); z-index: 1000; position: fixed; top: 0; 
-}
-.brand-3d { 
-    font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 900; color: #fff; 
-    text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px var(--primary-glow);
-    flex-shrink: 0; 
-}
-.back-btn { 
-    color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 700; 
-    display: flex; align-items: center; gap: 5px; flex-shrink: 0; cursor: pointer;
-}
-.balance-pill { 
-    background: rgba(0,255,163,0.1); border: 1px solid rgba(0,255,163,0.3); 
-    padding: 5px 12px; border-radius: 20px; font-weight: 900; color: var(--success); 
-    display: flex; align-items: center; gap: 5px; font-size: 14px; flex-shrink: 0;
-}
+        /* MODAL ANA YAPI */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
 
-/* === LOBİ & OYUN ALANI === */
-.main-content { margin-top: 85px; width: 100%; max-width: 900px; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-.lobby-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; width: 100%; }
+        .modal-card {
+            width: 90%;
+            max-width: 450px;
+            background: var(--glass);
+            border: 2px solid var(--primary);
+            border-radius: 30px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 50px var(--primary-glow);
+            position: relative;
+            /* Animasyon */
+            transform: scale(0.7);
+            opacity: 0;
+            animation: openModal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
 
-.panel { background: var(--bg-surface); border-radius: 20px; border: 1px solid var(--glass-border); padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-.bet-input { width: 100%; padding: 15px; margin: 15px 0; background: rgba(0,0,0,0.5); border: 1px solid var(--primary); color: var(--primary); border-radius: 10px; text-align: center; font-size: 18px; font-weight: 900; outline: none; }
+        @keyframes openModal {
+            to { transform: scale(1); opacity: 1; }
+        }
 
-.room-card { 
-    background: linear-gradient(90deg, rgba(10,14,23,0.9), rgba(0,85,255,0.1)); 
-    border: 1px solid var(--glass-border); border-left: 4px solid var(--primary); 
-    border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; 
-    align-items: center; margin-bottom: 10px; 
-}
+        .icon-box {
+            font-size: 60px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 15px var(--primary));
+            animation: pulse 2s infinite;
+        }
 
-/* === SATRANÇ TAHTASI === */
-.chessboard { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; max-width: 500px; aspect-ratio: 1; border: 2px solid var(--primary); border-radius: 5px; overflow: hidden; }
-.square { display: flex; justify-content: center; align-items: center; font-size: 35px; cursor: pointer; position: relative; }
-.square.dark { background: var(--board-dark); }
-.square.light { background: var(--board-light); }
-.square.selected { background: var(--highlight) !important; }
-.square.valid-move::after { content: ''; position: absolute; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; opacity: 0.6; }
-.square.valid-capture::after { content: ''; position: absolute; width: 80%; height: 80%; border: 3px solid var(--danger); border-radius: 50%; opacity: 0.4; }
-.square.in-check { background: var(--check-highlight) !important; }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
 
-.piece { z-index: 10; transition: transform 0.2s; cursor: pointer; }
-.piece.white { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-.piece.black { color: #000; -webkit-text-stroke: 1px var(--accent); }
+        h2 {
+            font-family: 'Montserrat', sans-serif;
+            color: #fff;
+            font-size: 24px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
 
-/* === MODAL === */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
-.btn { width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        p {
+            color: #94a3b8;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
 
-@media(max-width: 768px) { .lobby-grid { grid-template-columns: 1fr; } .square { font-size: 28px; } }
-</style>
+        .btn-exit {
+            width: 100%;
+            padding: 18px;
+            border-radius: 15px;
+            border: none;
+            background: linear-gradient(135deg, var(--primary), #0055ff);
+            color: #fff;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            box-shadow: 0 10px 20px rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-exit:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px var(--primary-glow);
+        }
+
+        .brand {
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            color: var(--primary);
+            opacity: 0.5;
+            letter-spacing: 3px;
+        }
+    </style>
 </head>
 <body>
 
-<header class="top-bar">
-    <div class="back-btn" id="btnBack"><i class="fa-solid fa-chevron-left"></i> LOBİ</div>
-    <div class="brand-3d">NEON CHESS</div>
-    <div class="balance-pill"><i class="fa-solid fa-gem"></i> <span id="userBal">0</span></div>
-</header>
+    <div class="bg-glow"></div>
 
-<div class="main-content">
-    <div id="lobbyArea" class="lobby-grid">
-        <div class="panel" style="text-align: center;">
-            <i class="fa-solid fa-chess-knight" style="font-size: 40px; color: var(--primary);"></i>
-            <h2 style="margin-top:10px;">ARENA KUR</h2>
-            <input type="number" id="betAmount" class="bet-input" value="500" min="100" step="100">
-            <button class="btn" id="btnCreate">OLUŞTUR</button>
-        </div>
-        <div class="panel">
-            <h3 style="margin-bottom:15px;"><i class="fa-solid fa-tower-broadcast" style="color:var(--danger)"></i> CANLI ODALAR</h3>
-            <div id="roomList"></div>
-        </div>
-    </div>
+    <div class="modal-overlay">
+        <div class="modal-card">
+            <div class="icon-box">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <h2>SİSTEM GÜNCELLEMESİ</h2>
+            <p>
+                <b>PlayMatrix Arena Protokolü Devrededir.</b><br><br>
+                Bu oyunun çok oyunculu algoritması ve grafik motoru şu an mühendislerimiz tarafından 
+                <b>Ultra Profesyonel</b> standartlara yükseltilmektedir. 
+                En kusursuz siberpunk deneyimi için çok yakında tekrar yayında olacağız.
+            </p>
+            
+            <button class="btn-exit" onclick="exitGame()">
+                <i class="fa-solid fa-power-off"></i> ANA LOBİYE DÖN
+            </button>
 
-    <div id="gameArea" style="display:none; width:100%; flex-direction:column; align-items:center;">
-        <div class="status-panel" style="width:100%; max-width:500px; display:flex; justify-content:space-between; margin-bottom:15px; background:var(--bg-surface); padding:15px; border-radius:10px; border:1px solid var(--glass-border);">
-            <div id="playerTop">Rakip Ajan</div>
-            <div id="poolAmount" style="color:var(--success); font-weight:900;">0 MC</div>
-        </div>
-        
-        <div id="board" class="chessboard"></div>
-
-        <div class="status-panel" style="width:100%; max-width:500px; margin-top:15px; background:var(--bg-surface); padding:15px; border-radius:10px; display:flex; justify-content:space-between; border:1px solid var(--glass-border);">
-            <div id="playerBottom" style="color:var(--primary); font-weight:900;">Sen</div>
-            <div id="turnIndicator" style="font-weight:900;">SIRANI BEKLE</div>
+            <div class="brand">PLAYMATRIX GLOBAL</div>
         </div>
     </div>
-</div>
 
-<div class="modal" id="statusModal">
-    <div class="panel" style="width:100%; max-width:400px; text-align:center;">
-        <div id="waitingArea">
-            <h2 style="color:var(--primary)">AJAN BEKLENİYOR...</h2>
-            <p style="margin:15px 0; color:var(--text-secondary)">Odanız ağda yayınlanıyor.</p>
-            <button class="btn" style="background:var(--danger)" id="btnCancel">İPTAL ET</button>
-        </div>
-        <div id="countdownArea" style="display:none;">
-            <h1 id="countdown" style="font-size:80px; color:var(--primary)">3</h1>
-        </div>
-    </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, collection, addDoc, updateDoc, onSnapshot, query, where, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-    authDomain:"emirhan-site.firebaseapp.com",
-    projectId:"emirhan-site",
-    storageBucket:"emirhan-site.firebasestorage.app",
-    messagingSenderId:"668871888390",
-    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-// === OYUN MOTORU & STATE ===
-const game = new Chess();
-const pieceUnicode = { 'p':'♟', 'n':'♞', 'b':'♝', 'r':'♜', 'q':'♛', 'k':'♚', 'P':'♙', 'N':'♘', 'B':'♗', 'R':'♖', 'Q':'♕', 'K':'♔' };
-const sfxMove = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3');
-
-let myColor = 'w', currentRoomId = null, myUsername = "Ajan", myBalance = 0;
-let selectedSquare = null, validMoves = [];
-
-// === AUTH & LOBİ BAŞLATMA ===
-onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = "index.html"; return; }
-    const uDoc = await getDoc(doc(db, "users", user.uid));
-    const data = uDoc.data();
-    myUsername = data.username || "Ajan_" + user.uid.slice(0,4);
-    myBalance = data.balance || 0;
-    document.getElementById("userBal").innerText = myBalance.toLocaleString();
-    initLobby();
-});
-
-function initLobby() {
-    const q = query(collection(db, "chess_rooms"), where("status", "==", "waiting"));
-    onSnapshot(q, (snap) => {
-        const list = document.getElementById('roomList');
-        list.innerHTML = '';
-        if(snap.empty) { list.innerHTML = '<div style="color:var(--text-secondary); text-align:center;">Şu an açık oda yok.</div>'; return; }
-        snap.forEach(d => {
-            const data = d.data();
-            if(data.whiteId === auth.currentUser.uid) return;
-            const card = document.createElement('div');
-            card.className = 'room-card';
-            card.innerHTML = `
-                <div><strong>${data.whiteName}</strong><br><small>#${d.id.slice(0,5)}</small></div>
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <div class="room-bet">${data.bet} MC</div>
-                    <button class="btn btn-join-room" data-id="${d.id}" data-bet="${data.bet}" style="width:auto; padding:8px 15px; margin:0;">KATIL</button>
-                </div>`;
-            list.appendChild(card);
-        });
-        document.querySelectorAll('.btn-join-room').forEach(b => {
-            b.onclick = () => joinRoom(b.dataset.id, parseInt(b.dataset.bet));
-        });
-    });
-}
-
-// === ODA İŞLEMLERİ ===
-async function createRoom() {
-    const bet = parseInt(document.getElementById('betAmount').value);
-    if (bet < 100 || myBalance < bet) { alert("Yetersiz bakiye veya hatalı miktar!"); return; }
-
-    try {
-        const docRef = await addDoc(collection(db, "chess_rooms"), {
-            whiteId: auth.currentUser.uid,
-            whiteName: myUsername,
-            status: "waiting",
-            bet: bet,
-            fen: game.fen(),
-            turn: 'w',
-            createdAt: Date.now()
-        });
-        currentRoomId = docRef.id;
-        myColor = 'w';
-        document.getElementById('statusModal').style.display = 'flex';
-        
-        onSnapshot(doc(db, "chess_rooms", currentRoomId), (s) => {
-            if(s.data()?.status === "playing") startCountdown(s.data());
-        });
-    } catch (e) { alert("Oda kurulamadı! Lütfen tekrar deneyin."); }
-}
-
-async function joinRoom(id, bet) {
-    if (myBalance < bet) { alert("Yetersiz bakiye!"); return; }
-    try {
-        await updateDoc(doc(db, "chess_rooms", id), { blackId: auth.currentUser.uid, blackName: myUsername, status: "playing" });
-        currentRoomId = id; myColor = 'b';
-        const s = await getDoc(doc(db, "chess_rooms", id));
-        startCountdown(s.data());
-    } catch (e) { alert("Odaya giriş başarısız!"); }
-}
-
-async function cancelRoom() {
-    if(currentRoomId && myColor === 'w') {
-        await deleteDoc(doc(db, "chess_rooms", currentRoomId));
-    }
-    document.getElementById('statusModal').style.display = 'none';
-}
-
-function startCountdown(data) {
-    document.getElementById('waitingArea').style.display = 'none';
-    document.getElementById('countdownArea').style.display = 'block';
-    let c = 3;
-    const t = setInterval(() => {
-        c--;
-        document.getElementById('countdown').innerText = c > 0 ? c : "GO!";
-        if(c < 0) { clearInterval(t); launchGame(data); }
-    }, 1000);
-}
-
-function launchGame(data) {
-    document.getElementById('statusModal').style.display = 'none';
-    document.getElementById('lobbyArea').style.display = 'none';
-    document.getElementById('gameArea').style.display = 'flex';
-    document.getElementById('poolAmount').innerText = (data.bet * 2) + " MC";
-    document.getElementById('playerTop').innerText = myColor === 'w' ? (data.blackName || "Ajan") : data.whiteName;
-    document.getElementById('playerBottom').innerText = myUsername + ` (${myColor === 'w' ? 'Beyaz' : 'Siyah'})`;
-
-    onSnapshot(doc(db, "chess_rooms", currentRoomId), (s) => {
-        const d = s.data();
-        if(d && d.fen !== game.fen()) {
-            game.load(d.fen);
-            sfxMove.play();
-            renderBoard();
+    <script>
+        function exitGame() {
+            // Animasyonla çıkış hissi verip yönlendiriyoruz
+            document.querySelector('.modal-card').style.transform = "scale(0.8)";
+            document.querySelector('.modal-overlay').style.opacity = "0";
+            setTimeout(() => {
+                window.location.href = "index.html"; // Ana sayfanın adı index.html ise
+            }, 300);
         }
-    });
-    renderBoard();
-}
-
-// === OYUN MANTIĞI ===
-function renderBoard() {
-    const bEl = document.getElementById('board');
-    bEl.innerHTML = '';
-    const board = game.board();
-    const rows = myColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
-    const cols = myColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
-    
-    let checkSq = null;
-    if(game.in_check()) {
-        const turn = game.turn();
-        for(let r=0; r<8; r++) for(let c=0; c<8; c++)
-            if(board[r][c]?.type === 'k' && board[r][c]?.color === turn) checkSq = String.fromCharCode(97+c) + (8-r);
-    }
-
-    rows.forEach(r => {
-        cols.forEach(c => {
-            const id = String.fromCharCode(97+c) + (8-r);
-            const p = board[r][c];
-            const sq = document.createElement('div');
-            sq.className = `square ${(r+c)%2 ? 'dark' : 'light'}`;
-            if(selectedSquare === id) sq.classList.add('selected');
-            if(checkSq === id) sq.classList.add('in-check');
-            
-            const mv = validMoves.find(x => x.to === id);
-            if(mv) sq.classList.add(p ? 'valid-capture' : 'valid-move');
-            
-            if(p) {
-                const pEl = document.createElement('div');
-                pEl.className = `piece ${p.color === 'w' ? 'white' : 'black'}`;
-                pEl.innerText = pieceUnicode[p.color === 'w' ? p.type.toUpperCase() : p.type];
-                sq.appendChild(pEl);
-            }
-            sq.onclick = () => handleSquare(id);
-            bEl.appendChild(sq);
-        });
-    });
-    const ind = document.getElementById('turnIndicator');
-    ind.innerText = game.turn() === myColor ? "SENİN SIRAN" : "RAKİBİ BEKLE";
-    ind.style.color = game.turn() === myColor ? "var(--success)" : "var(--danger)";
-}
-
-async function handleSquare(id) {
-    if(game.turn() !== myColor || game.game_over()) return;
-    const mv = validMoves.find(x => x.to === id);
-    
-    if(mv) {
-        game.move(mv);
-        selectedSquare = null; validMoves = [];
-        renderBoard();
-        sfxMove.play();
-        await updateDoc(doc(db, "chess_rooms", currentRoomId), { fen: game.fen(), turn: game.turn() });
-        if(game.game_over()) alert("Oyun Bitti!");
-    } else {
-        const p = game.get(id);
-        if(p?.color === myColor) {
-            selectedSquare = id; 
-            validMoves = game.moves({ square: id, verbose: true });
-        } else { selectedSquare = null; validMoves = []; }
-        renderBoard();
-    }
-}
-
-document.getElementById('btnCreate').onclick = createRoom;
-document.getElementById('btnCancel').onclick = cancelRoom;
-document.getElementById('btnBack').onclick = () => window.location.reload();
-
-</script>
+    </script>
 </body>
 </html>
