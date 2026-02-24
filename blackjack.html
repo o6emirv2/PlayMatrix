@@ -11,21 +11,22 @@
     body {
         height:100vh; width: 100vw; overflow:hidden;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-        background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.5) 100%),
-                    linear-gradient(135deg, #073d1c 0%, #0a5d2a 50%, #063d1c 100%);
+        /* Gerçekçi Casino Çuhası (Felt) Görünümü */
+        background: radial-gradient(circle at 50% 40%, #0d6e38 0%, #064522 60%, #021a0d 100%);
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR (Taşma ve Düzen Bozukluğu Giderildi) */
+    /* ÜST BAR */
     .top-bar {
         position:fixed; top:0; left:0; right:0; height:70px; 
         display:flex; align-items:center; justify-content:space-between;
         padding:0 10px; background: rgba(0,0,0,0.95);
-        border-bottom: 2px solid #4fd1ff; z-index:1000;
+        border-bottom: 2px solid #d4af37; z-index:1000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
 
     .brand {
-        font-size:1rem; font-weight:900; color: #4fd1ff;
+        font-size:1rem; font-weight:900; color: #d4af37;
         letter-spacing: 0.5px; font-family: 'Arial Black', sans-serif;
         white-space: nowrap; flex-shrink: 0;
     }
@@ -57,6 +58,7 @@
     .back-btn {
         background: #ff3b30; color: white; text-decoration: none; padding: 6px 10px;
         border-radius: 4px; font-size: 0.7rem; font-weight: 900; flex-shrink: 0;
+        border: 1px solid #c0392b;
     }
 
     /* OYUN ALANI */
@@ -66,15 +68,16 @@
     }
     
     .area { width: 100%; text-align: center; }
-    .dealer-title { font-size: 16px; letter-spacing: 3px; font-weight: 800; color: #d4af37; margin-bottom: 5px; }
+    .dealer-title { font-size: 16px; letter-spacing: 3px; font-weight: 800; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
     
     .score-badge { 
-        background: rgba(0,0,0,0.6); color: #ffd700; padding: 4px 15px; 
+        background: rgba(0,0,0,0.7); color: #ffd700; padding: 4px 15px; 
         border-radius: 20px; font-size: 13px; border: 1px solid rgba(255,215,0,0.3); 
         display: inline-block; margin-bottom: 10px; transition: 0.3s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     }
 
-    /* KART GÖRÜNÜM VE ANİMASYONLARI (BlackJack.html'den BİREBİR alındı) */
+    /* KART GÖRÜNÜM VE ANİMASYONLARI */
     .cards-wrapper { display: flex; justify-content: center; gap: 8px; min-height: 105px; padding: 0 10px; }
     
     .card-3d {
@@ -83,24 +86,24 @@
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(35deg) scale(0.4);
         opacity: 0;
-        transition: transform 1.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s;
+        transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s;
     }
 
     .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
-    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.8s ease-in-out; }
+    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.6s ease-in-out; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden;
-        border-radius: 8px;
-        box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+        border-radius: 6px;
+        box-shadow: -3px 3px 10px rgba(0,0,0,0.6); /* Masa derinliği için gölge */
     }
 
     .card-front { background: white; transform: rotateY(180deg); }
     .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
 
     .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85px; z-index: 10; }
-    #message { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.8); margin-bottom: 10px; text-transform: uppercase;}
+    #message { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 15px;}
     
     .controls { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; }
     .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: 800; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase;}
@@ -112,32 +115,38 @@
 
     .hands-container { display: flex; justify-content: center; gap: 20px; width: 100%; transition: 0.3s; }
     .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
-    .hand-box.active { border: 2px dashed rgba(46, 204, 113, 0.8); background: rgba(0,0,0,0.2); }
+    .hand-box.active { border: 2px dashed rgba(212, 175, 55, 0.8); background: rgba(0,0,0,0.3); box-shadow: inset 0 0 20px rgba(212,175,55,0.1); }
 
     .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; }
-    .chip { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; border: 2px dashed rgba(255,255,255,0.4); box-shadow: 0 5px 15px rgba(0,0,0,0.4); cursor: pointer; transition: transform 0.2s; }
-    .c250 { background: #fff; color: #000; }
-    .c500 { background: #27ae60; color: #fff; }
-    .c1k { background: #e74c3c; color: #fff; }
-    .c2k { background: #000; color: #fff; border-color: #ffd700; }
-    .cancel-btn { width: 48px; height: 48px; border-radius: 50%; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; }
-    .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+    .chip { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; border: 4px dashed rgba(255,255,255,0.3); box-shadow: 0 6px 10px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.1s; }
+    .chip:active { transform: scale(0.9); }
+    .c250 { background: radial-gradient(circle, #fff 40%, #ccc 100%); color: #000; border-color: #999; }
+    .c500 { background: radial-gradient(circle, #2ecc71 40%, #27ae60 100%); color: #fff; }
+    .c1k { background: radial-gradient(circle, #e74c3c 40%, #c0392b 100%); color: #fff; }
+    .c2k { background: radial-gradient(circle, #333 40%, #000 100%); color: #d4af37; border-color: #d4af37; }
+    .cancel-btn { width: 48px; height: 48px; border-radius: 50%; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+    .disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.5); }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-    .modal-content { background: #111; border: 1px solid #d4af37; border-radius: 20px; width: 85%; max-width: 320px; padding: 30px; text-align: center; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
+    .modal-content { background: #1a1a1a; border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 350px; padding: 25px; text-align: center; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); }
+    .rules-text { font-size: 13px; color: #bbb; margin-bottom: 20px; text-align: left; line-height: 1.5; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333; }
 </style>
 </head>
 <body>
 
 <div id="sys-start-overlay" class="modal-overlay">
     <div class="modal-content">
-        <h2 style="color:#d4af37; margin-bottom: 20px;">VIP CASINO</h2>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: #d4af37; color: #000; font-weight: 900; cursor: pointer;">MASAYA OTUR</button>
+        <h2 style="color:#d4af37; margin-bottom: 15px; letter-spacing: 2px;">NASIL OYNANIR</h2>
+        <div class="rules-text">
+            Blackjack'te amaç, 21'i geçmeden Kurupiyer'den daha yüksek bir skora ulaşmaktır.<br><br>
+            <span style="color: #ff3b30; font-weight: bold;">ÖNEMLİ UYARI:</span> Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız bahis (MC) iadesi <b>kesinlikle yapılmayacaktır.</b> Lütfen stabil bir internet bağlantısı ile oynayın.
+        </div>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4af37); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(212,175,55,0.4);">KABUL ET VE MASAYA OTUR</button>
     </div>
 </div>
 
 <div class="top-bar">
-    <div class="brand">BLACKJACK</div>
+    <div class="brand">VIP BLACKJACK</div>
     <div class="right-menu">
         <div class="user-pill-mini">
             <div class="balance-info"><b id="balance">0</b><div class="mc-chip">MC</div></div>
@@ -208,7 +217,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// OYUN DURUMLARI
 let balance = 0, initialBet = 0, userRef = null;
 let deck = [], dealer = [], dealerHidden = true;
 let playerHands = []; 
@@ -218,31 +226,49 @@ let insuranceBet = 0;
 let gameState = "loading", betCountdown = null, actionTimer = null, isProcessing = false;
 const messageEl = document.getElementById("message");
 
-// --- SES KONTROL ---
+// --- GERÇEKÇİ SES KONTROLÜ (iOS UYUMLU) ---
 const sounds = {};
 let audioCtx = null;
+
 async function initAudio() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+    
+    // iOS için kullanıcı etkileşimiyle motoru canlandırma
+    if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+    }
+
     const urls = {
-        card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-        win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-        lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3',
-        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'
+        card: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',   // Kart dağıtma sesi
+        win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',    // Casino Win (Çip/Jeton Sesi)
+        lose: 'https://assets.mixkit.co/active_storage/sfx/2043/2043-preview.mp3',   // Bust / Kaybetme sesi
+        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',   // Geri sayım
+        chip: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'    // Çip masaya koyma
     };
+    
     for (const [name, url] of Object.entries(urls)) {
-        fetch(url).then(r => r.arrayBuffer()).then(b => audioCtx.decodeAudioData(b)).then(d => sounds[name] = d);
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            sounds[name] = audioBuffer;
+        } catch(e) { console.error("Ses yüklenemedi:", name); }
     }
 }
-document.getElementById('systemStartBtn').onclick = () => { initAudio(); document.getElementById('sys-start-overlay').style.display='none'; };
+
+document.getElementById('systemStartBtn').onclick = async () => { 
+    await initAudio(); 
+    document.getElementById('sys-start-overlay').style.display='none'; 
+};
 
 function playSound(name) {
-    if(!audioCtx) return;
-    if(name === 'chip') { 
-        const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(350, now); g.gain.setValueAtTime(0.5, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-        o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + 0.05); return;
-    }
-    if(sounds[name]) { const s = audioCtx.createBufferSource(); s.buffer = sounds[name]; s.connect(audioCtx.destination); s.start(0); }
+    if(!audioCtx || !sounds[name]) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume(); // Ekstra güvenlik
+    const source = audioCtx.createBufferSource();
+    source.buffer = sounds[name];
+    source.connect(audioCtx.destination);
+    source.start(0);
 }
 
 onAuthStateChanged(auth, user => {
@@ -262,7 +288,7 @@ onAuthStateChanged(auth, user => {
 window.addBet = (a) => {
     if(gameState !== "betting" || isProcessing) return;
     if(initialBet + a > balance) return;
-    playSound('chip');
+    playSound('chip'); // Gerçek çip sesi
     initialBet += a;
     document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); 
     document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
@@ -271,7 +297,8 @@ window.addBet = (a) => {
 
 window.cancelBet = () => {
     if(gameState !== "betting" || initialBet === 0 || isProcessing) return;
-    initialBet = 0; playSound('chip');
+    initialBet = 0; 
+    playSound('chip');
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = "0";
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
@@ -323,9 +350,8 @@ function updateScores(){
     document.getElementById("betAmount").innerText = totalBet.toLocaleString('tr-TR');
 }
 
-// BİREBİR ORİJİNAL DOSYADAKİ ANİMASYON MANTIĞI
 async function draw(hand, divId, isOpen = true){
-    playSound('card');
+    playSound('card'); // Gerçek kart sesi
     let card = deck.pop(); 
     hand.push(card);
     
@@ -339,21 +365,14 @@ async function draw(hand, divId, isOpen = true){
     
     return new Promise(resolve => {
         setTimeout(() => { 
-            // 1. Adım: Kart masaya kapalı iner
             cardCont.classList.add("show"); 
-            
-            // 2. Adım: Kart açık olması gerekiyorsa 600ms sonra kendi etrafında döner
             if(isOpen) {
-                setTimeout(() => {
-                    cardCont.classList.add("flipped"); 
-                }, 600);
+                setTimeout(() => { cardCont.classList.add("flipped"); }, 400);
             }
-            
-            // Kartın animasyonları bitene kadar bekle ve oyunu devam ettir
             setTimeout(() => {
                 updateScores();
                 resolve();
-            }, isOpen ? 1400 : 1000); 
+            }, isOpen ? 1000 : 600); 
         }, 50);
     });
 }
@@ -378,11 +397,10 @@ async function startGame(){
     try { await updateDoc(userRef, { balance: increment(-initialBet) }); } 
     catch(e) { cancelBet(); return; }
 
-    // DAĞITIM SIRASI
-    await draw(playerHands[0].cards, "hand0", true);   // 1. Oyuncu AÇIK
-    await draw(dealer, "dealerCards", true);           // 2. Kurupiyer AÇIK
-    await draw(playerHands[0].cards, "hand0", true);   // 3. Oyuncu AÇIK
-    await draw(dealer, "dealerCards", false);          // 4. Kurupiyer KAPALI
+    await draw(playerHands[0].cards, "hand0", true);
+    await draw(dealer, "dealerCards", true);
+    await draw(playerHands[0].cards, "hand0", true);
+    await draw(dealer, "dealerCards", false);
 
     if(dealer[0].value === 1 && balance >= initialBet / 2) {
         messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
@@ -412,7 +430,7 @@ async function checkInitialBlackjack() {
         dealerHidden = false;
         const hiddenCard = document.getElementById("dealerCards").children[1];
         if (hiddenCard && !hiddenCard.classList.contains("flipped")) {
-            hiddenCard.classList.add("flipped"); // Kapalı kartı aç
+            hiddenCard.classList.add("flipped"); 
         }
         updateScores();
         await delay(1000);
@@ -469,11 +487,12 @@ document.getElementById("hit").onclick = async () => {
     }
 };
 
-const stand = () => { 
+// Hoisting riskini önlemek için fonksiyon olarak tanımlandı
+function stand() { 
     if(isProcessing) return; isProcessing = true; hideControls();
     playerHands[currentHandIdx].status = 'stand';
     nextHandOrDealer(); 
-};
+}
 document.getElementById("stand").onclick = stand;
 
 document.getElementById("double").onclick = async () => {
@@ -488,6 +507,7 @@ document.getElementById("double").onclick = async () => {
     nextHandOrDealer();
 };
 
+// DÜZELTİLMİŞ SPLIT MANTIĞI
 document.getElementById("split").onclick = async () => {
     if(isProcessing) return; isProcessing = true; hideControls();
     
@@ -501,20 +521,22 @@ document.getElementById("split").onclick = async () => {
     hand0Div.lastChild.remove();
     document.getElementById("hand1-box").style.display = "flex";
     
-    // Split için eklenen kart doğrudan masada ve açık kalır
     const cardCont = document.createElement("div");
     cardCont.className = "card-3d show flipped"; 
     cardCont.innerHTML = `<div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(splitCard.value)}${splitCard.suit}.png') center/cover"></div><div class="card-face card-back"></div>`;
     document.getElementById("hand1").appendChild(cardCont);
     
+    await delay(300);
+    // Böldüğümüz iki ele de kurallara uygun olarak anında birer kart veriyoruz
     await draw(playerHands[0].cards, "hand0", true);
+    await draw(playerHands[1].cards, "hand1", true);
+    
     isProcessing = false; showControls();
 };
 
 async function nextHandOrDealer() {
     if(currentHandIdx + 1 < playerHands.length) {
         currentHandIdx++;
-        await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
         isProcessing = false; showControls();
     } else {
         dealerTurn();
@@ -528,7 +550,7 @@ async function dealerTurn(){
     if(cards[1] && !cards[1].classList.contains('flipped')) {
         cards[1].classList.add("flipped");
         playSound('card'); 
-        await delay(800); // Dönme süresi
+        await delay(600);
     }
     updateScores(); await delay(500);
 
@@ -547,9 +569,11 @@ async function endGameLogic(){
     gameState = "resolving";
     let dTotal = getScore(dealer).total;
     let totalWin = 0;
+    let didWin = false;
     
     if(insuranceBet > 0 && dTotal === 21 && dealer.length === 2) {
         totalWin += insuranceBet * 3; 
+        didWin = true;
     }
 
     for(let i=0; i<playerHands.length; i++) {
@@ -562,24 +586,26 @@ async function endGameLogic(){
         if(pTotal > 21) { 
             document.getElementById(`score${i}`).innerText += " (PATLADI)";
         } else if (dTotal > 21) {
-            totalWin += hand.bet * 2;
+            totalWin += hand.bet * 2; didWin = true;
         } else if (isPlayerBJ && !isDealerBJ) {
-            totalWin += Math.floor(hand.bet * 2.5); 
+            totalWin += Math.floor(hand.bet * 2.5); didWin = true;
         } else if (pTotal > dTotal) {
-            totalWin += hand.bet * 2;
+            totalWin += hand.bet * 2; didWin = true;
         } else if (pTotal === dTotal) {
             totalWin += hand.bet; 
         }
     }
 
     if(totalWin > 0) {
-        messageEl.innerText = "KAZANCINIZ: " + totalWin; playSound('win');
+        messageEl.innerText = "KAZANCINIZ: " + totalWin; 
+        if(didWin) playSound('win'); // Eğer iade değil de net kazançsa kazanma sesi
         try { await updateDoc(userRef, { balance: increment(totalWin) }); } catch(e){}
     } else {
-        messageEl.innerText = "KAYBETTİNİZ!"; playSound('lose');
+        messageEl.innerText = "KAYBETTİNİZ!"; 
+        playSound('lose'); // Bust / Kaybetme sesi
     }
     
-    await delay(4000);
+    await delay(3500);
     resetBoard();
 }
 
