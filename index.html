@@ -898,6 +898,12 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
         }
     });
 });
+    // Sayfa yüklendiğinde URL'den .html kısmını temizler
+if (window.history.replaceState) {
+    // Mevcut adresi kontrol eder, eğer blackjack.html ile bitiyorsa temizler
+    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname.replace('blackjack.html', '');
+    window.history.replaceState(null, null, cleanUrl);
+}
 </script>
 </body>
 </html>
