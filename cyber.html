@@ -13,6 +13,8 @@
             --glass: rgba(10, 15, 25, 0.9);
             --border: rgba(0, 255, 163, 0.2);
             --off: rgba(30, 41, 59, 0.7);
+            /* Taşların boyutunu dinamik yapmak için CSS değişkeni ekledik */
+            --tile-size: 65px; 
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -93,12 +95,13 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            padding: 20px;
         }
 
         #grid {
             display: grid;
-            gap: 12px;
-            padding: 25px;
+            gap: 8px; /* Boşlukları biraz kıstık ki büyük leveller sığsın */
+            padding: 20px;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -107,9 +110,10 @@
         }
 
         .tile {
-            width: 65px; height: 65px;
+            width: var(--tile-size); 
+            height: var(--tile-size);
             background: var(--off);
-            border-radius: 14px;
+            border-radius: 12px;
             cursor: pointer;
             position: relative;
             display: flex; align-items: center; justify-content: center;
@@ -139,7 +143,7 @@
 
         .modal {
             background: var(--glass); padding: 35px; border-radius: 28px;
-            border: 1px solid var(--border); text-align: center; width: 85%; max-width: 320px;
+            border: 1px solid var(--border); text-align: center; width: 85%; max-width: 340px;
         }
 
         .btn {
@@ -148,10 +152,8 @@
             text-transform: uppercase; cursor: pointer; margin-top: 20px;
             font-size: 14px;
         }
-
-        @media (max-width: 400px) {
-            .tile { width: 55px; height: 55px; }
-        }
+        
+        #win-status { font-size: 11px; letter-spacing: 2px; color: #fff; opacity: 0.5; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -159,7 +161,7 @@
     <canvas id="neural-canvas"></canvas>
 
     <div class="top-bar">
-        <div class="brand"><i class="fa-solid fa-microchip"></i> CYBER</div>
+        <div class="brand"><i class="fa-solid fa-microchip"></i> CYBER_LINK</div>
         <div class="level-info">
             NODE: <span id="level-num">1</span>
             <span class="best-score-badge">EN İYİ: <span id="best-score">1</span></span>
@@ -172,8 +174,9 @@
 
         <div id="win-overlay" class="overlay" style="display:none;">
             <div class="modal">
-                <h2 style="color:var(--primary); font-family: Montserrat;">SİSTEM SIZILDI</h2>
-                <p style="margin-top:10px; opacity:0.7; font-size: 14px;">Nöron bağlantıları başarıyla kuruldu.</p>
+                <span id="win-status">[DURUM: BAŞARILI]</span>
+                <h2 id="win-title" style="color:var(--primary); font-family: Montserrat;">SİSTEM SIZILDI</h2>
+                <p id="win-desc" style="margin-top:10px; opacity:0.7; font-size: 14px;">Nöron bağlantıları başarıyla kuruldu.</p>
                 <button class="btn" onclick="nextLevel()">SONRAKİ NODE</button>
             </div>
         </div>
@@ -255,23 +258,51 @@
         sounds.start.play();
         document.getElementById('start-overlay').style.display = 'none';
         
-        // Kaydedilmiş skoru yükle
         loadBestScore();
         createLevel();
+    }
+
+    // --- DİNAMİK MESAJ SİSTEMİ (600+ Benzersiz Kombinasyon) ---
+    const cyberTitles = [
+        "SİSTEM SIZILDI", "GÜVENLİK AŞILDI", "AĞA ERİŞİLDİ", "VERİLER ÇEKİLDİ", 
+        "FIREWALL ÇÖKTÜ", "ŞİFRELEME KIRILDI", "NODE AKTİF", "PROTOKOL TAMAM",
+        "KÖK ERİŞİMİ", "SİBER AĞ ÇÖZÜLDÜ"
+    ];
+    
+    const cyberDescs = [
+        "Nöron bağlantıları başarıyla kuruldu.", "Ana sunucuya yetkisiz erişim sağlandı.",
+        "Kriptografik anahtar başarıyla çözüldü.", "Güvenlik duvarı atlatıldı, sistem senin.",
+        "Siber ağ protokolleri güncellendi.", "Karanlık ağ geçidi açıldı.",
+        "Veri paketleri hedefe yönlendirildi.", "Hedef sistemin kontrolü sağlandı.",
+        "Biyometrik kilitler devre dışı bırakıldı.", "Matris kodları deşifre edildi.",
+        "Güvenlik kameraları döngüye alındı.", "İz bırakmadan ana belleğe sızıldı.",
+        "Admin yetkileri ele geçirildi.", "Kuantum şifrelemesi bypass edildi.",
+        "Sistem logları başarıyla temizlendi."
+    ];
+
+    const cyberStatuses = ["[DURUM: BAŞARILI]", "[DURUM: GİZLİ]", "[DURUM: KRİTİK]", "[DURUM: STABİL]"];
+
+    function generateWinMessage(lvl) {
+        // Bölüm numarasına göre farklı kelimeler seçmek için matematiksel indeksleme kullanıyoruz
+        const titleIndex = (lvl * 3) % cyberTitles.length;
+        const descIndex = (lvl * 7) % cyberDescs.length;
+        const statusIndex = (lvl * 2) % cyberStatuses.length;
+
+        document.getElementById('win-status').innerText = cyberStatuses[statusIndex];
+        document.getElementById('win-title').innerText = `${cyberTitles[titleIndex]} [LVL ${lvl}]`;
+        document.getElementById('win-desc').innerText = cyberDescs[descIndex];
     }
 
     // --- OYUN MANTIĞI VE SKOR SİSTEMİ ---
     let level = 1;
     let bestLevel = 1;
-    let gridSize = 3;
+    let gridSize = 3; // Başlangıç 3x3
     let tiles = [];
     let isGameLocked = false;
 
     function loadBestScore() {
         const savedScore = localStorage.getItem('cyberLinkBestScore');
-        if(savedScore) {
-            bestLevel = parseInt(savedScore);
-        }
+        if(savedScore) bestLevel = parseInt(savedScore);
         document.getElementById('best-score').innerText = bestLevel;
     }
 
@@ -283,10 +314,26 @@
         }
     }
 
+    // Taş boyutunu ekrana sığacak şekilde dinamik hesapla
+    function calculateTileSize() {
+        const maxWidth = window.innerWidth > 450 ? 400 : window.innerWidth * 0.85;
+        const gapSize = 8; // Grid gap
+        const totalGap = (gridSize - 1) * gapSize;
+        
+        let newSize = Math.floor((maxWidth - totalGap) / gridSize);
+        if (newSize > 65) newSize = 65; // Maksimum boyut
+        if (newSize < 30) newSize = 30; // Minimum boyut
+        
+        document.documentElement.style.setProperty('--tile-size', `${newSize}px`);
+    }
+
     function createLevel() {
         const grid = document.getElementById('grid');
         grid.innerHTML = '';
         grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+        
+        calculateTileSize(); // Izgara boyutuna göre taşları ayarla
+
         tiles = [];
         isGameLocked = false;
 
@@ -294,11 +341,9 @@
             const tileDiv = document.createElement('div');
             tileDiv.className = 'tile';
             
-            const type = Math.floor(Math.random() * 2); // 0: Düz, 1: Köşe
-            const targetRotation = 0; // Hedef açı her zaman 0 olsun
+            const type = Math.floor(Math.random() * 2); 
+            const targetRotation = 0; 
             
-            // Çözülebilir bir oyun için kasten döndür (Scramble)
-            // 1, 2 veya 3 defa 90 derece döndürerek oyuncuya sunuyoruz.
             const scrambleTurns = Math.floor(Math.random() * 3) + 1;
             const currentRotation = scrambleTurns * 90;
             
@@ -309,14 +354,11 @@
             grid.appendChild(tileDiv);
             
             tiles.push({ 
-                type: type, 
-                currentRotation: currentRotation, 
-                targetRotation: targetRotation, 
-                element: tileDiv 
+                type: type, currentRotation: currentRotation, 
+                targetRotation: targetRotation, element: tileDiv 
             });
         }
         
-        // Başlangıçta doğru denk gelen parçalar varsa ışıklarını yak
         checkConnectionsAndWin();
     }
 
@@ -332,7 +374,6 @@
         sounds.rotate.currentTime = 0; 
         sounds.rotate.play();
         
-        // Modül Alma: Açıyı 360'ı geçmeyecek şekilde sıfırla
         tiles[index].currentRotation = (tiles[index].currentRotation + 90) % 360;
         tiles[index].element.style.transform = `rotate(${tiles[index].currentRotation}deg)`;
         
@@ -346,15 +387,9 @@
             let isCorrect = false;
 
             if (t.type === 0) {
-                // Düz çizgiler hem 0 hem de 180 derecede doğru görünür
-                if (t.currentRotation === 0 || t.currentRotation === 180) {
-                    isCorrect = true;
-                }
+                if (t.currentRotation === 0 || t.currentRotation === 180) isCorrect = true;
             } else if (t.type === 1) {
-                // Köşe parçaları sadece hedef açısında (0) doğrudur
-                if (t.currentRotation === t.targetRotation) {
-                    isCorrect = true;
-                }
+                if (t.currentRotation === t.targetRotation) isCorrect = true;
             }
 
             if (isCorrect) {
@@ -365,10 +400,13 @@
             }
         });
 
-        // Tüm taşlar doğruysa bölümü bitir
         if (correctTilesCount === tiles.length) {
             isGameLocked = true;
-            saveBestScore(); // Yeni rekor kırıldıysa kaydet
+            saveBestScore();
+            
+            // Kazanma mesajını bölüm numarasına göre dinamik oluştur
+            generateWinMessage(level);
+
             setTimeout(() => {
                 sounds.success.play();
                 document.getElementById('win-overlay').style.display = 'flex';
@@ -380,7 +418,10 @@
         level++;
         document.getElementById('level-num').innerText = level;
         
-        if(level % 3 === 0 && gridSize < 6) gridSize++; // Zorluk artışı
+        // ZORLUK ARTIŞI: Her 5 bölümde bir ızgara boyutunu (gridSize) artır.
+        if((level - 1) % 5 === 0 && gridSize < 10) {
+            gridSize++; 
+        }
         
         document.getElementById('win-overlay').style.display = 'none';
         createLevel();
