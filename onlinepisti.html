@@ -30,7 +30,6 @@
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         }
 
-        /* 5. LOBİ ARKA PLANI VE ATMOSFERİK ANİMASYONLAR */
         #bg-canvas { 
             position: fixed; inset: 0; z-index: -1; 
             background: #02040a; overflow: hidden;
@@ -49,7 +48,6 @@
             100% { transform: translate(-30px, -20px) scale(0.9); }
         }
 
-        /* 4. ÜST BAR KAYMA DÜZEN BOZUKLUĞU ÇÖZÜMÜ */
         .top-bar { 
             height: 70px; flex-shrink: 0; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; 
             background: rgba(5, 7, 12, 0.95); border-bottom: 1px solid rgba(0, 210, 255, 0.2); 
@@ -104,7 +102,13 @@
         }
         .btn-neon:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(0, 210, 255, 0.4); }
 
-        /* LOBİ KARTLARI (GLASMORPHISM) */
+        /* HIZLI MASA BUTONU ÖZEL TASARIM */
+        .btn-fast-join {
+            background: linear-gradient(45deg, #ff8a00, #e52e71); color: #fff;
+            border: 1px solid #ffcc00; box-shadow: 0 4px 20px rgba(255, 138, 0, 0.6);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
         .room-card { 
             background: linear-gradient(145deg, rgba(25, 30, 45, 0.75), rgba(10, 15, 20, 0.85)); 
             border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--border); 
@@ -166,6 +170,7 @@
         .stack-card { 
             width:90px; position:absolute; left:0; top:0; border-radius: 8px; 
             box-shadow: 3px 3px 15px rgba(0,0,0,0.8); background:white; border: 1px solid #ccc;
+            transition: transform 0.3s ease-out; /* Masaya atılan kartların yumuşak düşüşü için eklendi */
         }
         
         .hand { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:10px; width: max-content; padding: 15px; bottom: 5px; z-index: 200; }
@@ -214,21 +219,29 @@
 
         .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
 
+        /* YENİ SİNEMATİK PİŞTİ EKRANI */
         #pistiDisplay {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
-            font-size: 120px; font-weight: 900; color: #fff; text-align: center;
-            text-shadow: 0 0 30px var(--border), 0 0 60px var(--accent), 0 0 100px #fff;
+            font-size: 110px; font-weight: 900; text-align: center;
+            /* Altın ve ateş rengi profesyonel text gradient */
+            background: linear-gradient(to bottom, #ffe600, #ff5e00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            /* Derin parlama gölgeleri */
+            filter: drop-shadow(0 0 10px rgba(255, 166, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.6));
             display: none; z-index: 9999; font-family: 'Black Ops One'; letter-spacing: 5px;
-            pointer-events: none; /* KRİTİK: Piştiden sonra oyun kitlenmez */
+            pointer-events: none; /* KRİTİK: Tıklamaları engellemez */
         }
-        .pisti-active { animation: pistiTurbo 1.8s forwards; display: block !important; }
         
-        @keyframes pistiTurbo {
-            0% { transform: translate(-50%,-50%) scale(0); opacity: 0; }
-            20% { transform: translate(-50%,-50%) scale(1.2) rotate(-5deg); opacity: 1; }
-            50% { transform: translate(-50%,-50%) scale(1.3) rotate(5deg); opacity: 1; }
-            80% { transform: translate(-50%,-50%) scale(1.2) rotate(0deg); opacity: 1; }
-            100% { transform: translate(-50%,-50%) scale(3); opacity: 0; }
+        .pisti-active { animation: pistiCinematic 2.2s ease-out forwards; display: block !important; }
+        
+        @keyframes pistiCinematic {
+            0% { transform: translate(-50%,-50%) scale(0.1); opacity: 0; filter: brightness(3); }
+            15% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; filter: brightness(1.5); }
+            30% { transform: translate(-50%,-50%) scale(0.9); opacity: 1; filter: brightness(1); }
+            45% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; }
+            70% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.8)); }
+            100% { transform: translate(-50%,-50%) scale(5); opacity: 0; filter: blur(10px); }
         }
     </style>
 </head>
@@ -274,7 +287,7 @@
 
         <div style="display:flex; gap:12px; margin-top:5px;">
             <button class="btn-neon" onclick="openCreateModal()">MASA KUR</button>
-            <button class="btn-neon" onclick="handleQuickJoin()" style="background:var(--btn-sec); color:#000;">HIZLI KATIL</button>
+            <button class="btn-neon btn-fast-join" onclick="handleQuickJoin()">HIZLI MASA</button>
         </div>
 
         <div id="roomList" style="margin-top:10px"></div>
@@ -361,26 +374,30 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // 1-2. SES KAYNAKLARI (Kazanç ve Kayıp dahil gerçekçi ve garantili)
+    // SES KAYNAKLARI 
     const sfx = {
         chip: new Audio("https://cdn.freesound.org/previews/253/253174_4404552-lq.mp3"),
         deal: new Audio("https://cdn.freesound.org/previews/434/434472_7504780-lq.mp3"),
         cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
-        win: new Audio("https://cdn.freesound.org/previews/609/609335_10292524-lq.mp3"), // Profesyonel Kazanç Sesi
-        lose: new Audio("https://cdn.freesound.org/previews/173/173859_2370158-lq.mp3"), // Profesyonel Kayıp Sesi
-        pisti: new Audio("https://cdn.freesound.org/previews/476/476178_7879024-lq.mp3") 
+        win: new Audio("https://cdn.freesound.org/previews/609/609335_10292524-lq.mp3"), 
+        lose: new Audio("https://cdn.freesound.org/previews/173/173859_2370158-lq.mp3"), 
+        // Yeni Bonus/Pişti Sesi (Tüm Cihazlarda Uyumlu)
+        pisti: new Audio("https://cdn.freesound.org/previews/274/274180_4548252-lq.mp3") 
     };
 
-    // İOS SES KİLİDİ AÇMA (İlk Dokunuşta Sessiz Çaldırma Hilesi)
+    // İOS SES KİLİDİ AÇMA (Daha Güvenilir Yöntem)
     let audioUnlocked = false;
     function unlockAudio() {
         if(audioUnlocked) return;
         Object.values(sfx).forEach(audio => {
-            audio.load(); // Dosyayı önbelleğe zorla
-            audio.play().then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-            }).catch(e => {}); // Autoplay politikasını aşmak için sessizce yakala
+            audio.load();
+            let promise = audio.play();
+            if(promise !== undefined) {
+                promise.then(() => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }).catch(e => {}); 
+            }
         });
         audioUnlocked = true;
         document.removeEventListener('click', unlockAudio);
@@ -389,10 +406,9 @@
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
 
-    // 3. SES ÇALMA FONKSİYONU YENİLENDİ (Gecikmesiz, Çoklu Çalabilen Clone Tekniği)
+    // GECİKMESİZ SES ÇALMA (CloneNode tekniği ile her basışta sıfırdan ve anında çalar)
     function playSound(audioObj) {
         if(!audioObj) return;
-        // Aynı sesi üst üste hızlıca çalabilmek (kart dağıtımı, atma) için sesi klonluyoruz
         let soundClone = audioObj.cloneNode(true);
         soundClone.volume = 1;
         soundClone.play().catch(e => console.warn("Ses Çalınamadı: ", e));
@@ -681,8 +697,12 @@
                 document.getElementById("waitingStatus").style.display = "none";
                 const maxP = gameState.type.startsWith("4") ? 4 : 2;
                 const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
-                if (handsEmpty && !isProcessingPlay && gameState.turn === uid) refillHands();
-                render();
+                
+                // Eli biten son oyuncu değilsek, masanın güncellenmesini client taraflı render et
+                if(!isProcessingPlay) {
+                    if (handsEmpty && gameState.turn === uid) refillHands();
+                    else render();
+                }
             }
             if (gameState.status === "finished") handleEnd();
             renderHeads();
@@ -700,7 +720,7 @@
         container.innerHTML = html;
     }
 
-    // 6. MATEMATİKSEL KART DAĞITIMI (Tam Kusursuzlaştırıldı)
+    // MATEMATİKSEL KART DAĞITIMI
     async function refillHands() {
         isProcessingPlay = true;
         try {
@@ -713,21 +733,18 @@
                 const is104 = d.type.includes("104");
                 const fullSize = is104 ? 104 : 52;
                 
-                // İlk Tur Dağıtımı: (4 kişi 104 kartta başlarken yere 8 kart açılır)
                 let initialTableCount = (d.type === "4-104") ? 8 : 4; 
                 
                 if (table.length === 0 && deck.length === fullSize) {
                     updates.table = deck.splice(0, initialTableCount);
                 }
                 
-                let neededCards = maxP * 4; // Toplam dağıtılacak kart sayısı
+                let neededCards = maxP * 4; 
                 
                 if (deck.length >= neededCards) {
-                    // Oyunculara kart dağıt
                     for (let i = 1; i <= maxP; i++) updates[`p${i}_hand`] = deck.splice(0, 4);
                     updates.deck = deck;
                 } else {
-                    // Deste bitti, oyun sonu. Masada kalan kartları son alana yaz.
                     if (table.length > 0 && d.lastCollector) {
                         let lcRole = null;
                         for(let i=1; i<=maxP; i++) { if(d[`p${i}`] === d.lastCollector) lcRole = `p${i}`; }
@@ -744,19 +761,27 @@
         } catch (e) {} finally { isProcessingPlay = false; }
     }
 
+    // GECİKMEYİ ÖNLEYEN "OPTIMISTIC UI" KART ATMA SİSTEMİ
     async function playCard(idx) {
         if (gameState.turn !== uid || isProcessingPlay) return;
         isProcessingPlay = true;
         
-        // Hızlı Tepki İçin Client Tarafı Sesi Önceden Tetikliyoruz (Gecikme Sorunu Çözümü)
+        // 1. OPTIMISTIC UI: Önce sesi çal ve kartı anında masaya at! Bekleme yok!
         playSound(sfx.cardThrow); 
+        const playedCard = gameState[myRole + "_hand"][idx];
+        
+        // 2. Arayüzü Kullanıcı İçin Anında Geçici Olarak Güncelle (Gecikme Hissi Sıfırlanır)
+        gameState[myRole + "_hand"].splice(idx, 1);
+        gameState.table.push(playedCard);
+        gameState.turn = "processing"; // Başkasının sırasına geçene kadar bekle
+        render(); // Anında Ekrana Çiz
 
+        // 3. Arka Planda Firebase'e Gönder
         try {
             await runTransaction(db, async (t) => {
                 const d = (await t.get(roomRef)).data();
                 if(d.turn !== uid) throw "Sıra sizde değil!";
                 const hand = [...d[myRole + "_hand"]];
-                if (idx < 0 || idx >= hand.length) throw "Geçersiz Kart!";
                 
                 const card = hand.splice(idx, 1)[0];
                 let table = [...d.table], scoreInc = 0, countInc = 0, pistiInc = 0, lastColl = d.lastCollector;
@@ -775,7 +800,10 @@
                 const nextIdx = (parseInt(myRole.at(-1)) % maxP) + 1;
                 t.update(roomRef, { [myRole + "_hand"]: hand, table, [myRole + "_score"]: increment(scoreInc), [myRole + "_count"]: increment(countInc), turn: d[`p${nextIdx}`], lastCollector: lastColl, pistiSignal: increment(pistiInc) });
             });
-        } catch(e) {} finally { isProcessingPlay = false; }
+        } catch(e) { 
+            // Hata olursa (örn internet kopması) arayüzü geri al
+            listenRoom(); 
+        } finally { isProcessingPlay = false; }
     }
 
     function render() {
@@ -856,7 +884,7 @@
         p.classList.remove("pisti-active");
         void p.offsetWidth; 
         p.classList.add("pisti-active");
-        setTimeout(() => p.classList.remove("pisti-active"), 2000); // Kilitlenme Sorununu Çözen Sigorta
+        setTimeout(() => p.classList.remove("pisti-active"), 2300); // Animasyon süresi kadar bekle
     }
 
     window.openModal = (id) => document.getElementById(id).style.display = "flex";
