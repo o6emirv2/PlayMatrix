@@ -102,7 +102,6 @@
         }
         .btn-neon:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(0, 210, 255, 0.4); }
 
-        /* HIZLI MASA BUTONU ÖZEL TASARIM */
         .btn-fast-join {
             background: linear-gradient(45deg, #ff8a00, #e52e71); color: #fff;
             border: 1px solid #ffcc00; box-shadow: 0 4px 20px rgba(255, 138, 0, 0.6);
@@ -166,23 +165,25 @@
             pointer-events: none;
         }
 
-        .table-cards { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:90px; height:125px; z-index: 5; }
+        .table-cards { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width: 15vw; max-width:90px; height: 21vw; max-height:125px; z-index: 5; }
         .stack-card { 
-            width:90px; position:absolute; left:0; top:0; border-radius: 8px; 
+            width: 100%; height: 100%; position:absolute; left:0; top:0; border-radius: 8px; 
             box-shadow: 3px 3px 15px rgba(0,0,0,0.8); background:white; border: 1px solid #ccc;
-            transition: transform 0.3s ease-out; /* Masaya atılan kartların yumuşak düşüşü için eklendi */
+            transition: transform 0.3s ease-out; 
         }
         
         .hand { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:10px; width: max-content; padding: 15px; bottom: 5px; z-index: 200; }
         .opp-hand-visual { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:5px; width: max-content; top: 15px; opacity: 0.9; }
 
+        /* Mobil Uyumlu Kart Boyutları */
         .card { 
-            width:65px; height: 95px; border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; 
+            width: 12vw; max-width: 65px; height: 18vw; max-height: 95px; 
+            border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; 
             box-shadow: 0 10px 20px rgba(0,0,0,0.7); background:white; border: 1px solid #fff;
         }
         .card.passive { pointer-events: none; filter: brightness(0.5) contrast(1.1); }
         .card:hover:not(.passive) { transform: translateY(-20px) scale(1.05); z-index: 100; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
-        .card-mini { width: 32px; height: 48px; background: #ddd; border-radius: 4px; border: 1px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
+        .card-mini { width: 6vw; max-width: 32px; height: 9vw; max-height: 48px; background: #ddd; border-radius: 4px; border: 1px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
 
         @keyframes dealPlayer {
             0% { opacity: 0; transform: translate(0, -250px) scale(0.3) rotate(45deg); }
@@ -219,18 +220,14 @@
 
         .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
 
-        /* YENİ SİNEMATİK PİŞTİ EKRANI */
         #pistiDisplay {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
             font-size: 110px; font-weight: 900; text-align: center;
-            /* Altın ve ateş rengi profesyonel text gradient */
             background: linear-gradient(to bottom, #ffe600, #ff5e00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            /* Derin parlama gölgeleri */
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             filter: drop-shadow(0 0 10px rgba(255, 166, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.6));
             display: none; z-index: 9999; font-family: 'Black Ops One'; letter-spacing: 5px;
-            pointer-events: none; /* KRİTİK: Tıklamaları engellemez */
+            pointer-events: none; 
         }
         
         .pisti-active { animation: pistiCinematic 2.2s ease-out forwards; display: block !important; }
@@ -374,18 +371,15 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // SES KAYNAKLARI 
     const sfx = {
         chip: new Audio("https://cdn.freesound.org/previews/253/253174_4404552-lq.mp3"),
         deal: new Audio("https://cdn.freesound.org/previews/434/434472_7504780-lq.mp3"),
         cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
         win: new Audio("https://cdn.freesound.org/previews/609/609335_10292524-lq.mp3"), 
         lose: new Audio("https://cdn.freesound.org/previews/173/173859_2370158-lq.mp3"), 
-        // Yeni Bonus/Pişti Sesi (Tüm Cihazlarda Uyumlu)
         pisti: new Audio("https://cdn.freesound.org/previews/274/274180_4548252-lq.mp3") 
     };
 
-    // İOS SES KİLİDİ AÇMA (Daha Güvenilir Yöntem)
     let audioUnlocked = false;
     function unlockAudio() {
         if(audioUnlocked) return;
@@ -393,10 +387,7 @@
             audio.load();
             let promise = audio.play();
             if(promise !== undefined) {
-                promise.then(() => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }).catch(e => {}); 
+                promise.then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => {}); 
             }
         });
         audioUnlocked = true;
@@ -406,7 +397,6 @@
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
 
-    // GECİKMESİZ SES ÇALMA (CloneNode tekniği ile her basışta sıfırdan ve anında çalar)
     function playSound(audioObj) {
         if(!audioObj) return;
         let soundClone = audioObj.cloneNode(true);
@@ -417,9 +407,7 @@
     let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
     let roomRef = null, myRole = null, gameState = null, inGame = false;
     let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
-    let isProcessingPlay = false;
-    let lastHandLength = 0; 
-    let lastPistiCount = 0;
+    let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
     let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
 
     const CARD_POINTS = { "D0": 3, "C2": 2 };
@@ -481,6 +469,11 @@
             });
         } catch(e) {}
     }
+
+    // YENİLEME/KAPATMA ANINDA GÜVENLİ ÇIKIŞ (F5 Koruması)
+    window.onbeforeunload = function() {
+        if (inGame && roomRef) handleDisconnect();
+    };
 
     document.addEventListener("visibilitychange", async () => {
         if (document.visibilityState === 'hidden' && inGame && roomRef) handleDisconnect();
@@ -698,7 +691,6 @@
                 const maxP = gameState.type.startsWith("4") ? 4 : 2;
                 const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
                 
-                // Eli biten son oyuncu değilsek, masanın güncellenmesini client taraflı render et
                 if(!isProcessingPlay) {
                     if (handsEmpty && gameState.turn === uid) refillHands();
                     else render();
@@ -720,7 +712,6 @@
         container.innerHTML = html;
     }
 
-    // MATEMATİKSEL KART DAĞITIMI
     async function refillHands() {
         isProcessingPlay = true;
         try {
@@ -761,22 +752,19 @@
         } catch (e) {} finally { isProcessingPlay = false; }
     }
 
-    // GECİKMEYİ ÖNLEYEN "OPTIMISTIC UI" KART ATMA SİSTEMİ
     async function playCard(idx) {
         if (gameState.turn !== uid || isProcessingPlay) return;
         isProcessingPlay = true;
         
-        // 1. OPTIMISTIC UI: Önce sesi çal ve kartı anında masaya at! Bekleme yok!
         playSound(sfx.cardThrow); 
         const playedCard = gameState[myRole + "_hand"][idx];
         
-        // 2. Arayüzü Kullanıcı İçin Anında Geçici Olarak Güncelle (Gecikme Hissi Sıfırlanır)
+        // OPTIMISTIC UI: Gecikmeyi gizle, arayüzü anında güncelle!
         gameState[myRole + "_hand"].splice(idx, 1);
         gameState.table.push(playedCard);
-        gameState.turn = "processing"; // Başkasının sırasına geçene kadar bekle
-        render(); // Anında Ekrana Çiz
+        gameState.turn = "processing"; 
+        render(); 
 
-        // 3. Arka Planda Firebase'e Gönder
         try {
             await runTransaction(db, async (t) => {
                 const d = (await t.get(roomRef)).data();
@@ -800,10 +788,7 @@
                 const nextIdx = (parseInt(myRole.at(-1)) % maxP) + 1;
                 t.update(roomRef, { [myRole + "_hand"]: hand, table, [myRole + "_score"]: increment(scoreInc), [myRole + "_count"]: increment(countInc), turn: d[`p${nextIdx}`], lastCollector: lastColl, pistiSignal: increment(pistiInc) });
             });
-        } catch(e) { 
-            // Hata olursa (örn internet kopması) arayüzü geri al
-            listenRoom(); 
-        } finally { isProcessingPlay = false; }
+        } catch(e) { listenRoom(); } finally { isProcessingPlay = false; }
     }
 
     function render() {
@@ -841,6 +826,7 @@
             let img = document.createElement("img");
             img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
             img.className = "stack-card";
+            // Titreme sorununu çözmek için son kart hariç açıyı sabitliyoruz, böylece yeniden çizimde flicker olmuyor
             img.style.transform = `translate(${i*1.5}px, ${i*1.5}px) rotate(${i*2.5}deg)`;
             img.style.zIndex = i;
             tc.appendChild(img);
@@ -884,7 +870,7 @@
         p.classList.remove("pisti-active");
         void p.offsetWidth; 
         p.classList.add("pisti-active");
-        setTimeout(() => p.classList.remove("pisti-active"), 2300); // Animasyon süresi kadar bekle
+        setTimeout(() => p.classList.remove("pisti-active"), 2300); 
     }
 
     window.openModal = (id) => document.getElementById(id).style.display = "flex";
