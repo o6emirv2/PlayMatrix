@@ -134,7 +134,18 @@
     </div>
 
     <div id="helpModal" class="modal"><div class="modal-box"><h3>OYUN REHBERİ</h3><p style="color:#aaa; font-size:0.95rem; line-height:1.7; text-align:left; border-left: 2px solid var(--border); padding-left: 15px;">• Dokunduğun kare senin rengine döner.<br>• Rakibin karesine dokunarak onu ele geçir.<br>• Tüm alanı ele geçiren veya süre bitiminde en çok alana sahip olan kazanır!</p><button class="btn-neon" style="width:100%; margin-top:25px;" onclick="window.toggleModal('helpModal', false)">ANLADIM</button></div></div>
-    <div id="resultModal" class="modal"><div class="modal-box"><div id="winnerLabel" class="result-header">ZAFER</div><div class="final-score"><div class="score-box" id="finalS1">0</div><div style="font-family:'Black Ops One'">VS</div><div class="score-box" id="finalS2">0</div></div><button class="btn-neon" style="width:100%" onclick="window.leaveToHome()">LOBİYE DÖN</button></div></div>
+    
+    <div id="resultModal" class="modal">
+        <div class="modal-box">
+            <div id="winnerLabel" class="result-header">ZAFER</div>
+            <div class="final-score">
+                <div class="score-box" id="finalS1">0</div>
+                <div style="font-family:'Black Ops One'">VS</div>
+                <div class="score-box" id="finalS2">0</div>
+            </div>
+            <button class="btn-neon" style="width:100%" onclick="window.leaveToHome()">LOBİYE DÖN</button>
+        </div>
+    </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -154,23 +165,21 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // TÜM SESLER GERÇEKÇİ EFEKTLERLE GÜNCELLENDİ
+    // MÜZİKLER KALDIRILDI, SADECE GERÇEK ATMOSFER SESLERİ EKLENDİ
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
-        game: new Audio('https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3'), // Daha heyecanlı savaş müziği
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
         rain: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3'), // Gerçek Yağmur Sesi
         thunder: new Audio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek Sesi
     };
+    
     sfx.lobby.loop = true; 
-    sfx.game.loop = true; 
     sfx.rain.loop = true; // Yağmur sürekli yağar
     
     sfx.lobby.volume = 0.4; 
-    sfx.game.volume = 0.4; 
     sfx.tap.volume = 0.8;
-    sfx.rain.volume = 0.5;
-    sfx.thunder.volume = 0.8;
+    sfx.rain.volume = 0.7; // Yağmur sesi artırıldı
+    sfx.thunder.volume = 1.0; // Şimşek gücü maksimum yapıldı
 
     let audioUnlocked = false;
     const unlockAudio = () => {
@@ -188,8 +197,8 @@
     let localCells = {}; 
     let lastClickTime = 0;
     
-    let currentScene = 'lobby'; // Lobi ve Oyun animasyonlarını ayırmak için
-    let lightningTimer = null; // Şimşek döngüsünü kontrol etmek için
+    let currentScene = 'lobby'; 
+    let lightningTimer = null; 
 
     window.showModalAlert = (title, msg, onConfirmCallback) => {
         document.getElementById('alertTitle').innerText = title;
@@ -211,16 +220,43 @@
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
     };
 
+    // --- PROFESYONEL LOBİYE DÖNÜŞ (SAYFA YENİLEME OLMADAN) ---
     window.leaveToHome = async () => {
         if (curRoomId) {
             if (unsubGame) unsubGame();
             if (timerInt) clearInterval(timerInt);
+            if (lightningTimer) clearTimeout(lightningTimer);
             try {
+                // Oyundan çıkıldığı için odayı terminated yap ve sil
                 await updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
                 await deleteDoc(doc(db, "conquest_rooms", curRoomId));
             } catch (e) {}
         }
-        window.location.href = "index.html"; 
+        
+        // Değişkenleri Sıfırla
+        curRoomId = null;
+        isFin = false;
+        canPlay = false;
+        myRole = null;
+        currentScene = 'lobby';
+        lightningFlash = 0;
+        
+        // Ses Geçişleri (Savaşı Kapat, Lobiyi Aç)
+        sfx.rain.pause();
+        sfx.thunder.pause();
+        if (audioUnlocked) {
+            sfx.lobby.currentTime = 0;
+            sfx.lobby.play().catch(()=>{});
+        }
+        
+        // Arayüzü Lobideki Haline Getir
+        document.getElementById('game-view').style.display = 'none';
+        document.getElementById('lobby').style.display = 'flex';
+        window.toggleModal('resultModal', false);
+        window.toggleModal('alertModal', false);
+        
+        // Lobiyi tekrar dinlemeye başla (Güncel odaları yükler)
+        listenLobby(); 
     };
 
     window.filterRooms = () => {
@@ -239,7 +275,7 @@
 
     function initParticles() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        // Lobi Parçacıkları (Yavaş, Sakin)
+        // Lobi Parçacıkları
         lobbyParticles = Array.from({length: 60}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
@@ -247,7 +283,7 @@
             s: Math.random() * 0.5 
         }));
 
-        // Gerçekçi Yağmur Damlaları (Hızlı, İnce, Saydam)
+        // Gerçekçi Yağmur Damlaları
         rainParticles = Array.from({length: 150}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
@@ -260,7 +296,7 @@
 
     // RASTGELE GÖK GÜRÜLTÜSÜ VE ŞİMŞEK SİSTEMİ
     function triggerLightning() {
-        if (currentScene !== 'game') return; // Sadece oyundaysa çalışır
+        if (currentScene !== 'game') return; // Lobiye dönüldüyse şimşeği iptal et
         lightningFlash = 3; 
         if (audioUnlocked) {
             sfx.thunder.currentTime = 0;
@@ -272,7 +308,6 @@
 
     function drawBg() {
         if (currentScene === 'lobby') {
-            // LOBİ EKRANI: SAKİN NEON
             ctx.fillStyle = '#03050a'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgba(0, 242, 255, 0.2)';
@@ -282,8 +317,7 @@
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); 
             });
         } else if (currentScene === 'game') {
-            // OYUN EKRANI: ŞİDDETLİ YAĞMUR VE ŞİMŞEK
-            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Arkada hareket hissi bırakan karanlık
+            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // ŞİMŞEK ÇAKMA GÖRSELİ
@@ -298,7 +332,7 @@
             rainParticles.forEach(p => { 
                 ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; 
                 p.y += p.s; 
-                p.x -= p.s * 0.1; // Rüzgardan dolayı hafif yatık
+                p.x -= p.s * 0.1; 
                 
                 if(p.y > canvas.height) { 
                     p.y = -20; 
@@ -439,18 +473,15 @@
         enterGame(id);
     }
 
-    // OYUNA GİRİŞ - SES VE GÖRSEL GEÇİŞLERİ
+    // OYUNA GİRİŞ 
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
         
-        // Sesleri ve Sahneyi Oyuna Göre Ayarla
         currentScene = 'game';
         sfx.lobby.pause(); 
-        sfx.game.currentTime = 0; 
         sfx.rain.currentTime = 0;
         
         if (audioUnlocked) {
-            sfx.game.play().catch(()=>{});
             sfx.rain.play().catch(()=>{}); // Yağmur sesini başlat
         }
         triggerLightning(); // Şimşek döngüsünü başlat
