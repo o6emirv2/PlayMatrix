@@ -165,7 +165,7 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // OYUN MÜZİĞİ TAMAMEN SİLİNDİ, SADECE GERÇEK ATMOSFER VE LOBİ SESLERİ VAR
+    // KESİNLİKLE OYUN MÜZİĞİ YOK. SADECE GERÇEK ATMOSFER SESLERİ.
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
@@ -174,14 +174,14 @@
     };
     
     sfx.lobby.loop = true; 
-    sfx.rain.loop = true; // Yağmur döngüsel çalışır
+    sfx.rain.loop = true; 
     
     sfx.lobby.volume = 0.4; 
     sfx.tap.volume = 0.8;
-    sfx.rain.volume = 1.0; // Yağmur tam güçte
-    sfx.thunder.volume = 1.0; // Şimşek tam güçte
+    sfx.rain.volume = 1.0; 
+    sfx.thunder.volume = 1.0; 
 
-    // IOS SES KİLİDİ AÇICI (Tarayıcı ses kurallarını aşmak için)
+    // IOS SES KİLİDİ AÇICI (Güçlendirildi)
     let audioUnlocked = false;
     const unlockAudio = () => {
         if (!audioUnlocked) {
@@ -228,15 +228,13 @@
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
     };
 
-    // --- PROFESYONEL LOBİYE DÖNÜŞ FONKSİYONU (SAYFA ASLA YENİLENMEZ) ---
+    // --- PROFESYONEL LOBİYE DÖNÜŞ (SAYFA ASLA YENİLENMEZ) ---
     window.leaveToHome = async () => {
         if (curRoomId) {
-            // Dinleyicileri temizle (Memory leak ve bug önlemek için)
             if (unsubGame) unsubGame();
             if (timerInt) clearInterval(timerInt);
             if (lightningTimer) clearTimeout(lightningTimer);
             try {
-                // Oyundan ayrılıyorsak odayı sil
                 await updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
                 await deleteDoc(doc(db, "conquest_rooms", curRoomId));
             } catch (e) {}
@@ -250,7 +248,7 @@
         currentScene = 'lobby';
         lightningFlash = 0;
         
-        // SESLERİ SIFIRLA VE LOBİ MÜZİĞİNİ AÇ
+        // SES GEÇİŞLERİ (ATMOSFERİ KAPAT, LOBİYİ AÇ)
         sfx.rain.pause();
         sfx.thunder.pause();
         if (audioUnlocked) {
@@ -258,13 +256,13 @@
             sfx.lobby.play().catch(()=>{});
         }
         
-        // EKRANLARI GÜNCELLE (Sayfa yenilenmeden geçiş yapılır)
+        // Arayüzü Lobideki Haline Getir
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('lobby').style.display = 'flex';
         window.toggleModal('resultModal', false);
         window.toggleModal('alertModal', false);
         
-        // Lobideki güncel arenaları tekrar yükle
+        // Lobiyi tekrar yükle
         listenLobby(); 
     };
 
@@ -284,7 +282,7 @@
 
     function initParticles() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        // Lobi Ekranı - Hafif, Sakin Neon Parçacıklar
+        // Lobi Ekranı Parçacıkları
         lobbyParticles = Array.from({length: 60}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
@@ -303,12 +301,11 @@
         }));
     }
 
-    // TAM SENKRONİZE GÖK GÜRÜLTÜSÜ VE GÖRSEL ŞİMŞEK SİSTEMİ
+    // TAM SENKRONİZE GÖK GÜRÜLTÜSÜ VE ŞİMŞEK SİSTEMİ
     function triggerLightning() {
-        if (currentScene !== 'game') return; // Eğer lobiye dönüldüyse şimşek çakmasını iptal et
+        if (currentScene !== 'game') return; // Lobiye dönüldüyse iptal et
         
-        // Ekrana 3 frame boyunca (çok kısa ve anlık) beyaz parlama ver
-        lightningFlash = 3; 
+        lightningFlash = 3; // Ekrana parlama ver
         
         // Gök gürültüsünü görselle TAM aynı anda oynat
         if (audioUnlocked) {
@@ -316,7 +313,7 @@
             sfx.thunder.play().catch(()=>{});
         }
         
-        // 8 ile 18 saniye arasında tamamen rastgele bir sürede tekrar çaktır
+        // Rastgele sürede tekrar çaktır
         lightningTimer = setTimeout(triggerLightning, Math.random() * 10000 + 8000);
     }
 
@@ -331,7 +328,7 @@
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); 
             });
         } else if (currentScene === 'game') {
-            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Şiddetli fırtına hissi
+            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Fırtına hissi
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // SENKRONİZE GÖRSEL PATLAMA
@@ -346,7 +343,7 @@
             rainParticles.forEach(p => { 
                 ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; 
                 p.y += p.s; 
-                p.x -= p.s * 0.1; // Rüzgar efekti (eğimli)
+                p.x -= p.s * 0.1; // Rüzgar efekti
                 
                 if(p.y > canvas.height) { 
                     p.y = -20; 
@@ -487,14 +484,13 @@
         enterGame(id);
     }
 
-    // OYUNA GİRİŞ İŞLEMİ VE ATMOSFER DEĞİŞİMİ
+    // OYUNA GİRİŞ İŞLEMİ (Sadece Atmosfer Sesleri Çalar)
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
         
-        // Sahneyi ayarla
         currentScene = 'game';
         
-        // Lobi müziğini durdur, Yağmur sesini başlat (Oyun müziği yoktur)
+        // Lobi müziğini durdur, Sadece yağmuru başlat
         sfx.lobby.pause(); 
         sfx.rain.currentTime = 0;
         
