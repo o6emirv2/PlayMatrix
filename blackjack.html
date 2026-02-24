@@ -21,23 +21,20 @@
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* KUSURSUZ ÜST BAR (Hizalama ve Kayma Sorunu Çözüldü) */
+    /* ÜST BAR */
     .top-bar {
         position:fixed; top:0; left: 0; right: 0; height:70px;
         display:flex; align-items:center; justify-content:space-between;
         padding:0 15px; background: rgba(5, 10, 5, 0.95); 
         border-bottom: 2px solid #d4af37; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        z-index:1000;
-        width: 100%;
-        box-sizing: border-box;
+        z-index:1000; width: 100%; box-sizing: border-box;
     }
 
     .brand {
         font-size:1.1rem; font-weight:900; color: #d4af37;
         letter-spacing: 1px; font-family: 'Arial Black', sans-serif;
-        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
-        white-space: nowrap;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); white-space: nowrap;
     }
 
     .right-menu { display:flex; gap:8px; align-items: center; flex-wrap: nowrap; }
@@ -69,7 +66,7 @@
         border: 1px solid #ff7675; white-space: nowrap;
     }
 
-    /* OYUN ALANI STİLLERİ */
+    /* OYUN ALANI */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
         padding: 85px 0 20px 0; perspective: 1000px; position: relative;
@@ -94,7 +91,6 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
-    /* KART GÖRÜNÜM SORUNU ÇÖZÜLDÜ */
     .cards-wrapper { 
         display: flex; justify-content: center; gap: -25px; 
         min-height: 110px; padding: 0 10px; flex-wrap: nowrap; 
@@ -130,7 +126,6 @@
         letter-spacing: 1px; z-index: 10; position: relative;
     }
 
-    /* KONTROL BUTONLARI */
     .controls { display: none; gap: 20px; justify-content: center; margin-bottom: 15px; z-index: 10; position: relative; }
     .btn { 
         padding: 14px 30px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); 
@@ -166,7 +161,7 @@
     .cancel-btn:active { transform: scale(0.9); }
     .disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.8); }
 
-    /* BAŞLANGIÇ EKRANI (SES KİLİDİ) */
+    /* BAŞLANGIÇ MODALI */
     .start-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.95);
         display: flex; align-items: center; justify-content: center;
@@ -283,7 +278,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- OYUN DEĞİŞKENLERİ ---
 let balance = 0; 
 let localBet = 0; 
 let userRef = null;
@@ -302,7 +296,7 @@ window.showModal = (msg, isSuccess = false) => {
     document.getElementById("alertModal").style.display = "flex";
 }
 
-// --- PROFESYONEL MP3 SES MOTORU ---
+// --- PROFESYONEL SES MOTORU ---
 const sounds = {};
 let audioCtx = null;
 
@@ -311,26 +305,21 @@ async function initAudio() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') audioCtx.resume();
-        
-        // Sessiz frekans (Kilit kırıcı)
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
 
-        // Gerçek MP3 Ses Dosyaları
+        // Çip sesi hariç, BUST, TİCK (Geri Sayım) ve DİĞER sesler MP3 yapıldı.
         const urls = {
-            chip: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Tok Tıklama
-            card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Kart kaydırma
-            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',  // Çan/Kazanma
-            lose: 'https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3'   // Tok kaybetme sesi
+            card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Kart
+            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',  // Kazanma
+            lose: 'https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3', // Patlama / Kaybetme
+            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  // Geri Sayım / Tick
         };
         
         for (const [name, url] of Object.entries(urls)) {
-            fetch(url)
-                .then(res => res.arrayBuffer())
-                .then(buf => audioCtx.decodeAudioData(buf))
-                .then(decoded => sounds[name] = decoded)
-                .catch(e => console.warn(`Ses yüklenemedi: ${name}`));
+            fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf))
+            .then(decoded => sounds[name] = decoded).catch(e => console.warn(`Ses yüklenemedi: ${name}`));
         }
     } catch(e) { console.error("Ses açılamadı:", e); }
 }
@@ -341,12 +330,37 @@ document.getElementById('systemStartBtn').addEventListener('click', () => {
 });
 
 function playSound(name) {
-    if (!audioCtx || !sounds[name]) return;
+    if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const source = audioCtx.createBufferSource();
-    source.buffer = sounds[name];
-    source.connect(audioCtx.destination);
-    source.start(0);
+    
+    // Çip sesi için orijinal Oscillator dokunulmadı
+    if (name === 'chip') {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(350, now);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + 0.05);
+        
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'triangle'; osc2.frequency.setValueAtTime(2500, now);
+        gain2.gain.setValueAtTime(0.1, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+        osc2.start(now); osc2.stop(now + 0.03);
+        return;
+    }
+    
+    // Diğer sesler Buffer'dan çalınır
+    if(sounds[name]) {
+        const source = audioCtx.createBufferSource();
+        source.buffer = sounds[name];
+        source.connect(audioCtx.destination);
+        source.start(0);
+    }
 }
 
 // --- FİREBASE DİNLEYİCİSİ ---
@@ -392,10 +406,13 @@ window.cancelBet = () => {
 function startBetCountdown(){
     let s = 5;
     messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
+    playSound('tick'); // Geri Sayım Sesi
     betCountdown = setInterval(() => {
         s--;
-        if(s > 0) messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
-        else { 
+        if(s > 0) {
+            messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
+            playSound('tick');
+        } else { 
             clearInterval(betCountdown); 
             betCountdown = null; 
             startGame(); 
@@ -413,6 +430,7 @@ function createDeck(){
     deck.sort(() => Math.random() - 0.5); 
 }
 
+// Kart görselleri için 10'un sıfır olarak API'den çekilmesi gerekir. 
 function cardVal(v){ let m = {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}; return m[v] || v; }
 
 function total(hand){
@@ -446,12 +464,11 @@ async function draw(hand, divId, isHidden = false, forceCard = null){
     const cardCont = document.createElement("div");
     cardCont.className = "card-3d";
     
-    // Doğru API kart URL'si
-    let suitMap = {"H": "H", "D": "D", "C": "C", "S": "S"};
+    // API için doğru dönüştürme (0 = 10 değerindeki kart)
     let valStr = cardVal(card.value);
     
     cardCont.innerHTML = `
-        <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${valStr}${suitMap[card.suit]}.png') center/cover"></div>
+        <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${valStr}${card.suit}.png') center/cover"></div>
         <div class="card-face card-back"></div>
     `;
     document.getElementById(divId).appendChild(cardCont);
@@ -478,7 +495,7 @@ async function startGame(){
     if(localBet < 250) { messageEl.innerText = "MİNİMUM 250 MC!"; return; }
     
     isProcessing = true;
-    gameState = "playing"; // Kilit açılır
+    gameState = "playing"; 
     
     document.getElementById("chipsArea").classList.add("disabled");
     document.getElementById("dealerCards").innerHTML = "";
@@ -496,7 +513,6 @@ async function startGame(){
         return;
     }
 
-    // Klasik Dağıtım (Hızlandırıldı)
     await draw(player, "playerCards"); await delay(300);
     await draw(dealer, "dealerCards"); await delay(300);
     await draw(player, "playerCards"); await delay(300);
@@ -522,34 +538,41 @@ async function startGame(){
             endGame("BLACKJACK KAZANCI!", 2.5); 
         }
     } else { 
-        isProcessing = false; // Oyuncu butonlara basabilsin
+        isProcessing = false; // Kilit açıldı, oyuncu karar verebilir.
         document.getElementById("controls").style.display = "flex"; 
         startActionTimer(); 
     }
 }
 
-// OYUNCU HAMLELERİ (Hatalar düzeltildi)
+// --- OYUNCU KARAR AŞAMASI ---
 function startActionTimer(){
     let s = 10;
     messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
+    playSound('tick');
     if (actionTimer) clearInterval(actionTimer);
     
     actionTimer = setInterval(() => {
         s--;
-        if(s > 0) messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
+        if(s > 0) {
+            messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
+            if(s <= 3) playSound('tick'); // Son 3 saniye uyarısı
+        }
         else { 
             clearInterval(actionTimer); actionTimer = null; 
-            if(gameState === "playing" && !isProcessing) stand(); 
+            if(gameState === "playing" && !isProcessing) {
+                messageEl.innerText = ""; // SÜRE YAZISI GİDER
+                stand(); 
+            }
         }
     }, 1000);
 }
 
 document.getElementById("hit").onclick = async () => {
-    // Çift tıklamayı ve yetkisiz basmayı engelle
     if(gameState !== "playing" || isProcessing) return;
-    isProcessing = true; // Buton kitlenir
+    isProcessing = true; 
     
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
+    messageEl.innerText = ""; // Karar verildiği an süre yazısı gider.
     document.getElementById("controls").style.display = "none";
     
     await draw(player, "playerCards");
@@ -557,7 +580,7 @@ document.getElementById("hit").onclick = async () => {
     if(total(player) >= 21) {
         dealerTurn(); 
     } else { 
-        isProcessing = false; // Geri aç
+        isProcessing = false; 
         document.getElementById("controls").style.display = "flex"; 
         startActionTimer(); 
     }
@@ -565,15 +588,16 @@ document.getElementById("hit").onclick = async () => {
 
 const stand = () => { 
     if(gameState !== "playing" || isProcessing) return;
-    isProcessing = true; // Buton kitlenir
+    isProcessing = true; 
     
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
+    messageEl.innerText = ""; // Karar verildiği an süre yazısı gider.
     document.getElementById("controls").style.display="none"; 
     dealerTurn(); 
 };
 document.getElementById("stand").onclick = stand;
 
-// --- KURUPIYER (KASA) ALGORİTMASI ---
+// --- KURUPIYER ALGORİTMASI ---
 async function dealerTurn(){
     gameState = "dealer_turn";
     dealerHidden = false;
@@ -653,7 +677,7 @@ async function endGame(text, multiplier) {
         } catch(e) { console.error("Ödeme hatası:", e); }
     }
 
-    await delay(3000);
+    await delay(3500);
     resetBoard();
 }
 
