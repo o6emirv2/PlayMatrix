@@ -166,14 +166,43 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // --- SES SİSTEMİ VE KİLİT AÇICI ---
     let audioCtx = null;
+    let audioUnlocked = false;
+
     const unlockAudio = () => {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (audioUnlocked) return;
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            // Tarayıcıyı kandırmak için milisaniyelik sessiz bir frekans çal
+            const osc = audioCtx.createOscillator(); 
+            const gain = audioCtx.createGain();
+            gain.gain.value = 0; // Ses seviyesi 0
+            osc.connect(gain); 
+            gain.connect(audioCtx.destination);
+            osc.start(0); 
+            osc.stop(0.01);
+
+            audioUnlocked = true;
+            
+            // Kilit açıldıktan sonra dinleyicileri kaldır ki sistemi yormasın
+            ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
+                document.removeEventListener(evt, unlockAudio);
+            });
+        } catch (e) { console.error("Ses başlatılamadı:", e); }
     };
 
+    // Ekrana yapılan İLK etkileşimde sesleri serbest bırak
+    ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
+        document.addEventListener(evt, unlockAudio, { once: true });
+    });
+
     function playSfx(type) {
-        if(!audioCtx) return;
+        // Ses motoru kilitliyse sessizce iptal et, hata verme
+        if(!audioCtx || audioCtx.state !== 'running') return;
+        
         const now = audioCtx.currentTime;
         if(type==='countdown') {
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
@@ -267,29 +296,20 @@
         const totalActiveBet = activeBet1 + activeBet2;
 
         if (totalActiveBet > 0) {
-            // DURUM 1: OYUNCU BAHİS YAPTI (Acımasız Kasa Mantığı)
             let chance = Math.random();
-            
             if (chance < 0.45) {
-                // %45 İhtimalle oyuncu kaçamadan patlar (1.00x - 1.15x arası)
                 return 1.00 + (Math.random() * 0.15);
             } else if (chance < 0.85) {
-                // %40 İhtimalle heyecanlandırıp düşükte patlar (1.15x - 1.50x arası)
                 return 1.15 + (Math.random() * 0.35);
             } else {
-                // %15 İhtimalle oyuncuya umut vermek için yüksek çarpan izni verir
                 const e = 100;
                 const h = Math.random() * e;
                 return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100);
             }
         } else {
-            // DURUM 2: OYUNCU İZLEMEDE (Yemleme / Bait Mantığı)
-            // Oyuncu bahis yapmadığında bilerek yüksek çarpanlar gösterilir.
             const e = 100;
             const h = Math.random() * e;
             let point = Math.max(1.00, Math.floor(100 * e / (e - h)) / 100);
-            
-            // %60 ihtimalle normalin üstüne suni çarpan ekle (3x ile 15x arası ekstra)
             if (Math.random() < 0.60) {
                 point += (Math.random() * 12 + 3);
             }
@@ -352,7 +372,6 @@
         document.getElementById('betInput2').disabled = true;
 
         let startTime = Date.now();
-        // Uçuş başlarken hedef belirlenir (Yem veya Kasa mantığıyla)
         let crashPoint = generateCrashPoint();
         
         if (flightFrameId) cancelAnimationFrame(flightFrameId);
@@ -388,7 +407,7 @@
     }
 
     async function handleBet(box, isAuto = false) {
-        unlockAudio();
+        unlockAudio(); // Her ihtimale karşı burada da çağırıyoruz (Zaten kilit açıldıysa pas geçer)
         
         if (box === 1 && isProcessing1) return;
         if (box === 2 && isProcessing2) return;
@@ -503,7 +522,6 @@
     document.getElementById('btn2').onclick = () => handleBet(2);
     document.getElementById('autoSwitch1').onchange = (e) => auto1 = e.target.checked;
     document.getElementById('autoSwitch2').onchange = (e) => auto2 = e.target.checked;
-    document.body.addEventListener('touchstart', unlockAudio, { once: true });
 </script>
 </body>
 </html>
