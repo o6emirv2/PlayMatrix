@@ -13,7 +13,7 @@
         height:100vh; width: 100vw; overflow:hidden;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
         background-color: #0b3d22;
-        /* VIP Casino Masa Arka Planı (Görsele uygun) */
+        /* VIP Casino Masa Arka Planı */
         background-image: 
             radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.7) 100%),
             linear-gradient(180deg, #0a4625 0%, #052613 100%);
@@ -90,9 +90,9 @@
         border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; 
     }
 
-    /* KART GÖRÜNÜMÜ */
+    /* KART GÖRÜNÜMÜ - TERS DURMA VE BİTİŞİKLİK SORUNU ÇÖZÜLDÜ */
     .cards-wrapper { 
-        display: flex; justify-content: center; gap: -30px; /* Görseldeki gibi kartlar bitişik */
+        display: flex; justify-content: center; gap: -30px; /* Kartları bitişik yapar */
         min-height: 115px; padding: 0 10px; flex-wrap: nowrap; 
         position: relative; z-index: 5;
     }
@@ -102,23 +102,28 @@
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(45deg) scale(0.4);
         opacity: 0; margin-left: -40px; 
-        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
         filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
     }
     .card-3d:first-child { margin-left: 0; }
 
-    .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
-    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); }
+    /* Kart açıldığında düz durması için rotateY eklendi */
+    .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); opacity: 1; }
+    /* Gizli (Kapalı) kart için rotateY(0deg) kullanıldı */
+    .card-3d.show.hidden-card { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(0deg); }
+    /* Kartı açma (çevirme) animasyonu */
+    .card-3d.flipped { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); transition: transform 0.6s ease-out; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden; border-radius: 6px;
         border: 1px solid rgba(255,255,255,0.8);
-        background-color: white; /* Hata önleyici arka plan */
+        background-color: white; 
     }
 
+    /* Ön yüz 180 derece döndürüldü ki düz görünsün */
     .card-front { background-color: white; transform: rotateY(180deg); }
-    .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
+    .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; transform: rotateY(0deg); }
 
     /* MESAJ VE KONTROLLER (Görseldeki gibi yerleşim) */
     .action-area {
@@ -304,7 +309,7 @@ window.showModal = (msg, isSuccess = false) => {
     document.getElementById("alertModal").style.display = "flex";
 }
 
-// --- PROFESYONEL SES MOTORU ---
+// --- PROFESYONEL MP3 SES MOTORU ---
 const sounds = {};
 let audioCtx = null;
 
@@ -318,12 +323,12 @@ async function initAudio() {
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
 
-        // Çip sesi hariç, BUST, TİCK ve DİĞER sesler gerçeği ile değiştirildi.
+        // İSTENİLEN GERÇEKÇİ SES DOSYALARI (URL)
         const urls = {
             card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
             win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-            lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3', // Daha iyi Bust/Kaybetme sesi
-            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  // Gerçekçi Tick sesi
+            lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3', // Daha iyi Bust Sesi
+            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  // Gerçekçi Tick Sesi
         };
         
         for (const [name, url] of Object.entries(urls)) {
@@ -342,7 +347,7 @@ function playSound(name) {
     if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    // Çip sesi orijinal (istenildiği gibi)
+    // Çip sesi orijinal Oscillator (dokunulmadı)
     if (name === 'chip') {
         const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
@@ -363,6 +368,7 @@ function playSound(name) {
         return;
     }
     
+    // Diğer sesler Buffer'dan (MP3) çalınır
     if(sounds[name]) {
         const source = audioCtx.createBufferSource();
         source.buffer = sounds[name];
@@ -440,7 +446,7 @@ function createDeck(){
     deck.sort(() => Math.random() - 0.5); 
 }
 
-// API GÖRSEL HATASI DÜZELTİLDİ: 10 numaralı kart "0" olarak isimlendirilmeli
+// URL SORUNU ÇÖZÜMÜ: 10 değerli kart API'de "0" olarak adlandırılmış.
 function cardVal(v){ let m = {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}; return m[v] || v; }
 
 function total(hand){
@@ -466,6 +472,7 @@ function updateScores(){
     }
 }
 
+// --- KART ÇEKME VE TERS/DÜZ ANİMASYON ---
 async function draw(hand, divId, isHidden = false, forceCard = null){
     playSound('card');
     let card = forceCard ? forceCard : deck.pop();
@@ -476,24 +483,29 @@ async function draw(hand, divId, isHidden = false, forceCard = null){
     
     let valStr = cardVal(card.value);
     
+    // API görselini ayarla
     cardCont.innerHTML = `
         <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${valStr}${card.suit}.png') center/cover"></div>
         <div class="card-face card-back"></div>
     `;
+    
     document.getElementById(divId).appendChild(cardCont);
     
     return new Promise(resolve => {
         setTimeout(() => { 
-            cardCont.classList.add("show"); 
-            if(!isHidden) {
-                setTimeout(() => {
-                    cardCont.classList.add("flipped");
-                    updateScores();
-                    resolve();
-                }, 150); 
-            } else {
+            if(isHidden) {
+                // Gizli kart ise (Sadece arkası görünecek)
+                cardCont.classList.add("show", "hidden-card");
                 updateScores();
                 resolve();
+            } else {
+                // Açık kart ise (Önü dönecek)
+                cardCont.classList.add("show");
+                setTimeout(() => {
+                    cardCont.classList.add("flipped"); // Bu sınıf rotateY(180deg) yapar
+                    updateScores();
+                    resolve();
+                }, 100); 
             }
         }, 50);
     });
@@ -527,10 +539,11 @@ async function startGame(){
         return;
     }
 
+    // Klasik Dağıtım (Oyuncu Açık -> Kurupiyer Açık -> Oyuncu Açık -> Kurupiyer Kapalı)
     await draw(player, "playerCards"); await delay(300);
     await draw(dealer, "dealerCards"); await delay(300);
     await draw(player, "playerCards"); await delay(300);
-    await draw(dealer, "dealerCards", true);
+    await draw(dealer, "dealerCards", true); // Kapalı kart
 
     const pTotal = total(player);
     const dTotal = total(dealer);
@@ -543,7 +556,11 @@ async function startGame(){
         
         dealerHidden = false;
         const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-        if(cards[1]) cards[1].classList.add("flipped");
+        // Kapalı kartı (2. kart) çevir
+        if(cards[1]) {
+            cards[1].classList.remove("hidden-card");
+            cards[1].classList.add("flipped");
+        }
         updateScores();
         await delay(1000);
         
@@ -558,7 +575,7 @@ async function startGame(){
     }
 }
 
-// --- OYUNCU KARAR AŞAMASI (Süre Sorunu Çözüldü) ---
+// --- OYUNCU KARAR AŞAMASI (Süre Görünümü Çözüldü) ---
 function startActionTimer(){
     let s = 10;
     messageEl.style.display = "flex";
@@ -576,14 +593,14 @@ function startActionTimer(){
             // SÜRE BİTİNCE OTOMATİK KALIR
             clearInterval(actionTimer); actionTimer = null; 
             if(gameState === "playing" && !isProcessing) {
-                hideControls(); // Hem yazıyı hem butonu gizle
+                hideControls(); // Yazıyı ve butonları tamamen gizle
                 stand(); 
             }
         }
     }, 1000);
 }
 
-// KARAR VERİLDİĞİNDE BUTON VE YAZIYI GİZLEYEN YARDIMCI FONKSİYON
+// KARAR VERİLDİĞİNDE BUTON VE YAZIYI GİZLEYEN FONKSİYON
 function hideControls() {
     messageEl.style.display = "none";
     controlsEl.style.display = "none";
@@ -603,7 +620,7 @@ document.getElementById("hit").onclick = async () => {
         dealerTurn(); 
     } else { 
         isProcessing = false; 
-        startActionTimer(); // Tekrar sor
+        startActionTimer(); // Tekrar karar süresi başlat
     }
 };
 
@@ -623,14 +640,19 @@ async function dealerTurn(){
     gameState = "dealer_turn";
     dealerHidden = false;
     
+    // Kurupiyerin kapalı (hidden) olan 2. kartını bul ve çevir
     const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-    if(cards[1]) cards[1].classList.add("flipped");
-    updateScores();
+    if(cards[1]) {
+        cards[1].classList.remove("hidden-card");
+        cards[1].classList.add("flipped");
+    }
     playSound('card'); 
+    updateScores();
     await delay(1000);
 
     const pScore = total(player);
     
+    // Oyuncu patlamadıysa kurupiyer oynar
     if(pScore <= 21) {
         while(total(dealer) < 17) {
             let cheatCard = null;
