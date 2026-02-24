@@ -86,7 +86,7 @@
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
         .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #00b894; }
+        input:checked + .slider { background-color: #00ffa3; }
         input:checked + .slider:before { transform: translateX(18px); }
 
         .main-btn {
@@ -101,9 +101,29 @@
         .main-btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
 
         @media (max-width: 400px) { .x-value { font-size: 55px; } .bottom-panel { height: 210px; } }
+
+        /* YENİ: SİSTEM BAŞLATMA OVERLAY EKRANI */
+        .start-overlay {
+            position: fixed; inset: 0; background: rgba(2,4,10,0.95);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(10px); flex-direction: column;
+        }
+        .start-modal {
+            background: rgba(10,15,25,0.95); padding: 40px; border-radius: 20px; 
+            text-align: center; border: 2px solid #4fd1ff; box-shadow: 0 0 30px rgba(79,209,255,0.2);
+            width: 85%; max-width: 350px;
+        }
     </style>
 </head>
 <body>
+
+<div id="start-overlay" class="start-overlay">
+    <div class="start-modal">
+        <h2 style="font-family:'Orbitron'; color:#4fd1ff; font-size: 24px; margin-bottom: 10px; text-shadow: 0 0 15px rgba(79,209,255,0.5);">CRASH PROTOKOLÜ</h2>
+        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px; font-family: 'Inter';">Sesleri ve oyun motorunu aktifleştirmek için sistemi başlatın.</p>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-family: 'Orbitron'; font-size: 16px; cursor: pointer; text-transform: uppercase;">SİSTEMİ BAŞLAT</button>
+    </div>
+</div>
 
 <div class="top-bar">
     <div class="brand">CRASH</div>
@@ -166,71 +186,90 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- SES SİSTEMİ VE KİLİT AÇICI ---
+    // --- YENİ PROFESYONEL SES SİSTEMİ (Autoplay Policy Çözümü) ---
     let audioCtx = null;
-    let audioUnlocked = false;
+    let authReady = false;
+    let gameStarted = false;
 
-    const unlockAudio = () => {
-        if (audioUnlocked) return;
+    function initAudio() {
         try {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if(!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
             
-            // Tarayıcıyı kandırmak için milisaniyelik sessiz bir frekans çal
-            const osc = audioCtx.createOscillator(); 
-            const gain = audioCtx.createGain();
-            gain.gain.value = 0; // Ses seviyesi 0
-            osc.connect(gain); 
-            gain.connect(audioCtx.destination);
-            osc.start(0); 
-            osc.stop(0.01);
+            // Tarayıcıyı (Özellikle iOS) ses çalmaya zorlamak için sessiz bir tetikleyici oluştur
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+        } catch (e) {
+            console.error("Ses sistemi başlatılamadı:", e);
+        }
+    }
 
-            audioUnlocked = true;
-            
-            // Kilit açıldıktan sonra dinleyicileri kaldır ki sistemi yormasın
-            ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
-                document.removeEventListener(evt, unlockAudio);
-            });
-        } catch (e) { console.error("Ses başlatılamadı:", e); }
-    };
-
-    // Ekrana yapılan İLK etkileşimde sesleri serbest bırak
-    ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
-        document.addEventListener(evt, unlockAudio, { once: true });
+    // OYUNU BAŞLAT BUTONU
+    document.getElementById('systemStartBtn').addEventListener('click', () => {
+        initAudio(); // Ses kilidini kır
+        document.getElementById('start-overlay').style.display = 'none'; // Ekranı gizle
+        gameStarted = true; // Oyun motoruna izin ver
+        
+        // Eğer Firebase giriş yaptıysa ve oyun bekliyorsa hemen döngüyü başlat
+        if(authReady && phase === "WAITING") {
+            startNewRound();
+        }
     });
 
     function playSfx(type) {
-        // Ses motoru kilitliyse sessizce iptal et, hata verme
-        if(!audioCtx || audioCtx.state !== 'running') return;
-        
+        if(!audioCtx) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        if(audioCtx.state !== 'running') return; // Güvenlik kontrolü
+
         const now = audioCtx.currentTime;
+        
         if(type==='countdown') {
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
             o.connect(g); g.connect(audioCtx.destination);
-            o.frequency.setValueAtTime(500, now); g.gain.setValueAtTime(0.1, now);
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.1); o.start(); o.stop(now + 0.1);
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(500, now); 
+            g.gain.setValueAtTime(0.3, now); // Sesi Yükselttim
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.1); 
+            o.start(now); o.stop(now + 0.1);
         }
         if(type==='crash') { 
-            const lowOsc = audioCtx.createOscillator(); const lowGain = audioCtx.createGain();
-            lowOsc.frequency.setValueAtTime(100, now); lowGain.gain.setValueAtTime(0.5, now);
-            lowGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            lowOsc.connect(lowGain); lowGain.connect(audioCtx.destination);
-            lowOsc.start(); lowOsc.stop(now + 0.5);
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'sawtooth'; // Mobil hoparlörler için daha iyi bir ses türü
+            o.frequency.setValueAtTime(300, now); 
+            o.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+            g.gain.setValueAtTime(0.5, now); // Sesi Yükselttim
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            o.start(now); o.stop(now + 0.5);
         }
         if(type==='cash') {
-            [0, 0.08].forEach((d, i) => {
+            [0, 0.1].forEach((d, i) => {
                 const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                o.type = 'triangle'; o.frequency.setValueAtTime(800 + (i * 400), now + d);
-                g.gain.setValueAtTime(0.1, now + d); g.gain.exponentialRampToValueAtTime(0.01, now + d + 0.2);
-                o.connect(g); g.connect(audioCtx.destination); o.start(now + d); o.stop(now + d + 0.2);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.type = 'square'; 
+                o.frequency.setValueAtTime(800 + (i * 400), now + d);
+                g.gain.setValueAtTime(0.2, now + d); // Sesi Yükselttim
+                g.gain.exponentialRampToValueAtTime(0.01, now + d + 0.2);
+                o.start(now + d); o.stop(now + d + 0.2);
             });
         }
         if(type==='bet') { 
             const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'sine'; o.frequency.setValueAtTime(600, now);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type = 'sine'; 
+            o.frequency.setValueAtTime(600, now);
             o.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-            g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(now + 0.15);
+            g.gain.setValueAtTime(0.3, now); // Sesi Yükselttim
+            g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            o.start(now); o.stop(now + 0.15);
         }
     }
 
@@ -298,38 +337,40 @@
         if (totalActiveBet > 0) {
             let chance = Math.random();
             if (chance < 0.45) {
-                return 1.00 + (Math.random() * 0.15);
+                return 1.00 + (Math.random() * 0.15); // %45 Çok Erken Patlama
             } else if (chance < 0.85) {
-                return 1.15 + (Math.random() * 0.35);
+                return 1.15 + (Math.random() * 0.35); // %40 Ortalama Patlama
             } else {
                 const e = 100;
                 const h = Math.random() * e;
-                return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100);
+                return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100); // %15 Normal İzin
             }
         } else {
             const e = 100;
             const h = Math.random() * e;
             let point = Math.max(1.00, Math.floor(100 * e / (e - h)) / 100);
             if (Math.random() < 0.60) {
-                point += (Math.random() * 12 + 3);
+                point += (Math.random() * 12 + 3); // %60 Suni Yemleme Çarpanı Ekle
             }
             return point;
         }
     }
 
     onAuthStateChanged(auth, user => {
+        authReady = true; // Firebase bağlantısı hazır
         if(user) {
             userRef = doc(db, "users", user.uid);
             onSnapshot(userRef, snap => {
                 if(snap.exists()) {
                     balance = snap.data().balance || 0;
                     document.getElementById('balance').innerText = balance.toLocaleString('tr-TR');
-                    if(phase === "WAITING") startNewRound();
+                    // Kullanıcı tıkladıysa ve oyun bekliyorsa başlat
+                    if(gameStarted && phase === "WAITING") startNewRound();
                 }
             });
         } else {
             signInAnonymously(auth);
-            setTimeout(() => { if(phase === "WAITING") startNewRound(); }, 3000);
+            setTimeout(() => { if(gameStarted && phase === "WAITING") startNewRound(); }, 3000);
         }
     });
 
@@ -407,7 +448,7 @@
     }
 
     async function handleBet(box, isAuto = false) {
-        unlockAudio(); // Her ihtimale karşı burada da çağırıyoruz (Zaten kilit açıldıysa pas geçer)
+        if(!isAuto) initAudio(); // Herhangi bir butona basılırsa ses sistemini garantiye al
         
         if (box === 1 && isProcessing1) return;
         if (box === 2 && isProcessing2) return;
