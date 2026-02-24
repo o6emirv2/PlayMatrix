@@ -165,30 +165,32 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // KESİNLİKLE OYUN MÜZİĞİ YOK. SADECE GERÇEK ATMOSFER SESLERİ.
+    // KESİNLİKLE OYUN MÜZİĞİ YOK! SADECE DOĞAL SESLER
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
-        rain: new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3'), // Şiddetli Gerçek Yağmur Sesi
-        thunder: new Audio('https://cdn.pixabay.com/download/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek / Gök Gürültüsü
+        rain: new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_73d9136e05.mp3'), // Şiddetli Gerçek Yağmur Sesi
+        thunder: new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_924ebc01e6.mp3') // Gerçek Şimşek / Gök Gürültüsü
     };
     
     sfx.lobby.loop = true; 
     sfx.rain.loop = true; 
     
+    // GÜÇLÜ SES AYARLARI
     sfx.lobby.volume = 0.4; 
     sfx.tap.volume = 0.8;
     sfx.rain.volume = 1.0; 
     sfx.thunder.volume = 1.0; 
 
-    // IOS SES KİLİDİ AÇICI (Güçlendirildi)
+    // IOS SES KİLİDİ AÇICI (Sorunsuz çalışması için tüm sesleri başlatıp anında durdurur)
     let audioUnlocked = false;
     const unlockAudio = () => {
         if (!audioUnlocked) {
             Object.values(sfx).forEach(a => { 
-                a.play().catch(()=>{}); 
-                a.pause(); 
-                a.currentTime = 0; 
+                a.play().then(() => { 
+                    a.pause(); 
+                    a.currentTime = 0; 
+                }).catch(()=>{}); 
             });
             audioUnlocked = true;
             if(document.getElementById('lobby').style.display !== 'none') {
@@ -207,7 +209,6 @@
     let currentScene = 'lobby'; 
     let lightningTimer = null; 
 
-    // ÖZEL MODAL ALERT FONKSİYONU
     window.showModalAlert = (title, msg, onConfirmCallback) => {
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMsg').innerText = msg;
@@ -228,7 +229,7 @@
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
     };
 
-    // --- PROFESYONEL LOBİYE DÖNÜŞ (SAYFA ASLA YENİLENMEZ) ---
+    // --- PÜRÜZSÜZ LOBİYE DÖNÜŞ (SAYFA ASLA YENİLENMEZ) ---
     window.leaveToHome = async () => {
         if (curRoomId) {
             if (unsubGame) unsubGame();
@@ -240,7 +241,7 @@
             } catch (e) {}
         }
         
-        // Oyun verilerini sıfırla
+        // Verileri Sıfırla
         curRoomId = null;
         isFin = false;
         canPlay = false;
@@ -248,7 +249,7 @@
         currentScene = 'lobby';
         lightningFlash = 0;
         
-        // SES GEÇİŞLERİ (ATMOSFERİ KAPAT, LOBİYİ AÇ)
+        // OYUN SESLERİNİ SUSTUR, LOBİYİ AÇ
         sfx.rain.pause();
         sfx.thunder.pause();
         if (audioUnlocked) {
@@ -256,13 +257,12 @@
             sfx.lobby.play().catch(()=>{});
         }
         
-        // Arayüzü Lobideki Haline Getir
+        // EKRANI PÜRÜZSÜZ DEĞİŞTİR (Sayfa yenileme kodu (location.href) tamamen silindi)
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('lobby').style.display = 'flex';
         window.toggleModal('resultModal', false);
         window.toggleModal('alertModal', false);
         
-        // Lobiyi tekrar yükle
         listenLobby(); 
     };
 
@@ -273,7 +273,7 @@
         });
     };
 
-    // --- SAHNEYE (LOBİ vs OYUN) GÖRE EKRAN ANİMASYONLARI ---
+    // --- SAHNEYE (LOBİ vs OYUN) GÖRE ANİMASYON SİSTEMİ ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let lobbyParticles = [];
@@ -290,30 +290,29 @@
             s: Math.random() * 0.5 
         }));
 
-        // Oyun Ekranı - Şiddetli Yağmur Damlaları
+        // Şiddetli Yağmur Damlaları (Oyun İçi)
         rainParticles = Array.from({length: 150}, () => ({ 
             x: Math.random() * canvas.width, 
             y: Math.random() * canvas.height, 
-            l: Math.random() * 25 + 15, // Damla uzunluğu
-            s: Math.random() * 20 + 15, // Düşme hızı
-            w: Math.random() * 1.5 + 0.5, // Kalınlık
-            o: Math.random() * 0.4 + 0.1 // Saydamlık
+            l: Math.random() * 25 + 15, 
+            s: Math.random() * 20 + 15, 
+            w: Math.random() * 1.5 + 0.5, 
+            o: Math.random() * 0.4 + 0.1 
         }));
     }
 
-    // TAM SENKRONİZE GÖK GÜRÜLTÜSÜ VE ŞİMŞEK SİSTEMİ
+    // TAM SENKRONİZE GÖK GÜRÜLTÜSÜ VE ŞİMŞEK ÇAKMASI
     function triggerLightning() {
         if (currentScene !== 'game') return; // Lobiye dönüldüyse iptal et
         
-        lightningFlash = 3; // Ekrana parlama ver
+        lightningFlash = 3; 
         
-        // Gök gürültüsünü görselle TAM aynı anda oynat
+        // Gök gürültüsünü tam ekran parlarken patlat
         if (audioUnlocked) {
             sfx.thunder.currentTime = 0;
             sfx.thunder.play().catch(()=>{});
         }
         
-        // Rastgele sürede tekrar çaktır
         lightningTimer = setTimeout(triggerLightning, Math.random() * 10000 + 8000);
     }
 
@@ -328,10 +327,10 @@
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); 
             });
         } else if (currentScene === 'game') {
-            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Fırtına hissi
+            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; // Karanlık ve kasvetli fırtına rengi
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // SENKRONİZE GÖRSEL PATLAMA
+            // ŞİMŞEK PARLAMASI
             if (lightningFlash > 0) {
                 ctx.fillStyle = `rgba(230, 240, 255, ${Math.random() * 0.6 + 0.2})`;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -343,7 +342,7 @@
             rainParticles.forEach(p => { 
                 ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; 
                 p.y += p.s; 
-                p.x -= p.s * 0.1; // Rüzgar efekti
+                p.x -= p.s * 0.1; 
                 
                 if(p.y > canvas.height) { 
                     p.y = -20; 
@@ -484,16 +483,17 @@
         enterGame(id);
     }
 
-    // OYUNA GİRİŞ İŞLEMİ (Sadece Atmosfer Sesleri Çalar)
+    // OYUNA GİRİŞ İŞLEMİ (Müzik Yok, Sadece Yağmur)
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
         
         currentScene = 'game';
         
-        // Lobi müziğini durdur, Sadece yağmuru başlat
+        // Lobi müziğini durdur
         sfx.lobby.pause(); 
         sfx.rain.currentTime = 0;
         
+        // Sadece Şiddetli Yağmuru Başlat
         if (audioUnlocked) {
             sfx.rain.play().catch(()=>{}); 
         }
