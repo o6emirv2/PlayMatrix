@@ -19,7 +19,7 @@
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR */
+    /* KUSURSUZ ÜST BAR */
     .top-bar {
         position:fixed; top:0; left: 0; right: 0; height:70px;
         display:flex; align-items:center; justify-content:space-between;
@@ -62,7 +62,7 @@
         white-space: nowrap; border:none;
     }
 
-    /* OYUN ALANI */
+    /* OYUN ALANI STİLLERİ */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
         padding: 85px 0 20px 0; perspective: 1000px; position: relative;
@@ -88,7 +88,7 @@
         border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; 
     }
 
-    /* KART ANİMASYONLARI (Kusursuz Geliş ve Dönüş) */
+    /* KART GÖRÜNÜMÜ - İNİŞ VE DÖNÜŞ ANİMASYONLARI */
     .cards-wrapper { 
         display: flex; justify-content: center; gap: -30px; 
         min-height: 115px; padding: 0 10px; flex-wrap: nowrap; 
@@ -98,7 +98,7 @@
     .card-3d {
         width: 80px; height: 115px; position: relative;
         transform-style: preserve-3d;
-        /* Kart başlangıçta ekran dışında ve KAPALI (rotateY 0) */
+        /* Başlangıçta ekranın sağ üstünden tamamen kapalı(rotateY:0) başlar */
         transform: translate(350px, -250px) rotateZ(45deg) scale(0.4) rotateY(0deg);
         opacity: 0; margin-left: -40px; 
         transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
@@ -106,12 +106,12 @@
     }
     .card-3d:first-child { margin-left: 0; }
 
-    /* Kart masaya iner (Hala kapalı durur) */
+    /* Masaya inme anı: Kart kapalı olarak yerleşir */
     .card-3d.landed { 
         transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(0deg); 
         opacity: 1; 
     }
-    /* Gerekirse kart ön yüzüne döner */
+    /* Kartın ön yüzünü gösterme anı */
     .card-3d.flipped { 
         transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); 
         transition: transform 0.5s ease-out; 
@@ -174,7 +174,7 @@
     .cancel-btn:active { transform: scale(0.9); }
     .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
 
-    /* MODALLAR */
+    /* BAŞLANGIÇ EKRANI VE MODAL */
     .start-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.95);
         display: flex; align-items: center; justify-content: center;
@@ -289,8 +289,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-let balance = 0, localBet = 0, userRef = null;
-let gameState = "loading", betCountdown = null, actionTimer = null, isProcessing = false; 
+// --- OYUN DEĞİŞKENLERİ ---
+let balance = 0; 
+let localBet = 0; 
+let userRef = null;
+let gameState = "loading"; 
+let betCountdown = null;
+let actionTimer = null;
+let isProcessing = false; 
 let deck = [], player = [], dealer = [], dealerHidden = true;
 
 const messageEl = document.getElementById("message");
@@ -303,7 +309,7 @@ window.showModal = (msg, isSuccess = false) => {
     document.getElementById("alertModal").style.display = "flex";
 }
 
-// --- SES MOTORU ---
+// --- PROFESYONEL MP3 SES MOTORU ---
 const sounds = {};
 let audioCtx = null;
 
@@ -313,18 +319,22 @@ async function initAudio() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') audioCtx.resume();
         
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+
         const urls = {
             card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
             win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
-            lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3',
-            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'
+            lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3', 
+            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  
         };
         
         for (const [name, url] of Object.entries(urls)) {
             fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf))
             .then(decoded => sounds[name] = decoded).catch(e => console.warn(`Ses yüklenemedi: ${name}`));
         }
-    } catch(e) {}
+    } catch(e) { console.error("Ses açılamadı:", e); }
 }
 
 document.getElementById('systemStartBtn').addEventListener('click', () => {
@@ -345,6 +355,14 @@ function playSound(name) {
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(now); osc.stop(now + 0.05);
+        
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'triangle'; osc2.frequency.setValueAtTime(2500, now);
+        gain2.gain.setValueAtTime(0.1, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+        osc2.start(now); osc2.stop(now + 0.03);
         return;
     }
     
@@ -356,7 +374,7 @@ function playSound(name) {
     }
 }
 
-// --- FİREBASE ---
+// --- FİREBASE DİNLEYİCİSİ ---
 onAuthStateChanged(auth, user => {
     if(!user) { signInAnonymously(auth); return; }
     userRef = doc(db, "users", user.uid);
@@ -375,6 +393,7 @@ onAuthStateChanged(auth, user => {
 window.addBet = (amount) => {
     if(gameState !== "betting" || isProcessing) return;
     if(localBet + amount > balance) { showModal("BAKİYENİZ YETERSİZ!"); return; }
+    if(localBet + amount > 50000) { showModal("MAKSİMUM BAHİS 50.000 MC!"); return; }
     
     playSound('chip');
     localBet += amount;
@@ -414,7 +433,7 @@ function startBetCountdown(){
     }, 1000);
 }
 
-// --- DESTE VE OYUN MANTIĞI ---
+// --- DESTE VE KART YÖNETİMİ ---
 function createDeck(){
     const s=["H","D","C","S"], v=[1,2,3,4,5,6,7,8,9,10,11,12,13];
     deck = [];
@@ -442,7 +461,6 @@ function updateScores(){
     if(dealer.length === 0) {
         document.getElementById("dealerScore").innerText = "0";
     } else {
-        // Kurupiyerin 2. kartı kapalıyken (dealerHidden=true) sadece ilk kartın değerini göster
         let dScore = dealerHidden ? 
             (dealer[0].value > 10 ? 10 : (dealer[0].value === 1 ? 11 : dealer[0].value)) : 
             total(dealer);
@@ -450,7 +468,7 @@ function updateScores(){
     }
 }
 
-// --- MÜKEMMEL KART DAĞITIM ANİMASYONU ---
+// --- KART ÇEKME ANİMASYONU (ÖNCE KAPALI İNER SONRA AÇILIR) ---
 async function draw(hand, divId, isOpen = true, forceCard = null){
     playSound('card');
     let card = forceCard ? forceCard : deck.pop();
@@ -469,24 +487,32 @@ async function draw(hand, divId, isOpen = true, forceCard = null){
     document.getElementById(divId).appendChild(cardCont);
     
     return new Promise(resolve => {
-        setTimeout(() => { 
-            // 1. Adım: Kart masaya kapalı olarak uçar
+        setTimeout(async () => { 
+            // 1. AŞAMA: Kart kapalı olarak masaya iner
             cardCont.classList.add("landed");
+            await delay(400); // İniş süresini bekle
+
+            // 2. AŞAMA: Eğer kart açık olması gerekiyorsa animasyonla çevrilir
+            if(isOpen) {
+                cardCont.classList.add("flipped");
+                await delay(300); // Çevrilme süresini bekle
+            }
             
-            setTimeout(() => {
-                // 2. Adım: Eğer açık olması gerekiyorsa animasyonla döner
-                if(isOpen) {
-                    cardCont.classList.add("flipped");
-                }
-                updateScores();
-                resolve();
-            }, 400); // Fırlatma animasyon süresi kadar bekle
+            updateScores();
+            resolve();
         }, 50);
     });
 }
 
+function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
+
 // --- OYUN AKIŞI ---
 async function startGame(){
+    if(localBet < 250) { 
+        messageEl.style.display = "flex"; 
+        messageEl.innerText = "MİNİMUM 250 MC!"; return; 
+    }
+    
     isProcessing = true;
     gameState = "playing"; 
     
@@ -508,30 +534,33 @@ async function startGame(){
         return;
     }
 
-    // İSTENİLEN DAĞITIM SIRASI (1- Oyuncu Açık, 2- Kurupiyer Açık, 3- Oyuncu Açık, 4- Kurupiyer Kapalı)
-    await draw(player, "playerCards", true); 
-    await draw(dealer, "dealerCards", true);
-    await draw(player, "playerCards", true); 
-    await draw(dealer, "dealerCards", false); 
+    // İSTENEN KUSURSUZ SIRALAMA:
+    await draw(player, "playerCards", true);  // 1. KART OYUNCUYA (AÇILIR)
+    await draw(dealer, "dealerCards", true);  // 2. KART KURUPİYERE (AÇILIR)
+    await draw(player, "playerCards", true);  // 3. KART OYUNCUYA (AÇILIR)
+    await draw(dealer, "dealerCards", false); // 4. KART KURUPİYERE (KAPALI KALIR)
 
     const pTotal = total(player);
+    const dTotal = total(dealer);
 
     if(pTotal === 21) { 
         messageEl.style.display = "flex";
         messageEl.innerText = "BLACKJACK!"; 
         playSound('win');
         await delay(1000); 
-        dealerTurn();
+        
+        dealerTurn(); // Blackjack yaptıysa direkt kurupiyer oynar
     } else { 
         isProcessing = false; 
         startActionTimer(); 
     }
 }
 
+// --- OYUNCU KARAR AŞAMASI ---
 function startActionTimer(){
     let s = 10;
     messageEl.style.display = "flex";
-    controlsEl.style.display = "flex";
+    controlsEl.style.display = "flex"; 
     messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
     playSound('tick');
     if (actionTimer) clearInterval(actionTimer);
@@ -544,7 +573,7 @@ function startActionTimer(){
         } else { 
             clearInterval(actionTimer); actionTimer = null; 
             if(gameState === "playing" && !isProcessing) {
-                hideControls();
+                hideControls(); 
                 stand(); 
             }
         }
@@ -563,7 +592,7 @@ document.getElementById("hit").onclick = async () => {
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
     hideControls(); 
     
-    // Sonradan çekilen kartlar oyuncuya AÇIK gelir
+    // Oyuncunun sonradan çektiği kartlar da kapalı inip açılır
     await draw(player, "playerCards", true);
     
     if(total(player) >= 21) {
@@ -589,14 +618,15 @@ async function dealerTurn(){
     gameState = "dealer_turn";
     dealerHidden = false;
     
-    // Kurupiyerin kapalı (hidden) olan 4. kartını bul ve çevir
+    // Kurupiyerin masada bekleyen kapalı (4.) kartını bul ve çevir
     const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-    if(cards[1] && !cards[1].classList.contains("flipped")) {
+    if(cards[1] && !cards[1].classList.contains('flipped')) {
         cards[1].classList.add("flipped");
         playSound('card'); 
-        await delay(500); // Kartın dönme animasyonunu bekle
+        await delay(500);
     }
     updateScores();
+    await delay(500);
 
     const pScore = total(player);
     
@@ -614,8 +644,8 @@ async function dealerTurn(){
                 if (bestIdx !== -1) { cheatCard = deck.splice(bestIdx, 1)[0]; }
             }
 
-            // Kurupiyerin sonradan çektiği kartlar da AÇIK gelir
             await draw(dealer, "dealerCards", true, cheatCard); 
+            await delay(500); 
         }
     }
     
@@ -629,16 +659,33 @@ async function endGameLogic(){
     let m = 0; 
     let txt = "";
 
-    // Doğal Blackjack kontrolü
-    let isPlayerBJ = (player.length === 2 && p === 21);
-    let isDealerBJ = (dealer.length === 2 && d === 21);
-
-    if(p > 21) { txt = "PATLADIN! (KASA KAZANDI)"; playSound('lose'); }
-    else if(d > 21) { txt = "KASA PATLADI! KAZANDIN!"; m = 2; playSound('win'); }
-    else if(isPlayerBJ && !isDealerBJ) { txt = "BLACKJACK KAZANCI!"; m = 2.5; playSound('win'); }
-    else if(p > d) { txt = "KAZANDIN!"; m = 2; playSound('win'); }
-    else if(d > p) { txt = "KAYBETTİN!"; playSound('lose'); }
-    else { txt = "BERABERE (PUSH)"; m = 1; }
+    if(p > 21) { 
+        txt = "PATLADIN! (KASA KAZANDI)"; 
+        playSound('lose');
+    }
+    else if(d > 21) { 
+        txt = "KASA PATLADI! KAZANDIN!"; 
+        m = 2; 
+        playSound('win'); 
+    }
+    else if(p === 21 && player.length === 2 && !(d === 21 && dealer.length === 2)) {
+        txt = "BLACKJACK KAZANCI!"; 
+        m = 2.5; 
+        playSound('win');
+    }
+    else if(p > d) { 
+        txt = "KAZANDIN!"; 
+        m = 2; 
+        playSound('win'); 
+    }
+    else if(d > p) { 
+        txt = "KAYBETTİN!"; 
+        playSound('lose');
+    }
+    else { 
+        txt = "BERABERE (PUSH)"; 
+        m = 1; 
+    }
     
     endGame(txt, m);
 }
@@ -676,8 +723,6 @@ function resetBoard() {
     isProcessing = false;
     gameState = "betting";
 }
-
-function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 </script>
 </body>
