@@ -44,12 +44,19 @@
         .btn-neon:disabled { opacity: 0.3; cursor: not-allowed; }
         .btn-sec { background: var(--btn-sec); }
 
+        /* YENİ PROFESYONEL LOBİ KART TASARIMI */
         .room-card { 
             background: var(--glass); border: 1px solid rgba(255, 204, 0, 0.2); border-left: 5px solid var(--border); 
-            padding: 18px; display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 12px; border-radius: 0 8px 8px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 15px; display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 12px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
         }
+        .room-info { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+        .room-title { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; }
+        .room-players { font-size: 0.95rem; font-weight: 700; color: #fff; display:flex; align-items: center; gap: 5px;}
+        .room-time { font-size: 0.75rem; color: #888; font-weight: 700; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; display: inline-block; width: fit-content;}
+        .room-action .btn-neon { padding: 12px 18px; font-size: 0.75rem; border-radius: 0; }
+
         @keyframes slideIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
 
         .how-to-btn {
@@ -90,7 +97,7 @@
     <div class="header">
         <div class="user-badge" id="meName">YÜKLENİYOR...</div>
         <div class="logo">NEON CONQUEST</div>
-        <button onclick="window.leaveToHome()" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">AYRIL</button>
+        <button onclick="window.showModalAlert('ONAY', 'Savaş alanından ayrılmak istediğine emin misin?', window.leaveToHome)" style="background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">AYRIL</button>
     </div>
 
     <div id="lobby">
@@ -117,8 +124,17 @@
     <div id="roomTypeModal" class="modal"><div class="modal-box"><h3>ARENA TİPİ</h3><button class="btn-neon" style="width:100%; margin-bottom:12px;" onclick="window.createArena(false)">AÇIK ARENA</button><button class="btn-neon btn-sec" style="width:100%" onclick="window.showPrivateSettings()">KİLİTLİ ARENA</button><p onclick="window.toggleModal('roomTypeModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">İPTAL</p></div></div>
     <div id="privateSettingsModal" class="modal"><div class="modal-box"><h3>ARENA KURULUMU</h3><input type="number" id="customRoomCode" class="modal-input" placeholder="ODA NO (Min 3 Sayı)"><input type="number" id="customRoomPass" class="modal-input" placeholder="ŞİFRE (Min 5 Sayı)"><div id="createError" class="error-text">HATA: SAYI KURALLARINA UYUN!</div><button class="btn-neon" style="width:100%" onclick="window.createArena(true)">OLUŞTUR</button><p onclick="window.toggleModal('privateSettingsModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">GERİ</p></div></div>
     <div id="passwordEntryModal" class="modal"><div class="modal-box"><h3>ŞİFRE GEREKLİ</h3><input type="number" id="joinRoomPassInput" class="modal-input" placeholder="ŞİFREYİ GİRİN"><div id="passError" class="error-text">HATA: ŞİFRE YANLIŞ!</div><button class="btn-neon" id="confirmJoinPass" style="width:100%">GİRİŞ YAP</button><button class="btn-neon btn-sec" style="width:100%; margin-top:10px;" onclick="window.toggleModal('passwordEntryModal', false)">İPTAL</button></div></div>
-    <div id="alertModal" class="modal"><div class="modal-box"><h3 id="alertTitle">UYARI</h3><p id="alertMsg" style="color:#aaa; margin-bottom:20px;"></p><button class="btn-neon" style="width:100%" onclick="window.toggleModal('alertModal', false)">TAMAM</button></div></div>
-    <div id="helpModal" class="modal"><div class="modal-box"><h3>OYUN REHBERİ</h3><p style="color:#aaa; font-size:0.95rem; line-height:1.7; text-align:left; border-left: 2px solid var(--border); padding-left: 15px;">• Dokunduğun kare senin rengine döner.<br>• Rakibin karesine dokunarak onu ele geçir.<br>• 60 saniye sonunda alanı domine eden kazanır.</p><button class="btn-neon" style="width:100%; margin-top:25px;" onclick="window.toggleModal('helpModal', false)">ANLADIM</button></div></div>
+    
+    <div id="alertModal" class="modal">
+        <div class="modal-box">
+            <h3 id="alertTitle">UYARI</h3>
+            <p id="alertMsg" style="color:#aaa; margin-bottom:20px; font-weight:700;"></p>
+            <button class="btn-neon" id="alertOkBtn" style="width:100%">TAMAM</button>
+            <button class="btn-neon btn-sec" id="alertCancelBtn" style="width:100%; margin-top:10px; display:none;" onclick="window.toggleModal('alertModal', false)">İPTAL</button>
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal"><div class="modal-box"><h3>OYUN REHBERİ</h3><p style="color:#aaa; font-size:0.95rem; line-height:1.7; text-align:left; border-left: 2px solid var(--border); padding-left: 15px;">• Dokunduğun kare senin rengine döner.<br>• Rakibin karesine dokunarak onu ele geçir.<br>• Tüm alanı ele geçiren veya süre bitiminde en çok alana sahip olan kazanır!</p><button class="btn-neon" style="width:100%; margin-top:25px;" onclick="window.toggleModal('helpModal', false)">ANLADIM</button></div></div>
     <div id="resultModal" class="modal"><div class="modal-box"><div id="winnerLabel" class="result-header">ZAFER</div><div class="final-score"><div class="score-box" id="finalS1">0</div><div style="font-family:'Black Ops One'">VS</div><div class="score-box" id="finalS2">0</div></div><button class="btn-neon" style="width:100%" onclick="window.leaveToHome()">LOBİYE DÖN</button></div></div>
 
 <script type="module">
@@ -139,7 +155,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // PROFESYONEL VE IOS UYUMLU SESLER
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         game: new Audio('https://cdn.pixabay.com/download/audio/2021/11/24/audio_907cdbc3ad.mp3'),
@@ -148,7 +163,6 @@
     sfx.lobby.loop = true; sfx.game.loop = true;
     sfx.lobby.volume = 0.4; sfx.game.volume = 0.5; sfx.tap.volume = 0.8;
 
-    // IOS Ses Kilidi Açıcı
     let audioUnlocked = false;
     const unlockAudio = () => {
         if (!audioUnlocked) {
@@ -162,8 +176,26 @@
 
     let uid, username, curRoomId = null, myRole, isFin = false, canPlay = false, timerInt = null;
     let unsubLobby = null, unsubGame = null;
-    let localCells = {}; // Hile koruması için yerel önbellek
-    let lastClickTime = 0; // Tıklama hızı sınırı
+    let localCells = {}; 
+    let lastClickTime = 0;
+
+    // ÖZEL MODAL ALERT FONKSİYONU
+    window.showModalAlert = (title, msg, onConfirmCallback) => {
+        document.getElementById('alertTitle').innerText = title;
+        document.getElementById('alertMsg').innerText = msg;
+        
+        const okBtn = document.getElementById('alertOkBtn');
+        const cancelBtn = document.getElementById('alertCancelBtn');
+        
+        // Eğer bir işlem yapılacaksa İptal butonunu göster, yoksa gizle (sadece bilgi amaçlı)
+        cancelBtn.style.display = onConfirmCallback ? 'block' : 'none';
+
+        okBtn.onclick = () => {
+            window.toggleModal('alertModal', false);
+            if(onConfirmCallback) onConfirmCallback();
+        };
+        window.toggleModal('alertModal', true);
+    };
 
     window.onbeforeunload = function() {
         if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
@@ -176,12 +208,11 @@
             try {
                 await updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
                 await deleteDoc(doc(db, "conquest_rooms", curRoomId));
-            } catch (e) { console.log("Temizlendi"); }
+            } catch (e) {}
         }
         window.location.href = "index.html"; 
     };
 
-    // ARAMA FONKSİYONU
     window.filterRooms = () => {
         const searchText = document.getElementById('roomSearch').value.toLowerCase();
         document.querySelectorAll('.room-card').forEach(card => {
@@ -189,18 +220,56 @@
         });
     };
 
-    // CANVAS ARKA PLAN
+    // --- YENİ YAĞMUR VE ŞİMŞEK EFEKTİ ---
     const canvas = document.getElementById('bg-canvas');
     const ctx = canvas.getContext('2d');
     let particles = [];
+    let lightningFlash = 0; // Şimşek sayacı
+
     function initParticles() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        particles = Array.from({length:60}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*2, s: Math.random()*0.5 }));
+        particles = Array.from({length: 120}, () => ({ 
+            x: Math.random() * canvas.width, 
+            y: Math.random() * canvas.height, 
+            l: Math.random() * 20 + 10, // Yağmur damlası uzunluğu
+            s: Math.random() * 15 + 10, // Yağmur düşme hızı
+            w: Math.random() * 1.5 + 0.5  // Yağmur kalınlığı
+        }));
+
+        // 15 Saniyede Bir Şimşek Çakması İçin Döngü
+        setInterval(() => { lightningFlash = 3; }, 15000); 
     }
+
     function drawBg() {
-        ctx.fillStyle = '#03050a'; ctx.fillRect(0,0,canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0, 242, 255, 0.2)';
-        particles.forEach(p => { p.y -= p.s; if(p.y < 0) p.y = canvas.height; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); });
+        // Arkada iz bırakan siyahlık (Hareket hissi verir)
+        ctx.fillStyle = 'rgba(3, 5, 10, 0.4)'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // ŞİMŞEK EFEKTİ ÇİZİMİ
+        if (lightningFlash > 0) {
+            ctx.fillStyle = `rgba(220, 240, 255, ${Math.random() * 0.4 + 0.1})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            lightningFlash--;
+        }
+
+        // Yağmur Çizimi
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.6)';
+        ctx.lineCap = 'round';
+        particles.forEach(p => { 
+            p.y += p.s; 
+            p.x -= p.s * 0.2; // Hafif rüzgar açısı (sola doğru yatık)
+            
+            if(p.y > canvas.height) { 
+                p.y = -20; 
+                p.x = Math.random() * canvas.width + 50; 
+            } 
+            
+            ctx.beginPath(); 
+            ctx.lineWidth = p.w;
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - p.l * 0.2, p.y - p.l);
+            ctx.stroke(); 
+        });
         requestAnimationFrame(drawBg);
     }
     initParticles(); drawBg();
@@ -221,6 +290,7 @@
     function listenLobby() {
         if(unsubLobby) unsubLobby();
         const q = query(collection(db, "conquest_rooms"), where("status", "in", ["waiting", "playing"]));
+        
         unsubLobby = onSnapshot(q, snap => {
             const list = document.getElementById('roomList');
             list.innerHTML = "";
@@ -231,22 +301,55 @@
                 const r = d.data();
                 if(r.p1 === uid || r.status === 'terminated') return;
                 
-                // ZOMBİ ODA TEMİZLİĞİ: 5 Dakikadan eski bekleme odalarını gizle
+                // ZOMBİ ODA TEMİZLİĞİ: 65 Saniyeden eskiyse veritabanından tamamen SİL
                 if(r.status === 'waiting' && r.createdAt) {
                     const ageMs = now - r.createdAt.toMillis();
-                    if(ageMs > 300000) return; // 5 dakikadan yaşlıysa gösterme
+                    if(ageMs > 65000) {
+                        deleteDoc(doc(db, "conquest_rooms", d.id)).catch(()=>{});
+                        return; // Ekrana çizme
+                    }
+                    
+                    // PROFESYONEL LOBİ KARTI OLUŞTURMA
+                    count++;
+                    const ageSec = Math.floor(ageMs / 1000);
+                    const timeStr = ageSec < 5 ? "Az önce" : `${ageSec} saniye önce`;
+                    
+                    const card = document.createElement('div');
+                    card.className = "room-card";
+                    card.innerHTML = `
+                        <div class="room-info">
+                            <div class="room-title">BÖLGE: ${d.id} ${r.pass ? '🔒' : '🔓'}</div>
+                            <div class="room-players">
+                                <span style="color:var(--p1)">${r.p1Name}</span> 
+                                <span style="color:#555">vs</span> 
+                                <span style="color:var(--p2)">BEKLENİYOR...</span>
+                            </div>
+                            <div class="room-time">⏳ ${timeStr} açıldı</div>
+                        </div>
+                        <div class="room-action">
+                            <button class="btn-neon var(--btn-sec)" onclick="window.joinHandler('${d.id}', '${r.pass||''}')">GİRİŞ YAP</button>
+                        </div>`;
+                    list.appendChild(card);
+                } else if(r.status === 'playing') {
+                    // Dolu/Oynanan odaları gösterme kısmını dilersen aktif tutabilirsin
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = "room-card";
+                    card.innerHTML = `
+                        <div class="room-info">
+                            <div class="room-title">BÖLGE: ${d.id} ⚔️</div>
+                            <div class="room-players">
+                                <span style="color:var(--p1)">${r.p1Name}</span> 
+                                <span style="color:#555">vs</span> 
+                                <span style="color:var(--p2)">${r.p2Name || 'GİZLİ'}</span>
+                            </div>
+                            <div class="room-time" style="color:var(--danger)">🔴 SAVAŞTA</div>
+                        </div>
+                        <div class="room-action">
+                            <button class="btn-neon" style="background:#222; color:#555; cursor:not-allowed;" disabled>MEŞGUL</button>
+                        </div>`;
+                    list.appendChild(card);
                 }
-
-                count++;
-                const card = document.createElement('div');
-                card.className = "room-card";
-                card.innerHTML = `
-                    <div><small style="color:var(--border)">BÖLGE: ${d.id}</small><br><b>${r.p1Name} ${r.pass ? '🔒' : '🔓'}</b></div>
-                    <button class="btn-neon" style="padding:10px 15px; font-size:0.7rem; background:${r.status==='playing'?'#222':'var(--btn-sec)'}" 
-                        onclick="${r.status==='playing'?'':'window.joinHandler(\''+d.id+'\', \''+(r.pass||'')+'\')'}">
-                        ${r.status==='playing'?'MEŞGUL':'GİRİŞ'}
-                    </button>`;
-                list.appendChild(card);
             });
             document.getElementById('emptyLobbyMsg').style.display = (count === 0) ? 'block' : 'none';
         });
@@ -258,9 +361,7 @@
         rooms.forEach(card => { if(card.innerText.includes('🔓') && !card.innerText.includes('MEŞGUL')) target = card; });
         if(target) target.querySelector('button').click();
         else {
-            document.getElementById('alertTitle').innerText = "ARENA YOK";
-            document.getElementById('alertMsg').innerText = "Uygun şifresiz arena bulunamadı. Kendi arenanı kur.";
-            window.toggleModal('alertModal', true);
+            window.showModalAlert("ARENA BULUNAMADI", "Uygun şifresiz arena bulunamadı. Kendi arenanı kur.");
         }
     };
 
@@ -314,7 +415,6 @@
             const c = document.createElement('div'); c.className = 'cell';
             c.onclick = () => { 
                 const now = Date.now();
-                // ANTİ-HİLE: 150ms bekleme süresi ve zaten benim olan hücreyi tekrar almama
                 if(canPlay && !isFin && (now - lastClickTime > 150) && localCells[i] !== myRole) { 
                     updateDoc(doc(db, "conquest_rooms", id), { [`cells.${i}`]: myRole }); 
                     sfx.tap.currentTime = 0; 
@@ -328,11 +428,12 @@
         unsubGame = onSnapshot(doc(db, "conquest_rooms", id), snap => {
             if(!snap.exists()) { if(!isFin) window.leaveToHome(); return; }
             const d = snap.data();
-            localCells = d.cells || {}; // Hücre durumlarını önbelleğe al
+            localCells = d.cells || {}; 
             
+            // AYRILAN RAKİP KONTROLÜ (NATIVE ALERT KALDIRILDI)
             if(d.status === 'terminated' && !isFin) {
-                alert("Rakip sahadan ayrıldı!");
-                window.leaveToHome();
+                isFin = true;
+                window.showModalAlert("BAĞLANTI KOPTU", "Rakip savaş alanından kaçtı!", window.leaveToHome);
                 return;
             }
 
@@ -342,7 +443,6 @@
 
             if(d.status === 'playing') canPlay = true;
 
-            // SAYAÇ (TIMER) HATASI DÜZELTİLDİ
             if(myRole === 'p1' && d.status === 'playing' && !timerInt) {
                 let localTimer = d.timer; 
                 timerInt = setInterval(() => {
@@ -358,9 +458,19 @@
 
             let s1=0, s2=0;
             document.querySelectorAll('.cell').forEach((c, i) => {
-                if(d.cells[i]) { c.className = 'cell ' + d.cells[i]; d.cells[i] === 'p1' ? s1++ : s2++; }
+                if(d.cells[i]) { 
+                    c.className = 'cell ' + d.cells[i]; 
+                    d.cells[i] === 'p1' ? s1++ : s2++; 
+                }
             });
             document.getElementById('s1').innerText = s1; document.getElementById('s2').innerText = s2;
+
+            // ERKEN BİTİŞ KONTROLÜ (Tüm Alanlar Ele Geçirildiyse)
+            if(d.status === 'playing' && myRole === 'p1') {
+                if (s1 === 36 || s2 === 36) {
+                    updateDoc(doc(db, "conquest_rooms", id), { timer: 0, status: 'finished' });
+                }
+            }
 
             if(d.status === 'finished' && !isFin) finish(id, s1, s2);
         });
@@ -368,7 +478,7 @@
 
     async function finish(id, s1, s2) {
         isFin = true; if(timerInt) clearInterval(timerInt);
-        canPlay = false; // Süre bittiğinde tıklamaları kapat
+        canPlay = false; 
         const win = (myRole === 'p1' && s1 > s2) || (myRole === 'p2' && s2 > s1);
         const label = document.getElementById('winnerLabel');
         label.innerText = s1 === s2 ? "BERABERE" : (win ? "ZAFER" : "BOZGUN");
