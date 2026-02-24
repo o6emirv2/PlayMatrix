@@ -98,7 +98,7 @@
         .btn-cancel { background: linear-gradient(180deg, #ef4444, #b91c1c); box-shadow: 0 4px 0 #7f1d1d; }
         .btn-cashout { background: linear-gradient(180deg, #10b981, #047857); box-shadow: 0 4px 0 #064e3b; }
         .main-btn:active { transform: translateY(2px); box-shadow: none; }
-        .main-btn:disabled { opacity: 0.3; filter: grayscale(1); }
+        .main-btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
 
         @media (max-width: 400px) { .x-value { font-size: 55px; } .bottom-panel { height: 210px; } }
     </style>
@@ -196,14 +196,33 @@
                 o.connect(g); g.connect(audioCtx.destination); o.start(now + d); o.stop(now + d + 0.2);
             });
         }
+        if(type==='bet') { // Yeni eklenen bahis sesi
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = 'sine'; o.frequency.setValueAtTime(600, now);
+            o.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+            g.gain.setValueAtTime(0.1, now); g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(now + 0.15);
+        }
     }
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let width, height, stars = [];
-    let multiplier = 1.00, phase = "WAITING", balance = 0, userRef = null;
-    let activeBet1 = 0, activeBet2 = 0, auto1 = false, auto2 = false;
+    
+    // OYUN DURUM DEĞİŞKENLERİ
+    let multiplier = 1.00;
+    let phase = "WAITING"; // WAITING, COUNTDOWN, FLYING, CRASHED
+    let balance = 0;
+    let userRef = null;
+    let activeBet1 = 0, activeBet2 = 0;
+    let auto1 = false, auto2 = false;
     let lineProgress = 0; 
+    let countdownTimer = null;
+    let flightFrameId = null; // Uçuş animasyonunu durdurmak için
+    
+    // GÜVENLİK KİLİTLERİ (Asenkron işlemler devam ederken butona basılmasını engeller)
+    let isProcessing1 = false;
+    let isProcessing2 = false;
 
     function initStars() {
         stars = []; for(let i=0; i<100; i++) stars.push({x: Math.random()*width, y: Math.random()*height, s: Math.random()*2});
@@ -214,24 +233,32 @@
     function draw() {
         ctx.fillStyle = "#02050e"; ctx.fillRect(0,0,width,height);
         ctx.fillStyle = "white";
+        
+        // Yıldız Hareketi
         stars.forEach(s => {
             s.y += (phase === "FLYING" ? multiplier * 0.4 : 0.2);
             if(s.y > height) s.y = 0;
             ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
         });
 
+        // Dinamik Çizgi Çizimi
         if(phase === "FLYING") {
             ctx.save();
             ctx.shadowBlur = 15; ctx.shadowColor = "#4fd1ff";
             ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 4; ctx.lineCap = "round";
+            
             const startX = 0, startY = height;
-            const cpX = width * 0.5, cpY = height * 0.95;
-            const endX = width * 0.85, endY = height * 0.25;
+            const cpX = width * 0.5;
+            const cpY = height * (1 - (multiplier / 10)); // Çarpan arttıkça eğri yukarı kalkar
+            const endX = width * (0.85 + (lineProgress * 0.15));
+            const endY = height * (0.8 - (lineProgress * 0.6));
+            
             ctx.setLineDash([width * 2]); 
             ctx.lineDashOffset = (width * 2) * (1 - lineProgress);
+            
             ctx.beginPath();
             ctx.moveTo(startX, startY);
-            ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+            ctx.quadraticCurveTo(cpX, Math.max(0, cpY), endX, Math.max(0, endY));
             ctx.stroke();
             ctx.restore();
         }
@@ -253,59 +280,90 @@
                 if(snap.exists()) {
                     balance = snap.data().balance || 0;
                     document.getElementById('balance').innerText = balance.toLocaleString('tr-TR');
+                    // Kullanıcı yüklendiğinde oyun bekliyorsa başlat
                     if(phase === "WAITING") startNewRound();
                 }
             });
         } else {
             signInAnonymously(auth);
+            // Anonim giriş yapıldığında bekle ve başlat
             setTimeout(() => { if(phase === "WAITING") startNewRound(); }, 3000);
         }
     });
 
     function startNewRound() {
         if(phase === "COUNTDOWN" || phase === "FLYING") return;
-        phase = "COUNTDOWN"; multiplier = 1.00; lineProgress = 0;
+        
+        phase = "COUNTDOWN"; 
+        multiplier = 1.00; 
+        lineProgress = 0;
+        
         document.getElementById('multiplier').classList.remove('crashed-text');
         document.getElementById('statusText').innerText = "BEKLENİYOR";
         document.getElementById('betInput1').disabled = false;
         document.getElementById('betInput2').disabled = false;
-        if(auto1) handleBet(1, true); if(auto2) handleBet(2, true);
+        
+        // Önceki timer varsa temizle
+        if (countdownTimer) clearInterval(countdownTimer);
+        
+        updateUI();
+
+        // Otomatik Bahis Kontrolü
+        if(auto1 && activeBet1 === 0) handleBet(1, true); 
+        if(auto2 && activeBet2 === 0) handleBet(2, true);
 
         let count = 5;
-        const timer = setInterval(() => {
+        countdownTimer = setInterval(() => {
             document.getElementById('multiplier').innerText = count + "s";
             playSfx('countdown');
-            if(count <= 0) { clearInterval(timer); launch(); }
+            if(count <= 0) { 
+                clearInterval(countdownTimer); 
+                launch(); 
+            }
             count--;
         }, 1000);
-        updateUI();
     }
 
     function launch() {
-        phase = "FLYING"; document.getElementById('statusText').innerText = "UÇUŞTA";
+        phase = "FLYING"; 
+        document.getElementById('statusText').innerText = "UÇUŞTA";
+        
+        document.getElementById('betInput1').disabled = true;
+        document.getElementById('betInput2').disabled = true;
+
         let startTime = Date.now();
         let crashPoint = generateCrashPoint();
         
+        if (flightFrameId) cancelAnimationFrame(flightFrameId);
+
         const tick = () => {
-            if(phase !== "FLYING") return;
+            if(phase !== "FLYING") return; // Güvenlik kontrolü
+            
             const elapsed = (Date.now() - startTime) / 1000;
             multiplier = 1 + (Math.pow(elapsed * 0.18, 1.35));
             if(lineProgress < 1) lineProgress += 0.002; 
             
             if(multiplier >= crashPoint) {
+                // ÇARPIŞMA (CRASH) DURUMU
                 phase = "CRASHED";
                 playSfx('crash');
                 document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
                 document.getElementById('multiplier').classList.add('crashed-text');
                 document.getElementById('statusText').innerText = "PATLADI";
+                
                 addHistory(multiplier);
-                activeBet1 = 0; activeBet2 = 0;
+                
+                // Kaybedilen bahisleri sıfırla
+                activeBet1 = 0; 
+                activeBet2 = 0;
+                
                 updateUI();
                 setTimeout(startNewRound, 4000);
             } else {
+                // UÇUŞ DEVAM EDİYOR
                 document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
                 updateUI();
-                requestAnimationFrame(tick);
+                flightFrameId = requestAnimationFrame(tick);
             }
         };
         tick();
@@ -313,38 +371,112 @@
 
     async function handleBet(box, isAuto = false) {
         unlockAudio();
+        
+        // İşlem zaten devam ediyorsa yeni tıklamayı yoksay (Güvenlik)
+        if (box === 1 && isProcessing1) return;
+        if (box === 2 && isProcessing2) return;
+
         const input = document.getElementById('betInput'+box);
         const amount = Math.floor(parseInt(input.value)) || 0;
+        
+        if (amount <= 0) return;
+
         let currentActive = (box === 1) ? activeBet1 : activeBet2;
 
-        if(phase === "COUNTDOWN" && currentActive === 0 && balance >= amount && amount > 0) {
-            if(userRef) await updateDoc(userRef, { balance: increment(-amount) });
-            else balance -= amount;
-            if(box === 1) activeBet1 = amount; else activeBet2 = amount;
-            if(!isAuto) playSfx('bet');
-        } 
-        else if(phase === "FLYING" && currentActive > 0) {
-            const win = Math.floor(currentActive * multiplier);
-            if(userRef) await updateDoc(userRef, { balance: increment(win) });
-            else balance += win;
-            if(box === 1) activeBet1 = 0; else activeBet2 = 0;
-            playSfx('cash');
+        // KİLİDİ AKTİF ET
+        if(box === 1) isProcessing1 = true;
+        if(box === 2) isProcessing2 = true;
+        updateUI(); // Kilitliyken UI'ı güncelle (butonları disable yap)
+
+        try {
+            // DURUM 1: Geri sayım aşamasında yeni bahis yapılıyor
+            if(phase === "COUNTDOWN" && currentActive === 0 && balance >= amount) {
+                if(userRef) {
+                    await updateDoc(userRef, { balance: increment(-amount) });
+                } else {
+                    balance -= amount; // Sadece test amaçlı, gerçekte userRef hep olmalı
+                }
+                
+                if(box === 1) activeBet1 = amount; 
+                if(box === 2) activeBet2 = amount;
+                
+                if(!isAuto) playSfx('bet');
+            } 
+            // DURUM 2: Geri sayım aşamasında bahsi iptal et
+            else if (phase === "COUNTDOWN" && currentActive > 0) {
+                 if(userRef) {
+                    await updateDoc(userRef, { balance: increment(currentActive) });
+                } else {
+                    balance += currentActive; 
+                }
+                
+                if(box === 1) activeBet1 = 0; 
+                if(box === 2) activeBet2 = 0;
+            }
+            // DURUM 3: Uçuş sırasında kazancı çek (Cashout)
+            else if(phase === "FLYING" && currentActive > 0) {
+                // Kazanç o anki multiplier üzerinden hesaplanır
+                const win = Math.floor(currentActive * multiplier);
+                
+                if(userRef) {
+                    await updateDoc(userRef, { balance: increment(win) });
+                } else {
+                    balance += win;
+                }
+                
+                if(box === 1) activeBet1 = 0; 
+                if(box === 2) activeBet2 = 0;
+                
+                playSfx('cash');
+            }
+        } catch (error) {
+            console.error("Bahis işleminde hata:", error);
+        } finally {
+            // KİLİDİ KALDIR
+            if(box === 1) isProcessing1 = false;
+            if(box === 2) isProcessing2 = false;
+            updateUI();
         }
-        updateUI();
     }
 
     function updateUI() {
-        const u = (id, active) => {
-            const b = document.getElementById(id);
+        const u = (boxNum) => {
+            const b = document.getElementById('btn' + boxNum);
+            const active = (boxNum === 1) ? activeBet1 : activeBet2;
+            const isProcessing = (boxNum === 1) ? isProcessing1 : isProcessing2;
+
+            // Eğer işlem sürüyorsa butonları tamamen dondur
+            if (isProcessing) {
+                b.disabled = true;
+                b.innerText = "İşleniyor...";
+                return;
+            }
+
             if(phase === "COUNTDOWN") {
-                b.disabled = false; b.innerText = active > 0 ? "İPTAL" : "MC KULLAN";
+                b.disabled = false; 
+                b.innerText = active > 0 ? "İPTAL" : "MC KULLAN";
                 b.className = active > 0 ? "main-btn btn-cancel" : "main-btn btn-bet";
-            } else if(phase === "FLYING" && active > 0) {
-                b.disabled = false; b.innerText = `ÇEK MC ${Math.floor(active * multiplier)}`;
-                b.className = "main-btn btn-cashout";
-            } else { b.disabled = true; b.innerText = active > 0 ? "UÇUYOR" : "BEKLE"; b.className = "main-btn"; }
+            } 
+            else if(phase === "FLYING") {
+                if (active > 0) {
+                    b.disabled = false; 
+                    b.innerText = `ÇEK MC ${Math.floor(active * multiplier)}`;
+                    b.className = "main-btn btn-cashout";
+                } else {
+                    b.disabled = true; 
+                    b.innerText = "UÇUYOR"; 
+                    b.className = "main-btn";
+                }
+            } 
+            else { 
+                b.disabled = true; 
+                b.innerText = "BEKLE"; 
+                b.className = "main-btn"; 
+            }
         };
-        u('btn1', activeBet1); u('btn2', activeBet2);
+        
+        u(1); 
+        u(2);
         document.getElementById('betTotal').innerText = (activeBet1 + activeBet2).toLocaleString('tr-TR');
     }
 
@@ -352,7 +484,8 @@
         const span = document.createElement('span');
         span.innerText = val.toFixed(2) + "x";
         span.style.color = val < 2 ? "#ff4757" : "#00b894";
-        const h = document.getElementById('history'); h.prepend(span);
+        const h = document.getElementById('history'); 
+        h.prepend(span);
         if(h.children.length > 15) h.lastChild.remove();
     }
 
