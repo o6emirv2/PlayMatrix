@@ -13,28 +13,26 @@
         height:100vh; width: 100vw; overflow:hidden;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
         background-color: #0b3d22;
+        /* VIP Casino Masa Arka Planı (Görsele uygun) */
         background-image: 
-            radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.6) 80%),
-            repeating-radial-gradient(rgba(0,0,0,0.1) 0, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 4px),
-            linear-gradient(180deg, #094726 0%, #062b16 100%);
-        box-shadow: inset 0 0 100px rgba(0,0,0,0.9); 
+            radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.7) 100%),
+            linear-gradient(180deg, #0a4625 0%, #052613 100%);
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR */
+    /* KUSURSUZ ÜST BAR */
     .top-bar {
         position:fixed; top:0; left: 0; right: 0; height:70px;
         display:flex; align-items:center; justify-content:space-between;
-        padding:0 15px; background: rgba(5, 10, 5, 0.95); 
+        padding:0 15px; background: #000; 
         border-bottom: 2px solid #d4af37; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         z-index:1000; width: 100%; box-sizing: border-box;
     }
 
     .brand {
         font-size:1.1rem; font-weight:900; color: #d4af37;
         letter-spacing: 1px; font-family: 'Arial Black', sans-serif;
-        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); white-space: nowrap;
+        white-space: nowrap;
     }
 
     .right-menu { display:flex; gap:8px; align-items: center; flex-wrap: nowrap; }
@@ -59,51 +57,53 @@
     }
 
     .back-btn {
-        background: linear-gradient(180deg, #e74c3c, #c0392b); color: white; 
+        background: #d63031; color: white; 
         text-decoration: none; padding: 6px 10px;
         border-radius: 4px; font-size: 0.7rem; font-weight: 900;
-        clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
-        border: 1px solid #ff7675; white-space: nowrap;
+        white-space: nowrap; border:none;
     }
 
-    /* OYUN ALANI */
+    /* OYUN ALANI STİLLERİ */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
         padding: 85px 0 20px 0; perspective: 1000px; position: relative;
     }
     
+    /* Görseldeki gibi masa üzerindeki ince altın sarısı dikiş/çizgi */
     .game-container::after {
-        content: ''; position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-        width: 150vw; height: 300px; border-radius: 50%;
-        border-top: 2px dashed rgba(212, 175, 55, 0.3); 
+        content: ''; position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+        width: 180vw; height: 350px; border-radius: 50%;
+        border-top: 1.5px dashed rgba(212, 175, 55, 0.4); 
         pointer-events: none; z-index: 1;
     }
 
     .area { width: 100%; text-align: center; z-index: 2; position: relative; }
+    
     .dealer-title { 
-        font-size: 15px; letter-spacing: 5px; font-weight: 800; color: #d4af37; 
-        margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        font-size: 14px; letter-spacing: 4px; font-weight: 800; color: #d4af37; 
+        margin-bottom: 5px; text-transform: uppercase; 
     }
+    
     .score-badge { 
-        background: rgba(0,0,0,0.8); color: #fff; padding: 4px 15px; 
-        border-radius: 20px; font-size: 14px; font-weight: 700;
+        background: rgba(0,0,0,0.7); color: #fff; padding: 4px 12px; 
+        border-radius: 12px; font-size: 12px; font-weight: 700;
         border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
+    /* KART GÖRÜNÜMÜ */
     .cards-wrapper { 
-        display: flex; justify-content: center; gap: -25px; 
-        min-height: 110px; padding: 0 10px; flex-wrap: nowrap; 
+        display: flex; justify-content: center; gap: -30px; /* Görseldeki gibi kartlar bitişik */
+        min-height: 115px; padding: 0 10px; flex-wrap: nowrap; 
         position: relative; z-index: 5;
     }
     
     .card-3d {
-        width: 75px; height: 105px; position: relative;
+        width: 80px; height: 115px; position: relative;
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(45deg) scale(0.4);
         opacity: 0; margin-left: -40px; 
         transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
-        filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.6));
+        filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
     }
     .card-3d:first-child { margin-left: 0; }
 
@@ -113,63 +113,70 @@
     .card-face {
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden; border-radius: 6px;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.8);
+        background-color: white; /* Hata önleyici arka plan */
     }
 
-    .card-front { background: white; transform: rotateY(180deg); }
+    .card-front { background-color: white; transform: rotateY(180deg); }
     .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
 
+    /* MESAJ VE KONTROLLER (Görseldeki gibi yerleşim) */
+    .action-area {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 80px; z-index: 10; position: relative;
+    }
+
     #message { 
-        font-size: 20px; font-weight: 900; color: #fff; 
-        text-shadow: 0 4px 15px rgba(0,0,0,0.9), 0 0 20px rgba(212, 175, 55, 0.5); 
-        height: 35px; display: flex; align-items: center; justify-content: center;
-        letter-spacing: 1px; z-index: 10; position: relative;
+        font-size: 18px; font-weight: 800; color: #fff; 
+        text-shadow: 0 2px 5px rgba(0,0,0,0.8); 
+        letter-spacing: 0.5px; margin-bottom: 10px;
     }
 
-    .controls { display: none; gap: 20px; justify-content: center; margin-bottom: 15px; z-index: 10; position: relative; }
+    .controls { display: none; gap: 15px; justify-content: center; width: 100%; }
+    
+    /* Butonlar görseldeki gibi yuvarlak ve dolgun */
     .btn { 
-        padding: 14px 30px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); 
-        font-weight: 900; font-size: 16px; color: white; cursor: pointer; letter-spacing: 1px;
-        transition: 0.2s; text-transform: uppercase;
+        padding: 12px 35px; border-radius: 12px; border: none; 
+        font-weight: 800; font-size: 15px; color: white; cursor: pointer; letter-spacing: 1px;
+        transition: 0.1s; text-transform: uppercase;
     }
-    #hit { background: linear-gradient(180deg, #2ecc71, #27ae60); box-shadow: 0 6px 0 #1e8449, 0 10px 20px rgba(0,0,0,0.5); }
-    #stand { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 6px 0 #922b21, 0 10px 20px rgba(0,0,0,0.5); }
-    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.5), 0 5px 10px rgba(0,0,0,0.5) !important; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+    #hit { background: #2ecc71; box-shadow: 0 6px 0 #27ae60; }
+    #stand { background: #e74c3c; box-shadow: 0 6px 0 #c0392b; }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.5) !important; }
 
-    .chips-area { display: flex; justify-content: center; gap: 10px; padding-bottom: 25px; align-items: center; flex-wrap: wrap; z-index: 10; position: relative;}
+    /* ÇİP ALANI */
+    .chips-area { display: flex; justify-content: center; gap: 12px; padding-bottom: 25px; align-items: center; flex-wrap: nowrap; z-index: 10; position: relative;}
     
     .chip {
-        width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-weight: 900; font-size: 14px; cursor: pointer; transition: transform 0.1s;
-        border: 4px dashed rgba(0,0,0,0.3); 
-        box-shadow: inset 0 0 10px rgba(255,255,255,0.3), 0 8px 15px rgba(0,0,0,0.6), 0 2px 0 #333;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.1s;
+        border: 3px dashed rgba(0,0,0,0.3); 
+        box-shadow: inset 0 0 5px rgba(255,255,255,0.2), 0 5px 10px rgba(0,0,0,0.5), 0 2px 0 #222;
     }
-    .chip:active { transform: scale(0.9) translateY(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
+    .chip:active { transform: scale(0.9) translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     
-    .c250 { background: radial-gradient(circle, #f5f6fa 40%, #dcdde1 100%); color: #2f3640; border-color: #7f8fa6; }
+    .c250 { background: radial-gradient(circle, #7f8fa6 40%, #2f3640 100%); color: #000; border-color: #2f3640; }
     .c500 { background: radial-gradient(circle, #4cd137 40%, #44bd32 100%); color: #fff; border-color: #2f3640; }
     .c1k { background: radial-gradient(circle, #e84118 40%, #c23616 100%); color: #fff; border-color: #2f3640; }
     .c2k { background: radial-gradient(circle, #2f3640 40%, #192a56 100%); color: #d4af37; border-color: #d4af37; }
     
     .cancel-btn {
-        width: 50px; height: 50px; border-radius: 50%; background: #c0392b; color: white;
-        display: flex; align-items: center; justify-content: center; font-weight: 800;
-        font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        width: 55px; height: 55px; border-radius: 50%; background: #333; color: #aaa;
+        display: flex; align-items: center; justify-content: center; font-weight: 700;
+        font-size: 10px; cursor: pointer; border: 1px solid #555;
     }
     .cancel-btn:active { transform: scale(0.9); }
-    .disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.8); }
+    .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
 
-    /* BAŞLANGIÇ MODALI */
+    /* BAŞLANGIÇ EKRANI (SES KİLİDİ) */
     .start-overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.95);
         display: flex; align-items: center; justify-content: center;
         z-index: 9999; backdrop-filter: blur(15px); flex-direction: column;
     }
     .start-modal {
-        background: linear-gradient(180deg, #111 0%, #222 100%); padding: 40px; border-radius: 20px; 
-        text-align: center; border: 2px solid #d4af37; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2);
+        background: #111; padding: 40px; border-radius: 20px; 
+        text-align: center; border: 1px solid #d4af37; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
         width: 85%; max-width: 350px;
     }
 
@@ -180,15 +187,14 @@
         display: none; align-items: center; justify-content: center; z-index: 9999;
     }
     .modal-content {
-        background: #111; border: 2px solid #d4af37; border-radius: 20px;
+        background: #111; border: 1px solid #d4af37; border-radius: 20px;
         width: 85%; max-width: 320px; padding: 25px; text-align: center;
-        box-shadow: 0 0 40px rgba(0,0,0,0.8);
     }
     .modal-icon { font-size: 40px; margin-bottom: 15px; color: #e74c3c; }
-    .modal-text { font-weight: 700; font-size: 16px; line-height: 1.5; margin-bottom: 20px; color:#fff;}
+    .modal-text { font-weight: 700; font-size: 16px; margin-bottom: 20px; color:#fff;}
     .modal-btn {
-        background: linear-gradient(180deg, #d4af37, #aa8a29); color: #000; padding: 12px 30px; border-radius: 10px;
-        font-weight: 900; border: none; cursor: pointer; font-size: 14px; text-transform: uppercase;
+        background: #d4af37; color: #000; padding: 12px 30px; border-radius: 10px;
+        font-weight: 900; border: none; cursor: pointer;
     }
 </style>
 </head>
@@ -196,9 +202,9 @@
 
 <div id="sys-start-overlay" class="start-overlay">
     <div class="start-modal">
-        <h2 style="font-family:'Arial Black', sans-serif; color:#d4af37; font-size: 22px; margin-bottom: 10px; text-shadow: 0 0 15px rgba(212,175,55,0.5);">VIP CASINO</h2>
-        <p style="font-size: 13px; color: #bbb; margin-bottom: 25px;">Gerçekçi masa seslerini ve kurupiyer algoritmasını aktifleştirmek için masaya oturun.</p>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #d4af37, #f1c40f); color: #000; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">Masaya Otur</button>
+        <h2 style="font-family:'Arial Black', sans-serif; color:#d4af37; font-size: 20px; margin-bottom: 10px;">VIP CASINO</h2>
+        <p style="font-size: 12px; color: #bbb; margin-bottom: 25px;">Oyun motorunu ve sesleri aktifleştirmek için masaya oturun.</p>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: #d4af37; color: #000; font-weight: 900; font-size: 15px; cursor: pointer;">MASAYA OTUR</button>
     </div>
 </div>
 
@@ -223,7 +229,7 @@
         <div class="user-pill-mini" style="border-color: #ffcc00;">
             <div class="balance-info">
                 <b id="betAmount" style="color:#ffcc00">0</b>
-                <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">MC</div>
+                <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00);">MC</div>
             </div>
         </div>
 
@@ -238,7 +244,7 @@
         <div id="dealerCards" class="cards-wrapper"></div>
     </div>
 
-    <div class="area">
+    <div class="action-area">
         <div id="message">BAHİS YAPIN (MİN: 250)</div>
         <div class="controls" id="controls">
             <button id="hit" class="btn">KART ÇEK</button>
@@ -278,6 +284,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// --- OYUN DEĞİŞKENLERİ ---
 let balance = 0; 
 let localBet = 0; 
 let userRef = null;
@@ -288,6 +295,7 @@ let isProcessing = false;
 let deck = [], player = [], dealer = [], dealerHidden = true;
 
 const messageEl = document.getElementById("message");
+const controlsEl = document.getElementById("controls");
 
 window.showModal = (msg, isSuccess = false) => {
     document.getElementById("modalIcon").innerText = isSuccess ? "✅" : "⚠️";
@@ -305,16 +313,17 @@ async function initAudio() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') audioCtx.resume();
+        
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
 
-        // Çip sesi hariç, BUST, TİCK (Geri Sayım) ve DİĞER sesler MP3 yapıldı.
+        // Çip sesi hariç, BUST, TİCK ve DİĞER sesler gerçeği ile değiştirildi.
         const urls = {
-            card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Kart
-            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',  // Kazanma
-            lose: 'https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3', // Patlama / Kaybetme
-            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  // Geri Sayım / Tick
+            card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+            lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3', // Daha iyi Bust/Kaybetme sesi
+            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  // Gerçekçi Tick sesi
         };
         
         for (const [name, url] of Object.entries(urls)) {
@@ -333,7 +342,7 @@ function playSound(name) {
     if (!audioCtx) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    // Çip sesi için orijinal Oscillator dokunulmadı
+    // Çip sesi orijinal (istenildiği gibi)
     if (name === 'chip') {
         const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
@@ -354,7 +363,6 @@ function playSound(name) {
         return;
     }
     
-    // Diğer sesler Buffer'dan çalınır
     if(sounds[name]) {
         const source = audioCtx.createBufferSource();
         source.buffer = sounds[name];
@@ -400,17 +408,19 @@ window.cancelBet = () => {
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = "0";
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
+    messageEl.style.display = "flex";
     messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
 };
 
 function startBetCountdown(){
     let s = 5;
-    messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
-    playSound('tick'); // Geri Sayım Sesi
+    messageEl.style.display = "flex";
+    messageEl.innerText = "BAŞLIYOR (" + s + ")";
+    playSound('tick'); 
     betCountdown = setInterval(() => {
         s--;
         if(s > 0) {
-            messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
+            messageEl.innerText = "BAŞLIYOR (" + s + ")";
             playSound('tick');
         } else { 
             clearInterval(betCountdown); 
@@ -430,7 +440,7 @@ function createDeck(){
     deck.sort(() => Math.random() - 0.5); 
 }
 
-// Kart görselleri için 10'un sıfır olarak API'den çekilmesi gerekir. 
+// API GÖRSEL HATASI DÜZELTİLDİ: 10 numaralı kart "0" olarak isimlendirilmeli
 function cardVal(v){ let m = {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}; return m[v] || v; }
 
 function total(hand){
@@ -464,7 +474,6 @@ async function draw(hand, divId, isHidden = false, forceCard = null){
     const cardCont = document.createElement("div");
     cardCont.className = "card-3d";
     
-    // API için doğru dönüştürme (0 = 10 değerindeki kart)
     let valStr = cardVal(card.value);
     
     cardCont.innerHTML = `
@@ -492,7 +501,10 @@ async function draw(hand, divId, isHidden = false, forceCard = null){
 
 // --- OYUN AKIŞI ---
 async function startGame(){
-    if(localBet < 250) { messageEl.innerText = "MİNİMUM 250 MC!"; return; }
+    if(localBet < 250) { 
+        messageEl.style.display = "flex"; 
+        messageEl.innerText = "MİNİMUM 250 MC!"; return; 
+    }
     
     isProcessing = true;
     gameState = "playing"; 
@@ -501,7 +513,9 @@ async function startGame(){
     document.getElementById("dealerCards").innerHTML = "";
     document.getElementById("playerCards").innerHTML = "";
     player = []; dealer = []; dealerHidden = true;
-    messageEl.innerText = "";
+    
+    messageEl.style.display = "none"; // Yazıyı gizle
+    controlsEl.style.display = "none";
     
     createDeck(); 
     
@@ -522,6 +536,7 @@ async function startGame(){
     const dTotal = total(dealer);
 
     if(pTotal === 21) { 
+        messageEl.style.display = "flex";
         messageEl.innerText = "BLACKJACK!"; 
         playSound('win');
         await delay(1000); 
@@ -538,15 +553,16 @@ async function startGame(){
             endGame("BLACKJACK KAZANCI!", 2.5); 
         }
     } else { 
-        isProcessing = false; // Kilit açıldı, oyuncu karar verebilir.
-        document.getElementById("controls").style.display = "flex"; 
+        isProcessing = false; 
         startActionTimer(); 
     }
 }
 
-// --- OYUNCU KARAR AŞAMASI ---
+// --- OYUNCU KARAR AŞAMASI (Süre Sorunu Çözüldü) ---
 function startActionTimer(){
     let s = 10;
+    messageEl.style.display = "flex";
+    controlsEl.style.display = "flex"; // Butonları göster
     messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
     playSound('tick');
     if (actionTimer) clearInterval(actionTimer);
@@ -555,16 +571,22 @@ function startActionTimer(){
         s--;
         if(s > 0) {
             messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
-            if(s <= 3) playSound('tick'); // Son 3 saniye uyarısı
-        }
-        else { 
+            if(s <= 3) playSound('tick'); 
+        } else { 
+            // SÜRE BİTİNCE OTOMATİK KALIR
             clearInterval(actionTimer); actionTimer = null; 
             if(gameState === "playing" && !isProcessing) {
-                messageEl.innerText = ""; // SÜRE YAZISI GİDER
+                hideControls(); // Hem yazıyı hem butonu gizle
                 stand(); 
             }
         }
     }, 1000);
+}
+
+// KARAR VERİLDİĞİNDE BUTON VE YAZIYI GİZLEYEN YARDIMCI FONKSİYON
+function hideControls() {
+    messageEl.style.display = "none";
+    controlsEl.style.display = "none";
 }
 
 document.getElementById("hit").onclick = async () => {
@@ -572,8 +594,8 @@ document.getElementById("hit").onclick = async () => {
     isProcessing = true; 
     
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
-    messageEl.innerText = ""; // Karar verildiği an süre yazısı gider.
-    document.getElementById("controls").style.display = "none";
+    
+    hideControls(); // Tıklandığı an yazı ve buton gider
     
     await draw(player, "playerCards");
     
@@ -581,8 +603,7 @@ document.getElementById("hit").onclick = async () => {
         dealerTurn(); 
     } else { 
         isProcessing = false; 
-        document.getElementById("controls").style.display = "flex"; 
-        startActionTimer(); 
+        startActionTimer(); // Tekrar sor
     }
 };
 
@@ -591,8 +612,8 @@ const stand = () => {
     isProcessing = true; 
     
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
-    messageEl.innerText = ""; // Karar verildiği an süre yazısı gider.
-    document.getElementById("controls").style.display="none"; 
+    
+    hideControls(); // Tıklandığı an yazı ve buton gider
     dealerTurn(); 
 };
 document.getElementById("stand").onclick = stand;
@@ -668,6 +689,7 @@ async function endGameLogic(){
 }
 
 async function endGame(text, multiplier) {
+    messageEl.style.display = "flex";
     messageEl.innerText = text;
 
     if(multiplier > 0) {
@@ -692,6 +714,8 @@ function resetBoard() {
     
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("chipsArea").classList.remove("disabled");
+    
+    messageEl.style.display = "flex";
     messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
     
     isProcessing = false;
