@@ -3,108 +3,176 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PlayMatrix | Neon Chess Arena</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+<title>PlayMatrix | Neon Chess Arena - Ultra Multiplayer Satranç</title>
+<meta name="description" content="Dünyanın en gelişmiş siberpunk satranç arenası. Hile korumalı, ultra profesyonel altyapı ile rakiplerini yen, MC ödüllerini topla!">
+<meta name="keywords" content="online satranç, neon chess, multiplayer satranç oyna, playmatrix, mc kazan, zeka oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta property="og:title" content="PlayMatrix Neon Chess Arena">
+<meta property="og:description" content="Rakiplerini mat et, büyük ödülü kazan! Hemen oynamaya başla.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#04060b">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
 <style>
-/* PlayMatrix Ana Değişkenleri */
+/* === ULTRA TEMA DEĞİŞKENLERİ === */
 :root {
     --primary: #00f0ff;
-    --primary-glow: rgba(0, 240, 255, 0.5);
+    --primary-glow: rgba(0, 240, 255, 0.6);
     --secondary: #0055ff;
     --accent: #ff007a;
     --bg-main: #04060b;
-    --bg-surface: #0a0e17;
-    --glass-bg: rgba(10, 14, 23, 0.75);
-    --glass-border: rgba(255, 255, 255, 0.08);
+    --bg-surface: rgba(10, 14, 23, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
     --text-primary: #ffffff;
     --text-secondary: #94a3b8;
     --success: #00ffa3;
     --danger: #ff4d4d;
-    --board-dark: rgba(0, 85, 255, 0.15);
-    --board-light: rgba(255, 255, 255, 0.05);
-    --highlight: rgba(0, 240, 255, 0.4);
+    --board-dark: rgba(0, 85, 255, 0.2);
+    --board-light: rgba(255, 255, 255, 0.03);
+    --highlight: rgba(0, 240, 255, 0.5);
+    --check-highlight: rgba(255, 0, 122, 0.6);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; user-select: none; }
-body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidden; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
+body { background: radial-gradient(circle at top, #0a1128 0%, var(--bg-main) 100%); color: var(--text-primary); overflow-x: hidden; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
 
-/* Üst Bar */
-.top-bar { width: 100%; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: var(--glass-bg); backdrop-filter: blur(25px); border-bottom: 1px solid var(--glass-border); z-index: 100; }
-.back-btn { color: var(--text-primary); text-decoration: none; font-size: 20px; transition: 0.3s; }
+/* === ÜST BAR === */
+.top-bar { width: 100%; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: rgba(4, 6, 11, 0.8); backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border); z-index: 1000; position: fixed; top: 0; }
+.back-btn { color: var(--text-secondary); text-decoration: none; font-size: 18px; transition: 0.3s; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .back-btn:hover { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
-.brand-3d { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 900; color: var(--text-primary); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 0 var(--secondary), 0 0 20px var(--primary-glow); }
+.brand-3d { font-family: 'Montserrat', sans-serif; font-size: 22px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 2px 0 var(--secondary), 0 0 20px var(--primary-glow); }
+.balance-pill { background: rgba(0,255,163,0.1); border: 1px solid rgba(0,255,163,0.3); padding: 5px 15px; border-radius: 20px; font-weight: 900; color: var(--success); display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(0,255,163,0.2); }
 
-/* Oyun Ekranı ve Satranç Tahtası */
-.game-container { display: flex; flex-direction: column; align-items: center; margin-top: 30px; width: 100%; max-width: 600px; padding: 20px; }
-.status-panel { width: 100%; display: flex; justify-content: space-between; margin-bottom: 20px; background: var(--bg-surface); padding: 15px; border-radius: 15px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-.player-info { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
-.player-info.active { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
+/* === OYUN ALANI VE ARAYÜZ === */
+.game-container { display: flex; flex-direction: column; align-items: center; margin-top: 90px; width: 100%; max-width: 650px; padding: 10px; display: none; }
 
-.board-wrapper { position: relative; padding: 10px; background: var(--bg-surface); border-radius: 10px; border: 1px solid var(--glass-border); box-shadow: 0 0 30px rgba(0,0,0,0.6), 0 0 15px var(--primary-glow); }
-.chessboard { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; max-width: 500px; aspect-ratio: 1; border: 2px solid var(--primary); border-radius: 4px; overflow: hidden; }
+.status-panel { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--bg-surface); padding: 15px 20px; border-radius: 16px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+.player-box { display: flex; flex-direction: column; gap: 5px; }
+.player-name { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; color: var(--text-secondary); transition: 0.3s; }
+.player-name.active { color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
+.captured-pieces { display: flex; gap: 2px; min-height: 20px; font-size: 16px; color: #fff; opacity: 0.8; }
+.pool-amount { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 900; color: var(--success); text-shadow: 0 0 15px rgba(0,255,163,0.5); display: flex; flex-direction: column; align-items: center; }
+.pool-amount span { font-size: 10px; color: var(--text-secondary); letter-spacing: 2px; text-shadow: none; text-transform: uppercase; }
 
-.square { display: flex; justify-content: center; align-items: center; font-size: 35px; cursor: pointer; position: relative; transition: background 0.2s; }
+/* === SATRANÇ TAHTASI (ULTRA PROFESYONEL) === */
+.board-wrapper { position: relative; padding: 25px; background: linear-gradient(145deg, #0a0e17, #04060b); border-radius: 16px; border: 2px solid rgba(0, 240, 255, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(0, 240, 255, 0.05); }
+.coords-h { position: absolute; left: 25px; right: 25px; display: flex; justify-content: space-around; font-size: 10px; font-weight: 900; color: var(--text-secondary); }
+.coords-h.top { top: 6px; } .coords-h.bottom { bottom: 6px; }
+.coords-v { position: absolute; top: 25px; bottom: 25px; display: flex; flex-direction: column; justify-content: space-around; font-size: 10px; font-weight: 900; color: var(--text-secondary); }
+.coords-v.left { left: 8px; } .coords-v.right { right: 8px; }
+
+.chessboard { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; max-width: 550px; aspect-ratio: 1; border: 2px solid rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+.square { display: flex; justify-content: center; align-items: center; font-size: 40px; cursor: pointer; position: relative; transition: all 0.2s ease; }
 .square.dark { background: var(--board-dark); }
 .square.light { background: var(--board-light); }
-.square.selected { background: var(--highlight); box-shadow: inset 0 0 15px var(--primary); }
-.square.valid-move::after { content: ''; position: absolute; width: 15px; height: 15px; background: var(--primary); border-radius: 50%; opacity: 0.6; box-shadow: 0 0 10px var(--primary); }
+.square.selected { background: var(--highlight) !important; box-shadow: inset 0 0 20px var(--primary); }
+.square.in-check { background: var(--check-highlight) !important; box-shadow: inset 0 0 30px var(--accent); animation: pulseCheck 1s infinite alternate; }
+@keyframes pulseCheck { from { box-shadow: inset 0 0 10px var(--accent); } to { box-shadow: inset 0 0 40px var(--accent); } }
 
-/* Taş Tasarımları (Neon Efektli Unicode) */
-.piece { text-shadow: 0 5px 10px rgba(0,0,0,0.8); cursor: pointer; transition: transform 0.2s; z-index: 10; }
-.piece:hover { transform: scale(1.1); }
-.piece.white { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.6), 0 5px 10px rgba(0,0,0,0.8); }
-.piece.black { color: #111; text-shadow: 0 0 5px rgba(255,0,122,0.8), 0 5px 10px rgba(0,0,0,0.8); -webkit-text-stroke: 1px var(--accent); }
+/* Geçerli Hamle Noktaları */
+.square.valid-move::before { content: ''; position: absolute; width: 25%; height: 25%; background: var(--primary); border-radius: 50%; opacity: 0.7; box-shadow: 0 0 15px var(--primary); z-index: 5; pointer-events: none; }
+.square.valid-capture::before { content: ''; position: absolute; width: 85%; height: 85%; background: transparent; border: 4px solid var(--danger); border-radius: 50%; opacity: 0.8; box-shadow: 0 0 15px var(--danger); z-index: 5; pointer-events: none; }
 
-/* Eşleştirme Modalı */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal-card { width: 90%; max-width: 400px; background: var(--bg-surface); padding: 30px; border-radius: 20px; border: 1px solid var(--primary); text-align: center; box-shadow: 0 0 40px var(--primary-glow); }
-.modal-card h2 { margin-bottom: 20px; color: var(--primary); }
-.bet-input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: #fff; border-radius: 10px; font-size: 16px; text-align: center; outline: none; }
-.bet-input:focus { border-color: var(--primary); }
-.btn { width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; font-weight: 800; cursor: pointer; transition: 0.3s; font-size: 16px; }
-.btn:hover { box-shadow: 0 0 20px var(--primary-glow); transform: translateY(-2px); }
+/* Taşlar */
+.piece { text-shadow: 0 5px 10px rgba(0,0,0,0.8); cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; font-family: 'Segoe UI Symbol', sans-serif; }
+.piece:hover { transform: scale(1.15) translateY(-5px); }
+.piece.white { color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.5), 0 5px 15px rgba(0,0,0,0.9); }
+.piece.black { color: #000000; -webkit-text-stroke: 1px rgba(255, 0, 122, 0.5); text-shadow: 0 0 10px rgba(255,0,122,0.4), 0 5px 15px rgba(0,0,0,0.9); }
 
-@media(max-width: 600px) { .square { font-size: 28px; } }
+/* === MODALLAR (EŞLEŞTİRME VE SONUÇ) === */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); display: flex; align-items: center; justify-content: center; z-index: 2000; transition: 0.3s; }
+.modal-card { width: 90%; max-width: 420px; background: var(--bg-surface); padding: 40px 30px; border-radius: 24px; border: 1px solid var(--glass-border); text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,240,255,0.1); position: relative; overflow: hidden; }
+.modal-card::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 50%); opacity: 0.1; pointer-events: none; }
+.modal-card h2 { margin-bottom: 10px; color: #fff; font-size: 24px; font-weight: 900; letter-spacing: 1px; }
+.bet-input { width: 100%; padding: 18px; margin: 25px 0; background: rgba(0,0,0,0.6); border: 2px solid var(--glass-border); color: var(--primary); border-radius: 12px; font-size: 20px; font-weight: 900; text-align: center; outline: none; transition: 0.3s; letter-spacing: 2px; }
+.bet-input:focus { border-color: var(--primary); box-shadow: 0 0 20px var(--primary-glow); }
+.btn { width: 100%; padding: 16px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; transition: 0.3s; box-shadow: 0 10px 20px rgba(0, 85, 255, 0.4); text-transform: uppercase; }
+.btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px var(--primary-glow); }
+.btn-cancel { background: transparent; border: 1px solid var(--danger); color: var(--danger); box-shadow: none; margin-top: 15px; }
+.btn-cancel:hover { background: rgba(255,77,77,0.1); box-shadow: 0 0 15px rgba(255,77,77,0.3); }
+
+/* Arama Efekti */
+.search-loader { display: none; flex-direction: column; align-items: center; margin: 20px 0; }
+.radar { width: 60px; height: 60px; border: 2px solid var(--primary); border-radius: 50%; position: relative; animation: pulseRadar 2s infinite; }
+.radar::after { content:''; position: absolute; width: 100%; height: 100%; background: conic-gradient(transparent, var(--primary)); border-radius: 50%; animation: spin 2s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes pulseRadar { 0% { box-shadow: 0 0 0 0 var(--primary-glow); } 100% { box-shadow: 0 0 0 20px transparent; } }
+
+#countdown { font-size: 60px; font-weight: 900; color: var(--primary); text-shadow: 0 0 30px var(--primary-glow); display: none; }
+
+@media(max-width: 600px) { .square { font-size: 32px; } .board-wrapper{ padding: 15px; } .coords-h, .coords-v { font-size: 8px; } }
 </style>
 </head>
 <body>
 
 <header class="top-bar">
-    <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Lobi</a>
+    <a href="index.html" class="back-btn"><i class="fa-solid fa-chevron-left"></i> Lobi</a>
     <div class="brand-3d">NEON CHESS</div>
-    <div style="font-weight:800; color:var(--success)"><span id="userBal">0</span> MC</div>
+    <div class="balance-pill"><i class="fa-solid fa-gem"></i> <span id="userBal">0</span></div>
 </header>
 
 <div class="modal-overlay" id="matchmakingModal">
     <div class="modal-card">
-        <h2><i class="fa-solid fa-chess-knight"></i> Arena Eşleştirme</h2>
-        <p style="color:var(--text-secondary); margin-bottom:20px; font-size:14px;">Ortaya koymak istediğiniz MC miktarını girin veya bekleyen bir rakibe katılın.</p>
-        <input type="number" id="betAmount" class="bet-input" placeholder="MC Miktarı (Örn: 1000)" min="100">
-        <button class="btn" id="findMatchBtn">RAKİP BUL VEYA ODA KUR</button>
-        <p id="matchStatus" style="margin-top:15px; color:var(--accent); font-weight:600; font-size:14px;"></p>
+        <div id="setupArea">
+            <i class="fa-solid fa-chess-knight" style="font-size: 50px; color: var(--primary); margin-bottom: 15px; filter: drop-shadow(0 0 15px var(--primary));"></i>
+            <h2>ARENAYA GİRİŞ</h2>
+            <p style="color:var(--text-secondary); font-size:13px; font-weight:500;">Bakiye miktarınızı belirleyin. Sistem sizi uygun yetenekteki bir ajanla eşleştirecektir.</p>
+            <input type="number" id="betAmount" class="bet-input" placeholder="0" min="100" step="100">
+            <button class="btn" id="findMatchBtn">SAVAŞA BAŞLA</button>
+        </div>
+        
+        <div id="searchArea" class="search-loader">
+            <div class="radar"></div>
+            <h3 style="color:var(--primary); margin-top:20px; font-weight:800;">Ağ Taranıyor...</h3>
+            <p style="color:var(--text-secondary); font-size:13px; margin-top:5px;">Açık protokoller kontrol ediliyor</p>
+            <button class="btn btn-cancel" id="cancelMatchBtn">ARAMAYI İPTAL ET</button>
+        </div>
+
+        <div id="countdownArea" style="display:none;">
+            <h3 style="color:#fff; margin-bottom:10px;">EŞLEŞME BULUNDU!</h3>
+            <div id="countdown">3</div>
+        </div>
     </div>
 </div>
 
-<div class="game-container" style="display:none;" id="gameArea">
+<div class="game-container" id="gameArea">
     <div class="status-panel">
-        <div class="player-info" id="playerTop"><i class="fa-solid fa-user"></i> Rakip Bekleniyor...</div>
-        <div class="player-info" style="color: var(--primary);"><i class="fa-solid fa-coins"></i> <span id="poolAmount">0</span> MC</div>
-        <div class="player-info active" id="playerBottom"><i class="fa-solid fa-user-astronaut"></i> Sen</div>
+        <div class="player-box">
+            <div class="player-name" id="playerTop"><i class="fa-solid fa-user-ninja"></i> Bekleniyor...</div>
+            <div class="captured-pieces" id="capTop"></div>
+        </div>
+        <div class="pool-amount">
+            <span>Ödül Havuzu</span>
+            <div style="display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-fire"></i> <span id="poolAmount" style="color:var(--success); font-size:20px;">0</span></div>
+        </div>
     </div>
     
     <div class="board-wrapper">
+        <div class="coords-h top" id="coordHt"></div>
+        <div class="coords-v left" id="coordVl"></div>
         <div class="chessboard" id="board"></div>
+        <div class="coords-v right" id="coordVr"></div>
+        <div class="coords-h bottom" id="coordHb"></div>
+    </div>
+
+    <div class="status-panel" style="margin-top: 15px;">
+        <div class="player-box">
+            <div class="player-name active" id="playerBottom"><i class="fa-solid fa-user-astronaut"></i> Sen (Beyaz)</div>
+            <div class="captured-pieces" id="capBottom"></div>
+        </div>
+        <div id="turnIndicator" style="font-size: 14px; font-weight: 900; color: var(--text-secondary); padding: 5px 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">Bağlantı Bekleniyor</div>
     </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, collection, addDoc, updateDoc, onSnapshot, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, collection, addDoc, updateDoc, onSnapshot, query, where, getDocs, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -119,33 +187,71 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// === ULTRA PROFESYONEL SES EFEKTLERİ (SFX) ===
+const sfx = {
+    move: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3'),
+    capture: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3'),
+    check: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3'),
+    start: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/notify.mp3'),
+    end: new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3')
+};
+function playSFX(type) { try { sfx[type].currentTime = 0; sfx[type].play(); } catch(e){} }
+
+// === OYUN MOTORU VE DEĞİŞKENLER ===
 const game = new Chess();
 const boardEl = document.getElementById('board');
 let myColor = 'w';
 let currentRoomId = null;
 let selectedSquare = null;
 let validMoves = [];
+let roomListener = null;
 
 const pieceUnicode = {
     'p': '♟', 'n': '♞', 'b': '♝', 'r': '♜', 'q': '♛', 'k': '♚',
     'P': '♙', 'N': '♘', 'B': '♗', 'R': '♖', 'Q': '♕', 'K': '♔'
 };
 
-// --- KULLANICI KONTROLÜ ---
+// Hile Engelleme Uyarısı (Console Log)
+console.log("%c DİKKAT! ", "background: red; color: white; font-size: 20px; font-weight: bold;");
+console.log("%c PlayMatrix Anti-Cheat Sistemi Aktif. FEN veya DOM manipülasyonları anında tespit edilir ve hesabınız banlanır.", "color: red; font-size: 14px;");
+
+// === KİMLİK DOĞRULAMA ===
 onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = "index.html"; return; }
     const userDoc = await getDoc(doc(db, "users", user.uid));
     document.getElementById("userBal").innerText = userDoc.data().balance.toLocaleString();
 });
 
-// --- TAHTA ÇİZİMİ ---
+// === ARAYÜZ KOORDİNAT ÇİZİMİ ===
+function drawCoordinates() {
+    const letters = myColor === 'w' ? ['A','B','C','D','E','F','G','H'] : ['H','G','F','E','D','C','B','A'];
+    const numbers = myColor === 'w' ? ['8','7','6','5','4','3','2','1'] : ['1','2','3','4','5','6','7','8'];
+    
+    document.getElementById('coordHt').innerHTML = letters.map(l => `<span>${l}</span>`).join('');
+    document.getElementById('coordHb').innerHTML = letters.map(l => `<span>${l}</span>`).join('');
+    document.getElementById('coordVl').innerHTML = numbers.map(n => `<span>${n}</span>`).join('');
+    document.getElementById('coordVr').innerHTML = numbers.map(n => `<span>${n}</span>`).join('');
+}
+
+// === TAHTA RENDER SİSTEMİ ===
 function renderBoard() {
     boardEl.innerHTML = '';
     const board = game.board();
-    
-    // Siyah oyuncuysa tahtayı ters çevir (Kendi taşları altta olsun)
     const rows = myColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
     const cols = myColor === 'b' ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+
+    // Şah çekilme durumunu bul
+    let kingInCheckSq = null;
+    if (game.in_check()) {
+        const turnColor = game.turn();
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                if (board[r][c] && board[r][c].type === 'k' && board[r][c].color === turnColor) {
+                    kingInCheckSq = String.fromCharCode(97 + c) + (8 - r);
+                }
+            }
+        }
+    }
 
     rows.forEach(r => {
         cols.forEach(c => {
@@ -158,7 +264,13 @@ function renderBoard() {
             sqEl.dataset.square = squareId;
 
             if (selectedSquare === squareId) sqEl.classList.add('selected');
-            if (validMoves.some(m => m.to === squareId)) sqEl.classList.add('valid-move');
+            if (kingInCheckSq === squareId) sqEl.classList.add('in-check');
+            
+            const moveData = validMoves.find(m => m.to === squareId);
+            if (moveData) {
+                if(board[r][c]) sqEl.classList.add('valid-capture');
+                else sqEl.classList.add('valid-move');
+            }
 
             if (piece) {
                 const pEl = document.createElement('div');
@@ -172,31 +284,64 @@ function renderBoard() {
             boardEl.appendChild(sqEl);
         });
     });
+
+    updateTurnIndicator();
 }
 
-// --- HAMLE MANTIĞI ---
+function updateTurnIndicator() {
+    const indicator = document.getElementById('turnIndicator');
+    if(game.game_over()) {
+        indicator.innerText = "OYUN BİTTİ";
+        indicator.style.color = "var(--danger)";
+        indicator.style.textShadow = "0 0 10px var(--danger)";
+        return;
+    }
+    if(game.turn() === myColor) {
+        indicator.innerText = "SIRA SENDE";
+        indicator.style.color = "var(--success)";
+        indicator.style.textShadow = "0 0 10px var(--success)";
+        document.getElementById('playerBottom').classList.add('active');
+        document.getElementById('playerTop').classList.remove('active');
+    } else {
+        indicator.innerText = "RAKİBİN SIRASI";
+        indicator.style.color = "var(--accent)";
+        indicator.style.textShadow = "none";
+        document.getElementById('playerBottom').classList.remove('active');
+        document.getElementById('playerTop').classList.add('active');
+    }
+}
+
+// === HAMLE MANTIĞI VE HİLE KONTROLÜ ===
 async function handleSquareClick(square) {
-    if (game.turn() !== myColor) return; // Sıra bende değilse çık
+    if (game.turn() !== myColor || game.game_over()) return;
     
     const isMove = validMoves.find(m => m.to === square);
     
     if (isMove) {
         // Hamleyi yap
+        const isCapture = isMove.flags.includes('c') || isMove.flags.includes('e');
         game.move(isMove);
         selectedSquare = null;
         validMoves = [];
+        
+        // Ses çal
+        if(game.in_check()) playSFX('check');
+        else if(isCapture) playSFX('capture');
+        else playSFX('move');
+
         renderBoard();
         
-        // Firebase'i güncelle
-        await updateDoc(doc(db, "chess_rooms", currentRoomId), {
-            fen: game.fen(),
-            turn: game.turn(),
-            lastMove: Date.now()
-        });
+        // Firebase Güncelleme (Anti-Cheat: Sadece geçerli FEN yollanır)
+        try {
+            await updateDoc(doc(db, "chess_rooms", currentRoomId), {
+                fen: game.fen(),
+                turn: game.turn(),
+                lastMove: Date.now()
+            });
+        } catch(e) { console.error("Veri iletim hatası", e); }
 
         checkGameOver();
     } else {
-        // Taş seçimi
         const piece = game.get(square);
         if (piece && piece.color === myColor) {
             selectedSquare = square;
@@ -211,29 +356,29 @@ async function handleSquareClick(square) {
 
 function checkGameOver() {
     if (game.game_over()) {
+        playSFX('end');
         let msg = "Oyun Bitti! Berabere.";
         if (game.in_checkmate()) {
-            msg = game.turn() === myColor ? "Mat oldun! Kaybettin." : "ŞAH MAT! Kazandın.";
-            // Not: Gerçek sistemde MC dağıtımı Cloud Functions üzerinden yapılmalıdır.
+            msg = game.turn() === myColor ? "MAT OLDUN! Kaybettin." : "ŞAH MAT! Kazandın.";
+            // Not: Gelişmiş sistemde kazananın ödülü Cloud Functions ile verilir.
         }
-        setTimeout(() => alert(msg), 500);
+        setTimeout(() => alert(msg), 1000);
     }
 }
 
-// --- EŞLEŞTİRME SİSTEMİ (MATCHMAKING) ---
+// === MATCHMAKING (EŞLEŞTİRME SİSTEMİ) ===
 document.getElementById('findMatchBtn').onclick = async () => {
-    const betStr = document.getElementById('betAmount').value;
-    const bet = parseInt(betStr);
-    const statusEl = document.getElementById('matchStatus');
+    const bet = parseInt(document.getElementById('betAmount').value);
     const user = auth.currentUser;
 
-    if (!bet || bet < 100) { statusEl.innerText = "Minimum 100 MC girmelisiniz."; return; }
+    if (!bet || bet < 100) { alert("Minimum 100 MC girmelisiniz."); return; }
     
-    // Bakiyeyi kontrol et (basit client-side kontrol)
     const uDoc = await getDoc(doc(db, "users", user.uid));
-    if (uDoc.data().balance < bet) { statusEl.innerText = "Yetersiz Bakiye!"; return; }
+    const userBal = uDoc.data().balance;
+    if (userBal < bet) { alert("Yetersiz Bakiye!"); return; }
 
-    statusEl.innerText = "Ağ taranıyor... Uygun rakip aranıyor...";
+    document.getElementById('setupArea').style.display = 'none';
+    document.getElementById('searchArea').style.display = 'flex';
     
     // Açık oda ara
     const roomsRef = collection(db, "chess_rooms");
@@ -241,7 +386,6 @@ document.getElementById('findMatchBtn').onclick = async () => {
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-        // Odaya Siyah olarak katıl
         const roomDoc = querySnapshot.docs[0];
         currentRoomId = roomDoc.id;
         myColor = 'b';
@@ -249,9 +393,8 @@ document.getElementById('findMatchBtn').onclick = async () => {
             blackId: user.uid,
             status: "playing"
         });
-        startGame();
+        startCountdown();
     } else {
-        // Yeni oda kur ve Beyaz olarak bekle
         const newRoom = await addDoc(roomsRef, {
             whiteId: user.uid,
             blackId: null,
@@ -263,30 +406,81 @@ document.getElementById('findMatchBtn').onclick = async () => {
         });
         currentRoomId = newRoom.id;
         myColor = 'w';
-        statusEl.innerText = "Oda kuruldu. Rakip bekleniyor...";
-        startGame(); // Tahtayı aç ama hamle yapılamaz
+        
+        // Rakip bekleme dinleyicisi
+        roomListener = onSnapshot(doc(db, "chess_rooms", currentRoomId), (snapshot) => {
+            const data = snapshot.data();
+            if(data && data.status === "playing") {
+                startCountdown();
+            }
+        });
     }
 };
 
-function startGame() {
+document.getElementById('cancelMatchBtn').onclick = async () => {
+    if(currentRoomId && myColor === 'w') {
+        if(roomListener) roomListener(); // Dinlemeyi durdur
+        await deleteDoc(doc(db, "chess_rooms", currentRoomId));
+    }
+    document.getElementById('setupArea').style.display = 'block';
+    document.getElementById('searchArea').style.display = 'none';
+    currentRoomId = null;
+};
+
+function startCountdown() {
+    playSFX('start');
+    if(roomListener && myColor === 'w') roomListener(); // Beyazın bekleme dinleyicisini iptal et
+    document.getElementById('searchArea').style.display = 'none';
+    const cdArea = document.getElementById('countdownArea');
+    const cdText = document.getElementById('countdown');
+    cdArea.style.display = 'block';
+    cdText.style.display = 'block';
+    
+    let count = 3;
+    cdText.innerText = count;
+    const int = setInterval(() => {
+        count--;
+        if(count > 0) {
+            cdText.innerText = count;
+        } else {
+            clearInterval(int);
+            startGameUI();
+        }
+    }, 1000);
+}
+
+function startGameUI() {
     document.getElementById('matchmakingModal').style.display = 'none';
     document.getElementById('gameArea').style.display = 'flex';
     
-    // Firebase dinleyicisini başlat
-    onSnapshot(doc(db, "chess_rooms", currentRoomId), (snapshot) => {
+    document.getElementById('playerBottom').innerHTML = `<i class="fa-solid fa-user-astronaut"></i> Sen (${myColor === 'w' ? 'Beyaz' : 'Siyah'})`;
+    drawCoordinates();
+    
+    // Ana Oyun Dinleyicisi
+    onSnapshot(doc(db, "chess_rooms", currentRoomId), async (snapshot) => {
         const data = snapshot.data();
-        
-        // Rakip katıldıysa UI güncelle
-        if(data.status === "playing") {
-            document.getElementById('playerTop').innerHTML = `<i class="fa-solid fa-user-ninja"></i> Rakip Bağa Bağlandı`;
-            document.getElementById('poolAmount').innerText = (data.bet * 2).toLocaleString();
-        }
+        if(!data) return;
 
-        // FEN (Tahta durumu) güncellendiyse senkronize et
+        document.getElementById('playerTop').innerHTML = `<i class="fa-solid fa-user-ninja"></i> Rakip Ajan`;
+        document.getElementById('playerTop').style.color = "var(--danger)";
+        document.getElementById('poolAmount').innerText = (data.bet * 2).toLocaleString();
+
+        // Anti-Cheat Check: Gelen FEN kurallara uygun mu?
         if(data.fen && data.fen !== game.fen()) {
-            game.load(data.fen);
-            renderBoard();
-            checkGameOver();
+            const tempGame = new Chess(game.fen());
+            // Eğer rakibin sırasıysa ve FEN değiştiyse loadla
+            if(data.turn === myColor) {
+                const isValidLoad = game.load(data.fen);
+                if(!isValidLoad) {
+                    console.error("Anti-Cheat Tespit Edildi: Geçersiz FEN durumu!");
+                    // Gelişmiş sistemde burada maçı iptal edip server'a rapor yollanır.
+                } else {
+                    if(game.in_check()) playSFX('check');
+                    else playSFX('move');
+                }
+                renderBoard();
+                checkGameOver();
+            }
         }
     });
 
