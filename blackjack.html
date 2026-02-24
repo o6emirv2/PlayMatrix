@@ -3,82 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PlayMatrix VIP BlackJack</title>
+<title>PlayMatrix VIP LÜKS BlackJack</title>
 
 <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
     
     body {
         height:100vh; width: 100vw; overflow:hidden;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-        /* Gerçekçi Casino Çuhası (Felt) Görünümü */
-        background: radial-gradient(circle at 50% 40%, #0d6e38 0%, #064522 60%, #021a0d 100%);
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto, Helvetica, Arial, sans-serif;
+        /* ULTRA LÜKS CASINO MASASI: Zümrüt yeşili merkez, siyah kenarlar ve hafif altın yansıma */
+        background: radial-gradient(circle at 50% -20%, rgba(212,175,55,0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 50% 50%, #0d5c2e 0%, #073b1c 60%, #031c0c 100%);
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR */
+    /* ÜST BAR (Taşma Korumalı & Lüks Tasarım) */
     .top-bar {
-        position:fixed; top:0; left:0; right:0; height:70px; 
+        position:fixed; top:0; left:0; right:0; height:65px; 
         display:flex; align-items:center; justify-content:space-between;
-        padding:0 10px; background: rgba(0,0,0,0.95);
+        padding:0 10px; 
+        background: linear-gradient(to bottom, #1a1a1a 0%, #000000 100%);
         border-bottom: 2px solid #d4af37; z-index:1000;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.8);
     }
 
     .brand {
-        font-size:1rem; font-weight:900; color: #d4af37;
-        letter-spacing: 0.5px; font-family: 'Arial Black', sans-serif;
+        font-size: clamp(0.9rem, 4vw, 1.1rem); /* Ekrana göre küçülür */
+        font-weight:900; color: #d4af37;
+        letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; /* Daha klasik ve lüks bir font */
         white-space: nowrap; flex-shrink: 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,1);
     }
 
+    /* Sağ Menü - Taşma Kontrolü */
     .right-menu { 
-        display:flex; gap:6px; align-items: center; 
-        flex-wrap: nowrap; overflow-x: auto; 
+        display:flex; gap:5px; align-items: center; 
+        flex-wrap: nowrap; overflow: hidden; /* Taşmayı gizle */
+        justify-content: flex-end; flex: 1; margin-left: 10px;
     }
     
     .user-pill-mini { 
-        display: flex; align-items: center; gap: 5px; 
-        background: rgba(255,255,255,0.05); padding: 5px 8px; 
-        border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-        white-space: nowrap; flex-shrink: 0;
+        display: flex; align-items: center; gap: 4px; 
+        background: linear-gradient(145deg, #222, #111); padding: 4px 8px; 
+        border-radius: 15px; border: 1px solid rgba(212,175,55,0.4); 
+        white-space: nowrap; flex-shrink: 1; /* Gerektiğinde daralabilir */
+        min-width: 0; /* Flexbox içinde taşmayı önlemek için kritik */
     }
-    .balance-info { display: flex; align-items: center; }
-    .balance-info b { font-size: 13px; color: #00ffa3; font-family: monospace; font-weight: 700; }
+    
+    .balance-info { 
+        display: flex; align-items: center; 
+        overflow: hidden; /* Bakiyeler çok uzarsa gizle */
+    }
+    
+    .balance-info b { 
+        font-size: clamp(11px, 3.5vw, 13px); color: #00ffa3; 
+        font-family: monospace; font-weight: 700; 
+        text-overflow: ellipsis; overflow: hidden; /* Uzun rakamları ... ile kes */
+    }
     
     .mc-chip {
-        width: 18px; height: 18px;
+        width: 16px; height: 16px; flex-shrink: 0;
         background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
-        border-radius: 50%; margin-left: 5px;
+        border-radius: 50%; margin-left: 4px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 7px; font-weight: 900; color: #fff;
-        box-shadow: 0 0 10px rgba(79, 209, 255, 0.3);
-        border: 1px solid rgba(255,255,255,0.2);
+        font-size: 6px; font-weight: 900; color: #fff;
+        box-shadow: 0 0 8px rgba(79, 209, 255, 0.4);
+        border: 1px solid rgba(255,255,255,0.4);
     }
 
     .back-btn {
-        background: #ff3b30; color: white; text-decoration: none; padding: 6px 10px;
-        border-radius: 4px; font-size: 0.7rem; font-weight: 900; flex-shrink: 0;
-        border: 1px solid #c0392b;
+        background: linear-gradient(to bottom, #ff4b4b, #cc0000); 
+        color: white; text-decoration: none; padding: 5px 8px;
+        border-radius: 6px; font-size: clamp(0.6rem, 2.5vw, 0.7rem); 
+        font-weight: 900; flex-shrink: 0;
+        border: 1px solid #7a0000; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     }
 
     /* OYUN ALANI */
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
-        padding: 85px 0 20px 0; perspective: 1000px; position: relative;
+        padding: 80px 0 20px 0; perspective: 1200px; position: relative;
     }
     
     .area { width: 100%; text-align: center; }
-    .dealer-title { font-size: 16px; letter-spacing: 3px; font-weight: 800; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+    
+    /* Lüks Krupiyer Başlığı */
+    .dealer-title { 
+        font-size: 14px; letter-spacing: 4px; font-weight: 900; 
+        color: #d4af37; margin-bottom: 5px; 
+        text-shadow: 0 2px 4px rgba(0,0,0,0.9); 
+        font-family: 'Times New Roman', Times, serif;
+    }
     
     .score-badge { 
-        background: rgba(0,0,0,0.7); color: #ffd700; padding: 4px 15px; 
-        border-radius: 20px; font-size: 13px; border: 1px solid rgba(255,215,0,0.3); 
-        display: inline-block; margin-bottom: 10px; transition: 0.3s;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); 
+        color: #ffd700; padding: 4px 18px; 
+        border-radius: 20px; font-size: 12px; font-weight: bold;
+        border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.1);
     }
 
     /* KART GÖRÜNÜM VE ANİMASYONLARI */
-    .cards-wrapper { display: flex; justify-content: center; gap: 8px; min-height: 105px; padding: 0 10px; }
+    .cards-wrapper { display: flex; justify-content: center; gap: -20px; min-height: 105px; padding: 0 10px; }
     
     .card-3d {
         width: 70px; height: 100px;
@@ -86,62 +112,96 @@
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(35deg) scale(0.4);
         opacity: 0;
-        transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s;
+        /* Daha keskin ve hızlı dağıtma animasyonu */
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
     }
 
     .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
-    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.6s ease-in-out; }
+    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.5s ease-in-out; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden;
         border-radius: 6px;
-        box-shadow: -3px 3px 10px rgba(0,0,0,0.6); 
+        box-shadow: -4px 4px 12px rgba(0,0,0,0.7); /* Derin lüks gölge */
     }
 
     .card-front { background: white; transform: rotateY(180deg); }
+    /* Şık casino kart arkası */
     .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
 
     .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 85px; z-index: 10; }
-    #message { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 15px;}
     
-    .controls { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; }
-    .btn { padding: 10px 15px; border-radius: 8px; border: none; font-weight: 800; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase;}
-    #hit { background: #2ecc71; box-shadow: 0 4px #27ae60; }
-    #stand { background: #e74c3c; box-shadow: 0 4px #c0392b; }
-    #double { background: #f39c12; box-shadow: 0 4px #d68910; }
-    #split { background: #9b59b6; box-shadow: 0 4px #8e44ad; }
-    .btn:active { transform: translateY(3px); box-shadow: 0 1px #000 !important; }
+    #message { 
+        font-size: 14px; font-weight: 900; color: #fff; 
+        text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; 
+        text-transform: uppercase; 
+        background: linear-gradient(90deg, transparent, rgba(0,0,0,0.7), transparent); 
+        padding: 5px 30px; border-radius: 5px; letter-spacing: 1px;
+    }
+    
+    .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
+    
+    .btn { 
+        padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); 
+        font-weight: 900; font-size: 13px; color: white; cursor: pointer; 
+        text-transform: uppercase; letter-spacing: 1px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 2px 2px rgba(255,255,255,0.2);
+        transition: all 0.1s;
+    }
+    #hit { background: linear-gradient(to bottom, #2ecc71, #229954); border-color: #1e8449;}
+    #stand { background: linear-gradient(to bottom, #e74c3c, #c0392b); border-color: #922b21;}
+    #double { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; border-color: #b7950b;}
+    #split { background: linear-gradient(to bottom, #9b59b6, #8e44ad); border-color: #76448a;}
+    .btn:active { transform: translateY(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 2px rgba(0,0,0,0.4); }
 
     .hands-container { display: flex; justify-content: center; gap: 20px; width: 100%; transition: 0.3s; }
     .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
-    .hand-box.active { border: 2px dashed rgba(212, 175, 55, 0.8); background: rgba(0,0,0,0.3); box-shadow: inset 0 0 20px rgba(212,175,55,0.1); }
+    .hand-box.active { 
+        border: 2px solid #d4af37; 
+        background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); 
+        box-shadow: 0 0 20px rgba(212,175,55,0.2), inset 0 0 15px rgba(212,175,55,0.1); 
+    }
 
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; }
-    .chip { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; border: 4px dashed rgba(255,255,255,0.3); box-shadow: 0 6px 10px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.1s; }
+    /* ÇİPLER LÜKS TASARIM */
+    .chips-area { display: flex; justify-content: center; gap: 10px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .chip { 
+        width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        font-weight: 900; font-size: 13px; cursor: pointer; transition: transform 0.1s; 
+        /* Altın varaklı çip kenarları */
+        border: 4px dashed #d4af37; 
+        box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8); 
+    }
     .chip:active { transform: scale(0.9); }
-    .c250 { background: radial-gradient(circle, #fff 40%, #ccc 100%); color: #000; border-color: #999; }
-    .c500 { background: radial-gradient(circle, #2ecc71 40%, #27ae60 100%); color: #fff; }
-    .c1k { background: radial-gradient(circle, #e74c3c 40%, #c0392b 100%); color: #fff; }
-    .c2k { background: radial-gradient(circle, #333 40%, #000 100%); color: #d4af37; border-color: #d4af37; }
-    .cancel-btn { width: 48px; height: 48px; border-radius: 50%; background: #c0392b; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
-    .disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.5); }
+    .c250 { background: radial-gradient(circle, #e0e0e0 30%, #999 90%); color: #000; }
+    .c500 { background: radial-gradient(circle, #2ecc71 30%, #1e8449 90%); color: #fff; border-color: #fff; }
+    .c1k { background: radial-gradient(circle, #e74c3c 30%, #922b21 90%); color: #fff; border-color: #fff; }
+    .c2k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; }
+    
+    .cancel-btn { 
+        width: 50px; height: 50px; border-radius: 50%; 
+        background: linear-gradient(to bottom, #555, #222); color: white; 
+        display: flex; align-items: center; justify-content: center; 
+        font-weight: 800; font-size: 10px; cursor: pointer; 
+        border: 2px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); 
+    }
+    .disabled { opacity: 0.5; pointer-events: none; filter: brightness(0.6); }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px); }
-    .modal-content { background: #1a1a1a; border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 350px; padding: 25px; text-align: center; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); }
-    .rules-text { font-size: 13px; color: #bbb; margin-bottom: 20px; text-align: left; line-height: 1.5; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #333; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
+    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 350px; padding: 25px; text-align: center; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3); }
+    .rules-text { font-size: 13px; color: #ccc; margin-bottom: 20px; text-align: left; line-height: 1.6; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; }
 </style>
 </head>
 <body>
 
 <div id="sys-start-overlay" class="modal-overlay">
     <div class="modal-content">
-        <h2 style="color:#d4af37; margin-bottom: 15px; letter-spacing: 2px;">NASIL OYNANIR</h2>
+        <h2 style="color:#d4af37; margin-bottom: 15px; letter-spacing: 2px; font-family: 'Times New Roman', Times, serif;">VIP LÜKS CASINO</h2>
         <div class="rules-text">
             Blackjack'te amaç, 21'i geçmeden Kurupiyer'den daha yüksek bir skora ulaşmaktır.<br><br>
-            <span style="color: #ff3b30; font-weight: bold;">ÖNEMLİ UYARI:</span> Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız bahis (MC) iadesi <b>kesinlikle yapılmayacaktır.</b> Lütfen stabil bir internet bağlantısı ile oynayın.
+            <span style="color: #ff4b4b; font-weight: bold;">ÖNEMLİ UYARI:</span> Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız bahis (MC) iadesi <b>kesinlikle yapılmayacaktır.</b>
         </div>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4af37); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(212,175,55,0.4);">KABUL ET VE MASAYA OTUR</button>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.4); text-transform: uppercase;">Masaya Otur</button>
     </div>
 </div>
 
@@ -149,10 +209,12 @@
     <div class="brand">VIP BLACKJACK</div>
     <div class="right-menu">
         <div class="user-pill-mini">
-            <div class="balance-info"><b id="balance">0</b><div class="mc-chip">MC</div></div>
+            <div class="balance-info"><b id="balance">0</b></div>
+            <div class="mc-chip">MC</div>
         </div>
-        <div class="user-pill-mini" style="border-color: #ffcc00;">
-            <div class="balance-info"><b id="betAmount" style="color:#ffcc00">0</b><div class="mc-chip" style="background: orange;">MC</div></div>
+        <div class="user-pill-mini" style="border-color: #ffcc00; background: linear-gradient(145deg, #332800, #1a1400);">
+            <div class="balance-info"><b id="betAmount" style="color:#ffcc00">0</b></div>
+            <div class="mc-chip" style="background: orange; box-shadow: 0 0 8px rgba(255, 165, 0, 0.4);">MC</div>
         </div>
         <a href="#" class="back-btn">ÇIKIŞ</a>
     </div>
@@ -174,8 +236,8 @@
             <button id="split" class="btn">BÖL</button>
         </div>
         <div class="controls" id="insurance-controls">
-            <button id="ins-yes" class="btn" style="background:#2ecc71;">EVET</button>
-            <button id="ins-no" class="btn" style="background:#e74c3c;">HAYIR</button>
+            <button id="ins-yes" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);">EVET</button>
+            <button id="ins-no" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);">HAYIR</button>
         </div>
     </div>
 
@@ -191,7 +253,7 @@
     </div>
 
     <div class="chips-area" id="chipsArea">
-        <div class="cancel-btn" onclick="cancelBet()">İPTAL</div>
+        <div class="cancel-btn" onclick="cancelBet()">SİL</div>
         <div class="chip c250" onclick="addBet(250)">250</div>
         <div class="chip c500" onclick="addBet(500)">500</div>
         <div class="chip c1k" onclick="addBet(1000)">1K</div>
@@ -236,11 +298,13 @@ async function initAudio() {
     
     // Sesleri belleğe yükle
     const urls = {
-        card: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3',   // Keskin, gerçekçi kağıt sürtünme/dağıtma sesi
-        win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',    // Çip / Jeton kazanma sesi
-        lose: 'https://assets.mixkit.co/active_storage/sfx/2043/2043-preview.mp3',   // Bust / Kaybetme sesi
-        tick: 'https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3',   // Tok, saat benzeri geri sayım sesi
-        chip: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'    // Çip masaya koyma
+        // Tamamen gerçekçi, kısa sürtünme/şırrak şeklinde iskambil dağıtma sesi
+        card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',   
+        win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
+        lose: 'https://assets.mixkit.co/active_storage/sfx/2043/2043-preview.mp3',
+        // Tok ve gergin bir saat tiki (geri sayım)
+        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',   
+        chip: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'
     };
     
     for (const [name, url] of Object.entries(urls)) {
@@ -260,7 +324,6 @@ document.getElementById('systemStartBtn').addEventListener('click', async () => 
         await audioCtx.resume();
     }
     
-    // Sesi tetiklemek ve iOS kısıtlamasını kalıcı kırmak için kısa boş bir ses çalıyoruz
     const buffer = audioCtx.createBuffer(1, 1, 22050);
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;
@@ -273,7 +336,6 @@ document.getElementById('systemStartBtn').addEventListener('click', async () => 
 function playSound(name) {
     if(!audioCtx || !sounds[name]) return;
     
-    // iOS uyku moduna geri dönerse tekrar uyandır
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
@@ -281,10 +343,9 @@ function playSound(name) {
     const source = audioCtx.createBufferSource();
     source.buffer = sounds[name];
     
-    // KART SESİ İÇİN ÖZEL PITCH EFEKTİ (Daha Gerçekçi)
+    // Kart sesi için çok hafif hız (pitch) değişimi - her kartın farklı hissettirmesi için
     if (name === 'card') {
-        // Kart sesinin perdesini %10 oranında rastgele değiştirerek farklı kart hissi yarat
-        source.playbackRate.value = 0.9 + Math.random() * 0.2; 
+        source.playbackRate.value = 0.95 + Math.random() * 0.1; 
     }
 
     source.connect(audioCtx.destination);
@@ -392,7 +453,7 @@ async function draw(hand, divId, isOpen = true){
             setTimeout(() => {
                 updateScores();
                 resolve();
-            }, isOpen ? 1000 : 600); 
+            }, isOpen ? 900 : 500); 
         }, 50);
     });
 }
@@ -567,9 +628,9 @@ async function dealerTurn(){
     if(cards[1] && !cards[1].classList.contains('flipped')) {
         cards[1].classList.add("flipped");
         playSound('card'); 
-        await delay(600);
+        await delay(500);
     }
-    updateScores(); await delay(500);
+    updateScores(); await delay(400);
 
     let allBust = playerHands.every(h => getScore(h.cards).total > 21);
     
