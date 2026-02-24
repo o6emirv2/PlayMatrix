@@ -604,32 +604,58 @@ window.claimBonus = async () => {
     const feedback = document.getElementById("promoFeedback");
     const code = input.value.trim().toUpperCase();
     if(!code) return;
+    
     feedback.innerText = "Sistem kontrol ediliyor...";
     feedback.className = "promo-msg";
+    
     try {
         const q = query(collection(db, "promocodes"), where("code", "==", code));
         const querySnapshot = await getDocs(q);
+        
         if (querySnapshot.empty) {
             feedback.innerText = "Hatalı veya süresi dolmuş promosyon kodu!";
             feedback.classList.add("promo-error");
             return;
         }
+        
         const promoDoc = querySnapshot.docs[0];
         const promoData = promoDoc.data();
+        
+        // 2000 KİŞİ SINIRI KONTROLÜ
+        if (promoData.usageCount >= promoData.maxUses) {
+            feedback.innerText = "Maalesef bu kodun kullanım limiti (2.000 kişi) dolmuştur!";
+            feedback.classList.add("promo-error");
+            return;
+        }
+
         const userRef = doc(db, "users", auth.currentUser.uid);
         const userSnap = await getDoc(userRef);
         const userData = userSnap.data();
+        
         if (userData.usedPromos && userData.usedPromos.includes(code)) {
             feedback.innerText = "Bu kodu hesabınızda zaten kullandınız!";
             feedback.classList.add("promo-error");
             return;
         }
-        await updateDoc(userRef, { balance: increment(promoData.amount), usedPromos: [...(userData.usedPromos || []), code] });
+        
+        // Kullanıcıya bakiyeyi ekle ve kullanılmış kodlar listesine yaz
+        await updateDoc(userRef, { 
+            balance: increment(promoData.amount), 
+            usedPromos: [...(userData.usedPromos || []), code] 
+        });
+        
+        // Promo kodun genel kullanım sayısını 1 artır
+        await updateDoc(doc(db, "promocodes", promoDoc.id), {
+            usageCount: increment(1)
+        });
+
         feedback.innerText = `BAŞARILI! ${promoData.amount.toLocaleString()} MC Bakiyenize Eklendi.`;
         feedback.classList.add("promo-success");
         input.value = "";
+        
     } catch(e) {
-        feedback.innerText = "İşlem sırasında sunucu hatası oluştu!";
+        // Hata ayıklayıcı eklendi: Sorun varsa tam sebebini ekrana yazacak
+        feedback.innerText = "Sistem Hatası: " + e.message;
         feedback.classList.add("promo-error");
     }
 };
