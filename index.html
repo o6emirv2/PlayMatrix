@@ -3,7 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PlayMatrix</title>
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix | Ücretsiz Online Multiplayer, Zeka ve Casino Oyunları</title>
+<meta name="description" content="PlayMatrix: Türkiye'nin en iyi ücretsiz online multiplayer arena, zeka ve strateji oyunları platformu. Kayıt ol, şans çarkını çevir, anında MC kazan ve oynamaya başla!">
+<meta name="keywords" content="online oyunlar, ücretsiz oyun oyna, multiplayer oyunlar, online pişti, zeka oyunları, casino oyunları, tarayıcı oyunları, PlayMatrix">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#04060b">
+<link rel="canonical" href="https://www.senindomainin.com/">
+
+<meta property="og:title" content="PlayMatrix | Ücretsiz Online Multiplayer ve Zeka Oyunları">
+<meta property="og:description" content="Kayıt ol, çarkı çevir ve anında MC kazan! Arkadaşlarınla Online Pişti, Crash ve zeka oyunları oyna.">
+<meta property="og:image" content="https://www.senindomainin.com/assets/promo-banner.jpg">
+<meta property="og:url" content="https://www.senindomainin.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix | En İyi Online Oyun Platformu">
+<meta name="twitter:description" content="Tarayıcından tek tıkla ücretsiz oyunlara katıl ve rekabete başla.">
+
 <script>
     if (window.history.replaceState) {
         window.history.replaceState(null, null, "/");
@@ -149,8 +169,10 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .announcement-text span { color: var(--primary); font-weight: 900; }
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-/* ARAMA ALANI */
-.hero-search { margin-top: 150px; padding: 0 20px; text-align: center; position: relative; z-index: 10; }
+/* ARAMA VE SEO BAŞLIK ALANI */
+.hero-search { margin-top: 130px; padding: 0 20px; text-align: center; position: relative; z-index: 10; }
+.seo-h1 { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 900; color: var(--text-primary); margin-bottom: 15px; text-shadow: 0 0 15px var(--primary-glow); padding: 0 15px; }
+.seo-desc { font-size: 14px; color: var(--text-secondary); max-width: 700px; margin: 0 auto 25px auto; line-height: 1.6; padding: 0 15px; font-weight: 500; }
 .search-container { max-width: 550px; margin: 0 auto; position: relative; }
 .search-container i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 18px; transition: 0.3s; }
 #searchInput {
@@ -278,6 +300,8 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
 /* MOBİL UYUM (TAŞMA ENGELLENDİ) */
 @media(max-width: 768px) {
+    .seo-h1 { font-size: 20px; }
+    .seo-desc { font-size: 12px; margin-bottom: 20px; }
     .games-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 15px; }
     .top-bar { padding: 0 10px; height: 65px; }
     .brand-3d { font-size: 16px; }
@@ -289,7 +313,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     .theme-btn { width: 32px; height: 32px; font-size: 14px; }
     .announcement-bar { top: 65px; height: 32px; }
     .announcement-text { font-size: 11px; }
-    .hero-search { margin-top: 130px; }
+    .hero-search { margin-top: 110px; }
     .section-title { padding: 30px 15px 15px; font-size: 12px; }
     .wheel-container { width: 240px; height: 240px; }
 }
@@ -305,10 +329,10 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
 <canvas id="snow"></canvas>
 
-<div class="top-bar">
+<header class="top-bar">
     <div class="brand-3d" onclick="window.scrollTo({top:0, behavior:'smooth'})">PlayMatrix</div>
-    <div class="right-menu">
-        <button class="theme-btn" id="themeToggle" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+    <nav class="right-menu">
+        <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Tema Değiştir"><i class="fa-solid fa-moon"></i></button>
         <button class="btn login-btn" id="loginBtn">GİRİŞ</button>
         <button class="btn register-btn" id="regBtn">KAYIT OL</button>
 
@@ -318,7 +342,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
                 <div class="mc-chip">MC</div>
             </div>
             <div class="avatar" id="avatarTrigger">
-                <img src="" id="userProfileImg">
+                <img src="" id="userProfileImg" alt="Kullanıcı Profil Avatarı">
             </div>
             <div class="dropdown" id="userDropdown">
                 <div class="drop-item" onclick="openModal('profileModal')"><i class="fa-solid fa-user-astronaut"></i> Profil Ayarları</div>
@@ -327,8 +351,8 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
                 <div class="drop-item" id="logoutBtn" style="color:var(--danger); border-top:1px solid var(--glass-border); margin-top:5px;"><i class="fa-solid fa-power-off"></i> Güvenli Çıkış</div>
             </div>
         </div>
-    </div>
-</div>
+    </nav>
+</header>
 
 <div class="announcement-bar">
     <div class="announcement-icon"><i class="fa-solid fa-bolt"></i></div>
@@ -338,9 +362,12 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 </div>
 
 <div class="hero-search">
+    <h1 class="seo-h1">PlayMatrix: Ücretsiz Online Multiplayer ve Zeka Oyunları</h1>
+    <p class="seo-desc">Tarayıcınız üzerinden hiçbir kurulum yapmadan arkadaşlarınızla online pişti, yetenek ve zeka oyunları oynayın. Kayıt olun, günlük şans çarkını çevirin ve binlerce MC ödülüyle arenaya hemen katılın!</p>
+    
     <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Favori oyununuzu arayın...">
-        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Favori oyununuzu arayın..." aria-label="Oyun Ara">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
     </div>
 </div>
 
@@ -348,12 +375,12 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     <div class="section-title">Multiplayer Arena</div>
     <div class="games-grid">
         <div class="game-card" data-name="Online Pişti" onclick="checkLogin('OnlinePisti.html')">
-            <div class="game-icon"><i class="fa-solid fa-hand-fist"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-hand-fist" aria-hidden="true"></i></div>
             <span>Online Pişti</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
         <div class="game-card" data-name="Online Grid Conquest" onclick="checkLogin('GridConquest.html')">
-            <div class="game-icon"><i class="fa-solid fa-border-all"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-border-all" aria-hidden="true"></i></div>
             <span>Grid Conquest</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
@@ -361,13 +388,13 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
     <div class="section-title">Zeka & Strateji</div>
     <div class="games-grid">
-        <div class="game-card" data-name="loops" onclick="location.href='Cyber.html'">
-            <div class="game-icon"><i class="fa-solid fa-infinity"></i></div>
+        <div class="game-card" data-name="loops cyber" onclick="location.href='Cyber.html'">
+            <div class="game-icon"><i class="fa-solid fa-infinity" aria-hidden="true"></i></div>
             <span>Cyber</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
         <div class="game-card" data-name="Pattern Master" onclick="location.href='PatternMaster.html'">
-            <div class="game-icon"><i class="fa-solid fa-shapes"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-shapes" aria-hidden="true"></i></div>
             <span>Pattern Master</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
@@ -376,22 +403,22 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     <div class="section-title">Premium Casino</div>
     <div class="games-grid">
         <div class="game-card" data-name="Crash" onclick="checkLogin('Crash.html')">
-            <div class="game-icon"><i class="fa-solid fa-plane-up"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-plane-up" aria-hidden="true"></i></div>
             <span>Crash</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
         <div class="game-card" data-name="Mines" onclick="checkLogin('Mines.html')">
-            <div class="game-icon"><i class="fa-solid fa-land-mine-on"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-land-mine-on" aria-hidden="true"></i></div>
             <span>Mines</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
         <div class="game-card" data-name="BlackJack" onclick="checkLogin('BlackJack.html')">
-            <div class="game-icon"><i class="fa-solid fa-diamond"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-diamond" aria-hidden="true"></i></div>
             <span>BlackJack</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="Pişti" onclick="checkLogin('Pisti.html')">
-            <div class="game-icon"><i class="fa-solid fa-clone"></i></div>
+        <div class="game-card" data-name="Pişti Casino" onclick="checkLogin('Pisti.html')">
+            <div class="game-icon"><i class="fa-solid fa-clone" aria-hidden="true"></i></div>
             <span>Pişti</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>    
@@ -400,17 +427,17 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     <div class="section-title">Arcade Classics</div>
     <div class="games-grid">
         <div class="game-card" data-name="Space Pro" onclick="location.href='SpacePro.html'">
-            <div class="game-icon"><i class="fa-solid fa-user-astronaut"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-user-astronaut" aria-hidden="true"></i></div>
             <span>Space Pro</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
         <div class="game-card" data-name="Snake Pro" onclick="location.href='SnakePro.html'">
-            <div class="game-icon"><i class="fa-solid fa-worm"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-worm" aria-hidden="true"></i></div>
             <span>Snake Pro</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
         <div class="game-card" data-name="Tower Stack" onclick="location.href='TowerStack.html'">
-            <div class="game-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="game-icon"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>
             <span>Tower Stack</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
@@ -420,9 +447,9 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 <footer class="footer">
     <div class="brand-3d" style="font-size:26px; margin-bottom: 20px;">PlayMatrix</div>
     <div class="social-icons">
-        <a href="https://t.me/+25bJu1XJssZhYjg8" class="social-btn"><i class="fa-brands fa-discord"></i></a>
-        <a href="https://www.instagram.com/playmatrix_games" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
-        <a href="https://t.me/+25bJu1XJssZhYjg8" class="social-btn"><i class="fa-brands fa-telegram"></i></a>
+        <a href="https://t.me/+25bJu1XJssZhYjg8" class="social-btn" aria-label="Discord Hesabımız"><i class="fa-brands fa-discord"></i></a>
+        <a href="https://www.instagram.com/playmatrix_games" class="social-btn" aria-label="Instagram Sayfamız"><i class="fa-brands fa-instagram"></i></a>
+        <a href="https://t.me/+25bJu1XJssZhYjg8" class="social-btn" aria-label="Telegram Grubumuz"><i class="fa-brands fa-telegram"></i></a>
     </div>
     <p style="color:var(--text-secondary); font-size:12px; margin-top: 20px; font-weight: 600;">© 2026 PlayMatrix Global. Tüm Hakları Saklıdır.</p>
 </footer>
@@ -619,12 +646,10 @@ window.claimBonus = async () => {
         
         const promoData = promoSnap.data();
         
-        // Firebase veritabanındaki isimleri (usageCount, kullanilan, vb.) garantiye alan kontrol:
         const currentUses = promoData.usageCount || promoData.kullanilan || 0;
         const maxUses = promoData.kota || 2000;
         const odul = promoData.odul_miktari || 0;
         
-        // 2000 KİŞİ SINIRI KONTROLÜ
         if (currentUses >= maxUses) {
             feedback.innerText = "Maalesef bu kodun kullanım limiti (" + maxUses + " kişi) dolmuştur!";
             feedback.classList.add("promo-error");
@@ -641,13 +666,11 @@ window.claimBonus = async () => {
             return;
         }
         
-        // Kullanıcıya bakiyeyi ekle
         await updateDoc(userRef, { 
             balance: increment(odul), 
             usedPromos: [...(userData.usedPromos || []), code] 
         });
         
-        // Promo kodun genel kullanım sayısını 1 artır (Hem usageCount hem kullanilanı artırıyorum ki karışıklık olmasın)
         await updateDoc(promoRef, {
             usageCount: increment(1),
             kullanilan: increment(1)
@@ -718,7 +741,7 @@ const avatarLinks = [
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUkEeAPrAXCyY5kZzvb17-FciLVhiSHq1z0krelJA1SQ&s=10",
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2foyhD4m6NkAJICHXJDOfhmpFKqRzUSTPHpxzZVOLRw&s=10",
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmkYygtE4fo-rQ9azwFZcUkZUokE8YYrZhLKZw6UgNiw&s=10",
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5MxBdQ6TQzrlGQ00a7K0MpnAlR1EtXPP4VQ5r3duMHQ&s=10" // 20. avatar (Eksiksiz Grid için)
+    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5MxBdQ6TQzrlGQ00a7K0MpnAlR1EtXPP4VQ5r3duMHQ&s=10"
 ];
 
 let selectedAvatar = "";
@@ -726,7 +749,7 @@ function loadAvatars(current) {
     const container = document.getElementById("avatarLibrary"); container.innerHTML = "";
     avatarLinks.forEach(link => {
         const div = document.createElement("div"); div.className = `avatar-item ${link === current ? 'active' : ''}`;
-        div.innerHTML = `<img src="${link}">`;
+        div.innerHTML = `<img src="${link}" alt="Kullanıcı Avatar Seçeneği">`; // ALT ETİKETİ EKLENDİ
         div.onclick = () => { document.querySelectorAll(".avatar-item").forEach(i => i.classList.remove("active")); div.classList.add("active"); selectedAvatar = link; };
         container.appendChild(div);
     });
@@ -788,7 +811,6 @@ onAuthStateChanged(auth, user => {
 window.openModal = (id) => { 
     const modal = document.getElementById(id);
     modal.style.display = 'flex';
-    // Animasyon için kısa gecikme
     setTimeout(() => { modal.classList.add('show'); }, 10);
     
     if(id === 'wheelModal') {
@@ -803,7 +825,6 @@ window.openModal = (id) => {
 window.closeModal = (id) => { 
     const modal = document.getElementById(id);
     modal.classList.remove('show');
-    // Animasyon bitiminde display none
     setTimeout(() => { modal.style.display = 'none'; }, 300);
     
     if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
@@ -869,7 +890,6 @@ document.getElementById("authSubmit").onclick = async () => {
             const qs = await getDocs(q);
             if(!qs.empty) throw new Error("Bu kullanıcı adı başka bir ajan tarafından kullanılıyor!");
             const res = await createUserWithEmailAndPassword(auth, email, pass);
-            // YENİ KAYITTA 50.000 MC VERİLSİN
             await setDoc(doc(db, "users", res.user.uid), { 
                 username: userN, email: email, balance: 50000, lastSpin: 0, 
                 userChangeCount: 0, fullName: "", phone: "", avatar: avatarLinks[0], usedPromos: [] 
@@ -892,7 +912,6 @@ window.onclick = (e) => {
 };
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
-// KAR EFEKTİ (Optimize Edildi)
 const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
 function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; }
 window.onresize = resize; resize();
