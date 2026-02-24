@@ -35,7 +35,7 @@
             background: radial-gradient(circle at center, #0a1520 0%, #03050a 100%);
         }
 
-        /* --- ÜST BAR (Hatasız Düzen) --- */
+        /* --- ÜST BAR --- */
         .top-bar {
             height: 65px;
             min-height: 65px;
@@ -66,6 +66,14 @@
             border-radius: 12px; 
             border: 1px solid var(--border);
             white-space: nowrap;
+        }
+
+        .best-score-badge {
+            color: var(--primary);
+            opacity: 0.8;
+            margin-left: 5px;
+            padding-left: 5px;
+            border-left: 1px solid var(--border);
         }
 
         .exit-btn {
@@ -152,7 +160,10 @@
 
     <div class="top-bar">
         <div class="brand"><i class="fa-solid fa-microchip"></i> CYBER_LINK</div>
-        <div class="level-info">NODE: <span id="level-num">1</span></div>
+        <div class="level-info">
+            NODE: <span id="level-num">1</span>
+            <span class="best-score-badge">EN İYİ: <span id="best-score">1</span></span>
+        </div>
         <a href="index.html" class="exit-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
     </div>
 
@@ -243,34 +254,70 @@
         Object.values(sounds).forEach(s => { s.play(); s.pause(); });
         sounds.start.play();
         document.getElementById('start-overlay').style.display = 'none';
+        
+        // Kaydedilmiş skoru yükle
+        loadBestScore();
         createLevel();
     }
 
-    // --- OYUN MANTIĞI ---
-    let level = 1, gridSize = 3, tiles = [];
+    // --- OYUN MANTIĞI VE SKOR SİSTEMİ ---
+    let level = 1;
+    let bestLevel = 1;
+    let gridSize = 3;
+    let tiles = [];
+    let isGameLocked = false;
+
+    function loadBestScore() {
+        const savedScore = localStorage.getItem('cyberLinkBestScore');
+        if(savedScore) {
+            bestLevel = parseInt(savedScore);
+        }
+        document.getElementById('best-score').innerText = bestLevel;
+    }
+
+    function saveBestScore() {
+        if(level > bestLevel) {
+            bestLevel = level;
+            localStorage.setItem('cyberLinkBestScore', bestLevel);
+            document.getElementById('best-score').innerText = bestLevel;
+        }
+    }
 
     function createLevel() {
         const grid = document.getElementById('grid');
         grid.innerHTML = '';
         grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
         tiles = [];
+        isGameLocked = false;
 
         for (let i = 0; i < gridSize * gridSize; i++) {
             const tileDiv = document.createElement('div');
             tileDiv.className = 'tile';
             
-            // 0: Düz, 1: Köşe
-            const type = Math.floor(Math.random() * 2); 
-            const rotation = Math.floor(Math.random() * 4) * 90;
+            const type = Math.floor(Math.random() * 2); // 0: Düz, 1: Köşe
+            const targetRotation = 0; // Hedef açı her zaman 0 olsun
             
-            tileDiv.style.transform = `rotate(${rotation}deg)`;
+            // Çözülebilir bir oyun için kasten döndür (Scramble)
+            // 1, 2 veya 3 defa 90 derece döndürerek oyuncuya sunuyoruz.
+            const scrambleTurns = Math.floor(Math.random() * 3) + 1;
+            const currentRotation = scrambleTurns * 90;
+            
+            tileDiv.style.transform = `rotate(${currentRotation}deg)`;
             tileDiv.innerHTML = renderLines(type);
             tileDiv.onclick = () => rotateTile(i);
             
             grid.appendChild(tileDiv);
-            tiles.push({ type, rotation, element: tileDiv });
+            
+            tiles.push({ 
+                type: type, 
+                currentRotation: currentRotation, 
+                targetRotation: targetRotation, 
+                element: tileDiv 
+            });
         }
-        applyRandomConnection();
+        
+        // Başlangıçta doğru denk gelen parçalar varsa ışıklarını yak
+        checkConnectionsAndWin();
     }
 
     function renderLines(type) {
@@ -280,15 +327,48 @@
     }
 
     function rotateTile(index) {
-        sounds.rotate.currentTime = 0; sounds.rotate.play();
-        tiles[index].rotation += 90;
-        tiles[index].element.style.transform = `rotate(${tiles[index].rotation}deg)`;
+        if(isGameLocked) return;
+
+        sounds.rotate.currentTime = 0; 
+        sounds.rotate.play();
         
-        applyRandomConnection();
+        // Modül Alma: Açıyı 360'ı geçmeyecek şekilde sıfırla
+        tiles[index].currentRotation = (tiles[index].currentRotation + 90) % 360;
+        tiles[index].element.style.transform = `rotate(${tiles[index].currentRotation}deg)`;
         
-        // Basit kazanma kontrolü: Tüm taşlar 0 veya 180 derece (hizalı) ise
-        const win = tiles.every(t => t.rotation % 180 === 0);
-        if(win) {
+        checkConnectionsAndWin();
+    }
+
+    function checkConnectionsAndWin() {
+        let correctTilesCount = 0;
+
+        tiles.forEach(t => {
+            let isCorrect = false;
+
+            if (t.type === 0) {
+                // Düz çizgiler hem 0 hem de 180 derecede doğru görünür
+                if (t.currentRotation === 0 || t.currentRotation === 180) {
+                    isCorrect = true;
+                }
+            } else if (t.type === 1) {
+                // Köşe parçaları sadece hedef açısında (0) doğrudur
+                if (t.currentRotation === t.targetRotation) {
+                    isCorrect = true;
+                }
+            }
+
+            if (isCorrect) {
+                t.element.classList.add('connected');
+                correctTilesCount++;
+            } else {
+                t.element.classList.remove('connected');
+            }
+        });
+
+        // Tüm taşlar doğruysa bölümü bitir
+        if (correctTilesCount === tiles.length) {
+            isGameLocked = true;
+            saveBestScore(); // Yeni rekor kırıldıysa kaydet
             setTimeout(() => {
                 sounds.success.play();
                 document.getElementById('win-overlay').style.display = 'flex';
@@ -296,17 +376,12 @@
         }
     }
 
-    function applyRandomConnection() {
-        tiles.forEach(t => {
-            if(Math.random() > 0.5) t.element.classList.add('connected');
-            else t.element.classList.remove('connected');
-        });
-    }
-
     function nextLevel() {
         level++;
         document.getElementById('level-num').innerText = level;
-        if(level % 3 === 0 && gridSize < 6) gridSize++;
+        
+        if(level % 3 === 0 && gridSize < 6) gridSize++; // Zorluk artışı
+        
         document.getElementById('win-overlay').style.display = 'none';
         createLevel();
     }
