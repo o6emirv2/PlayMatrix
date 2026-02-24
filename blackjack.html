@@ -12,49 +12,44 @@
     body {
         height:100vh; width: 100vw; overflow:hidden;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-        /* YENİ: PROFESYONEL VIP CASINO MASASI ARKA PLANI */
         background-color: #0b3d22;
+        /* VIP Casino Masa Arka Planı */
         background-image: 
-            /* Ortadan yayılan lüks aydınlatma */
-            radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.6) 80%),
-            /* Çuha dokusu (noise) simülasyonu için ince tekrarlı gradient */
-            repeating-radial-gradient(rgba(0,0,0,0.1) 0, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 4px),
-            /* Koyu yeşil zemin */
-            linear-gradient(180deg, #094726 0%, #062b16 100%);
-        box-shadow: inset 0 0 100px rgba(0,0,0,0.9); /* Masa kenar gölgesi */
+            radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.7) 100%),
+            linear-gradient(180deg, #0a4625 0%, #052613 100%);
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
 
-    /* ÜST BAR VE MC COIN ENTEGRASYONU */
+    /* KUSURSUZ ÜST BAR */
     .top-bar {
-        position:fixed; top:0; width:100%; height:70px;
+        position:fixed; top:0; left: 0; right: 0; height:70px;
         display:flex; align-items:center; justify-content:space-between;
-        padding:0 15px; background: rgba(5, 10, 5, 0.95); /* Çok koyu yeşil/siyah */
-        border-bottom: 2px solid #d4af37; /* Altın rengi çizgi */
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        z-index:1000;
+        padding:0 15px; background: #000; 
+        border-bottom: 2px solid #d4af37; 
+        z-index:1000; width: 100%; box-sizing: border-box;
     }
 
     .brand {
         font-size:1.1rem; font-weight:900; color: #d4af37;
-        letter-spacing: 2px; font-family: 'Arial Black', sans-serif;
-        text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        letter-spacing: 1px; font-family: 'Arial Black', sans-serif;
+        white-space: nowrap;
     }
 
-    .right-menu { display:flex; gap:8px; align-items: center; }
+    .right-menu { display:flex; gap:8px; align-items: center; flex-wrap: nowrap; }
     
     .user-pill-mini { 
-        display: flex; align-items: center; gap: 8px; 
-        background: rgba(255,255,255,0.05); padding: 5px 12px; 
+        display: flex; align-items: center; gap: 6px; 
+        background: rgba(255,255,255,0.05); padding: 5px 10px; 
         border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+        white-space: nowrap;
     }
     .balance-info { display: flex; align-items: center; }
-    .balance-info b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; }
+    .balance-info b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; }
     
     .mc-chip {
-        width: 22px; height: 22px;
+        width: 20px; height: 20px;
         background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
-        border-radius: 50%; margin-left: 6px;
+        border-radius: 50%; margin-left: 5px;
         display: flex; align-items: center; justify-content: center;
         font-size: 8px; font-weight: 900; color: #fff;
         box-shadow: 0 0 10px rgba(79, 209, 255, 0.3);
@@ -62,11 +57,10 @@
     }
 
     .back-btn {
-        background: linear-gradient(180deg, #e74c3c, #c0392b); color: white; 
-        text-decoration: none; padding: 8px 12px;
+        background: #d63031; color: white; 
+        text-decoration: none; padding: 6px 10px;
         border-radius: 4px; font-size: 0.7rem; font-weight: 900;
-        clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
-        border: 1px solid #ff7675;
+        white-space: nowrap; border:none;
     }
 
     /* OYUN ALANI STİLLERİ */
@@ -75,95 +69,109 @@
         padding: 85px 0 20px 0; perspective: 1000px; position: relative;
     }
     
-    /* Masa üzerindeki altın sarısı yarım çember (Betting area çizgisi) */
+    /* Görseldeki gibi masa üzerindeki ince altın sarısı dikiş/çizgi */
     .game-container::after {
-        content: ''; position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-        width: 150vw; height: 300px; border-radius: 50%;
-        border-top: 2px dashed rgba(212, 175, 55, 0.3); /* Altın dikişli çizgi */
-        pointer-events: none; z-index: -1;
+        content: ''; position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+        width: 180vw; height: 350px; border-radius: 50%;
+        border-top: 1.5px dashed rgba(212, 175, 55, 0.4); 
+        pointer-events: none; z-index: 1;
     }
 
-    .area { width: 100%; text-align: center; z-index: 2; }
+    .area { width: 100%; text-align: center; z-index: 2; position: relative; }
+    
     .dealer-title { 
-        font-size: 15px; letter-spacing: 5px; font-weight: 800; color: #d4af37; 
-        margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        font-size: 14px; letter-spacing: 4px; font-weight: 800; color: #d4af37; 
+        margin-bottom: 5px; text-transform: uppercase; 
     }
+    
     .score-badge { 
-        background: rgba(0,0,0,0.8); color: #fff; padding: 4px 15px; 
-        border-radius: 20px; font-size: 14px; font-weight: 700;
+        background: rgba(0,0,0,0.7); color: #fff; padding: 4px 12px; 
+        border-radius: 12px; font-size: 12px; font-weight: 700;
         border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
-    .cards-wrapper { display: flex; justify-content: center; gap: -25px; min-height: 105px; padding: 0 10px; flex-wrap: wrap;}
+    /* KART GÖRÜNÜMÜ - TERS DURMA VE BİTİŞİKLİK SORUNU ÇÖZÜLDÜ */
+    .cards-wrapper { 
+        display: flex; justify-content: center; gap: -30px; /* Kartları bitişik yapar */
+        min-height: 115px; padding: 0 10px; flex-wrap: nowrap; 
+        position: relative; z-index: 5;
+    }
     
     .card-3d {
-        width: 75px; height: 105px; position: relative;
+        width: 80px; height: 115px; position: relative;
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(45deg) scale(0.4);
-        opacity: 0; margin-left: -40px; /* Kartların Casino stili üst üste binmesi */
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
-        filter: drop-shadow(5px 5px 10px rgba(0,0,0,0.6));
+        opacity: 0; margin-left: -40px; 
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1), opacity 0.3s;
+        filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.5));
     }
     .card-3d:first-child { margin-left: 0; }
 
-    .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
-    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.5s ease-out; }
+    /* Kart açıldığında düz durması için rotateY eklendi */
+    .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); opacity: 1; }
+    /* Gizli (Kapalı) kart için rotateY(0deg) kullanıldı */
+    .card-3d.show.hidden-card { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(0deg); }
+    /* Kartı açma (çevirme) animasyonu */
+    .card-3d.flipped { transform: translate(0, 0) rotateZ(0deg) scale(1) rotateY(180deg); transition: transform 0.6s ease-out; }
 
     .card-face {
         position: absolute; width: 100%; height: 100%;
         backface-visibility: hidden; border-radius: 6px;
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.8);
+        background-color: white; 
     }
 
-    .card-front { background: white; transform: rotateY(180deg); }
-    /* Profesyonel Casino Kart Arkası Deseni */
-    .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
+    /* Ön yüz 180 derece döndürüldü ki düz görünsün */
+    .card-front { background-color: white; transform: rotateY(180deg); }
+    .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; transform: rotateY(0deg); }
+
+    /* MESAJ VE KONTROLLER (Görseldeki gibi yerleşim) */
+    .action-area {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 80px; z-index: 10; position: relative;
+    }
 
     #message { 
-        font-size: 22px; font-weight: 900; color: #fff; 
-        text-shadow: 0 4px 15px rgba(0,0,0,0.9), 0 0 20px rgba(212, 175, 55, 0.5); 
-        height: 35px; display: flex; align-items: center; justify-content: center;
-        letter-spacing: 1px;
+        font-size: 18px; font-weight: 800; color: #fff; 
+        text-shadow: 0 2px 5px rgba(0,0,0,0.8); 
+        letter-spacing: 0.5px; margin-bottom: 10px;
     }
 
-    .controls { display: none; gap: 20px; justify-content: center; margin-bottom: 15px; }
+    .controls { display: none; gap: 15px; justify-content: center; width: 100%; }
+    
+    /* Butonlar görseldeki gibi yuvarlak ve dolgun */
     .btn { 
-        padding: 14px 30px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.1); 
-        font-weight: 900; font-size: 16px; color: white; cursor: pointer; letter-spacing: 1px;
-        transition: 0.2s; text-transform: uppercase;
+        padding: 12px 35px; border-radius: 12px; border: none; 
+        font-weight: 800; font-size: 15px; color: white; cursor: pointer; letter-spacing: 1px;
+        transition: 0.1s; text-transform: uppercase;
     }
-    #hit { background: linear-gradient(180deg, #2ecc71, #27ae60); box-shadow: 0 6px 0 #1e8449, 0 10px 20px rgba(0,0,0,0.5); }
-    #stand { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 6px 0 #922b21, 0 10px 20px rgba(0,0,0,0.5); }
-    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #1e8449, 0 5px 10px rgba(0,0,0,0.5) !important; }
+    #hit { background: #2ecc71; box-shadow: 0 6px 0 #27ae60; }
+    #stand { background: #e74c3c; box-shadow: 0 6px 0 #c0392b; }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.5) !important; }
 
-    .chips-area { display: flex; justify-content: center; gap: 10px; padding-bottom: 25px; align-items: center; flex-wrap: wrap;}
+    /* ÇİP ALANI */
+    .chips-area { display: flex; justify-content: center; gap: 12px; padding-bottom: 25px; align-items: center; flex-wrap: nowrap; z-index: 10; position: relative;}
     
-    /* Lüks Casino Çipleri Tasarımı */
     .chip {
-        width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-weight: 900; font-size: 14px; cursor: pointer; transition: transform 0.1s;
-        border: 4px dashed rgba(0,0,0,0.3); /* Çip kenar çizgileri */
-        box-shadow: 
-            inset 0 0 10px rgba(255,255,255,0.3),
-            0 8px 15px rgba(0,0,0,0.6),
-            0 2px 0 #333;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.1s;
+        border: 3px dashed rgba(0,0,0,0.3); 
+        box-shadow: inset 0 0 5px rgba(255,255,255,0.2), 0 5px 10px rgba(0,0,0,0.5), 0 2px 0 #222;
     }
-    .chip:active { transform: scale(0.9) translateY(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
+    .chip:active { transform: scale(0.9) translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     
-    .c250 { background: radial-gradient(circle, #f5f6fa 40%, #dcdde1 100%); color: #2f3640; border-color: #7f8fa6; }
+    .c250 { background: radial-gradient(circle, #7f8fa6 40%, #2f3640 100%); color: #000; border-color: #2f3640; }
     .c500 { background: radial-gradient(circle, #4cd137 40%, #44bd32 100%); color: #fff; border-color: #2f3640; }
     .c1k { background: radial-gradient(circle, #e84118 40%, #c23616 100%); color: #fff; border-color: #2f3640; }
     .c2k { background: radial-gradient(circle, #2f3640 40%, #192a56 100%); color: #d4af37; border-color: #d4af37; }
     
     .cancel-btn {
-        width: 50px; height: 50px; border-radius: 50%; background: #c0392b; color: white;
-        display: flex; align-items: center; justify-content: center; font-weight: 800;
-        font-size: 10px; cursor: pointer; border: 2px solid #e74c3c; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        width: 55px; height: 55px; border-radius: 50%; background: #333; color: #aaa;
+        display: flex; align-items: center; justify-content: center; font-weight: 700;
+        font-size: 10px; cursor: pointer; border: 1px solid #555;
     }
     .cancel-btn:active { transform: scale(0.9); }
-    .disabled { opacity: 0.4; pointer-events: none; filter: grayscale(0.8); }
+    .disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
 
     /* BAŞLANGIÇ EKRANI (SES KİLİDİ) */
     .start-overlay {
@@ -172,8 +180,8 @@
         z-index: 9999; backdrop-filter: blur(15px); flex-direction: column;
     }
     .start-modal {
-        background: linear-gradient(180deg, #111 0%, #222 100%); padding: 40px; border-radius: 20px; 
-        text-align: center; border: 2px solid #d4af37; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2);
+        background: #111; padding: 40px; border-radius: 20px; 
+        text-align: center; border: 1px solid #d4af37; box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
         width: 85%; max-width: 350px;
     }
 
@@ -181,18 +189,17 @@
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
-        display: none; align-items: center; justify-content: center; z-index: 2000;
+        display: none; align-items: center; justify-content: center; z-index: 9999;
     }
     .modal-content {
-        background: #111; border: 2px solid #d4af37; border-radius: 20px;
+        background: #111; border: 1px solid #d4af37; border-radius: 20px;
         width: 85%; max-width: 320px; padding: 25px; text-align: center;
-        box-shadow: 0 0 40px rgba(0,0,0,0.8);
     }
     .modal-icon { font-size: 40px; margin-bottom: 15px; color: #e74c3c; }
-    .modal-text { font-weight: 700; font-size: 16px; line-height: 1.5; margin-bottom: 20px; color:#fff;}
+    .modal-text { font-weight: 700; font-size: 16px; margin-bottom: 20px; color:#fff;}
     .modal-btn {
-        background: linear-gradient(180deg, #d4af37, #aa8a29); color: #000; padding: 12px 30px; border-radius: 10px;
-        font-weight: 900; border: none; cursor: pointer; font-size: 14px; text-transform: uppercase;
+        background: #d4af37; color: #000; padding: 12px 30px; border-radius: 10px;
+        font-weight: 900; border: none; cursor: pointer;
     }
 </style>
 </head>
@@ -200,9 +207,9 @@
 
 <div id="sys-start-overlay" class="start-overlay">
     <div class="start-modal">
-        <h2 style="font-family:'Arial Black', sans-serif; color:#d4af37; font-size: 22px; margin-bottom: 10px; text-shadow: 0 0 15px rgba(212,175,55,0.5);">VIP CASINO</h2>
-        <p style="font-size: 13px; color: #bbb; margin-bottom: 25px;">Gerçekçi masa seslerini ve kurupiyer algoritmasını aktifleştirmek için masaya oturun.</p>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #d4af37, #f1c40f); color: #000; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(212,175,55,0.4);">Masaya Otur</button>
+        <h2 style="font-family:'Arial Black', sans-serif; color:#d4af37; font-size: 20px; margin-bottom: 10px;">VIP CASINO</h2>
+        <p style="font-size: 12px; color: #bbb; margin-bottom: 25px;">Oyun motorunu ve sesleri aktifleştirmek için masaya oturun.</p>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: #d4af37; color: #000; font-weight: 900; font-size: 15px; cursor: pointer;">MASAYA OTUR</button>
     </div>
 </div>
 
@@ -227,7 +234,7 @@
         <div class="user-pill-mini" style="border-color: #ffcc00;">
             <div class="balance-info">
                 <b id="betAmount" style="color:#ffcc00">0</b>
-                <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">MC</div>
+                <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00);">MC</div>
             </div>
         </div>
 
@@ -242,7 +249,7 @@
         <div id="dealerCards" class="cards-wrapper"></div>
     </div>
 
-    <div class="area">
+    <div class="action-area">
         <div id="message">BAHİS YAPIN (MİN: 250)</div>
         <div class="controls" id="controls">
             <button id="hit" class="btn">KART ÇEK</button>
@@ -283,7 +290,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // --- OYUN DEĞİŞKENLERİ ---
-let audioCtx = null;
 let balance = 0; 
 let localBet = 0; 
 let userRef = null;
@@ -294,6 +300,7 @@ let isProcessing = false;
 let deck = [], player = [], dealer = [], dealerHidden = true;
 
 const messageEl = document.getElementById("message");
+const controlsEl = document.getElementById("controls");
 
 window.showModal = (msg, isSuccess = false) => {
     document.getElementById("modalIcon").innerText = isSuccess ? "✅" : "⚠️";
@@ -302,15 +309,32 @@ window.showModal = (msg, isSuccess = false) => {
     document.getElementById("alertModal").style.display = "flex";
 }
 
-// --- PROFESYONEL GERÇEKÇİ SES MOTORU ---
-function initAudio() {
+// --- PROFESYONEL MP3 SES MOTORU ---
+const sounds = {};
+let audioCtx = null;
+
+async function initAudio() {
+    if (audioCtx) return;
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if(!audioCtx) audioCtx = new AudioContext();
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if(audioCtx.state === 'suspended') audioCtx.resume();
+        
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+
+        // İSTENİLEN GERÇEKÇİ SES DOSYALARI (URL)
+        const urls = {
+            card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+            lose: 'https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3', // Daha iyi Bust Sesi
+            tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'  // Gerçekçi Tick Sesi
+        };
+        
+        for (const [name, url] of Object.entries(urls)) {
+            fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf))
+            .then(decoded => sounds[name] = decoded).catch(e => console.warn(`Ses yüklenemedi: ${name}`));
+        }
     } catch(e) { console.error("Ses açılamadı:", e); }
 }
 
@@ -319,60 +343,37 @@ document.getElementById('systemStartBtn').addEventListener('click', () => {
     document.getElementById('sys-start-overlay').style.display = 'none';
 });
 
-function playSound(type) {
-    if(!audioCtx || audioCtx.state !== 'running') return;
-    const now = audioCtx.currentTime;
-
-    const playTone = (freq, type, gainVal, start, duration) => {
+function playSound(name) {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    // Çip sesi orijinal Oscillator (dokunulmadı)
+    if (name === 'chip') {
+        const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, start);
-        gain.gain.setValueAtTime(gainVal, start);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(350, now);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
         osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(start); osc.stop(start + duration);
-    };
-
-    // Casino Çip Sesi (Tok bir tıkırtı)
-    if(type === 'chip') {
-        playTone(350, 'sine', 0.5, now, 0.05);
-        playTone(2500, 'triangle', 0.1, now, 0.03); // Plastik şaklaması
+        osc.start(now); osc.stop(now + 0.05);
+        
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'triangle'; osc2.frequency.setValueAtTime(2500, now);
+        gain2.gain.setValueAtTime(0.1, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+        osc2.start(now); osc2.stop(now + 0.03);
+        return;
     }
     
-    // Kart Çekme/Koyma Sesi (Sürtünme ve masaya çarpma)
-    if(type === 'card') {
-        // Hışırtı (Noise)
-        const bufferSize = audioCtx.sampleRate * 0.15;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
-        
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass'; filter.frequency.setValueAtTime(1000, now);
-        
-        const gain = audioCtx.createGain();
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        
-        noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
-        noise.start(now);
-        
-        // Kartın masaya vuruş tokluğu
-        playTone(150, 'sine', 0.6, now + 0.05, 0.1);
-    }
-    
-    // Kazanma Sesi (Lüks çan/zil efekti)
-    if(type === 'win') {
-        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-            playTone(freq, 'sine', 0.2, now + (i * 0.1), 0.6);
-        });
-    }
-    
-    // Kaybetme Sesi (Kaba, derin ton)
-    if(type === 'lose') {
-        playTone(150, 'sawtooth', 0.3, now, 0.5);
-        playTone(100, 'square', 0.3, now + 0.1, 0.4);
+    // Diğer sesler Buffer'dan (MP3) çalınır
+    if(sounds[name]) {
+        const source = audioCtx.createBufferSource();
+        source.buffer = sounds[name];
+        source.connect(audioCtx.destination);
+        source.start(0);
     }
 }
 
@@ -400,7 +401,6 @@ window.addBet = (amount) => {
     playSound('chip');
     localBet += amount;
     
-    // Sadece Görsel Olarak Düş
     document.getElementById("balance").innerText = (balance - localBet).toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = localBet.toLocaleString('tr-TR');
     
@@ -414,16 +414,21 @@ window.cancelBet = () => {
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("betAmount").innerText = "0";
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
+    messageEl.style.display = "flex";
     messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
 };
 
 function startBetCountdown(){
     let s = 5;
-    messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
+    messageEl.style.display = "flex";
+    messageEl.innerText = "BAŞLIYOR (" + s + ")";
+    playSound('tick'); 
     betCountdown = setInterval(() => {
         s--;
-        if(s > 0) messageEl.innerText = "KARTLAR DAĞITILIYOR: " + s;
-        else { 
+        if(s > 0) {
+            messageEl.innerText = "BAŞLIYOR (" + s + ")";
+            playSound('tick');
+        } else { 
             clearInterval(betCountdown); 
             betCountdown = null; 
             startGame(); 
@@ -435,13 +440,13 @@ function startBetCountdown(){
 function createDeck(){
     const s=["H","D","C","S"], v=[1,2,3,4,5,6,7,8,9,10,11,12,13];
     deck = [];
-    // 4 Deste (Shoe) 
     for(let d=0; d<4; d++) {
         s.forEach(x => v.forEach(y => deck.push({suit:x, value:y})));
     }
-    deck.sort(() => Math.random() - 0.5); // Karıştır
+    deck.sort(() => Math.random() - 0.5); 
 }
 
+// URL SORUNU ÇÖZÜMÜ: 10 değerli kart API'de "0" olarak adlandırılmış.
 function cardVal(v){ let m = {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}; return m[v] || v; }
 
 function total(hand){
@@ -467,6 +472,7 @@ function updateScores(){
     }
 }
 
+// --- KART ÇEKME VE TERS/DÜZ ANİMASYON ---
 async function draw(hand, divId, isHidden = false, forceCard = null){
     playSound('card');
     let card = forceCard ? forceCard : deck.pop();
@@ -474,24 +480,32 @@ async function draw(hand, divId, isHidden = false, forceCard = null){
     
     const cardCont = document.createElement("div");
     cardCont.className = "card-3d";
+    
+    let valStr = cardVal(card.value);
+    
+    // API görselini ayarla
     cardCont.innerHTML = `
-        <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png') center/cover"></div>
+        <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${valStr}${card.suit}.png') center/cover"></div>
         <div class="card-face card-back"></div>
     `;
+    
     document.getElementById(divId).appendChild(cardCont);
     
     return new Promise(resolve => {
         setTimeout(() => { 
-            cardCont.classList.add("show"); 
-            if(!isHidden) {
-                setTimeout(() => {
-                    cardCont.classList.add("flipped");
-                    updateScores();
-                    resolve();
-                }, 350); 
-            } else {
+            if(isHidden) {
+                // Gizli kart ise (Sadece arkası görünecek)
+                cardCont.classList.add("show", "hidden-card");
                 updateScores();
                 resolve();
+            } else {
+                // Açık kart ise (Önü dönecek)
+                cardCont.classList.add("show");
+                setTimeout(() => {
+                    cardCont.classList.add("flipped"); // Bu sınıf rotateY(180deg) yapar
+                    updateScores();
+                    resolve();
+                }, 100); 
             }
         }, 50);
     });
@@ -499,19 +513,24 @@ async function draw(hand, divId, isHidden = false, forceCard = null){
 
 // --- OYUN AKIŞI ---
 async function startGame(){
-    if(localBet < 250) { messageEl.innerText = "MİNİMUM 250 MC!"; return; }
+    if(localBet < 250) { 
+        messageEl.style.display = "flex"; 
+        messageEl.innerText = "MİNİMUM 250 MC!"; return; 
+    }
     
     isProcessing = true;
-    gameState = "playing";
+    gameState = "playing"; 
+    
     document.getElementById("chipsArea").classList.add("disabled");
     document.getElementById("dealerCards").innerHTML = "";
     document.getElementById("playerCards").innerHTML = "";
     player = []; dealer = []; dealerHidden = true;
-    messageEl.innerText = "";
+    
+    messageEl.style.display = "none"; // Yazıyı gizle
+    controlsEl.style.display = "none";
     
     createDeck(); 
     
-    // Bahsi Güvenli Bir Şekilde Veritabanından Düş
     try {
         await updateDoc(userRef, { balance: increment(-localBet) });
     } catch(e) {
@@ -520,23 +539,28 @@ async function startGame(){
         return;
     }
 
-    // Klasik Dağıtım: O -> D -> O -> D(Kapalı)
-    await draw(player, "playerCards"); await delay(400);
-    await draw(dealer, "dealerCards"); await delay(400);
-    await draw(player, "playerCards"); await delay(400);
-    await draw(dealer, "dealerCards", true);
+    // Klasik Dağıtım (Oyuncu Açık -> Kurupiyer Açık -> Oyuncu Açık -> Kurupiyer Kapalı)
+    await draw(player, "playerCards"); await delay(300);
+    await draw(dealer, "dealerCards"); await delay(300);
+    await draw(player, "playerCards"); await delay(300);
+    await draw(dealer, "dealerCards", true); // Kapalı kart
 
     const pTotal = total(player);
     const dTotal = total(dealer);
 
     if(pTotal === 21) { 
+        messageEl.style.display = "flex";
         messageEl.innerText = "BLACKJACK!"; 
         playSound('win');
         await delay(1000); 
         
         dealerHidden = false;
         const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-        if(cards[1]) cards[1].classList.add("flipped");
+        // Kapalı kartı (2. kart) çevir
+        if(cards[1]) {
+            cards[1].classList.remove("hidden-card");
+            cards[1].classList.add("flipped");
+        }
         updateScores();
         await delay(1000);
         
@@ -546,54 +570,84 @@ async function startGame(){
             endGame("BLACKJACK KAZANCI!", 2.5); 
         }
     } else { 
-        document.getElementById("controls").style.display = "flex"; 
+        isProcessing = false; 
         startActionTimer(); 
     }
 }
 
-// OYUNCU HAMLELERİ
+// --- OYUNCU KARAR AŞAMASI (Süre Görünümü Çözüldü) ---
 function startActionTimer(){
     let s = 10;
+    messageEl.style.display = "flex";
+    controlsEl.style.display = "flex"; // Butonları göster
     messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
+    playSound('tick');
+    if (actionTimer) clearInterval(actionTimer);
+    
     actionTimer = setInterval(() => {
         s--;
-        if(s > 0) messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
-        else { clearInterval(actionTimer); actionTimer = null; stand(); }
+        if(s > 0) {
+            messageEl.innerText = "KARAR SÜRESİ (" + s + ")";
+            if(s <= 3) playSound('tick'); 
+        } else { 
+            // SÜRE BİTİNCE OTOMATİK KALIR
+            clearInterval(actionTimer); actionTimer = null; 
+            if(gameState === "playing" && !isProcessing) {
+                hideControls(); // Yazıyı ve butonları tamamen gizle
+                stand(); 
+            }
+        }
     }, 1000);
+}
+
+// KARAR VERİLDİĞİNDE BUTON VE YAZIYI GİZLEYEN FONKSİYON
+function hideControls() {
+    messageEl.style.display = "none";
+    controlsEl.style.display = "none";
 }
 
 document.getElementById("hit").onclick = async () => {
     if(gameState !== "playing" || isProcessing) return;
+    isProcessing = true; 
+    
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
     
-    document.getElementById("controls").style.display = "none";
+    hideControls(); // Tıklandığı an yazı ve buton gider
+    
     await draw(player, "playerCards");
     
     if(total(player) >= 21) {
         dealerTurn(); 
     } else { 
-        document.getElementById("controls").style.display = "flex"; 
-        startActionTimer(); 
+        isProcessing = false; 
+        startActionTimer(); // Tekrar karar süresi başlat
     }
 };
 
 const stand = () => { 
     if(gameState !== "playing" || isProcessing) return;
+    isProcessing = true; 
+    
     if(actionTimer) { clearInterval(actionTimer); actionTimer = null; }
-    document.getElementById("controls").style.display="none"; 
+    
+    hideControls(); // Tıklandığı an yazı ve buton gider
     dealerTurn(); 
 };
 document.getElementById("stand").onclick = stand;
 
-// --- KURUPIYER (KASA) ALGORİTMASI ---
+// --- KURUPIYER ALGORİTMASI ---
 async function dealerTurn(){
     gameState = "dealer_turn";
     dealerHidden = false;
     
+    // Kurupiyerin kapalı (hidden) olan 2. kartını bul ve çevir
     const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-    if(cards[1]) cards[1].classList.add("flipped");
+    if(cards[1]) {
+        cards[1].classList.remove("hidden-card");
+        cards[1].classList.add("flipped");
+    }
+    playSound('card'); 
     updateScores();
-    playSound('card'); // Kapalı kart açılma sesi
     await delay(1000);
 
     const pScore = total(player);
@@ -602,8 +656,6 @@ async function dealerTurn(){
     if(pScore <= 21) {
         while(total(dealer) < 17) {
             let cheatCard = null;
-            
-            // KASA AVANTAJI (House Edge)
             let cheatChance = localBet >= 10000 ? 0.70 : (localBet >= 5000 ? 0.40 : 0);
             
             if (Math.random() < cheatChance) {
@@ -618,7 +670,7 @@ async function dealerTurn(){
             }
 
             await draw(dealer, "dealerCards", false, cheatCard); 
-            await delay(1000); 
+            await delay(800); 
         }
     }
     
@@ -659,6 +711,7 @@ async function endGameLogic(){
 }
 
 async function endGame(text, multiplier) {
+    messageEl.style.display = "flex";
     messageEl.innerText = text;
 
     if(multiplier > 0) {
@@ -683,6 +736,8 @@ function resetBoard() {
     
     document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("chipsArea").classList.remove("disabled");
+    
+    messageEl.style.display = "flex";
     messageEl.innerText = "BAHİS YAPIN (MİN: 250)";
     
     isProcessing = false;
