@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>PlayMatrix Crash</title>
+<script>
+    if (window.history.replaceState) {
+        // blackjack.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
+        window.history.replaceState(null, null, "/");
+    }
+</script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; }
