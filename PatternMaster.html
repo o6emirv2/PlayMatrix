@@ -25,7 +25,6 @@
 
 <script>
     if (window.history.replaceState) {
-        // PatternMaster.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
 </script>
@@ -40,7 +39,6 @@
     }
 
     body {
-        /* Güzelleştirme: Noktalı Cyberpunk Arkaplan Eklendi */
         background-color: #05050a;
         background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
         background-size: 20px 20px;
@@ -48,13 +46,11 @@
         align-items:center; justify-content:center; height:100vh; overflow:hidden;
     }
 
-    /* SEO İÇİN GİZLİ H1 SINIFI */
     .sr-only {
         position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
         overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
     }
 
-    /* ÜST BAR DÜZENLEME */
     .top-bar {
         position:fixed; top:0; width:100%; height:60px; 
         display:grid; grid-template-columns: 80px 1fr 80px; 
@@ -64,7 +60,6 @@
         border-bottom: 1px solid rgba(0, 245, 255, 0.15);
     }
 
-    /* GERİ BUTONU STİLİ */
     .back-btn {
         justify-self: start;
         margin-left: 15px;
@@ -85,15 +80,14 @@
     }
 
     .brand {
-        justify-self: center; /* Ortala */
+        justify-self: center;
         font-size:16px; font-weight:900; letter-spacing:3px;
         background:linear-gradient(90deg,#00f5ff,#ff00c8);
         -webkit-background-clip:text; -webkit-text-fill-color:transparent;
         white-space: nowrap;
-        text-shadow: 0 0 20px rgba(255, 0, 200, 0.4); /* Parlama Efekti */
+        text-shadow: 0 0 20px rgba(255, 0, 200, 0.4); 
     }
 
-    /* OYUN ALANI */
     .game-wrapper {
         margin-top:55px; display:flex; flex-direction:column;
         align-items:center; justify-content:center; width: 100%;
@@ -116,7 +110,7 @@
     .btn {
         position: relative;
         display:flex; align-items:center; justify-content:center;
-        font-size:48px; /* Emojiler Büyütüldü */
+        font-size:48px; 
         border-radius:30px; cursor:pointer;
         background: rgba(20, 20, 35, 0.8);
         border: 1px solid rgba(255,255,255,0.05);
@@ -144,7 +138,6 @@
         100% { transform: scale(2.5); opacity: 0; }
     }
 
-    /* Renkler Daha Canlı Hale Getirildi */
     .neon-up { color:#00f5ff; box-shadow: inset 0 0 10px rgba(0,245,255,0.1); }
     .neon-right { color:#ff00c8; box-shadow: inset 0 0 10px rgba(255,0,200,0.1); }
     .neon-left { color:#00ff88; box-shadow: inset 0 0 10px rgba(0,255,136,0.1); }
@@ -218,6 +211,11 @@
 </main>
 
 <script>
+// GÜVENLİK: IIFE Kullanımı. Kod kapsüllenerek dışarıdan (konsoldan) müdahale engellenir.
+(function() {
+    // Katı mod aktifleştirildi (güvenlik için)
+    "use strict";
+
     const buttons = document.querySelectorAll(".btn");
     const grid = document.getElementById("grid");
     const levelEl = document.getElementById("level");
@@ -233,11 +231,36 @@
     let speed = 800;
     let isShowing = false;
     let gameActive = false;
-
-    let highScore = localStorage.getItem("patternHigh") || 0;
-    highscoreEl.innerText = "EN YÜKSEK SKOR: " + highScore;
-
     let audioCtx;
+
+    // GÜVENLİK: Skor Şifreleme (Anti-Cheat)
+    const SECRET_SALT = "PlayMatrixSecure_9912";
+    
+    function saveHighScore(score) {
+        const data = score + "|" + btoa(score + SECRET_SALT);
+        localStorage.setItem("pm_highData", data);
+    }
+
+    function getHighScore() {
+        const raw = localStorage.getItem("pm_highData");
+        if (!raw) return 0;
+        
+        const parts = raw.split("|");
+        if (parts.length !== 2) return 0;
+        
+        const score = parseInt(parts[0], 10);
+        const expectedHash = btoa(score + SECRET_SALT);
+        
+        // Eğer hash eşleşmiyorsa, birisi localStorage'ı kurcalamıştır, sıfırla.
+        if (parts[1] !== expectedHash || isNaN(score)) {
+            localStorage.removeItem("pm_highData");
+            return 0;
+        }
+        return score;
+    }
+
+    let highScore = getHighScore();
+    highscoreEl.innerText = "EN YÜKSEK SKOR: " + highScore;
 
     document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
 
@@ -264,6 +287,7 @@
 
     function flashButton(dir) {
         const btn = document.querySelector(`[data-dir='${dir}']`);
+        if(!btn) return;
         btn.classList.add("active");
         setTimeout(() => btn.classList.remove("active"), Math.max(200, speed - 200));
     }
@@ -274,15 +298,20 @@
         statusEl.innerText = "İZLE...";
         
         for (let i = 0; i < pattern.length; i++) {
+            // Anti-Cheat: Döngü sırasında oyun durdurulursa veya resetlenirse break
+            if (!gameActive) break; 
+            
             await new Promise(r => setTimeout(r, i === 0 ? 400 : speed / 2));
             flashButton(pattern[i]);
             playBeep(400 + (i * 50), 0.15);
             await new Promise(r => setTimeout(r, speed / 2));
         }
         
-        isShowing = false;
-        grid.style.pointerEvents = "auto";
-        statusEl.innerText = "SIRANI YAP!";
+        if(gameActive) {
+            isShowing = false;
+            grid.style.pointerEvents = "auto";
+            statusEl.innerText = "SIRANI YAP!";
+        }
     }
 
     function startGame() {
@@ -297,6 +326,7 @@
     }
 
     function nextRound() {
+        if(!gameActive) return;
         playerIndex = 0;
         pattern.push(["up", "down", "left", "right"][Math.floor(Math.random() * 4)]);
         levelEl.innerText = level;
@@ -305,6 +335,7 @@
     }
 
     function levelUp() {
+        if(!gameActive) return;
         document.body.classList.add("flash-bg");
         setTimeout(() => document.body.classList.remove("flash-bg"), 100);
         playBeep(800, 0.2);
@@ -325,7 +356,7 @@
         
         if (level - 1 > highScore) {
             highScore = level - 1;
-            localStorage.setItem("patternHigh", highScore);
+            saveHighScore(highScore);
             highscoreEl.innerText = "EN YÜKSEK SKOR: " + highScore;
         }
 
@@ -363,6 +394,8 @@
         e.preventDefault();
         startGame();
     });
+
+})(); // Kapsülleme bitişi
 </script>
 
 </body>
