@@ -392,6 +392,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -403,6 +404,13 @@
     };
 
     const app = initializeApp(firebaseConfig);
+
+    // ✅ App Check (reCAPTCHA v3) - BURAYA "SITE KEY" GELECEK (Secret değil!)
+    initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider("BURAYA_SITE_KEY_YAZ"),
+        isTokenAutoRefreshEnabled: true
+    });
+
     const auth = getAuth(app);
     const db = getFirestore(app);
 
