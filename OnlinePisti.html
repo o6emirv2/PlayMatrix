@@ -26,7 +26,6 @@
 
     <script>
     if (window.history.replaceState) {
-        // OnlinePisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
     </script>
@@ -57,7 +56,6 @@
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         }
 
-        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
         .sr-only {
             position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
@@ -208,7 +206,6 @@
         .hand { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:10px; width: max-content; padding: 15px; bottom: 5px; z-index: 200; }
         .opp-hand-visual { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:5px; width: max-content; top: 15px; opacity: 0.9; }
 
-        /* Mobil Uyumlu Kart Boyutları */
         .card { 
             width: 12vw; max-width: 65px; height: 18vw; max-height: 95px; 
             border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; 
@@ -307,7 +304,7 @@
     </header>
 
     <main id="lobbyScreen">
-        <input type="text" id="roomSearch" class="search-input" placeholder="MASA ARA..." aria-label="Pişti Masası Ara">
+        <input type="text" id="roomSearch" class="search-input" placeholder="MASA ARA..." aria-label="Pişti Masası Ara" maxlength="30">
         
         <div class="chips" id="chipsArea" aria-label="Bahis Çipleri">
             <div class="chip" onclick="cancelBet()" style="background:var(--danger); color:#fff; border-color: rgba(255,255,255,0.4);" aria-label="Bahsi İptal Et">İPTAL</div>
@@ -344,7 +341,7 @@
         <div class="modal-box">
             <h3 style="color:var(--warning)">🔒 ÖZEL MASA</h3><br>
             <p style="font-size:0.85rem; margin-bottom:15px; color:#888;">Bu masaya girmek için şifre gereklidir.</p>
-            <input type="password" id="joinRoomPass" class="modal-input" placeholder="Şifreyi Yazınız..." inputmode="text" aria-label="Oda Şifresi">
+            <input type="password" id="joinRoomPass" class="modal-input" placeholder="Şifreyi Yazınız..." inputmode="text" aria-label="Oda Şifresi" maxlength="15">
             <div id="passError" class="error-msg">HATALI ŞİFRE! TEKRAR DENEYİN.</div>
             <button class="btn-neon" onclick="confirmPasswordJoin()">GİRİŞ YAP</button>
             <button class="btn-neon" style="margin-top:12px; background:var(--danger); color:white; box-shadow:none;" onclick="closeModal('passwordModal')">İPTAL</button>
@@ -354,13 +351,13 @@
     <div id="createRoomModal" class="modal-overlay" aria-hidden="true">
         <div class="modal-box">
             <h3 style="color:var(--border)">MASA AYARLARI</h3><br>
-            <input type="text" id="newRoomName" class="modal-input" placeholder="Masa Adı" inputmode="text" aria-label="Masa Adı Belirle">
+            <input type="text" id="newRoomName" class="modal-input" placeholder="Masa Adı" inputmode="text" aria-label="Masa Adı Belirle" maxlength="20">
             <select id="newRoomType" class="modal-input" aria-label="Oyuncu ve Kart Sayısı">
                 <option value="2-52">2 Kişilik (52 Kart)</option>
                 <option value="2-104">2 Kişilik (104 Kart)</option>
                 <option value="4-104">4 Kişilik (104 Kart)</option>
             </select>
-            <input type="password" id="newRoomPass" class="modal-input" placeholder="Şifre (İsteğe Bağlı)" inputmode="text" aria-label="Masa Şifresi Belirle">
+            <input type="password" id="newRoomPass" class="modal-input" placeholder="Şifre (İsteğe Bağlı)" inputmode="text" aria-label="Masa Şifresi Belirle" maxlength="15">
             <button class="btn-neon" onclick="confirmCreateRoom()">OLUŞTUR</button>
             <button class="btn-neon" style="margin-top:12px; background:var(--danger); color:white; box-shadow:none;" onclick="closeModal('createRoomModal')">İPTAL</button>
         </div>
@@ -394,6 +391,20 @@
     import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
+    // ✅ GÜVENLİK: XSS (Cross-Site Scripting) Koruması eklendi.
+    const escapeHTML = (str) => {
+        if (!str) return '';
+        return String(str).replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag])
+        );
+    };
+
     const firebaseConfig = {
         apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
         authDomain: "emirhan-site.firebaseapp.com",
@@ -405,7 +416,7 @@
 
     const app = initializeApp(firebaseConfig);
 
-    // ✅ App Check (reCAPTCHA v3) - BURAYA "SITE KEY" GELECEK (Secret değil!)
+    // ✅ App Check (reCAPTCHA v3) - BURAYA "SITE KEY" GELECEK
     initializeAppCheck(app, {
         provider: new ReCaptchaV3Provider("6Lf9iXcsAAAAAIO8dzYHLShOZoPw7TVQXb2deB7I"),
         isTokenAutoRefreshEnabled: true
@@ -554,27 +565,33 @@
         if(lobbyUnsub) lobbyUnsub();
         lobbyUnsub = onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snap) => {
             const list = document.getElementById("roomList");
-            const filter = document.getElementById("roomSearch").value.toLowerCase();
+            const filter = escapeHTML(document.getElementById("roomSearch").value.toLowerCase());
             let html = ""; const now = Date.now();
             if(Math.random() < 0.1) cleanZombies();
 
             snap.forEach(roomDoc => {
                 const data = roomDoc.data();
                 if (data.status === "finished") return; 
-                if (data.name.toLowerCase().includes(filter)) {
+                
+                // GÜVENLİK: İsimleri ve metinleri escapeHTML ile temizliyoruz
+                const safeName = escapeHTML(data.name);
+                const safePass = escapeHTML(data.password || '');
+                const safeId = escapeHTML(roomDoc.id);
+
+                if (safeName.toLowerCase().includes(filter)) {
                     const duration = data.createdAt ? Math.floor((now - data.createdAt) / 60000) : 0;
                     const isPlaying = data.status === "playing";
                     const maxP = data.type.startsWith("4") ? 4 : 2;
                     const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
                     
-                    let pNames = `${data.p1_name || '...'}`;
-                    if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
-                    else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
+                    let pNames = `${escapeHTML(data.p1_name) || '...'}`;
+                    if(maxP === 2) pNames += ` vs ${escapeHTML(data.p2_name) || '...'}`;
+                    else pNames += `, ${escapeHTML(data.p2_name) || '...'}, ${escapeHTML(data.p3_name) || '...'}, ${escapeHTML(data.p4_name) || '...'}`;
 
                     html += `
                         <div class="room-card" style="${isPlaying ? 'border-left-color:#00ff88;' : ''}">
                             <div style="flex:1">
-                                <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type}] (${pList.length}/${maxP})</small> 
+                                <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${safeName} [${data.type}] (${pList.length}/${maxP})</small> 
                                 ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
                                 <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
                                 <div class="room-info-live">
@@ -582,7 +599,7 @@
                                 </div>
                             </div>
                             ${(data.status === 'waiting' && pList.length < maxP) ? `
-                                <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet})">KATIL</button>
+                                <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${safeId}', '${safePass}', ${data.bet})">KATIL</button>
                             ` : `<div style="font-size:0.75rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
                         </div>`;
                 }
@@ -613,12 +630,13 @@
         if (isProcessingPlay) return;
         isProcessingPlay = true;
 
-        const name = document.getElementById("newRoomName").value || "Arena";
+        // GÜVENLİK: Temizleme
+        const name = escapeHTML(document.getElementById("newRoomName").value.trim()) || "Arena";
         const type = document.getElementById("newRoomType").value;
-        const pass = document.getElementById("newRoomPass").value || "";
+        const pass = escapeHTML(document.getElementById("newRoomPass").value.trim()) || "";
         const roomId = "room_" + Date.now() + "_" + uid.substring(0,4);
-        roomRef = doc(db, "rooms", roomId); myRole = "p1";
         
+        roomRef = doc(db, "rooms", roomId); myRole = "p1";
         const isDouble = type.includes("104");
         const finalDeck = createShuffledDeck(isDouble);
 
@@ -659,7 +677,9 @@
     };
 
     window.confirmPasswordJoin = () => {
-        if(document.getElementById("joinRoomPass").value === pendingRoomPass) {
+        // Inputu escape ediyoruz
+        const enteredPass = escapeHTML(document.getElementById("joinRoomPass").value.trim());
+        if(enteredPass === pendingRoomPass) {
             closeModal('passwordModal'); joinRoom(pendingRoomId, pendingRoomBet);
         } else document.getElementById("passError").style.display = "block";
     };
@@ -717,7 +737,7 @@
             if(gameState.quitter) {
                 if(gameState.quitter !== uid) {
                     await updateDoc(userRef, { balance: increment(gameState.bet) });
-                    showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
+                    showInfoModal(`${escapeHTML(gameState.quitterName)} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
                     inGame = false; setTimeout(() => window.leaveRoom(), 3000);
                 }
                 return;
@@ -747,7 +767,7 @@
         const container = document.getElementById("playerHeadsContainer");
         const maxP = gameState?.type.startsWith("4") ? 4 : 2; let html = "";
         for(let i=1; i<=maxP; i++) {
-            const pUid = gameState?.[`p${i}`], pName = gameState?.[`p${i}_name`] || "...";
+            const pUid = gameState?.[`p${i}`], pName = escapeHTML(gameState?.[`p${i}_name`]) || "...";
             const isActive = gameState?.turn === pUid && gameState?.status === "playing";
             html += `<div class="p-head ${isActive ? 'active' : ''}"><div class="name">${pUid === uid ? "SİZ" : pName}</div><div class="score">${gameState?.[`p${i}_score`] || 0}</div></div>`;
         }
@@ -886,7 +906,7 @@
         for(let i=1; i<=maxP; i++) {
             let total = gameState[`p${i}_score`] || 0;
             if(`p${i}` === bonusRole) total += 3;
-            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`], score: total, uid: gameState[`p${i}`] });
+            finalScores.push({ role: `p${i}`, name: escapeHTML(gameState[`p${i}_name`]), score: total, uid: gameState[`p${i}`] });
         }
         finalScores.sort((a,b) => b.score - a.score);
         const winners = finalScores.filter(s => s.score === finalScores[0].score);
@@ -918,8 +938,8 @@
     window.openModal = (id) => document.getElementById(id).style.display = "flex";
     window.closeModal = (id) => document.getElementById(id).style.display = "none";
     window.showInfoModal = (m, t) => { 
-        document.getElementById("modalTitle").innerText = t; 
-        document.getElementById("modalMsg").innerHTML = m; 
+        document.getElementById("modalTitle").innerText = escapeHTML(t); 
+        document.getElementById("modalMsg").innerHTML = m; // Burada "m" HTML tagleri barındırabilir (br, b) o yüzden escape etmedim, yukarılarda veriyi escape ettim.
         openModal('infoModal');
     };
 
