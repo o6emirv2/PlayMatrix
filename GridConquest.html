@@ -26,7 +26,6 @@
 
     <script>
     if (window.history.replaceState) {
-        // GridConquest.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
     </script>
@@ -48,7 +47,6 @@
         }
         body { background: var(--bg); color: #e0e0e0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; position: relative; }
 
-        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
         .sr-only {
             position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
@@ -157,9 +155,9 @@
 
     <div id="roomTypeModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ARENA TİPİ</h3><button class="btn-neon" style="width:100%; margin-bottom:12px;" onclick="window.createArena(false)">AÇIK ARENA</button><button class="btn-neon btn-sec" style="width:100%" onclick="window.showPrivateSettings()">KİLİTLİ ARENA</button><p onclick="window.toggleModal('roomTypeModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">İPTAL</p></div></div>
     
-    <div id="privateSettingsModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ARENA KURULUMU</h3><input type="number" id="customRoomCode" class="modal-input" placeholder="ODA NO (Min 3 Sayı)" aria-label="Oda Numarası"><input type="number" id="customRoomPass" class="modal-input" placeholder="ŞİFRE (Min 5 Sayı)" aria-label="Oda Şifresi"><div id="createError" class="error-text">HATA: SAYI KURALLARINA UYUN!</div><button class="btn-neon" style="width:100%" onclick="window.createArena(true)">OLUŞTUR</button><p onclick="window.toggleModal('privateSettingsModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">GERİ</p></div></div>
+    <div id="privateSettingsModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ARENA KURULUMU</h3><input type="number" id="customRoomCode" class="modal-input" placeholder="ODA NO (Min 3 Sayı)" aria-label="Oda Numarası" maxlength="6" oninput="this.value=this.value.slice(0,6)"><input type="number" id="customRoomPass" class="modal-input" placeholder="ŞİFRE (Min 5 Sayı)" aria-label="Oda Şifresi" maxlength="8" oninput="this.value=this.value.slice(0,8)"><div id="createError" class="error-text">HATA: SAYI KURALLARINA UYUN!</div><button class="btn-neon" style="width:100%" onclick="window.createArena(true)">OLUŞTUR</button><p onclick="window.toggleModal('privateSettingsModal', false)" style="margin-top:20px; cursor:pointer; color:#666;">GERİ</p></div></div>
     
-    <div id="passwordEntryModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ŞİFRE GEREKLİ</h3><input type="number" id="joinRoomPassInput" class="modal-input" placeholder="ŞİFREYİ GİRİN" aria-label="Oda Giriş Şifresi"><div id="passError" class="error-text">HATA: ŞİFRE YANLIŞ!</div><button class="btn-neon" id="confirmJoinPass" style="width:100%">GİRİŞ YAP</button><button class="btn-neon btn-sec" style="width:100%; margin-top:10px;" onclick="window.toggleModal('passwordEntryModal', false)">İPTAL</button></div></div>
+    <div id="passwordEntryModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ŞİFRE GEREKLİ</h3><input type="number" id="joinRoomPassInput" class="modal-input" placeholder="ŞİFREYİ GİRİN" aria-label="Oda Giriş Şifresi" maxlength="8" oninput="this.value=this.value.slice(0,8)"><div id="passError" class="error-text">HATA: ŞİFRE YANLIŞ!</div><button class="btn-neon" id="confirmJoinPass" style="width:100%">GİRİŞ YAP</button><button class="btn-neon btn-sec" style="width:100%; margin-top:10px;" onclick="window.toggleModal('passwordEntryModal', false)">İPTAL</button></div></div>
     
     <div id="alertModal" class="modal" aria-live="assertive">
         <div class="modal-box">
@@ -201,6 +199,20 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+
+    // XSS Koruması için HTML Karakter Temizleyici
+    const escapeHTML = (str) => {
+        if (!str) return '';
+        return String(str).replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag])
+        );
+    };
 
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
@@ -306,8 +318,10 @@
 
     window.filterRooms = () => {
         const searchText = document.getElementById('roomSearch').value.toLowerCase();
+        // XSS Korumalı Arama
+        const safeSearch = escapeHTML(searchText);
         document.querySelectorAll('.room-card').forEach(card => {
-            card.style.display = card.innerText.toLowerCase().includes(searchText) ? 'flex' : 'none';
+            card.style.display = card.innerText.toLowerCase().includes(safeSearch) ? 'flex' : 'none';
         });
     };
 
@@ -399,7 +413,7 @@
         uid = user.uid;
         const userDoc = await getDoc(doc(db, "users", uid));
         username = userDoc.exists() ? userDoc.data().username : "PILOT_" + uid.slice(0,4).toUpperCase();
-        document.getElementById('meName').innerText = username;
+        document.getElementById('meName').innerText = escapeHTML(username); // XSS Koruması
         document.getElementById('createRoomBtn').disabled = false;
         document.getElementById('quickJoinBtn').disabled = false;
         listenLobby();
@@ -419,6 +433,12 @@
                 const r = d.data();
                 if(r.p1 === uid || r.status === 'terminated') return;
                 
+                // Güvenli veriler
+                const safeP1 = escapeHTML(r.p1Name);
+                const safeP2 = escapeHTML(r.p2Name);
+                const safeId = escapeHTML(d.id);
+                const safePass = escapeHTML(r.pass || '');
+
                 if(r.status === 'waiting' && r.createdAt) {
                     const ageMs = now - r.createdAt.toMillis();
                     if(ageMs > 65000) {
@@ -434,16 +454,16 @@
                     card.className = "room-card";
                     card.innerHTML = `
                         <div class="room-info">
-                            <div class="room-title">BÖLGE: ${d.id} ${r.pass ? '🔒' : '🔓'}</div>
+                            <div class="room-title">BÖLGE: ${safeId} ${r.pass ? '🔒' : '🔓'}</div>
                             <div class="room-players">
-                                <span style="color:var(--p1)">${r.p1Name}</span> 
+                                <span style="color:var(--p1)">${safeP1}</span> 
                                 <span style="color:#555">vs</span> 
                                 <span style="color:var(--p2)">BEKLENİYOR...</span>
                             </div>
                             <div class="room-time">⏳ ${timeStr} açıldı</div>
                         </div>
                         <div class="room-action">
-                            <button class="btn-neon var(--btn-sec)" onclick="window.joinHandler('${d.id}', '${r.pass||''}')">GİRİŞ YAP</button>
+                            <button class="btn-neon var(--btn-sec)" onclick="window.joinHandler('${safeId}', '${safePass}')">GİRİŞ YAP</button>
                         </div>`;
                     list.appendChild(card);
                 } else if(r.status === 'playing') {
@@ -452,11 +472,11 @@
                     card.className = "room-card";
                     card.innerHTML = `
                         <div class="room-info">
-                            <div class="room-title">BÖLGE: ${d.id} ⚔️</div>
+                            <div class="room-title">BÖLGE: ${safeId} ⚔️</div>
                             <div class="room-players">
-                                <span style="color:var(--p1)">${r.p1Name}</span> 
+                                <span style="color:var(--p1)">${safeP1}</span> 
                                 <span style="color:#555">vs</span> 
-                                <span style="color:var(--p2)">${r.p2Name || 'GİZLİ'}</span>
+                                <span style="color:var(--p2)">${safeP2 || 'GİZLİ'}</span>
                             </div>
                             <div class="room-time" style="color:var(--danger)">🔴 SAVAŞTA</div>
                         </div>
@@ -484,10 +504,11 @@
         let id = Math.floor(100 + Math.random() * 900).toString();
         let pass = "";
         if(isPrivate) {
-            const inputId = document.getElementById('customRoomCode').value;
-            const inputPass = document.getElementById('customRoomPass').value;
+            const inputId = document.getElementById('customRoomCode').value.trim();
+            const inputPass = document.getElementById('customRoomPass').value.trim();
             if(inputId.length < 3 || inputPass.length < 5) { document.getElementById('createError').style.display = 'block'; return; }
-            id = inputId; pass = inputPass;
+            id = escapeHTML(inputId); 
+            pass = escapeHTML(inputPass);
         }
         curRoomId = id; myRole = 'p1';
         await setDoc(doc(db, "conquest_rooms", id), {
@@ -541,6 +562,7 @@
             
             c.onclick = () => { 
                 const now = Date.now();
+                // Hızlı tıklama koruması (Rate Limit) 150ms
                 if(canPlay && !isFin && (now - lastClickTime > 150) && localCells[i] !== myRole) { 
                     updateDoc(doc(db, "conquest_rooms", id), { [`cells.${i}`]: myRole }); 
                     sfx.tap.currentTime = 0; 
@@ -562,9 +584,9 @@
                 return;
             }
 
-            document.getElementById('n1').innerText = d.p1Name;
-            document.getElementById('n2').innerText = d.p2Name || "BEKLENİYOR...";
-            document.getElementById('timer-display').innerText = d.timer;
+            document.getElementById('n1').innerText = escapeHTML(d.p1Name);
+            document.getElementById('n2').innerText = escapeHTML(d.p2Name) || "BEKLENİYOR...";
+            document.getElementById('timer-display').innerText = escapeHTML(d.timer);
 
             if(d.status === 'playing') canPlay = true;
 
@@ -584,8 +606,11 @@
             let s1=0, s2=0;
             document.querySelectorAll('.cell').forEach((c, i) => {
                 if(d.cells[i]) { 
-                    c.className = 'cell ' + d.cells[i]; 
-                    d.cells[i] === 'p1' ? s1++ : s2++; 
+                    // Yalnızca geçerli rolleri kabul et
+                    if(d.cells[i] === 'p1' || d.cells[i] === 'p2') {
+                        c.className = 'cell ' + d.cells[i]; 
+                        d.cells[i] === 'p1' ? s1++ : s2++; 
+                    }
                 }
             });
             document.getElementById('s1').innerText = s1; document.getElementById('s2').innerText = s2;
