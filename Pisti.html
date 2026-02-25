@@ -26,7 +26,6 @@
 
 <script>
     if (window.history.replaceState) {
-        // Pisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
 </script>
@@ -44,13 +43,11 @@
         background:#03050a; color:white; display:flex; flex-direction:column; align-items:center;
     }
 
-    /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
     .sr-only {
         position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
         overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
     }
     
-    /* --- GÜNCELLENEN MC COIN ÜST BAR TASARIMI --- */
     .top-bar{
         position:fixed;top:0;width:100%;height:60px;
         display:flex;align-items:center;justify-content:space-between;
@@ -83,8 +80,6 @@
         border: 1px solid rgba(255,255,255,0.2);
     }
     
-    /* ------------------------------------ */
-
     .back-btn {
         background: #ff3b30;
         color: white;
@@ -215,25 +210,25 @@
     <div class="modal-overlay" id="modalOverlay" aria-hidden="true" aria-live="assertive">
         <div class="modal-content">
             <div class="modal-msg" id="modalMsg">-</div>
-            <button class="modal-btn" onclick="closeModal()" aria-label="Kapat">TAMAM</button>
+            <button class="modal-btn" onclick="window.closeModal()" aria-label="Kapat">TAMAM</button>
         </div>
     </div>
 
     <div class="chips" id="chipsArea" aria-label="Bahis Çipleri">
-        <div class="chip c-cancel" onclick="cancelBet()" aria-label="Bahsi İptal Et">İPTAL</div>
-        <div class="chip c100" id="chip100" onclick="addBet(100)">100</div>
-        <div class="chip c500" id="chip500" onclick="addBet(500)">500</div>
-        <div class="chip c2000" id="chip2000" onclick="addBet(2000)">2K</div>
-        <div class="chip c10000" id="chip10000" onclick="addBet(10000)">10K</div>
+        <div class="chip c-cancel" onclick="window.cancelBet()" aria-label="Bahsi İptal Et">İPTAL</div>
+        <div class="chip c100" id="chip100" onclick="window.addBet(100)">100</div>
+        <div class="chip c500" id="chip500" onclick="window.addBet(500)">500</div>
+        <div class="chip c2000" id="chip2000" onclick="window.addBet(2000)">2K</div>
+        <div class="chip c10000" id="chip10000" onclick="window.addBet(10000)">10K</div>
     </div>
 
-    <button class="start-btn" id="startBtn" onclick="unlockAudioAndStart()" aria-label="Masaya Otur ve Başla">MASAYA OTUR</button>
+    <button class="start-btn" id="startBtn" onclick="window.unlockAudioAndStart()" aria-label="Masaya Otur ve Başla">MASAYA OTUR</button>
 </main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -248,275 +243,296 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// PROFESYONEL SES MOTORU
-const sfx = {
-    chip: new Audio("https://cdn.freesound.org/previews/201/201491_3325145-lq.mp3"),
-    cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
-    cardCollect: new Audio("https://cdn.freesound.org/previews/202/202029_3325145-lq.mp3"),
-    win: new Audio("https://cdn.freesound.org/previews/391/391539_5235550-lq.mp3"),
-    lose: new Audio("https://cdn.freesound.org/previews/174/174499_1079313-lq.mp3"),
-    pisti: new Audio("https://cdn.freesound.org/previews/253/253177_4404552-lq.mp3"),
-    deal: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3")
-};
+// GÜVENLİK: IIFE (Kapsülleme) ile tarayıcı konsolundan hile yapılmasını engelliyoruz.
+(function() {
+    "use strict";
 
-function unlockAudioAndStart() {
-    Object.values(sfx).forEach(sound => {
-        sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(() => {});
-    });
-    startGame();
-}
-window.unlockAudioAndStart = unlockAudioAndStart;
+    const sfx = {
+        chip: new Audio("https://cdn.freesound.org/previews/201/201491_3325145-lq.mp3"),
+        cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
+        cardCollect: new Audio("https://cdn.freesound.org/previews/202/202029_3325145-lq.mp3"),
+        win: new Audio("https://cdn.freesound.org/previews/391/391539_5235550-lq.mp3"),
+        lose: new Audio("https://cdn.freesound.org/previews/174/174499_1079313-lq.mp3"),
+        pisti: new Audio("https://cdn.freesound.org/previews/253/253177_4404552-lq.mp3"),
+        deal: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3")
+    };
 
-function playSfx(name) {
-    if(sfx[name]) {
-        sfx[name].currentTime = 0;
-        sfx[name].volume = 0.8;
-        sfx[name].play().catch(() => {});
+    window.unlockAudioAndStart = function() {
+        Object.values(sfx).forEach(sound => {
+            sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(() => {});
+        });
+        startGame();
     }
-}
 
-let balance = 0, bet = 0, currentBet = 0, userRef = null, gameStarted = false, dealing = false, turnLock = false;
-let deck = [], player = [], computer = [], table = [];
-let ps = 0, cs = 0, round = 0;
+    function playSfx(name) {
+        if(sfx[name]) {
+            sfx[name].currentTime = 0;
+            sfx[name].volume = 0.8;
+            sfx[name].play().catch(() => {});
+        }
+    }
 
-onAuthStateChanged(auth, user => {
-    if (!user) return;
-    userRef = doc(db, "users", user.uid);
-    onSnapshot(userRef, snap => {
-        balance = snap.data().balance || 0;
+    let balance = 0, bet = 0, currentBet = 0, userRef = null, gameStarted = false, dealing = false, turnLock = false;
+    let deck = [], player = [], computer = [], table = [];
+    let ps = 0, cs = 0, round = 0;
+
+    onAuthStateChanged(auth, user => {
+        if (!user) return;
+        userRef = doc(db, "users", user.uid);
+        onSnapshot(userRef, snap => {
+            balance = snap.data()?.balance || 0;
+            updateUI();
+        });
+    });
+
+    function updateUI() {
+        document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+        document.getElementById("bet").innerText = currentBet.toLocaleString('tr-TR');
+        
+        [100, 500, 2000, 10000].forEach(val => {
+            const el = document.getElementById("chip" + val);
+            if (balance < val || currentBet + val > 50000) el.classList.add("disabled");
+            else el.classList.remove("disabled");
+        });
+    }
+
+    window.addBet = function(amount) {
+        if (gameStarted) return;
+        if (balance < amount || currentBet + amount > 50000) return;
+        currentBet += amount;
+        balance -= amount;
+        playSfx("chip");
         updateUI();
-    });
-});
-
-function updateUI() {
-    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-    document.getElementById("bet").innerText = currentBet.toLocaleString('tr-TR');
-    
-    [100, 500, 2000, 10000].forEach(val => {
-        const el = document.getElementById("chip" + val);
-        if (balance < val || currentBet + val > 50000) el.classList.add("disabled");
-        else el.classList.remove("disabled");
-    });
-}
-
-window.addBet = function(amount) {
-    if (gameStarted) return;
-    if (balance < amount || currentBet + amount > 50000) return;
-    currentBet += amount;
-    balance -= amount;
-    playSfx("chip");
-    updateUI();
-}
-
-window.cancelBet = function() {
-    if (gameStarted) return;
-    balance += currentBet;
-    currentBet = 0;
-    playSfx("chip");
-    updateUI();
-}
-
-async function animateDeals(targetId, count) {
-    dealing = true;
-    const targetEl = document.getElementById(targetId);
-    for (let i = 0; i < count; i++) {
-        const animCard = document.createElement("div");
-        animCard.className = "deal-anim-card";
-        animCard.style.left = "50%";
-        animCard.style.top = "-100px";
-        document.body.appendChild(animCard);
-        await new Promise(r => setTimeout(r, 50)); 
-        const rect = targetEl.getBoundingClientRect();
-        playSfx("deal");
-        animCard.style.left = (rect.left + (i * 10)) + "px";
-        animCard.style.top = rect.top + "px";
-        animCard.style.transform = "rotate(360deg)";
-        await new Promise(r => setTimeout(r, 150)); 
-        setTimeout(() => animCard.remove(), 500);
-    }
-    dealing = false;
-}
-
-window.startGame = async function() {
-    if (currentBet < 100) { showModal("Minimum MC 100 olmalıdır!"); return; }
-    gameStarted = true;
-    bet = currentBet;
-    await updateDoc(userRef, { balance });
-    document.getElementById("chipsArea").style.display = "none";
-    document.getElementById("startBtn").style.display = "none";
-    ps = 0; cs = 0; round = 0;
-    createDeck();
-    await animateDeals("tableCards", 4);
-    table = ["BACK", "BACK", "BACK", deck.shift()];
-    render();
-    setTimeout(dealRound, 500);
-}
-
-function createDeck() {
-    const suits = ["H", "D", "C", "S"], vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
-    deck = [];
-    suits.forEach(s => vals.forEach(v => deck.push(v + s)));
-    deck.sort(() => Math.random() - 0.5);
-}
-
-async function dealRound() {
-    if (round >= 6) { endGame(); return; }
-    await animateDeals("computerHand", 4);
-    for (let i = 0; i < 4; i++) computer.push(deck.shift());
-    await animateDeals("playerHand", 4);
-    for (let i = 0; i < 4; i++) player.push(deck.shift());
-    round++;
-    render();
-}
-
-function render() {
-    const ph = document.getElementById("playerHand");
-    const ch = document.getElementById("computerHand");
-    const tc = document.getElementById("tableCards");
-    ph.innerHTML = ""; ch.innerHTML = ""; tc.innerHTML = "";
-
-    player.forEach((c, i) => {
-        let img = document.createElement("img");
-        img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
-        img.className = "card";
-        img.alt = `Sizin Kartınız ${i+1}`;
-        img.onclick = () => play(i);
-        ph.appendChild(img);
-    });
-    computer.forEach(() => {
-        let img = document.createElement("img");
-        img.src = "https://deckofcardsapi.com/static/img/back.png";
-        img.className = "card";
-        img.alt = "Bilgisayarın Kartı";
-        ch.appendChild(img);
-    });
-    table.forEach((c, i) => {
-        let img = document.createElement("img");
-        img.src = c === "BACK" ? "https://deckofcardsapi.com/static/img/back.png" : `https://deckofcardsapi.com/static/img/${c}.png`;
-        img.className = "stack-card";
-        img.alt = "Yerdeki Kart";
-        img.style.transform = `rotate(${i * 2}deg) translate(${i}px, ${i}px)`;
-        img.style.zIndex = i;
-        tc.appendChild(img);
-    });
-    document.getElementById("ps").innerText = ps;
-    document.getElementById("cs").innerText = cs;
-}
-
-function play(i) {
-    if (dealing || !gameStarted || turnLock) return;
-    turnLock = true;
-    const card = player.splice(i, 1)[0];
-    const imgEl = document.querySelectorAll("#playerHand img")[i];
-    animateThrow(imgEl, card, "player");
-}
-
-function compPlay() {
-    if (computer.length === 0) return;
-    
-    let cardIndex = 0;
-    const topCard = table.length > 0 ? table[table.length - 1] : null;
-
-    if (bet >= 15000) { 
-        let match = computer.findIndex(c => topCard && c[0] === topCard[0]);
-        let jack = computer.findIndex(c => c[0] === 'J');
-        if (match !== -1) cardIndex = match;
-        else if (jack !== -1 && table.length > 1) cardIndex = jack;
-        else cardIndex = Math.floor(Math.random() * computer.length);
-    } 
-    else {
-        cardIndex = Math.floor(Math.random() * computer.length);
     }
 
-    const card = computer.splice(cardIndex, 1)[0];
-    const el = document.querySelectorAll("#computerHand img")[0];
-    animateThrow(el, card, "comp");
-}
+    window.cancelBet = function() {
+        if (gameStarted) return;
+        balance += currentBet;
+        currentBet = 0;
+        playSfx("chip");
+        updateUI();
+    }
 
-function animateThrow(el, card, owner) {
-    playSfx("cardThrow");
-    const rect = el.getBoundingClientRect();
-    const clone = el.cloneNode();
-    clone.className = "card-throw";
-    clone.style.left = rect.left + "px";
-    clone.style.top = rect.top + "px";
-    document.body.appendChild(clone);
-    setTimeout(() => {
-        const target = document.getElementById("tableCards").getBoundingClientRect();
-        clone.style.left = target.left + "px";
-        clone.style.top = target.top + "px";
-    }, 10);
-    setTimeout(() => {
-        clone.remove();
-        table.push(card);
-        checkRule(owner);
+    async function animateDeals(targetId, count) {
+        dealing = true;
+        const targetEl = document.getElementById(targetId);
+        for (let i = 0; i < count; i++) {
+            const animCard = document.createElement("div");
+            animCard.className = "deal-anim-card";
+            animCard.style.left = "50%";
+            animCard.style.top = "-100px";
+            document.body.appendChild(animCard);
+            await new Promise(r => setTimeout(r, 50)); 
+            const rect = targetEl.getBoundingClientRect();
+            playSfx("deal");
+            animCard.style.left = (rect.left + (i * 10)) + "px";
+            animCard.style.top = rect.top + "px";
+            animCard.style.transform = "rotate(360deg)";
+            await new Promise(r => setTimeout(r, 150)); 
+            setTimeout(() => animCard.remove(), 500);
+        }
+        dealing = false;
+    }
+
+    async function startGame() {
+        if (currentBet < 100) { showModal("Minimum MC 100 olmalıdır!"); return; }
+        if (gameStarted) return;
+
+        gameStarted = true;
+        bet = currentBet;
+        
+        // GÜVENLİK: Bakiyeyi anlık sayıya eşitlemek yerine Increment (Güvenli düşüm) yapıyoruz.
+        try {
+            await updateDoc(userRef, { balance: increment(-bet) });
+        } catch(e) {
+            showModal("Bakiye düşülemedi, bağlantınızı kontrol edin.");
+            gameStarted = false;
+            return;
+        }
+
+        document.getElementById("chipsArea").style.display = "none";
+        document.getElementById("startBtn").style.display = "none";
+        ps = 0; cs = 0; round = 0;
+        createDeck();
+        await animateDeals("tableCards", 4);
+        table = ["BACK", "BACK", "BACK", deck.shift()];
         render();
-        if (owner === "player") setTimeout(compPlay, 800);
+        setTimeout(dealRound, 500);
+    }
+
+    function createDeck() {
+        const suits = ["H", "D", "C", "S"], vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+        deck = [];
+        suits.forEach(s => vals.forEach(v => deck.push(v + s)));
+        deck.sort(() => Math.random() - 0.5);
+    }
+
+    async function dealRound() {
+        if (round >= 6) { endGame(); return; }
+        await animateDeals("computerHand", 4);
+        for (let i = 0; i < 4; i++) computer.push(deck.shift());
+        await animateDeals("playerHand", 4);
+        for (let i = 0; i < 4; i++) player.push(deck.shift());
+        round++;
+        render();
+    }
+
+    function render() {
+        const ph = document.getElementById("playerHand");
+        const ch = document.getElementById("computerHand");
+        const tc = document.getElementById("tableCards");
+        ph.innerHTML = ""; ch.innerHTML = ""; tc.innerHTML = "";
+
+        player.forEach((c, i) => {
+            let img = document.createElement("img");
+            img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
+            img.className = "card";
+            img.alt = `Sizin Kartınız ${i+1}`;
+            img.onclick = () => play(i);
+            ph.appendChild(img);
+        });
+        computer.forEach(() => {
+            let img = document.createElement("img");
+            img.src = "https://deckofcardsapi.com/static/img/back.png";
+            img.className = "card";
+            img.alt = "Bilgisayarın Kartı";
+            ch.appendChild(img);
+        });
+        table.forEach((c, i) => {
+            let img = document.createElement("img");
+            img.src = c === "BACK" ? "https://deckofcardsapi.com/static/img/back.png" : `https://deckofcardsapi.com/static/img/${c}.png`;
+            img.className = "stack-card";
+            img.alt = "Yerdeki Kart";
+            img.style.transform = `rotate(${i * 2}deg) translate(${i}px, ${i}px)`;
+            img.style.zIndex = i;
+            tc.appendChild(img);
+        });
+        document.getElementById("ps").innerText = ps;
+        document.getElementById("cs").innerText = cs;
+    }
+
+    function play(i) {
+        if (dealing || !gameStarted || turnLock) return;
+        turnLock = true;
+        const card = player.splice(i, 1)[0];
+        const imgEl = document.querySelectorAll("#playerHand img")[i];
+        animateThrow(imgEl, card, "player");
+    }
+
+    function compPlay() {
+        if (computer.length === 0) return;
+        
+        let cardIndex = 0;
+        const topCard = table.length > 0 ? table[table.length - 1] : null;
+
+        if (bet >= 15000) { 
+            let match = computer.findIndex(c => topCard && c[0] === topCard[0]);
+            let jack = computer.findIndex(c => c[0] === 'J');
+            if (match !== -1) cardIndex = match;
+            else if (jack !== -1 && table.length > 1) cardIndex = jack;
+            else cardIndex = Math.floor(Math.random() * computer.length);
+        } 
         else {
-            turnLock = false;
-            if(player.length === 0 && computer.length === 0) {
-                if (deck.length > 0) setTimeout(dealRound, 500);
-                else setTimeout(endGame, 1000);
+            cardIndex = Math.floor(Math.random() * computer.length);
+        }
+
+        const card = computer.splice(cardIndex, 1)[0];
+        const el = document.querySelectorAll("#computerHand img")[0];
+        animateThrow(el, card, "comp");
+    }
+
+    function animateThrow(el, card, owner) {
+        playSfx("cardThrow");
+        const rect = el.getBoundingClientRect();
+        const clone = el.cloneNode();
+        clone.className = "card-throw";
+        clone.style.left = rect.left + "px";
+        clone.style.top = rect.top + "px";
+        document.body.appendChild(clone);
+        setTimeout(() => {
+            const target = document.getElementById("tableCards").getBoundingClientRect();
+            clone.style.left = target.left + "px";
+            clone.style.top = target.top + "px";
+        }, 10);
+        setTimeout(() => {
+            clone.remove();
+            table.push(card);
+            checkRule(owner);
+            render();
+            if (owner === "player") setTimeout(compPlay, 800);
+            else {
+                turnLock = false;
+                if(player.length === 0 && computer.length === 0) {
+                    if (deck.length > 0) setTimeout(dealRound, 500);
+                    else setTimeout(endGame, 1000);
+                }
             }
-        }
-    }, 400);
-}
-
-function checkRule(owner) {
-    if (table.length < 2) return;
-    const last = table[table.length - 1];
-    const prev = table[table.length - 2];
-    if (prev === "BACK") return;
-    if (last[0] === "J" || last[0] === prev[0]) {
-        playSfx("cardCollect");
-        let points = table.length;
-        if (table.length === 2 && last[0] === prev[0]) {
-            points = 10; 
-            showPistiEffect();
-        }
-        if (owner === "player") ps += points; else cs += points;
-        table = [];
+        }, 400);
     }
-}
 
-function showPistiEffect() {
-    playSfx("pisti");
-    const el = document.getElementById("pistiDisplay");
-    el.style.display = "block";
-    setTimeout(() => el.style.display = "none", 1500);
-}
-
-async function endGame() {
-    gameStarted = false;
-    let msg = "";
-    if (ps > cs) {
-        let winValue = bet * 2;
-        balance += winValue;
-        playSfx("win");
-        msg = `TEBRİKLER!\n${winValue.toLocaleString('tr-TR')} MC Kazandınız.`;
-    } else if (ps < cs) {
-        playSfx("lose");
-        msg = "KAYBETTİNİZ!\nKrupiyer kazandı.";
-    } else {
-        balance += bet;
-        msg = "BERABERE!\nMC iade edildi.";
+    function checkRule(owner) {
+        if (table.length < 2) return;
+        const last = table[table.length - 1];
+        const prev = table[table.length - 2];
+        if (prev === "BACK") return;
+        if (last[0] === "J" || last[0] === prev[0]) {
+            playSfx("cardCollect");
+            let points = table.length;
+            if (table.length === 2 && last[0] === prev[0]) {
+                points = 10; 
+                showPistiEffect();
+            }
+            if (owner === "player") ps += points; else cs += points;
+            table = [];
+        }
     }
-    currentBet = 0; bet = 0;
-    await updateDoc(userRef, { balance });
-    document.getElementById("chipsArea").style.display = "flex";
-    document.getElementById("startBtn").style.display = "block";
-    showModal(msg);
-    updateUI();
-    render();
-}
 
-window.showModal = function(msg) {
-    document.getElementById("modalMsg").innerText = msg;
-    document.getElementById("modalOverlay").style.display = "flex";
-}
-window.closeModal = function() {
-    document.getElementById("modalOverlay").style.display = "none";
-}
+    function showPistiEffect() {
+        playSfx("pisti");
+        const el = document.getElementById("pistiDisplay");
+        el.style.display = "block";
+        setTimeout(() => el.style.display = "none", 1500);
+    }
+
+    async function endGame() {
+        gameStarted = false;
+        let msg = "";
+        try {
+            if (ps > cs) {
+                let winValue = bet * 2;
+                // GÜVENLİK: Kazançlar increment ile güvenli eklenir
+                await updateDoc(userRef, { balance: increment(winValue) });
+                playSfx("win");
+                msg = `TEBRİKLER!\n${winValue.toLocaleString('tr-TR')} MC Kazandınız.`;
+            } else if (ps < cs) {
+                playSfx("lose");
+                msg = "KAYBETTİNİZ!\nKrupiyer kazandı.";
+            } else {
+                // Beraberlik durumunda bahsi iade et
+                await updateDoc(userRef, { balance: increment(bet) });
+                msg = "BERABERE!\nMC iade edildi.";
+            }
+        } catch (e) {
+            msg = "Sonuç kaydedilirken bir hata oluştu!";
+        }
+
+        currentBet = 0; bet = 0;
+        document.getElementById("chipsArea").style.display = "flex";
+        document.getElementById("startBtn").style.display = "block";
+        showModal(msg);
+        updateUI();
+        render();
+    }
+
+    window.showModal = function(msg) {
+        document.getElementById("modalMsg").innerText = msg;
+        document.getElementById("modalOverlay").style.display = "flex";
+    }
+    window.closeModal = function() {
+        document.getElementById("modalOverlay").style.display = "none";
+    }
+
+})();
 </script>
 </body>
 </html>
