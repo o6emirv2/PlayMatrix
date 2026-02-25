@@ -26,10 +26,20 @@
 
 <script>
     if (window.history.replaceState) {
-        // BlackJack.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
 </script>
+
+<!-- CSP (tasarımı bozmaz; gerekli domainleri allowlist yaptık) -->
+<meta http-equiv="Content-Security-Policy" content="
+default-src 'self' https: data: blob:;
+script-src 'self' https://www.gstatic.com https://www.googleapis.com 'unsafe-inline';
+style-src 'self' https://fonts.googleapis.com https://cdnjs.cloudflare.com 'unsafe-inline';
+img-src 'self' https: data: blob:;
+media-src 'self' https: data: blob:;
+connect-src 'self' https://emirhan-siye.onrender.com https://*.googleapis.com https://*.gstatic.com https://*.firebaseapp.com https://*.firebasedatabase.app https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com;
+font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:;
+">
 
 <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
@@ -100,7 +110,7 @@
     .game-container { 
         flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
         padding: 80px 0 20px 0; perspective: 1200px; position: relative; 
-        overflow-y: auto; /* Kartlar çok çoğalırsa dikey kaydırma sağlar */
+        overflow-y: auto;
     }
     
     .area { width: 100%; text-align: center; }
@@ -119,24 +129,24 @@
         box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.1);
     }
 
-    /* KART GÖRÜNÜM VE ANİMASYONLARI (Taşma Düzeltmesi) */
+    /* KART GÖRÜNÜM VE ANİMASYONLARI */
     .cards-wrapper { 
-        display: flex; justify-content: center; flex-wrap: wrap; /* Kartlar sığmazsa alt satıra geçer */
-        gap: 5px; /* Üst üste binmeyi azaltarak netliği artırdık */
-        margin-left: -15px; /* Hafif içe geçme efekti için negatif marj */
+        display: flex; justify-content: center; flex-wrap: wrap;
+        gap: 5px;
+        margin-left: -15px;
         min-height: 105px; padding: 0 10px; 
     }
     
     .card-3d {
-        width: 65px; height: 95px; /* Kartları bir tık küçülttük ki ekrana sığsınlar */
+        width: 65px; height: 95px;
         position: relative;
         transform-style: preserve-3d;
         transform: translate(350px, -250px) rotateZ(35deg) scale(0.4);
         opacity: 0;
-        margin-left: -20px; /* Kartların üst üste binme efekti */
+        margin-left: -20px;
         transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
     }
-    .card-3d:first-child { margin-left: 0; } /* İlk kart normal dursun */
+    .card-3d:first-child { margin-left: 0; }
 
     .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
     .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.5s ease-in-out; }
@@ -176,7 +186,7 @@
 
     /* BÖLÜNMÜŞ ELLER DÜZENİ */
     .hands-container { 
-        display: flex; justify-content: center; flex-wrap: wrap; /* İki el oluştuğunda dar ekranda alt alta inmesini sağlar */
+        display: flex; justify-content: center; flex-wrap: wrap;
         gap: 15px; width: 100%; transition: 0.3s; 
     }
     .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
@@ -185,7 +195,7 @@
         box-shadow: 0 0 20px rgba(212,175,55,0.2), inset 0 0 15px rgba(212,175,55,0.1); 
     }
 
-    /* ÇİPLER LÜKS VE BENZERSİZ TASARIM */
+    /* ÇİPLER */
     .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; transition: opacity 0.3s;}
     .chip { 
         width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
@@ -193,13 +203,12 @@
         border: 4px dashed #d4af37; box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8); 
     }
     .chip:active { transform: scale(0.9); }
-    /* Renkler Birbirinden Tamamen Ayrıldı */
-    .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;} /* Gri/Beyaz */
-    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; border-color: #fff;} /* Yeşil */
-    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; border-color: #fff;} /* Kırmızı */
-    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; border-color: #fff;} /* Mavi */
-    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; border-color: #d4af37;} /* Mor */
-    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;} /* Siyah/Altın */
+    .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;}
+    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; border-color: #fff;}
+    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; border-color: #fff;}
+    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; border-color: #fff;}
+    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; border-color: #d4af37;}
+    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;}
     
     .cancel-btn { 
         width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; 
@@ -252,12 +261,14 @@
 
     <div class="action-area">
         <div id="message" aria-live="polite">MC KULLAN (MİN: 1K)</div>
+
         <div class="controls" id="controls">
             <button id="hit" class="btn" aria-label="Kart Çek">ÇEK</button>
             <button id="stand" class="btn" aria-label="Dur">KAL</button>
             <button id="double" class="btn" aria-label="Bahsi İkiye Katla">2X</button>
             <button id="split" class="btn" aria-label="Kartları Böl">BÖL</button>
         </div>
+
         <div class="controls" id="insurance-controls">
             <button id="ins-yes" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);" aria-label="Sigorta Al">EVET</button>
             <button id="ins-no" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);" aria-label="Sigorta Alma">HAYIR</button>
@@ -287,10 +298,46 @@
 </main>
 
 <script type="module">
+/**
+ * ✅ PlayMatrix Çoklu Oyun Motoru Uyumlu (Render API + Firebase ID Token)
+ *
+ * Beklenen API sözleşmesi (öneri):
+ *  - GET  /api/me
+ *      -> { ok:true, balance:number }
+ *
+ *  - POST /api/blackjack/start  { bet:number }
+ *      -> { ok:true, balance:number, gameId:string, state:{...} }
+ *
+ *  - POST /api/blackjack/insurance { gameId:string, take:boolean }
+ *      -> { ok:true, balance:number, state:{...} }
+ *
+ *  - POST /api/blackjack/action { gameId:string, action:'hit'|'stand'|'double'|'split' }
+ *      -> { ok:true, balance:number, state:{...}, resolved?:boolean, payout?:number, message?:string, didWin?:boolean }
+ *
+ *  - GET /api/blackjack/state (opsiyonel; reload sonrası devam)
+ *      -> { ok:true, active:boolean, balance:number, gameId?:string, state?:{...} }
+ *
+ * state formatı (minimum):
+ *  {
+ *    dealerCards: [{suit:'S',value:1}, ...],
+ *    dealerHidden: true/false,
+ *    hands: [
+ *      { bet:number, cards:[{suit,value}...], status:'playing'|'stand'|'bust'|'done' }
+ *    ],
+ *    currentHand: 0,
+ *    insuranceOffered: true/false,
+ *    insuranceBet: number,
+ *    allowedActions: { hit:true, stand:true, double:true, split:true }
+ *  }
+ */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* ✅ Render API Base */
+const API_BASE = "https://emirhan-siye.onrender.com";
+
+/* Firebase */
 const firebaseConfig = {
     apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
     authDomain:"emirhan-site.firebaseapp.com",
@@ -299,448 +346,751 @@ const firebaseConfig = {
     messagingSenderId:"668871888390",
     appId:"1:668871888390:web:76568bda84cb1641f7bd87"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-let balance = 0, initialBet = 0, userRef = null;
-let deck = [], dealer = [], dealerHidden = true;
-let playerHands = []; 
-let currentHandIdx = 0; 
-let insuranceBet = 0;
-
-let gameState = "loading", betCountdown = null, actionTimer = null, isProcessing = false;
+/* DOM */
+const balanceEl = document.getElementById("balance");
+const betAmountEl = document.getElementById("betAmount");
 const messageEl = document.getElementById("message");
 
-// --- GERÇEKÇİ SES KONTROLÜ (iOS UYUMLU) ---
+const dealerCardsEl = document.getElementById("dealerCards");
+const dealerScoreEl = document.getElementById("dealerScore");
+
+const hand0El = document.getElementById("hand0");
+const hand1El = document.getElementById("hand1");
+const hand0Box = document.getElementById("hand0-box");
+const hand1Box = document.getElementById("hand1-box");
+const score0El = document.getElementById("score0");
+const score1El = document.getElementById("score1");
+
+const chipsArea = document.getElementById("chipsArea");
+
+const controlsEl = document.getElementById("controls");
+const insuranceControlsEl = document.getElementById("insurance-controls");
+const btnHit = document.getElementById("hit");
+const btnStand = document.getElementById("stand");
+const btnDouble = document.getElementById("double");
+const btnSplit = document.getElementById("split");
+const btnInsYes = document.getElementById("ins-yes");
+const btnInsNo = document.getElementById("ins-no");
+
+/* Ses (iOS uyumlu) */
 const sounds = {};
 let audioCtx = null;
 
 async function initAudio() {
+    if (audioCtx) return;
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AudioContext();
-    
+
     const urls = {
-        card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',   
+        card: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
         win: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3',
         lose: 'https://assets.mixkit.co/active_storage/sfx/2043/2043-preview.mp3',
-        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',   
+        tick: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
         chip: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'
     };
-    
+
     for (const [name, url] of Object.entries(urls)) {
         try {
             const response = await fetch(url);
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
             sounds[name] = audioBuffer;
-        } catch(e) { console.error("Ses yüklenemedi:", name); }
+        } catch(e) { console.warn("Ses yüklenemedi:", name); }
     }
-}
 
-document.getElementById('systemStartBtn').addEventListener('click', async () => { 
-    await initAudio(); 
-    if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-    }
-    
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    // iOS unlock ping
     const buffer = audioCtx.createBuffer(1, 1, 22050);
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;
     source.connect(audioCtx.destination);
     source.start(0);
-
-    document.getElementById('sys-start-overlay').style.display='none'; 
-});
+}
 
 function playSound(name) {
     if(!audioCtx || !sounds[name]) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    
     const source = audioCtx.createBufferSource();
     source.buffer = sounds[name];
-    if (name === 'card') source.playbackRate.value = 0.95 + Math.random() * 0.1; 
+    if (name === 'card') source.playbackRate.value = 0.95 + Math.random() * 0.1;
     source.connect(audioCtx.destination);
     source.start(0);
 }
 
-onAuthStateChanged(auth, user => {
-    if(!user) { signInAnonymously(auth); return; }
-    userRef = doc(db, "users", user.uid);
-    onSnapshot(userRef, s => {
-        if(s.exists()) {
-            balance = s.data().balance || 0;
-            if(gameState === "loading" || gameState === "betting") {
-                document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-                if(gameState === "loading") gameState = "betting";
-            }
-        }
-    });
+document.getElementById('systemStartBtn').addEventListener('click', async () => {
+    await initAudio();
+    document.getElementById('sys-start-overlay').style.display='none';
 });
 
+/* --- Güvenli API Fetch (Bearer ID Token + 401 refresh + timeout) --- */
+let lastReqId = 0;
+
+async function apiFetch(path, method = "POST", body = null) {
+    if (!auth.currentUser) throw new Error("Oturum yok.");
+
+    const reqId = ++lastReqId;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 12000);
+
+    const doFetch = async (forceRefresh = false) => {
+        const token = await auth.currentUser.getIdToken(forceRefresh);
+        return fetch(API_BASE + path, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+                "X-PlayMatrix-Game": "blackjack",
+                "X-Client-ReqId": String(reqId)
+            },
+            body: body ? JSON.stringify(body) : null,
+            mode: "cors",
+            signal: controller.signal
+        });
+    };
+
+    try {
+        let res = await doFetch(false);
+
+        if (res.status === 401) {
+            res = await doFetch(true);
+        }
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) {
+            throw new Error(data?.error || "Sunucu hatası.");
+        }
+
+        // Out-of-order response koruması (eski response UI bozmasın)
+        if (reqId !== lastReqId) {
+            // Yeni istek atılmış; bu response'u UI'ye uygulama.
+            return { __ignored: true };
+        }
+
+        return data;
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+/* --- Oyun Değişkenleri --- */
+let balance = 0;
+let initialBet = 0;
+let betCountdown = null;
+let actionTimer = null;
+let isProcessing = false;
+
+let gameId = null;
+let state = null;     // sunucudan gelen state
+let prevState = null; // animasyon için diff
+
+/* --- UI yardımcıları --- */
+function fmt(n){ return Math.floor(Number(n||0)).toLocaleString('tr-TR'); }
+
+function setControlsDisabled(disabled) {
+    const btns = document.querySelectorAll('.controls .btn');
+    btns.forEach(btn => btn.disabled = disabled);
+}
+
+function showControls(show) {
+    controlsEl.style.display = show ? "flex" : "none";
+    if (!show) setControlsDisabled(true);
+}
+
+function showInsurance(show) {
+    insuranceControlsEl.style.display = show ? "flex" : "none";
+    if (show) setControlsDisabled(false);
+}
+
+function clearBoard() {
+    dealerCardsEl.innerHTML = "";
+    hand0El.innerHTML = "";
+    hand1El.innerHTML = "";
+    hand1Box.style.display = "none";
+    dealerScoreEl.innerText = "0";
+    score0El.innerText = "0";
+    score1El.innerText = "0";
+    hand0Box.classList.remove("active");
+    hand1Box.classList.remove("active");
+}
+
+function cardVal(v){ return {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}[v] || v; }
+
+function getScore(cards) {
+    let t = 0, a = 0;
+    (cards || []).forEach(c => {
+        const vv = Number(c.value);
+        let v = vv > 10 ? 10 : (vv === 1 ? 11 : vv);
+        if(v === 11) a++;
+        t += v;
+    });
+    while(t > 21 && a > 0) { t -= 10; a--; }
+    return { total: t, aces: a };
+}
+
+function dealerUpcardScore(dealerCards) {
+    const c = (dealerCards || [])[0];
+    if(!c) return 0;
+    const vv = Number(c.value);
+    return vv > 10 ? 10 : (vv === 1 ? 11 : vv);
+}
+
+function updateScoreBadges(st) {
+    const hands = st?.hands || [];
+    const dealerCards = st?.dealerCards || [];
+    const dealerHidden = !!st?.dealerHidden;
+
+    // Player scores
+    const s0 = hands[0]?.cards ? getScore(hands[0].cards).total : 0;
+    score0El.innerText = String(s0);
+
+    if (hands.length > 1) {
+        hand1Box.style.display = "flex";
+        const s1 = hands[1]?.cards ? getScore(hands[1].cards).total : 0;
+        score1El.innerText = String(s1);
+    } else {
+        hand1Box.style.display = "none";
+        score1El.innerText = "0";
+    }
+
+    // Dealer score
+    const ds = dealerHidden ? dealerUpcardScore(dealerCards) : getScore(dealerCards).total;
+    dealerScoreEl.innerText = String(ds);
+
+    // Bet amount top bar: hands + insurance
+    let totalBet = Number(st?.insuranceBet || 0);
+    hands.forEach(h => totalBet += Number(h.bet || 0));
+    betAmountEl.innerText = fmt(totalBet);
+}
+
+function setActiveHand(idx) {
+    hand0Box.classList.remove("active");
+    hand1Box.classList.remove("active");
+    if (idx === 1) hand1Box.classList.add("active");
+    else hand0Box.classList.add("active");
+}
+
+/* Kart animasyonlu ekleme */
+function appendCard(divEl, card, isOpen = true) {
+    playSound('card');
+
+    const cardCont = document.createElement("div");
+    cardCont.className = "card-3d";
+
+    const frontUrl = `https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png`;
+
+    cardCont.innerHTML = `
+        <div class="card-face card-front" style="background: url('${frontUrl}') center/cover"></div>
+        <div class="card-face card-back"></div>`;
+
+    divEl.appendChild(cardCont);
+
+    return new Promise(resolve => {
+        setTimeout(() => {
+            cardCont.classList.add("show");
+            if (isOpen) {
+                setTimeout(() => cardCont.classList.add("flipped"), 400);
+            }
+            setTimeout(resolve, isOpen ? 900 : 500);
+        }, 50);
+    });
+}
+
+function flipDealerHoleIfNeeded() {
+    const cards = dealerCardsEl.querySelectorAll('.card-3d');
+    if (cards[1] && !cards[1].classList.contains('flipped')) {
+        cards[1].classList.add("flipped");
+        playSound('card');
+    }
+}
+
+/* State render (diff ile) */
+async function renderState(newState, { animate = true } = {}) {
+    if (!newState) return;
+
+    // UI active hand
+    const cur = Number(newState.currentHand || 0);
+    setActiveHand(cur);
+
+    // İlk render: board boşsa, komple çiz
+    const firstRender = !prevState;
+
+    // Dealer
+    const dealerCards = newState.dealerCards || [];
+    const prevDealer = prevState?.dealerCards || [];
+    const dealerHidden = !!newState.dealerHidden;
+
+    if (firstRender) {
+        dealerCardsEl.innerHTML = "";
+        // dealer[0] open, dealer[1] hidden olabilir
+        for (let i = 0; i < dealerCards.length; i++) {
+            const open = !(i === 1 && dealerHidden);
+            if (animate) await appendCard(dealerCardsEl, dealerCards[i], open);
+            else {
+                const tmp = document.createElement("div");
+                tmp.className = "card-3d show" + (open ? " flipped" : "");
+                const frontUrl = `https://deckofcardsapi.com/static/img/${cardVal(dealerCards[i].value)}${dealerCards[i].suit}.png`;
+                tmp.innerHTML = `
+                    <div class="card-face card-front" style="background: url('${frontUrl}') center/cover"></div>
+                    <div class="card-face card-back"></div>`;
+                dealerCardsEl.appendChild(tmp);
+            }
+        }
+    } else {
+        // dealer diff: yeni kart eklendiyse animasyonla ekle
+        if (dealerCards.length > prevDealer.length) {
+            for (let i = prevDealer.length; i < dealerCards.length; i++) {
+                // dealerHidden false ise açık ekle
+                const open = !(i === 1 && dealerHidden);
+                if (animate) await appendCard(dealerCardsEl, dealerCards[i], open);
+            }
+        }
+
+        // hole reveal
+        if (prevState?.dealerHidden && !dealerHidden) {
+            flipDealerHoleIfNeeded();
+        }
+    }
+
+    // Hands
+    const hands = newState.hands || [];
+    const prevHands = prevState?.hands || [];
+
+    // hand0
+    if (firstRender) {
+        hand0El.innerHTML = "";
+        for (let i = 0; i < (hands[0]?.cards || []).length; i++) {
+            if (animate) await appendCard(hand0El, hands[0].cards[i], true);
+        }
+    } else {
+        const prev0 = (prevHands[0]?.cards || []);
+        const now0 = (hands[0]?.cards || []);
+        if (now0.length > prev0.length) {
+            for (let i = prev0.length; i < now0.length; i++) {
+                if (animate) await appendCard(hand0El, now0[i], true);
+            }
+        }
+    }
+
+    // hand1
+    if (hands.length > 1) {
+        hand1Box.style.display = "flex";
+
+        if (firstRender) {
+            hand1El.innerHTML = "";
+            for (let i = 0; i < (hands[1]?.cards || []).length; i++) {
+                if (animate) await appendCard(hand1El, hands[1].cards[i], true);
+            }
+        } else {
+            const prev1 = (prevHands[1]?.cards || []);
+            const now1 = (hands[1]?.cards || []);
+            if (now1.length > prev1.length) {
+                for (let i = prev1.length; i < now1.length; i++) {
+                    if (animate) await appendCard(hand1El, now1[i], true);
+                }
+            }
+        }
+    } else {
+        hand1Box.style.display = "none";
+    }
+
+    // Scores + bet
+    updateScoreBadges(newState);
+
+    // Actions
+    applyAllowedActions(newState);
+
+    // Insurance UI
+    if (newState.insuranceOffered) {
+        messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
+        showInsurance(true);
+        showControls(false);
+    } else {
+        showInsurance(false);
+    }
+
+    prevState = JSON.parse(JSON.stringify(newState));
+}
+
+function applyAllowedActions(st) {
+    const a = st?.allowedActions || null;
+
+    // fallback: client-side (sadece UI için). Asıl doğrulama sunucuda.
+    const hands = st?.hands || [];
+    const cur = Number(st?.currentHand || 0);
+    const hand = hands[cur] || null;
+    const cards = hand?.cards || [];
+    const canDoubleFallback = (cards.length === 2);
+    const canSplitFallback = (hands.length === 1 && cards.length === 2 && Number(cards[0]?.value) === Number(cards[1]?.value));
+
+    const canHit = a ? !!a.hit : true;
+    const canStand = a ? !!a.stand : true;
+    const canDouble = a ? !!a.double : canDoubleFallback;
+    const canSplit = a ? !!a.split : canSplitFallback;
+
+    btnHit.style.display = canHit ? "block" : "none";
+    btnStand.style.display = canStand ? "block" : "none";
+    btnDouble.style.display = canDouble ? "block" : "none";
+    btnSplit.style.display = canSplit ? "block" : "none";
+}
+
+/* --- Bakiye / session --- */
+async function refreshMe() {
+    const me = await apiFetch("/api/me", "GET");
+    if (me.__ignored) return;
+    balance = Number(me.balance || 0);
+    balanceEl.innerText = fmt(balance);
+}
+
+async function tryResume() {
+    // Opsiyonel: server /api/blackjack/state destekliyorsa oyun devam ettir
+    try {
+        const s = await apiFetch("/api/blackjack/state", "GET");
+        if (s.__ignored) return;
+        if (s.active && s.state && s.gameId) {
+            gameId = s.gameId;
+            state = s.state;
+            prevState = null;
+            initialBet = 0;
+            chipsArea.style.display = "none";
+            messageEl.innerText = "DEVAM EDİYOR...";
+            clearBoard();
+            await renderState(state, { animate: false });
+            // Kontrolleri göster
+            if (!state.insuranceOffered) {
+                showControls(true);
+                setControlsDisabled(false);
+                startActionTimer();
+            }
+        }
+        if (typeof s.balance !== "undefined") {
+            balance = Number(s.balance || 0);
+            balanceEl.innerText = fmt(balance);
+        }
+    } catch(_) {
+        // desteklenmiyorsa sessiz geç
+    }
+}
+
+/* --- Bahis (UI-only) --- */
 window.addBet = (a) => {
-    if(gameState !== "betting" || isProcessing) return;
+    if (isProcessing) return;
+    // betting modunda: gameId yokken
+    if (gameId) return;
     if(initialBet + a > balance) return;
-    playSound('chip'); 
+    playSound('chip');
     initialBet += a;
-    document.getElementById("balance").innerText = (balance - initialBet).toLocaleString('tr-TR'); 
-    document.getElementById("betAmount").innerText = initialBet.toLocaleString('tr-TR');
+    balanceEl.innerText = fmt(balance - initialBet);
+    betAmountEl.innerText = fmt(initialBet);
     if(!betCountdown && initialBet >= 1000) startBetCountdown();
 };
 
 window.cancelBet = () => {
-    if(gameState !== "betting" || initialBet === 0 || isProcessing) return;
-    initialBet = 0; 
+    if (isProcessing) return;
+    if (gameId) return;
+    if(initialBet === 0) return;
+    initialBet = 0;
     playSound('chip');
-    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-    document.getElementById("betAmount").innerText = "0";
+    balanceEl.innerText = fmt(balance);
+    betAmountEl.innerText = "0";
     if(betCountdown) { clearInterval(betCountdown); betCountdown = null; }
     messageEl.innerText = "MC KULLAN (MİN: 1K)";
 };
 
 function startBetCountdown(){
-    let s = 5; messageEl.innerText = `BAŞLIYOR (${s})`; playSound('tick');
+    let s = 5;
+    messageEl.innerText = `BAŞLIYOR (${s})`;
+    playSound('tick');
     betCountdown = setInterval(() => {
-        s--; if(s > 0) { messageEl.innerText = `BAŞLIYOR (${s})`; playSound('tick'); } 
-        else { clearInterval(betCountdown); betCountdown = null; startGame(); }
+        s--;
+        if(s > 0) {
+            messageEl.innerText = `BAŞLIYOR (${s})`;
+            playSound('tick');
+        } else {
+            clearInterval(betCountdown);
+            betCountdown = null;
+            startGame();
+        }
     }, 1000);
 }
 
-function createDeck(){
-    const s=["H","D","C","S"], v=[1,2,3,4,5,6,7,8,9,10,11,12,13];
-    deck = [];
-    for(let i=0; i<8; i++) { 
-        for(let d=0; d<4; d++) s.forEach(x => v.forEach(y => deck.push({suit:x, value:y})));
-    }
-    deck.sort(() => Math.random() - 0.5); 
-}
-
-function cardVal(v){ return {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}[v] || v; }
-
-function getScore(hand) {
-    let t = 0, a = 0;
-    hand.forEach(c => { let v = c.value > 10 ? 10 : (c.value === 1 ? 11 : c.value); if(v === 11) a++; t += v; });
-    while(t > 21 && a > 0) { t -= 10; a--; }
-    return { total: t, aces: a };
-}
-
-function isSoft17(hand) {
-    let { total, aces } = getScore(hand);
-    return total === 17 && aces > 0;
-}
-
-function updateScores(){
-    for(let i=0; i<playerHands.length; i++) {
-        document.getElementById(`score${i}`).innerText = getScore(playerHands[i].cards).total;
-    }
-    let dScore = (dealerHidden && dealer.length > 0) ? 
-        (dealer[0].value > 10 ? 10 : (dealer[0].value === 1 ? 11 : dealer[0].value)) : 
-        getScore(dealer).total;
-    document.getElementById("dealerScore").innerText = dScore;
-    
-    let totalBet = insuranceBet;
-    playerHands.forEach(h => totalBet += h.bet);
-    document.getElementById("betAmount").innerText = totalBet.toLocaleString('tr-TR');
-}
-
-async function draw(hand, divId, isOpen = true){
-    playSound('card'); 
-    let card = deck.pop(); 
-    hand.push(card);
-    
-    const cardCont = document.createElement("div");
-    cardCont.className = "card-3d";
-    cardCont.innerHTML = `
-        <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png') center/cover"></div>
-        <div class="card-face card-back"></div>`;
-    
-    document.getElementById(divId).appendChild(cardCont);
-    
-    return new Promise(resolve => {
-        setTimeout(() => { 
-            cardCont.classList.add("show"); 
-            if(isOpen) {
-                setTimeout(() => { cardCont.classList.add("flipped"); }, 400);
-            }
-            setTimeout(() => {
-                updateScores();
-                resolve();
-            }, isOpen ? 900 : 500); 
-        }, 50);
-    });
-}
-
-function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
-
-// BUTONLARI KİLİTLEME FONKSİYONU (SPAM/ÇİFT TIK KORUMASI)
-function setControlsDisabled(disabled) {
-    const btns = document.querySelectorAll('.controls .btn');
-    btns.forEach(btn => {
-        btn.disabled = disabled;
-    });
-}
-
-async function startGame(){
-    isProcessing = true; gameState = "playing"; 
-    
-    // OYUN BAŞLAYINCA ÇİPLERİ GİZLE
-    document.getElementById("chipsArea").style.display = "none";
-    
-    document.getElementById("dealerCards").innerHTML = "";
-    document.getElementById("hand0").innerHTML = "";
-    document.getElementById("hand1").innerHTML = "";
-    document.getElementById("hand1-box").style.display = "none";
-    
-    playerHands = [{ cards: [], bet: initialBet, status: 'playing' }];
-    currentHandIdx = 0; dealer = []; dealerHidden = true; insuranceBet = 0;
-    
-    messageEl.innerText = "DAĞITILIYOR...";
-    document.getElementById("controls").style.display = "none";
-    setControlsDisabled(true);
-    createDeck(); 
-    
-    try { await updateDoc(userRef, { balance: increment(-initialBet) }); } 
-    catch(e) { cancelBet(); document.getElementById("chipsArea").style.display = "flex"; return; }
-
-    await draw(playerHands[0].cards, "hand0", true);
-    await draw(dealer, "dealerCards", true);
-    await draw(playerHands[0].cards, "hand0", true);
-    await draw(dealer, "dealerCards", false);
-
-    if(dealer[0].value === 1 && balance >= initialBet / 2) {
-        messageEl.innerText = "SİGORTA İSTER MİSİNİZ?";
-        document.getElementById("insurance-controls").style.display = "flex";
-        setControlsDisabled(false);
-        return; 
-    }
-    
-    checkInitialBlackjack();
-}
-
-document.getElementById("ins-yes").onclick = async () => {
-    if(isProcessing) return; isProcessing = true; setControlsDisabled(true);
-    document.getElementById("insurance-controls").style.display = "none";
-    insuranceBet = initialBet / 2;
-    await updateDoc(userRef, { balance: increment(-insuranceBet) }); 
-    checkInitialBlackjack();
-};
-document.getElementById("ins-no").onclick = () => {
-    if(isProcessing) return; isProcessing = true; setControlsDisabled(true);
-    document.getElementById("insurance-controls").style.display = "none";
-    checkInitialBlackjack();
-};
-
-async function checkInitialBlackjack() {
-    let pScore = getScore(playerHands[0].cards).total;
-    let dScore = getScore(dealer).total;
-
-    if(pScore === 21 || dScore === 21) {
-        dealerHidden = false;
-        const hiddenCard = document.getElementById("dealerCards").children[1];
-        if (hiddenCard && !hiddenCard.classList.contains("flipped")) {
-            hiddenCard.classList.add("flipped"); 
-        }
-        updateScores();
-        await delay(1000);
-        endGameLogic();
-    } else {
-        isProcessing = false;
-        showControls();
-    }
-}
-
-function showControls() {
-    document.getElementById("hand0-box").classList.remove("active");
-    document.getElementById("hand1-box").classList.remove("active");
-    document.getElementById(`hand${currentHandIdx}-box`).classList.add("active");
-
-    let hand = playerHands[currentHandIdx];
-    let cards = hand.cards;
-    
-    document.getElementById("controls").style.display = "flex";
-    setControlsDisabled(false); // İşlem bitti, butonları aktif et
-    
-    document.getElementById("double").style.display = (cards.length === 2 && balance >= hand.bet) ? "block" : "none";
-    
-    let val1 = cards[0] ? (cards[0].value > 10 ? 10 : cards[0].value) : 0;
-    let val2 = cards[1] ? (cards[1].value > 10 ? 10 : cards[1].value) : 0;
-    document.getElementById("split").style.display = (cards.length === 2 && val1 === val2 && balance >= hand.bet && playerHands.length === 1) ? "block" : "none";
-
-    startActionTimer();
-}
-
+/* --- Aksiyon timer --- */
 function startActionTimer(){
-    let s = 10; messageEl.style.display = "block"; messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick');
     if (actionTimer) clearInterval(actionTimer);
-    
+    let s = 10;
+    messageEl.style.display = "block";
+    messageEl.innerText = `KARAR SÜRESİ (${s})`;
+    playSound('tick');
+
     actionTimer = setInterval(() => {
-        s--; if(s > 0) { messageEl.innerText = `KARAR SÜRESİ (${s})`; playSound('tick'); } 
-        else { clearInterval(actionTimer); stand(); }
+        s--;
+        if(s > 0) {
+            messageEl.innerText = `KARAR SÜRESİ (${s})`;
+            playSound('tick');
+        } else {
+            clearInterval(actionTimer);
+            actionTimer = null;
+            // Süre biterse otomatik stand (sunucu doğrular)
+            stand();
+        }
     }, 1000);
 }
 
-function hideControls() {
+function stopActionTimer(){
     if(actionTimer) clearInterval(actionTimer);
-    setControlsDisabled(true); // Tıklandığı an kilitlenir (Çift Tık Engeli)
-    document.getElementById("controls").style.display = "none";
-    messageEl.innerText = "";
+    actionTimer = null;
 }
 
-document.getElementById("hit").onclick = async () => {
-    if(isProcessing) return; 
-    isProcessing = true; hideControls();
-    
-    await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
-    
-    if(getScore(playerHands[currentHandIdx].cards).total >= 21) {
-        playerHands[currentHandIdx].status = 'bust';
-        nextHandOrDealer();
-    } else { 
-        isProcessing = false; showControls(); 
-    }
-};
+/* --- Oyun Başlat (SUNUCUDA) --- */
+async function startGame(){
+    if (isProcessing) return;
+    if (gameId) return;
+    if (initialBet < 1000) { messageEl.innerText = "MİNIMUM 1K"; return; }
 
-function stand() { 
-    if(isProcessing) return; 
-    isProcessing = true; hideControls();
-    playerHands[currentHandIdx].status = 'stand';
-    nextHandOrDealer(); 
-}
-document.getElementById("stand").onclick = stand;
+    isProcessing = true;
+    stopActionTimer();
+    showControls(false);
+    showInsurance(false);
+    setControlsDisabled(true);
 
-document.getElementById("double").onclick = async () => {
-    if(isProcessing) return; 
-    isProcessing = true; hideControls();
-    
-    let bet = playerHands[currentHandIdx].bet;
-    await updateDoc(userRef, { balance: increment(-bet) });
-    playerHands[currentHandIdx].bet *= 2; updateScores();
-    
-    await draw(playerHands[currentHandIdx].cards, `hand${currentHandIdx}`, true);
-    playerHands[currentHandIdx].status = getScore(playerHands[currentHandIdx].cards).total > 21 ? 'bust' : 'stand';
-    nextHandOrDealer();
-};
+    chipsArea.style.display = "none";
+    clearBoard();
+    messageEl.innerText = "DAĞITILIYOR...";
 
-document.getElementById("split").onclick = async () => {
-    if(isProcessing) return; 
-    isProcessing = true; hideControls();
-    
-    let bet = playerHands[0].bet;
-    await updateDoc(userRef, { balance: increment(-bet) }); 
-    
-    let splitCard = playerHands[0].cards.pop();
-    playerHands.push({ cards: [splitCard], bet: bet, status: 'playing' });
-    
-    let hand0Div = document.getElementById("hand0");
-    hand0Div.lastChild.remove();
-    document.getElementById("hand1-box").style.display = "flex";
-    
-    const cardCont = document.createElement("div");
-    cardCont.className = "card-3d show flipped"; 
-    cardCont.innerHTML = `<div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(splitCard.value)}${splitCard.suit}.png') center/cover"></div><div class="card-face card-back"></div>`;
-    document.getElementById("hand1").appendChild(cardCont);
-    
-    await delay(300);
-    await draw(playerHands[0].cards, "hand0", true);
-    await draw(playerHands[1].cards, "hand1", true);
-    
-    isProcessing = false; showControls();
-};
+    try {
+        const started = await apiFetch("/api/blackjack/start", "POST", { bet: initialBet });
+        if (started.__ignored) return;
 
-async function nextHandOrDealer() {
-    if(currentHandIdx + 1 < playerHands.length) {
-        currentHandIdx++;
-        isProcessing = false; showControls();
-    } else {
-        dealerTurn();
-    }
-}
+        gameId = started.gameId;
+        balance = Number(started.balance || balance);
+        balanceEl.innerText = fmt(balance);
 
-async function dealerTurn(){
-    gameState = "dealer_turn"; dealerHidden = false;
-    
-    const cards = document.getElementById("dealerCards").querySelectorAll('.card-3d');
-    if(cards[1] && !cards[1].classList.contains('flipped')) {
-        cards[1].classList.add("flipped");
-        playSound('card'); 
-        await delay(500);
-    }
-    updateScores(); await delay(400);
+        state = started.state;
+        prevState = null;
 
-    let allBust = playerHands.every(h => getScore(h.cards).total > 21);
-    
-    if(!allBust) {
-        while(getScore(dealer).total < 17 || isSoft17(dealer)) {
-            await draw(dealer, "dealerCards", true);
+        // İlk dağıtım animasyonlu
+        await renderState(state, { animate: true });
+
+        // insurance varsa renderState zaten açıyor
+        if (!state.insuranceOffered) {
+            isProcessing = false;
+            showControls(true);
+            setControlsDisabled(false);
+            startActionTimer();
+        } else {
+            // insurance kararı bekleniyor
+            isProcessing = false;
         }
+    } catch(e) {
+        console.error(e);
+        chipsArea.style.display = "flex";
+        messageEl.innerText = "SUNUCU HATASI";
+        // bet UI reset
+        initialBet = 0;
+        betAmountEl.innerText = "0";
+        balanceEl.innerText = fmt(balance);
+    } finally {
+        isProcessing = false;
     }
-    
-    endGameLogic();
 }
 
-async function endGameLogic(){
-    gameState = "resolving";
-    let dTotal = getScore(dealer).total;
-    let totalWin = 0;
-    let didWin = false;
-    
-    if(insuranceBet > 0 && dTotal === 21 && dealer.length === 2) {
-        totalWin += insuranceBet * 3; 
-        didWin = true;
-    }
+/* --- Insurance --- */
+btnInsYes.onclick = async () => {
+    if(isProcessing) return;
+    if(!gameId) return;
+    isProcessing = true;
+    setControlsDisabled(true);
+    showInsurance(false);
+    stopActionTimer();
 
-    for(let i=0; i<playerHands.length; i++) {
-        let hand = playerHands[i];
-        let pTotal = getScore(hand.cards).total;
-        
-        let isPlayerBJ = (pTotal === 21 && hand.cards.length === 2 && playerHands.length === 1);
-        let isDealerBJ = (dTotal === 21 && dealer.length === 2);
+    try {
+        const r = await apiFetch("/api/blackjack/insurance", "POST", { gameId, take: true });
+        if (r.__ignored) return;
 
-        if(pTotal > 21) { 
-            document.getElementById(`score${i}`).innerText += " (PATLADI)";
-        } else if (dTotal > 21) {
-            totalWin += hand.bet * 2; didWin = true;
-        } else if (isPlayerBJ && !isDealerBJ) {
-            totalWin += Math.floor(hand.bet * 2.5); didWin = true;
-        } else if (pTotal > dTotal) {
-            totalWin += hand.bet * 2; didWin = true;
-        } else if (pTotal === dTotal) {
-            totalWin += hand.bet; 
+        balance = Number(r.balance ?? balance);
+        balanceEl.innerText = fmt(balance);
+
+        state = r.state;
+        await renderState(state, { animate: true });
+
+        // Oyun çözülmüş olabilir
+        if (r.resolved) {
+            await handleResolved(r);
+            return;
         }
-    }
 
-    if(totalWin > 0) {
-        messageEl.innerText = "KAZANCINIZ: " + totalWin; 
-        if(didWin) playSound('win');
-        try { await updateDoc(userRef, { balance: increment(totalWin) }); } catch(e){}
-    } else {
-        messageEl.innerText = "KAYBETTİNİZ!"; 
-        playSound('lose'); 
+        isProcessing = false;
+        showControls(true);
+        setControlsDisabled(false);
+        startActionTimer();
+    } catch(e) {
+        console.error(e);
+        messageEl.innerText = (e.message || "İŞLEM HATASI").toUpperCase();
+    } finally {
+        isProcessing = false;
     }
-    
-    await delay(3500);
-    resetBoard();
+};
+
+btnInsNo.onclick = async () => {
+    if(isProcessing) return;
+    if(!gameId) return;
+    isProcessing = true;
+    setControlsDisabled(true);
+    showInsurance(false);
+    stopActionTimer();
+
+    try {
+        const r = await apiFetch("/api/blackjack/insurance", "POST", { gameId, take: false });
+        if (r.__ignored) return;
+
+        balance = Number(r.balance ?? balance);
+        balanceEl.innerText = fmt(balance);
+
+        state = r.state;
+        await renderState(state, { animate: true });
+
+        if (r.resolved) {
+            await handleResolved(r);
+            return;
+        }
+
+        isProcessing = false;
+        showControls(true);
+        setControlsDisabled(false);
+        startActionTimer();
+    } catch(e) {
+        console.error(e);
+        messageEl.innerText = (e.message || "İŞLEM HATASI").toUpperCase();
+    } finally {
+        isProcessing = false;
+    }
+};
+
+/* --- Actions --- */
+async function doAction(action) {
+    if(isProcessing) return;
+    if(!gameId) return;
+
+    isProcessing = true;
+    stopActionTimer();
+    showControls(false);
+    setControlsDisabled(true);
+
+    try {
+        const r = await apiFetch("/api/blackjack/action", "POST", { gameId, action });
+        if (r.__ignored) return;
+
+        balance = Number(r.balance ?? balance);
+        balanceEl.innerText = fmt(balance);
+
+        state = r.state;
+        await renderState(state, { animate: true });
+
+        if (r.resolved) {
+            await handleResolved(r);
+            return;
+        }
+
+        // devam ediyorsa kontrolleri aç
+        isProcessing = false;
+        showControls(true);
+        setControlsDisabled(false);
+        startActionTimer();
+    } catch(e) {
+        console.error(e);
+        messageEl.innerText = (e.message || "İŞLEM HATASI").toUpperCase();
+        // Kullanıcı kilitlenmesin:
+        isProcessing = false;
+        showControls(true);
+        setControlsDisabled(false);
+        startActionTimer();
+    }
 }
 
-function resetBoard() {
-    document.getElementById("dealerCards").innerHTML = "";
-    document.getElementById("hand0").innerHTML = "";
-    document.getElementById("hand1").innerHTML = "";
-    document.getElementById("hand1-box").style.display = "none";
-    document.getElementById("dealerScore").innerText = "0";
-    document.getElementById("score0").innerText = "0";
-    document.getElementById("hand0-box").classList.remove("active");
-    
-    // OYUN BİTİNCE ÇİPLERİ GERİ GETİR
-    document.getElementById("chipsArea").style.display = "flex";
-    
-    initialBet = 0; document.getElementById("betAmount").innerText = "0";
-    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-    
+btnHit.onclick = () => doAction("hit");
+
+function stand() { doAction("stand"); }
+btnStand.onclick = stand;
+
+btnDouble.onclick = () => doAction("double");
+btnSplit.onclick = () => doAction("split");
+
+/* --- Resolve --- */
+async function handleResolved(r) {
+    // r: { payout, message, didWin, balance, state }
+    showControls(false);
+    showInsurance(false);
+    setControlsDisabled(true);
+    stopActionTimer();
+
+    // dealer hole açık değilse aç
+    if (state && state.dealerHidden === false) {
+        flipDealerHoleIfNeeded();
+        updateScoreBadges(state);
+    }
+
+    const payout = Number(r.payout || 0);
+    const msg = (r.message || (payout > 0 ? `KAZANCINIZ: ${fmt(payout)}` : "KAYBETTİNİZ!")).toUpperCase();
+
+    messageEl.innerText = msg;
+
+    if (r.didWin) playSound("win");
+    else playSound("lose");
+
+    // kısa bekle, reset
+    setTimeout(() => resetToBetting(), 3500);
+}
+
+function resetToBetting() {
+    // sunucu zaten session kapattı varsayımıyla UI reset
+    gameId = null;
+    state = null;
+    prevState = null;
+
+    clearBoard();
+    chipsArea.style.display = "flex";
+
+    initialBet = 0;
+    betAmountEl.innerText = "0";
+    balanceEl.innerText = fmt(balance);
+
     messageEl.innerText = "MC KULLAN (MİN: 1K)";
-    isProcessing = false; gameState = "betting";
+    showControls(false);
+    showInsurance(false);
+    isProcessing = false;
 }
+
+/* --- AUTH bootstrap --- */
+onAuthStateChanged(auth, async (user) => {
+    if(!user) {
+        await signInAnonymously(auth);
+        return;
+    }
+
+    // ilk açılış
+    try {
+        await refreshMe();
+        await tryResume();
+    } catch(e) {
+        console.warn(e);
+        messageEl.innerText = "SUNUCU BAĞLANTISI YOK";
+    }
+});
+
+/* Sayfa görünürlüğü: timer sapıtmasın */
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        stopActionTimer();
+    } else {
+        // aktif oyunda isek timer tekrar başlat
+        if (gameId && !isProcessing && state && !state.insuranceOffered) {
+            startActionTimer();
+        }
+    }
+});
 </script>
 </body>
 </html>
