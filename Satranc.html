@@ -230,8 +230,8 @@ html, body {
 <header class="top-bar">
     <div class="brand-elite">Play<span>Matrix</span></div>
     <div class="top-actions">
-        <button class="btn-elite" onclick="openModal('howToModal')"><i class="fa-solid fa-book"></i> Kurallar</button>
-        <button class="btn-danger" id="exitGameBtn" style="display:none;" onclick="leaveRoom()"><i class="fa-solid fa-flag"></i> ÇEKİL</button>
+        <button class="btn-elite" id="btn-how-to"><i class="fa-solid fa-book"></i> Kurallar</button>
+        <button class="btn-danger" id="exitGameBtn" style="display:none;"><i class="fa-solid fa-flag"></i> ÇEKİL</button>
     </div>
 </header>
 
@@ -241,7 +241,7 @@ html, body {
         <h1 class="lobby-title">SATRANÇ KULÜBÜ</h1>
         <p class="lobby-desc">Büyük ustaların arenasına hoş geldin. Hilesiz, kesintisiz, kazançlı deneyim.</p>
         
-        <button class="create-btn-gold" onclick="openModal('createRoomMenuModal')">
+        <button class="create-btn-gold" id="btn-create-menu">
             <i class="fa-solid fa-chess-knight"></i> YENİ MASA KUR
         </button>
         
@@ -270,13 +270,13 @@ html, body {
         <div id="alertIcon" style="font-size: 50px; margin-bottom: 15px;"></div>
         <h2 id="alertTitle">Sistem Mesajı</h2>
         <p id="alertBody" style="color: var(--text-dim); margin-bottom: 25px; font-size: 14px; font-weight: 500;"></p>
-        <button class="btn-elite" style="width:100%; padding:14px;" onclick="closeModal('alertModal')">TAMAM</button>
+        <button class="btn-elite" style="width:100%; padding:14px;" id="btn-alert-ok">TAMAM</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="howToModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('howToModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="btn-close-how-to"></i>
         <h2>NASIL OYNANIR?</h2>
         <ul class="how-to-list">
             <li>"YENİ MASA KUR" ile <b>Açık</b> veya <b>Şifreli</b> bir oyun masası oluşturun.</li>
@@ -285,38 +285,38 @@ html, body {
             <li>Rakibini <b>ŞAH MAT</b> yapan oyuncu anında <b>2.500 MC</b> ödül kazanır.</li>
             <li>Oyundan çıkan veya "Çekil" butonuna basan taraf hükmen mağlup olur.</li>
         </ul>
-        <button class="btn-elite" style="width:100%; padding:14px;" onclick="closeModal('howToModal')">ANLADIM</button>
+        <button class="btn-elite" style="width:100%; padding:14px;" id="btn-how-to-ok">ANLADIM</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="createRoomMenuModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('createRoomMenuModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="btn-close-create-menu"></i>
         <h2>Masa Türü Seçin</h2>
         <p style="color:var(--text-dim); font-size:13px; margin-bottom:20px;">Lütfen oluşturmak istediğiniz masanın erişim türünü belirleyin.</p>
         
-        <button class="create-btn-gold" style="margin-bottom: 10px;" onclick="setupOpenRoom()"><i class="fa-solid fa-globe"></i> AÇIK MASA</button>
-        <button class="btn-elite" style="width:100%; padding:18px;" onclick="openPrivateRoomForm()"><i class="fa-solid fa-lock"></i> ŞİFRELİ MASA</button>
+        <button class="create-btn-gold" style="margin-bottom: 10px;" id="btn-open-room"><i class="fa-solid fa-globe"></i> AÇIK MASA</button>
+        <button class="btn-elite" style="width:100%; padding:18px;" id="btn-private-form"><i class="fa-solid fa-lock"></i> ŞİFRELİ MASA</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="privateRoomFormModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('privateRoomFormModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="btn-close-private-form"></i>
         <h2>Şifreli Masa Kur</h2>
         <input type="text" id="prRoomName" placeholder="Masa İsmi (Min 3 Karakter)" maxlength="20">
         <input type="password" id="prRoomPass" placeholder="Masa Şifresi (Min 5 Rakam)" maxlength="10">
-        <button class="create-btn-gold" onclick="setupPrivateRoom()">MASAYI AÇ</button>
+        <button class="create-btn-gold" id="btn-setup-private">MASAYI AÇ</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="joinPrivateModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('joinPrivateModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="btn-close-join-private"></i>
         <h2>Masaya Katıl</h2>
         <p id="joinPrivateRoomName" style="color:var(--gold); font-weight:700; margin-bottom:15px;"></p>
         <input type="password" id="joinRoomPass" placeholder="Masanın Şifresini Girin">
-        <button class="create-btn-gold" onclick="attemptJoinPrivate()">OTUR</button>
+        <button class="create-btn-gold" id="btn-join-private">OTUR</button>
     </div>
 </div>
 
@@ -334,6 +334,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, onSnapshot, setDoc, updateDoc, collection, query, where, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// GÜVENLİK: XSS Koruması eklendi.
+const escapeHTML = (str) => {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag])
+    );
+};
+
 const firebaseConfig = {
     apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
     authDomain:"emirhan-site.firebaseapp.com",
@@ -347,505 +361,521 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// OYUN DURUMLARI
-let engine = new Chess();
-let currentRoomId = null;
-let currentRoomStatus = 'waiting'; 
-let currentPrivateRoomData = null;
-let myColor = 'w';
-let userData = { uid: null, username: 'Misafir' };
-let boardReversed = false;
-let selectedSquare = null;
-let lastMoveSquares = [];
-let pendingPromotionMove = null;
-let unsubscribeRoom = null;
-let rewardGiven = false;
+// GÜVENLİK: IIFE (Kapsülleme) ile tarayıcı konsolundan hile yapılmasını engelliyoruz.
+(function() {
+    "use strict";
 
-// TAŞ SVG LİNKLERİ
-const pieceTheme = {
-    'w': {
-        'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
-        'n': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
-        'b': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
-        'r': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
-        'q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
-        'k': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
-    },
-    'b': {
-        'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
-        'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Chess_ndt45.svg',
-        'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
-        'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
-        'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
-        'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
-    }
-};
+    // OYUN DURUMLARI
+    let engine = new Chess();
+    let currentRoomId = null;
+    let currentRoomStatus = 'waiting'; 
+    let currentPrivateRoomData = null;
+    let myColor = 'w';
+    let userData = { uid: null, username: 'Misafir' };
+    let boardReversed = false;
+    let selectedSquare = null;
+    let lastMoveSquares = [];
+    let pendingPromotionMove = null;
+    let unsubscribeRoom = null;
+    let rewardGiven = false;
 
-// SES YÖNETİMİ
-const playSound = (type) => {
-    try {
-        const audio = document.getElementById(`sfx-${type}`);
-        if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
-    } catch(e){}
-};
-
-// SIKI ZOOM/KAYDIRMA ENGELİ
-document.addEventListener('touchmove', function (event) { if (event.scale !== 1) event.preventDefault(); }, { passive: false });
-document.addEventListener('dblclick', function (event) { event.preventDefault(); }, { passive: false });
-
-// MODAL YÖNETİMİ
-window.openModal = (id) => {
-    const modal = document.getElementById(id);
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
-};
-
-window.closeModal = (id) => {
-    const modal = document.getElementById(id);
-    modal.classList.remove('show');
-    setTimeout(() => modal.style.display = 'none', 300);
-};
-
-window.showMatrixModal = (title, message, type = 'info') => {
-    const icon = document.getElementById("alertIcon");
-    document.getElementById("alertTitle").innerText = title;
-    document.getElementById("alertBody").innerText = message;
-    
-    if(type === 'error') icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i>';
-    else if(type === 'success') icon.innerHTML = '<i class="fa-solid fa-medal" style="color:var(--gold);"></i>';
-    else icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--text-light);"></i>';
-    
-    openModal('alertModal');
-};
-
-// GİRİŞ KONTROLÜ
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        userData.uid = user.uid;
-        onSnapshot(doc(db, "users", user.uid), s => {
-            if(s.exists()) {
-                userData.username = s.data().username || "Oyuncu";
-                document.getElementById("myName").innerText = userData.username;
-            }
-        });
-        document.getElementById("loading").style.display = "none";
-        listenToRooms();
-    } else {
-        document.getElementById("loading").style.display = "none";
-        showMatrixModal("Erişim Reddedildi", "Satranç arenasına girmek için PlayMatrix hesabınızla giriş yapmalısınız.", "error");
-        setTimeout(() => window.location.href = "index.html", 3000);
-    }
-});
-
-// ==== HAYALET ODA VE BAĞLANTI KOPMASI KORUMASI ====
-window.addEventListener('beforeunload', () => {
-    if (currentRoomId && currentRoomStatus === 'playing') {
-        // Eğer maç ortasında sayfa kapanır/yenilenirse odayı bitir
-        updateDoc(doc(db, "chess_rooms", currentRoomId), { status: 'finished' }).catch(()=>{});
-    }
-});
-
-// === SATRANÇ ÇİZİMİ ===
-function drawBoard() {
-    const boardDiv = document.getElementById("chessBoard");
-    boardDiv.innerHTML = "";
-    
-    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-    
-    let displayRanks = boardReversed ? [...ranks].reverse() : ranks;
-    let displayFiles = boardReversed ? [...files].reverse() : files;
-
-    for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-            const squareId = displayFiles[f] + displayRanks[r];
-            const isLight = (r + f) % 2 === 0;
-            const squareDiv = document.createElement("div");
-            
-            squareDiv.className = `square ${isLight ? 'light' : 'dark'}`;
-            squareDiv.id = `sq-${squareId}`;
-            squareDiv.dataset.sq = squareId;
-            
-            if(f === 0) squareDiv.innerHTML += `<div class="coord coord-rank">${displayRanks[r]}</div>`;
-            if(r === 7) squareDiv.innerHTML += `<div class="coord coord-file">${displayFiles[f]}</div>`;
-
-            squareDiv.onclick = () => handleSquareClick(squareId);
-            boardDiv.appendChild(squareDiv);
+    // TAŞ SVG LİNKLERİ
+    const pieceTheme = {
+        'w': {
+            'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+            'n': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+            'b': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+            'r': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+            'q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+            'k': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
+        },
+        'b': {
+            'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+            'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Chess_ndt45.svg',
+            'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+            'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+            'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+            'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
         }
-    }
-    updatePieces();
-}
+    };
 
-function updatePieces() {
-    document.querySelectorAll('.valid-move-dot, .valid-capture-ring').forEach(e => e.remove());
-    document.querySelectorAll('.square').forEach(sq => {
-        const div = sq.querySelector('.piece');
-        if(div) div.remove();
-        sq.classList.remove('highlight');
-        if(!lastMoveSquares.includes(sq.dataset.sq)) sq.classList.remove('last-move');
+    // SES YÖNETİMİ
+    const playSound = (type) => {
+        try {
+            const audio = document.getElementById(`sfx-${type}`);
+            if(audio) { audio.currentTime = 0; audio.play().catch(()=>{}); }
+        } catch(e){}
+    };
+
+    // SIKI ZOOM/KAYDIRMA ENGELİ
+    document.addEventListener('touchmove', function (event) { if (event.scale !== 1) event.preventDefault(); }, { passive: false });
+    document.addEventListener('dblclick', function (event) { event.preventDefault(); }, { passive: false });
+
+    // MODAL YÖNETİMİ
+    const openModal = (id) => {
+        const modal = document.getElementById(id);
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    };
+
+    const closeModal = (id) => {
+        const modal = document.getElementById(id);
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    const showMatrixModal = (title, message, type = 'info') => {
+        const icon = document.getElementById("alertIcon");
+        document.getElementById("alertTitle").innerText = escapeHTML(title);
+        document.getElementById("alertBody").innerText = escapeHTML(message);
+        
+        if(type === 'error') icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:var(--danger);"></i>';
+        else if(type === 'success') icon.innerHTML = '<i class="fa-solid fa-medal" style="color:var(--gold);"></i>';
+        else icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--text-light);"></i>';
+        
+        openModal('alertModal');
+    };
+
+    // EVENT LİSTENER'LARI AYARLAMA
+    document.getElementById("btn-how-to").addEventListener("click", () => openModal('howToModal'));
+    document.getElementById("btn-close-how-to").addEventListener("click", () => closeModal('howToModal'));
+    document.getElementById("btn-how-to-ok").addEventListener("click", () => closeModal('howToModal'));
+
+    document.getElementById("btn-create-menu").addEventListener("click", () => openModal('createRoomMenuModal'));
+    document.getElementById("btn-close-create-menu").addEventListener("click", () => closeModal('createRoomMenuModal'));
+    document.getElementById("btn-open-room").addEventListener("click", () => {
+        closeModal('createRoomMenuModal');
+        createRoomDB(false, "", "");
+    });
+    document.getElementById("btn-private-form").addEventListener("click", () => {
+        closeModal('createRoomMenuModal');
+        document.getElementById("prRoomName").value = "";
+        document.getElementById("prRoomPass").value = "";
+        openModal('privateRoomFormModal');
     });
 
-    const boardState = engine.board(); 
-    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-    const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+    document.getElementById("btn-close-private-form").addEventListener("click", () => closeModal('privateRoomFormModal'));
+    document.getElementById("btn-setup-private").addEventListener("click", () => {
+        const name = escapeHTML(document.getElementById("prRoomName").value.trim());
+        const pass = escapeHTML(document.getElementById("prRoomPass").value.trim());
+        
+        if(name.length < 3) { showMatrixModal("Hata", "Masa ismi en az 3 karakter olmalıdır.", "error"); return; }
+        if(!/^\d{5,}$/.test(pass)) { showMatrixModal("Hata", "Masa şifresi en az 5 RAKAMDAN oluşmalıdır.", "error"); return; }
+        
+        closeModal('privateRoomFormModal');
+        createRoomDB(true, name, pass);
+    });
 
-    for (let r = 0; r < 8; r++) {
-        for (let f = 0; f < 8; f++) {
-            const piece = boardState[r][f];
-            if (piece) {
-                const sqId = files[f] + ranks[r];
-                const sqDiv = document.getElementById(`sq-${sqId}`);
-                if(sqDiv) {
-                    const pieceDiv = document.createElement("div");
-                    pieceDiv.className = "piece";
-                    pieceDiv.style.backgroundImage = `url(${pieceTheme[piece.color][piece.type]})`;
-                    sqDiv.appendChild(pieceDiv);
+    document.getElementById("btn-close-join-private").addEventListener("click", () => closeModal('joinPrivateModal'));
+    document.getElementById("btn-join-private").addEventListener("click", () => {
+        const inputPass = escapeHTML(document.getElementById("joinRoomPass").value.trim());
+        if(inputPass === currentPrivateRoomData.pass) {
+            closeModal('joinPrivateModal');
+            joinSpecificRoom(currentPrivateRoomData.id);
+        } else {
+            showMatrixModal("Yetkisiz Erişim", "Girdiğiniz şifre hatalı. Lütfen tekrar deneyin.", "error");
+        }
+    });
+
+    document.getElementById("btn-alert-ok").addEventListener("click", () => closeModal('alertModal'));
+    document.getElementById("exitGameBtn").addEventListener("click", () => leaveRoom());
+
+
+    // GİRİŞ KONTROLÜ
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            userData.uid = user.uid;
+            onSnapshot(doc(db, "users", user.uid), s => {
+                if(s.exists()) {
+                    userData.username = s.data().username || "Oyuncu";
+                    document.getElementById("myName").innerText = escapeHTML(userData.username);
+                }
+            });
+            document.getElementById("loading").style.display = "none";
+            listenToRooms();
+        } else {
+            document.getElementById("loading").style.display = "none";
+            showMatrixModal("Erişim Reddedildi", "Satranç arenasına girmek için PlayMatrix hesabınızla giriş yapmalısınız.", "error");
+            setTimeout(() => window.location.href = "index.html", 3000);
+        }
+    });
+
+    // ==== HAYALET ODA VE BAĞLANTI KOPMASI KORUMASI ====
+    window.addEventListener('beforeunload', () => {
+        if (currentRoomId && currentRoomStatus === 'playing') {
+            updateDoc(doc(db, "chess_rooms", currentRoomId), { status: 'finished' }).catch(()=>{});
+        }
+    });
+
+    // === SATRANÇ ÇİZİMİ ===
+    function drawBoard() {
+        const boardDiv = document.getElementById("chessBoard");
+        boardDiv.innerHTML = "";
+        
+        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+        
+        let displayRanks = boardReversed ? [...ranks].reverse() : ranks;
+        let displayFiles = boardReversed ? [...files].reverse() : files;
+
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const squareId = displayFiles[f] + displayRanks[r];
+                const isLight = (r + f) % 2 === 0;
+                const squareDiv = document.createElement("div");
+                
+                squareDiv.className = `square ${isLight ? 'light' : 'dark'}`;
+                squareDiv.id = `sq-${squareId}`;
+                squareDiv.dataset.sq = squareId;
+                
+                if(f === 0) squareDiv.innerHTML += `<div class="coord coord-rank">${displayRanks[r]}</div>`;
+                if(r === 7) squareDiv.innerHTML += `<div class="coord coord-file">${displayFiles[f]}</div>`;
+
+                squareDiv.onclick = () => handleSquareClick(squareId);
+                boardDiv.appendChild(squareDiv);
+            }
+        }
+        updatePieces();
+    }
+
+    function updatePieces() {
+        document.querySelectorAll('.valid-move-dot, .valid-capture-ring').forEach(e => e.remove());
+        document.querySelectorAll('.square').forEach(sq => {
+            const div = sq.querySelector('.piece');
+            if(div) div.remove();
+            sq.classList.remove('highlight');
+            if(!lastMoveSquares.includes(sq.dataset.sq)) sq.classList.remove('last-move');
+        });
+
+        const boardState = engine.board(); 
+        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const piece = boardState[r][f];
+                if (piece) {
+                    const sqId = files[f] + ranks[r];
+                    const sqDiv = document.getElementById(`sq-${sqId}`);
+                    if(sqDiv) {
+                        const pieceDiv = document.createElement("div");
+                        pieceDiv.className = "piece";
+                        pieceDiv.style.backgroundImage = `url(${pieceTheme[piece.color][piece.type]})`;
+                        sqDiv.appendChild(pieceDiv);
+                    }
                 }
             }
         }
-    }
-    
-    if(lastMoveSquares.length === 2) {
-        document.getElementById(`sq-${lastMoveSquares[0]}`)?.classList.add('last-move');
-        document.getElementById(`sq-${lastMoveSquares[1]}`)?.classList.add('last-move');
-    }
-    
-    if(currentRoomStatus === 'playing') {
-        if(engine.turn() === myColor) {
-            document.getElementById("myInfo").classList.add("active-turn");
-            document.getElementById("opponentInfo").classList.remove("active-turn");
-        } else {
-            document.getElementById("opponentInfo").classList.add("active-turn");
-            document.getElementById("myInfo").classList.remove("active-turn");
+        
+        if(lastMoveSquares.length === 2) {
+            document.getElementById(`sq-${lastMoveSquares[0]}`)?.classList.add('last-move');
+            document.getElementById(`sq-${lastMoveSquares[1]}`)?.classList.add('last-move');
+        }
+        
+        if(currentRoomStatus === 'playing') {
+            if(engine.turn() === myColor) {
+                document.getElementById("myInfo").classList.add("active-turn");
+                document.getElementById("opponentInfo").classList.remove("active-turn");
+            } else {
+                document.getElementById("opponentInfo").classList.add("active-turn");
+                document.getElementById("myInfo").classList.remove("active-turn");
+            }
         }
     }
-}
 
-// === HAMLE MANTIĞI ===
-function handleSquareClick(squareId) {
-    if (currentRoomStatus !== 'playing') {
-        showMatrixModal("Uyarı", "Rakibiniz masaya oturmadan taşları oynatamazsınız.", "info");
-        return;
-    }
-    
-    if (!currentRoomId || engine.turn() !== myColor) return; 
-
-    if (!selectedSquare) {
-        const piece = engine.get(squareId);
-        if (piece && piece.color === myColor) {
-            selectedSquare = squareId;
-            document.getElementById(`sq-${squareId}`).classList.add('highlight');
-            showValidMoves(squareId);
-        }
-    } else {
-        const piece = engine.get(squareId);
-        if (piece && piece.color === myColor) {
-            selectedSquare = squareId;
-            updatePieces(); 
-            document.getElementById(`sq-${squareId}`).classList.add('highlight');
-            showValidMoves(squareId);
+    // === HAMLE MANTIĞI ===
+    function handleSquareClick(squareId) {
+        if (currentRoomStatus !== 'playing') {
+            showMatrixModal("Uyarı", "Rakibiniz masaya oturmadan taşları oynatamazsınız.", "info");
             return;
         }
+        
+        if (!currentRoomId || engine.turn() !== myColor) return; 
 
-        const moves = engine.moves({ square: selectedSquare, verbose: true });
-        const move = moves.find(m => m.to === squareId);
-
-        if (move) {
-            if (move.flags.includes('p') || move.flags.includes('np') || move.flags.includes('cp')) {
-                pendingPromotionMove = { from: selectedSquare, to: squareId };
-                showPromotionModal();
-            } else {
-                executeMove({ from: selectedSquare, to: squareId });
+        if (!selectedSquare) {
+            const piece = engine.get(squareId);
+            if (piece && piece.color === myColor) {
+                selectedSquare = squareId;
+                document.getElementById(`sq-${squareId}`).classList.add('highlight');
+                showValidMoves(squareId);
             }
         } else {
-            selectedSquare = null;
-            updatePieces();
-        }
-    }
-}
-
-function showValidMoves(squareId) {
-    const moves = engine.moves({ square: squareId, verbose: true });
-    moves.forEach(m => {
-        const sqDiv = document.getElementById(`sq-${m.to}`);
-        if(sqDiv) {
-            if(engine.get(m.to)) sqDiv.innerHTML += `<div class="valid-capture-ring"></div>`;
-            else sqDiv.innerHTML += `<div class="valid-move-dot"></div>`;
-        }
-    });
-}
-
-// ==== PİYON TERFİ (PROMOTION) DÜZELTİLDİ ====
-function showPromotionModal() {
-    const container = document.getElementById("promoOptions");
-    container.innerHTML = "";
-    const pieces = ['q', 'r', 'n', 'b']; // Vezir, Kale, At, Fil
-    
-    pieces.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "promo-piece";
-        div.innerHTML = `<img src="${pieceTheme[myColor][p]}" alt="Promotion">`;
-        div.onclick = () => {
-            closeModal('promoModal');
-            // Promotion verisini executeMove'a TAM formatta iletiyoruz
-            executeMove({ from: pendingPromotionMove.from, to: pendingPromotionMove.to, promotion: p });
-            pendingPromotionMove = null;
-            selectedSquare = null;
-        };
-        container.appendChild(div);
-    });
-    
-    openModal('promoModal');
-}
-
-async function executeMove(moveObj) {
-    const move = engine.move(moveObj);
-    if (move) {
-        lastMoveSquares = [move.from, move.to];
-        
-        if(engine.in_check()) playSound('check');
-        else if(move.captured) playSound('capture');
-        else playSound('move');
-
-        updatePieces();
-        selectedSquare = null;
-
-        // HAMLE VERİSİ FİREBASE'E GÖNDERİLİRKEN SIKILAŞTIRILDI
-        try {
-            await updateDoc(doc(db, "chess_rooms", currentRoomId), {
-                fen: engine.fen(),
-                lastMoveData: { from: move.from, to: move.to, promotion: move.promotion || null },
-                turn: engine.turn()
-            });
-            checkGameOver();
-        } catch(e) {
-            console.error(e);
-        }
-    }
-}
-
-// OYUN BİTİŞ KONTROLÜ
-async function checkGameOver() {
-    if(engine.game_over() && !rewardGiven) {
-        playSound('end');
-        let msg = "Maç sona erdi!";
-        
-        if(engine.in_checkmate()) {
-            let winnerColor = engine.turn() === 'w' ? 'b' : 'w';
-            
-            if(myColor === winnerColor) {
-                rewardGiven = true;
-                msg = "Tebrikler ŞAH MAT! Mükemmel oyun.\n\nHesabınıza 2.500 MC Ödül Eklendi.";
-                try {
-                    await updateDoc(doc(db, "users", userData.uid), { balance: increment(2500) });
-                } catch(e) { console.error(e); }
-                showMatrixModal("KAZANDINIZ", msg, "success");
-            } else {
-                msg = "Şah Mat oldunuz. Rakibiniz oyunu kazandı.";
-                showMatrixModal("KAYBETTİNİZ", msg, "error");
+            const piece = engine.get(squareId);
+            if (piece && piece.color === myColor) {
+                selectedSquare = squareId;
+                updatePieces(); 
+                document.getElementById(`sq-${squareId}`).classList.add('highlight');
+                showValidMoves(squareId);
+                return;
             }
-        } 
-        else if(engine.in_draw() || engine.in_stalemate()) {
-            msg = "Oyun BERABERE bitti.";
-            showMatrixModal("BERABERE", msg, "info");
-        }
-        
-        try { await updateDoc(doc(db, "chess_rooms", currentRoomId), { status: 'finished' }); } catch(e){}
-    }
-}
 
-// === ODA KURMA SİSTEMİ ===
-window.setupOpenRoom = () => {
-    closeModal('createRoomMenuModal');
-    createRoomDB(false, "", "");
-};
+            const moves = engine.moves({ square: selectedSquare, verbose: true });
+            const move = moves.find(m => m.to === squareId);
 
-window.openPrivateRoomForm = () => {
-    closeModal('createRoomMenuModal');
-    document.getElementById("prRoomName").value = "";
-    document.getElementById("prRoomPass").value = "";
-    openModal('privateRoomFormModal');
-};
-
-window.setupPrivateRoom = () => {
-    const name = document.getElementById("prRoomName").value.trim();
-    const pass = document.getElementById("prRoomPass").value.trim();
-    
-    if(name.length < 3) { showMatrixModal("Hata", "Masa ismi en az 3 karakter olmalıdır.", "error"); return; }
-    if(!/^\d{5,}$/.test(pass)) { showMatrixModal("Hata", "Masa şifresi en az 5 RAKAMDAN oluşmalıdır.", "error"); return; }
-    
-    closeModal('privateRoomFormModal');
-    createRoomDB(true, name, pass);
-};
-
-async function createRoomDB(isPrivate, roomName, password) {
-    try {
-        const roomRef = doc(collection(db, "chess_rooms"));
-        await setDoc(roomRef, {
-            status: 'waiting',
-            hostUid: userData.uid,
-            hostName: userData.username,
-            guestUid: null,
-            guestName: null,
-            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-            createdAt: Date.now(),
-            turn: 'w',
-            isPrivate: isPrivate,
-            roomName: isPrivate ? roomName : `${userData.username}'in Masası`,
-            password: password
-        });
-        joinGame(roomRef.id, 'w');
-    } catch(e) {
-        showMatrixModal("Hata", "Masa kurulamadı: " + e.message, "error");
-    }
-}
-
-// ODAYA GİRİŞ
-window.joinRoomCheck = (roomId, isPrivate, roomName, password) => {
-    if(!isPrivate) {
-        joinSpecificRoom(roomId);
-    } else {
-        currentPrivateRoomData = { id: roomId, pass: password };
-        document.getElementById("joinPrivateRoomName").innerText = roomName;
-        document.getElementById("joinRoomPass").value = "";
-        openModal('joinPrivateModal');
-    }
-};
-
-window.attemptJoinPrivate = () => {
-    const inputPass = document.getElementById("joinRoomPass").value.trim();
-    if(inputPass === currentPrivateRoomData.pass) {
-        closeModal('joinPrivateModal');
-        joinSpecificRoom(currentPrivateRoomData.id);
-    } else {
-        showMatrixModal("Yetkisiz Erişim", "Girdiğiniz şifre hatalı. Lütfen tekrar deneyin.", "error");
-    }
-};
-
-async function joinSpecificRoom(roomId) {
-    try {
-        await updateDoc(doc(db, "chess_rooms", roomId), {
-            status: 'playing',
-            guestUid: userData.uid,
-            guestName: userData.username
-        });
-        joinGame(roomId, 'b');
-    } catch(e) {
-        showMatrixModal("Hata", "Masaya oturulamadı!", "error");
-    }
-}
-
-function joinGame(roomId, color) {
-    currentRoomId = roomId;
-    myColor = color;
-    boardReversed = (color === 'b'); 
-    rewardGiven = false;
-    currentRoomStatus = 'waiting';
-    
-    document.getElementById("lobbyArea").style.display = "none";
-    document.getElementById("gameArea").style.display = "flex";
-    document.getElementById("exitGameBtn").style.display = "block";
-    document.getElementById("opponentInfo").classList.remove("active-turn");
-    document.getElementById("myInfo").classList.remove("active-turn");
-    
-    engine.reset();
-    drawBoard();
-    playSound('start');
-    
-    unsubscribeRoom = onSnapshot(doc(db, "chess_rooms", roomId), (snap) => {
-        if(!snap.exists()) { leaveRoom(true); return; }
-        
-        const data = snap.data();
-        currentRoomStatus = data.status;
-        
-        if(myColor === 'w') {
-            document.getElementById("opponentName").innerText = data.guestName || "Rakip Bekleniyor...";
-        } else {
-            document.getElementById("opponentName").innerText = data.hostName || "Rakip";
-        }
-
-        // ==== GÜÇLENDİRİLMİŞ HİLE KORUMASI (ANTI-CHEAT) ====
-        if(data.fen !== engine.fen() && data.status !== 'waiting') {
-            
-            // Eğer veritabanı "sıra sende" diyorsa, rakibin gönderdiği hamleyi doğrula
-            if(data.turn === myColor && data.lastMoveData) {
-                let tempEngine = new Chess(engine.fen()); // Sistemin o an bildiği KESİN/GÜVENLİ tahta
-                
-                // Rakibin gönderdiği objeyle test hamlesi yap
-                let testMove = tempEngine.move(data.lastMoveData);
-                
-                // EĞER hamle kuraldışıysa VEYA test sonucunda oluşan yeni tahta ile, rakibin iddia ettiği tahta uyuşmuyorsa
-                if(!testMove || tempEngine.fen() !== data.fen) {
-                    showMatrixModal("Hile Tespit Edildi!", "Sistem veri manipülasyonu algıladı. Rakibiniz veya bağlantınız yasadışı bir hamle gönderdi. Maç güvenlik sebebiyle iptal edildi.", "error");
-                    leaveRoom(true);
-                    return;
+            if (move) {
+                if (move.flags.includes('p') || move.flags.includes('np') || move.flags.includes('cp')) {
+                    pendingPromotionMove = { from: selectedSquare, to: squareId };
+                    showPromotionModal();
+                } else {
+                    executeMove({ from: selectedSquare, to: squareId });
                 }
+            } else {
+                selectedSquare = null;
+                updatePieces();
             }
-            
-            // Testten geçti, tahtayı güvenle yükle
-            engine.load(data.fen);
-            if(data.lastMoveData) lastMoveSquares = [data.lastMoveData.from, data.lastMoveData.to];
+        }
+    }
+
+    function showValidMoves(squareId) {
+        const moves = engine.moves({ square: squareId, verbose: true });
+        moves.forEach(m => {
+            const sqDiv = document.getElementById(`sq-${m.to}`);
+            if(sqDiv) {
+                if(engine.get(m.to)) sqDiv.innerHTML += `<div class="valid-capture-ring"></div>`;
+                else sqDiv.innerHTML += `<div class="valid-move-dot"></div>`;
+            }
+        });
+    }
+
+    function showPromotionModal() {
+        const container = document.getElementById("promoOptions");
+        container.innerHTML = "";
+        const pieces = ['q', 'r', 'n', 'b']; 
+        
+        pieces.forEach(p => {
+            const div = document.createElement("div");
+            div.className = "promo-piece";
+            div.innerHTML = `<img src="${pieceTheme[myColor][p]}" alt="Promotion">`;
+            div.onclick = () => {
+                closeModal('promoModal');
+                executeMove({ from: pendingPromotionMove.from, to: pendingPromotionMove.to, promotion: p });
+                pendingPromotionMove = null;
+                selectedSquare = null;
+            };
+            container.appendChild(div);
+        });
+        
+        openModal('promoModal');
+    }
+
+    async function executeMove(moveObj) {
+        const move = engine.move(moveObj);
+        if (move) {
+            lastMoveSquares = [move.from, move.to];
             
             if(engine.in_check()) playSound('check');
-            else if(data.lastMoveData && data.lastMoveData.captured) playSound('capture');
+            else if(move.captured) playSound('capture');
             else playSound('move');
-            
+
             updatePieces();
-            checkGameOver();
-        }
+            selectedSquare = null;
 
-        if(data.status === 'finished' && !rewardGiven) {
-            document.getElementById("opponentName").innerText += " (Bitti)";
+            try {
+                await updateDoc(doc(db, "chess_rooms", currentRoomId), {
+                    fen: engine.fen(),
+                    lastMoveData: { from: move.from, to: move.to, promotion: move.promotion || null },
+                    turn: engine.turn()
+                });
+                checkGameOver();
+            } catch(e) {
+                console.error(e);
+            }
         }
-    });
-}
-
-window.leaveRoom = async (forced = false) => {
-    if(unsubscribeRoom) unsubscribeRoom();
-    
-    if(currentRoomId && !forced) {
-        try { await updateDoc(doc(db, "chess_rooms", currentRoomId), { status: 'finished' }); } catch(e){}
     }
-    
-    currentRoomId = null;
-    currentRoomStatus = 'waiting';
-    document.getElementById("lobbyArea").style.display = "flex";
-    document.getElementById("gameArea").style.display = "none";
-    document.getElementById("exitGameBtn").style.display = "none";
-    
-    if(forced) showMatrixModal("Masa Kapatıldı", "Bağlantı koptu, kural ihlali yapıldı veya maç sona erdi.", "info");
-};
 
-// ANLIK LOBİ 
-function listenToRooms() {
-    const q = query(collection(db, "chess_rooms"), where("status", "==", "waiting"));
-    onSnapshot(q, (snapshot) => {
-        const list = document.getElementById("roomsList");
-        list.innerHTML = "";
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            if(data.hostUid === userData.uid) return; 
+    // OYUN BİTİŞ KONTROLÜ
+    async function checkGameOver() {
+        if(engine.game_over() && !rewardGiven) {
+            playSound('end');
+            let msg = "Maç sona erdi!";
             
-            const isPriv = data.isPrivate;
-            const btnIcon = isPriv ? '<i class="fa-solid fa-lock"></i> ŞİFRELİ' : 'OTUR';
+            if(engine.in_checkmate()) {
+                let winnerColor = engine.turn() === 'w' ? 'b' : 'w';
+                
+                if(myColor === winnerColor) {
+                    rewardGiven = true;
+                    msg = "Tebrikler ŞAH MAT! Mükemmel oyun.\n\nHesabınıza 2.500 MC Ödül Eklendi.";
+                    try {
+                        await updateDoc(doc(db, "users", userData.uid), { balance: increment(2500) });
+                    } catch(e) { console.error(e); }
+                    showMatrixModal("KAZANDINIZ", msg, "success");
+                } else {
+                    msg = "Şah Mat oldunuz. Rakibiniz oyunu kazandı.";
+                    showMatrixModal("KAYBETTİNİZ", msg, "error");
+                }
+            } 
+            else if(engine.in_draw() || engine.in_stalemate()) {
+                msg = "Oyun BERABERE bitti.";
+                showMatrixModal("BERABERE", msg, "info");
+            }
             
-            list.innerHTML += `
-                <div class="room-card">
-                    <div class="room-info">
-                        <h3><i class="fa-solid fa-chess" style="color:var(--gold);"></i> ${data.roomName || data.hostName}</h3>
-                        <p>2.500 MC Ödül <span>| Kurucu: ${data.hostName}</span></p>
-                    </div>
-                    <button class="btn-elite" onclick="joinRoomCheck('${docSnap.id}', ${isPriv}, '${data.roomName}', '${data.password}')">${btnIcon}</button>
-                </div>
-            `;
-        });
-        
-        // ==== ODA LİSTELEME TASARIM HATASI ÇÖZÜMÜ ====
-        if(list.innerHTML === "") {
-            list.innerHTML = `<p style="color:var(--text-dim); width:100%; text-align:center; grid-column: 1 / -1; padding: 20px 0; font-weight: 500;">Şu an açık bir masa yok. Kendi masanı kur!</p>`;
+            try { await updateDoc(doc(db, "chess_rooms", currentRoomId), { status: 'finished' }); } catch(e){}
         }
-    });
-}
+    }
+
+    // === ODA KURMA SİSTEMİ ===
+    async function createRoomDB(isPrivate, roomName, password) {
+        try {
+            const roomRef = doc(collection(db, "chess_rooms"));
+            await setDoc(roomRef, {
+                status: 'waiting',
+                hostUid: userData.uid,
+                hostName: userData.username,
+                guestUid: null,
+                guestName: null,
+                fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                createdAt: Date.now(),
+                turn: 'w',
+                isPrivate: isPrivate,
+                roomName: isPrivate ? roomName : `${userData.username}'in Masası`,
+                password: password
+            });
+            joinGame(roomRef.id, 'w');
+        } catch(e) {
+            showMatrixModal("Hata", "Masa kurulamadı: " + e.message, "error");
+        }
+    }
+
+    // ODAYA GİRİŞ
+    const joinRoomCheck = (roomId, isPrivate, roomName, password) => {
+        if(!isPrivate) {
+            joinSpecificRoom(roomId);
+        } else {
+            currentPrivateRoomData = { id: roomId, pass: password };
+            document.getElementById("joinPrivateRoomName").innerText = escapeHTML(roomName);
+            document.getElementById("joinRoomPass").value = "";
+            openModal('joinPrivateModal');
+        }
+    };
+
+    // Bunu global window'a aktarıyoruz çünkü HTML içinden (onclick) çağrılıyor (Dinamik oluşturulan liste için gerekli)
+    window.joinRoomCheck = joinRoomCheck;
+
+    async function joinSpecificRoom(roomId) {
+        try {
+            await updateDoc(doc(db, "chess_rooms", roomId), {
+                status: 'playing',
+                guestUid: userData.uid,
+                guestName: userData.username
+            });
+            joinGame(roomId, 'b');
+        } catch(e) {
+            showMatrixModal("Hata", "Masaya oturulamadı!", "error");
+        }
+    }
+
+    function joinGame(roomId, color) {
+        currentRoomId = roomId;
+        myColor = color;
+        boardReversed = (color === 'b'); 
+        rewardGiven = false;
+        currentRoomStatus = 'waiting';
+        
+        document.getElementById("lobbyArea").style.display = "none";
+        document.getElementById("gameArea").style.display = "flex";
+        document.getElementById("exitGameBtn").style.display = "block";
+        document.getElementById("opponentInfo").classList.remove("active-turn");
+        document.getElementById("myInfo").classList.remove("active-turn");
+        
+        engine.reset();
+        drawBoard();
+        playSound('start');
+        
+        unsubscribeRoom = onSnapshot(doc(db, "chess_rooms", roomId), (snap) => {
+            if(!snap.exists()) { leaveRoom(true); return; }
+            
+            const data = snap.data();
+            currentRoomStatus = data.status;
+            
+            if(myColor === 'w') {
+                document.getElementById("opponentName").innerText = escapeHTML(data.guestName) || "Rakip Bekleniyor...";
+            } else {
+                document.getElementById("opponentName").innerText = escapeHTML(data.hostName) || "Rakip";
+            }
+
+            // ==== GÜÇLENDİRİLMİŞ HİLE KORUMASI (ANTI-CHEAT) ====
+            if(data.fen !== engine.fen() && data.status !== 'waiting') {
+                
+                // Eğer veritabanı "sıra sende" diyorsa, rakibin gönderdiği hamleyi doğrula
+                if(data.turn === myColor && data.lastMoveData) {
+                    let tempEngine = new Chess(engine.fen()); 
+                    let testMove = tempEngine.move(data.lastMoveData);
+                    
+                    if(!testMove || tempEngine.fen() !== data.fen) {
+                        showMatrixModal("Hile Tespit Edildi!", "Sistem veri manipülasyonu algıladı. Rakibiniz veya bağlantınız yasadışı bir hamle gönderdi. Maç güvenlik sebebiyle iptal edildi.", "error");
+                        leaveRoom(true);
+                        return;
+                    }
+                }
+                
+                engine.load(data.fen);
+                if(data.lastMoveData) lastMoveSquares = [data.lastMoveData.from, data.lastMoveData.to];
+                
+                if(engine.in_check()) playSound('check');
+                else if(data.lastMoveData && data.lastMoveData.captured) playSound('capture');
+                else playSound('move');
+                
+                updatePieces();
+                checkGameOver();
+            }
+
+            if(data.status === 'finished' && !rewardGiven) {
+                document.getElementById("opponentName").innerText += " (Bitti)";
+            }
+        });
+    }
+
+    const leaveRoom = async (forced = false) => {
+        if(unsubscribeRoom) unsubscribeRoom();
+        
+        if(currentRoomId && !forced) {
+            try { await updateDoc(doc(db, "chess_rooms", currentRoomId), { status: 'finished' }); } catch(e){}
+        }
+        
+        currentRoomId = null;
+        currentRoomStatus = 'waiting';
+        document.getElementById("lobbyArea").style.display = "flex";
+        document.getElementById("gameArea").style.display = "none";
+        document.getElementById("exitGameBtn").style.display = "none";
+        
+        if(forced) showMatrixModal("Masa Kapatıldı", "Bağlantı koptu, kural ihlali yapıldı veya maç sona erdi.", "info");
+    };
+
+    // ANLIK LOBİ 
+    function listenToRooms() {
+        const q = query(collection(db, "chess_rooms"), where("status", "==", "waiting"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById("roomsList");
+            list.innerHTML = "";
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if(data.hostUid === userData.uid) return; 
+                
+                const isPriv = data.isPrivate;
+                const btnIcon = isPriv ? '<i class="fa-solid fa-lock"></i> ŞİFRELİ' : 'OTUR';
+                
+                const safeRoomName = escapeHTML(data.roomName || data.hostName);
+                const safeHostName = escapeHTML(data.hostName);
+                const safePass = escapeHTML(data.password || "");
+                
+                list.innerHTML += `
+                    <div class="room-card">
+                        <div class="room-info">
+                            <h3><i class="fa-solid fa-chess" style="color:var(--gold);"></i> ${safeRoomName}</h3>
+                            <p>2.500 MC Ödül <span>| Kurucu: ${safeHostName}</span></p>
+                        </div>
+                        <button class="btn-elite" onclick="window.joinRoomCheck('${docSnap.id}', ${isPriv}, '${safeRoomName}', '${safePass}')">${btnIcon}</button>
+                    </div>
+                `;
+            });
+            
+            if(list.innerHTML === "") {
+                list.innerHTML = `<p style="color:var(--text-dim); width:100%; text-align:center; grid-column: 1 / -1; padding: 20px 0; font-weight: 500;">Şu an açık bir masa yok. Kendi masanı kur!</p>`;
+            }
+        });
+    }
+
+})();
 </script>
 </body>
 </html>
