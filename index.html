@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://emirhan-siye.onrender.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://encrypted-tbn0.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; connect-src 'self' https://emirhan-siye.onrender.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://encrypted-tbn0.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
 
 <title>PlayMatrix | Ücretsiz Online Multiplayer, Zeka ve Casino Oyunları</title>
 <meta name="description" content="PlayMatrix: Türkiye'nin en iyi ücretsiz online multiplayer arena, zeka ve strateji oyunları platformu. Kayıt ol, şans çarkını çevir, anında MC kazan ve oynamaya başla!">
@@ -26,15 +26,10 @@
 <meta name="twitter:title" content="PlayMatrix | En İyi Online Oyun Platformu">
 <meta name="twitter:description" content="Tarayıcından tek tıkla ücretsiz oyunlara katıl ve rekabete başla.">
 
-<script>
-    if (window.history.replaceState) { window.history.replaceState(null, null, "/"); }
-</script>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <style>
-/* === GELİŞMİŞ TEMA DEĞİŞKENLERİ === */
 :root {
     --primary: #00f0ff;
     --primary-glow: rgba(0, 240, 255, 0.5);
@@ -52,7 +47,6 @@
     --input-bg: rgba(0, 0, 0, 0.4);
 }
 
-/* AYDINLIK MOD DEĞİŞKENLERİ */
 .light-mode {
     --primary: #0066ff;
     --primary-glow: rgba(0, 102, 255, 0.3);
@@ -76,7 +70,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 #snow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.4; mix-blend-mode: screen; }
 .light-mode #snow { opacity: 0.1; filter: invert(1); mix-blend-mode: multiply; }
 
-/* === ÜST BAR === */
 .top-bar {
     position: fixed; top: 0; width: 100%; height: 70px;
     display: flex; align-items: center; justify-content: space-between;
@@ -137,7 +130,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 @keyframes slideUp { from { opacity:0; transform: translateY(15px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }
 .drop-item { 
     padding: 12px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; 
-    color: var(--text-primary); font-weight: 600; font-size: 13px; transition: 0.2s; border-radius: 10px; 
+    color: var(--text-primary); font-weight: 600; font-size: 13px; transition: 0.2s; border-radius: 10px; cursor: pointer;
 }
 .drop-item i { width: 20px; font-size: 16px; color: var(--primary); text-align: center; }
 .drop-item:hover { background: var(--bg-surface); transform: translateX(5px); color: var(--primary); }
@@ -314,9 +307,9 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 <canvas id="snow"></canvas>
 
 <header class="top-bar">
-    <div class="brand-3d" onclick="window.scrollTo({top:0, behavior:'smooth'})">PlayMatrix</div>
+    <div class="brand-3d" id="brandLogo">PlayMatrix</div>
     <nav class="right-menu">
-        <button class="theme-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Tema Değiştir"><i class="fa-solid fa-moon"></i></button>
+        <button class="theme-btn" id="themeToggle" aria-label="Tema Değiştir"><i class="fa-solid fa-moon"></i></button>
         <button class="btn login-btn" id="loginBtn">GİRİŞ</button>
         <button class="btn register-btn" id="regBtn">KAYIT OL</button>
 
@@ -329,9 +322,9 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
                 <img src="" id="userProfileImg" alt="Kullanıcı Profil Avatarı">
             </div>
             <div class="dropdown" id="userDropdown">
-                <div class="drop-item" onclick="openModal('profileModal')"><i class="fa-solid fa-user-astronaut"></i> Profil Ayarları</div>
-                <div class="drop-item" onclick="openModal('wheelModal')"><i class="fa-solid fa-dharmachakra"></i> Günlük Çark</div>
-                <div class="drop-item" onclick="openModal('bonusModal')"><i class="fa-solid fa-gift"></i> Promosyon Kodu</div>
+                <div class="drop-item" id="navProfileItem"><i class="fa-solid fa-user-astronaut"></i> Profil Ayarları</div>
+                <div class="drop-item" id="navWheelItem"><i class="fa-solid fa-dharmachakra"></i> Günlük Çark</div>
+                <div class="drop-item" id="navBonusItem"><i class="fa-solid fa-gift"></i> Promosyon Kodu</div>
                 <div class="drop-item" id="logoutBtn" style="color:var(--danger); border-top:1px solid var(--glass-border); margin-top:5px;"><i class="fa-solid fa-power-off"></i> Güvenli Çıkış</div>
             </div>
         </div>
@@ -358,17 +351,17 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 <main id="games">
     <div class="section-title">Multiplayer Arena</div>
     <div class="games-grid">
-        <div class="game-card" data-name="Online Pişti" onclick="checkLogin('MultiPlayer/OnlinePişti.html')">
+        <div class="game-card" data-name="Online Pişti" data-auth-url="MultiPlayer/OnlinePişti.html">
             <div class="game-icon"><i class="fa-solid fa-hand-fist" aria-hidden="true"></i></div>
             <span>Online Pişti</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="Online Grid Conquest" onclick="checkLogin('MultiPlayer/GridConquest.html')">
+        <div class="game-card" data-name="Online Grid Conquest" data-auth-url="MultiPlayer/GridConquest.html">
             <div class="game-icon"><i class="fa-solid fa-border-all" aria-hidden="true"></i></div>
             <span>Grid Conquest</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="Online Satranç" onclick="checkLogin('#')">
+        <div class="game-card" data-name="Online Satranç" data-auth-url="#">
             <div class="game-icon"><i class="fa-solid fa-chess-knight" aria-hidden="true"></i></div>
             <span>Online Satranç</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
@@ -377,12 +370,12 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
     <div class="section-title">Zeka & Strateji</div>
     <div class="games-grid">
-        <div class="game-card" data-name="loops cyber" onclick="location.href='Zeka Oyunları/Cyber.html'">
+        <div class="game-card" data-name="loops cyber" data-free-url="Zeka Oyunları/Cyber.html">
             <div class="game-icon"><i class="fa-solid fa-infinity" aria-hidden="true"></i></div>
             <span>Cyber</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
-        <div class="game-card" data-name="Pattern Master" onclick="location.href='Zeka Oyunları/PatternMaster.html'">
+        <div class="game-card" data-name="Pattern Master" data-free-url="Zeka Oyunları/PatternMaster.html">
             <div class="game-icon"><i class="fa-solid fa-shapes" aria-hidden="true"></i></div>
             <span>Pattern Master</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
@@ -391,22 +384,22 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
     <div class="section-title">Premium Casino</div>
     <div class="games-grid">
-        <div class="game-card" data-name="Crash" onclick="checkLogin('Casino/Crash.html')">
+        <div class="game-card" data-name="Crash" data-auth-url="Casino/Crash.html">
             <div class="game-icon"><i class="fa-solid fa-plane-up" aria-hidden="true"></i></div>
             <span>Crash</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="Mines" onclick="checkLogin('Casino/Mines.html')">
+        <div class="game-card" data-name="Mines" data-auth-url="Casino/Mines.html">
             <div class="game-icon"><i class="fa-solid fa-land-mine-on" aria-hidden="true"></i></div>
             <span>Mines</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="BlackJack" onclick="checkLogin('Casino/BlackJack.html')">
+        <div class="game-card" data-name="BlackJack" data-auth-url="Casino/BlackJack.html">
             <div class="game-icon"><i class="fa-solid fa-diamond" aria-hidden="true"></i></div>
             <span>BlackJack</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
         </div>
-        <div class="game-card" data-name="Pişti Casino" onclick="checkLogin('Casino/Pişti.html')">
+        <div class="game-card" data-name="Pişti Casino" data-auth-url="Casino/Pişti.html">
             <div class="game-icon"><i class="fa-solid fa-clone" aria-hidden="true"></i></div>
             <span>Pişti</span>
             <div class="badge auth-badge">GİRİŞ GEREKİR</div>
@@ -415,17 +408,17 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
     <div class="section-title">Arcade Classics</div>
     <div class="games-grid">
-        <div class="game-card" data-name="Space Pro" onclick="location.href='Free Games/SpacePro.html'">
+        <div class="game-card" data-name="Space Pro" data-free-url="Free Games/SpacePro.html">
             <div class="game-icon"><i class="fa-solid fa-user-astronaut" aria-hidden="true"></i></div>
             <span>Space Pro</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
-        <div class="game-card" data-name="Snake Pro" onclick="location.href='Free Games/SnakePro.html'">
+        <div class="game-card" data-name="Snake Pro" data-free-url="Free Games/SnakePro.html">
             <div class="game-icon"><i class="fa-solid fa-worm" aria-hidden="true"></i></div>
             <span>Snake Pro</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
         </div>
-        <div class="game-card" data-name="Tower Stack" onclick="location.href='Free Games/TowerStack.html'">
+        <div class="game-card" data-name="Tower Stack" data-free-url="Free Games/TowerStack.html">
             <div class="game-icon"><i class="fa-solid fa-layer-group" aria-hidden="true"></i></div>
             <span>Tower Stack</span>
             <div class="badge badge-free">ÜCRETSİZ OYNA</div>
@@ -448,13 +441,13 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
         <div id="alertIcon" style="font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));"></div>
         <h2 id="alertTitle">Sistem Mesajı</h2>
         <p id="alertBody" style="color: var(--text-secondary); margin-bottom: 25px; font-size: 15px; font-weight: 500;"></p>
-        <button class="modal-btn" onclick="closeModal('alertModal')">TAMAM</button>
+        <button class="modal-btn" id="alertCloseBtn">TAMAM</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="profileModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('profileModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="profileCloseIcon"></i>
         <h2>Profil Yönetimi</h2>
         <div style="text-align:left; margin-bottom:15px;">
             <label style="font-size:12px; color:var(--text-secondary); font-weight:700; margin-left:5px;">Kayıtlı E-posta</label>
@@ -468,25 +461,25 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
         </div>
         <div style="text-align: left; font-size: 13px; color: var(--text-primary); font-weight: 900; margin-top: 15px; text-transform:uppercase;">Avatar Seçimi</div>
         <div class="avatar-grid" id="avatarLibrary"></div>
-        <button class="modal-btn" onclick="updateProfile()">DEĞİŞİKLİKLERİ KAYDET</button>
+        <button class="modal-btn" id="profileSaveBtn">DEĞİŞİKLİKLERİ KAYDET</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="bonusModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('bonusModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="bonusCloseIcon"></i>
         <i class="fa-solid fa-gift" style="font-size:50px;color:var(--primary);margin-bottom:15px; filter: drop-shadow(0 0 15px var(--primary-glow));"></i>
         <h2>Ödül Merkezi</h2>
         <p style="color:var(--text-secondary); font-size:13px; margin-bottom:15px; font-weight:500;">Sosyal medya hesaplarımızdan aldığınız promosyon kodunu buraya girerek MC bakiyesi kazanabilirsiniz.</p>
         <input type="text" id="bonusInput" placeholder="PROMO KODU GİRİN" style="text-align: center; font-weight: 900; letter-spacing: 3px; font-size:16px; text-transform:uppercase;">
         <div id="promoFeedback" class="promo-msg"></div>
-        <button class="modal-btn" onclick="claimBonus()">KODU AKTİF ET</button>
+        <button class="modal-btn" id="bonusSubmitBtn">KODU AKTİF ET</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="wheelModal">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('wheelModal')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="wheelCloseIcon"></i>
         <h2>Şans Çarkı</h2>
         <div class="wheel-container">
             <div class="wheel-pointer"></div>
@@ -494,14 +487,14 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
             <canvas id="wheelCanvas" width="500" height="500"></canvas>
         </div>
         <div id="wheelResultText"></div>
-        <button class="modal-btn" id="spinBtn" onclick="spinWheel()" style="margin-top:20px;">ÜCRETSİZ ÇEVİR</button>
+        <button class="modal-btn" id="spinBtn" style="margin-top:20px;">ÜCRETSİZ ÇEVİR</button>
         <div id="wheelTimer" style="margin-top:15px;font-weight:800;color:var(--text-secondary); font-size: 14px; background:var(--input-bg); padding:10px; border-radius:10px;"></div>
     </div>
 </div>
 
 <div class="modal-overlay" id="authOverlay">
     <div class="modal-card">
-        <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('authOverlay')"></i>
+        <i class="fa-solid fa-xmark modal-close-btn" id="authCloseIcon"></i>
         <div style="font-size:40px; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 id="authTitle">Sisteme Giriş Yap</h2>
         <input type="text" id="authEmail" placeholder="E-posta Adresi">
@@ -535,7 +528,8 @@ const API_URL = window.location.hostname === "localhost" || window.location.host
 
 let globalUserData = null; 
 
-window.toggleTheme = () => {
+// === EVENT LISTENER MİMARİSİ (Inline XSS Koruması) ===
+const toggleTheme = () => {
     document.body.classList.toggle('light-mode');
     const icon = document.querySelector('#themeToggle i');
     if(document.body.classList.contains('light-mode')) {
@@ -546,8 +540,11 @@ window.toggleTheme = () => {
         localStorage.setItem('matrixTheme', 'dark');
     }
 };
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
 if(localStorage.getItem('matrixTheme') === 'light') { document.body.classList.add('light-mode'); document.querySelector('#themeToggle i').className = 'fa-solid fa-sun'; }
+
+document.getElementById("brandLogo").addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
 
 // === GÜVENLİ VE HATA TOLERANSLI API İSTEK FONKSİYONU ===
 async function fetchAPI(endpoint, method = 'GET', body = null) {
@@ -576,8 +573,7 @@ async function fetchAPI(endpoint, method = 'GET', body = null) {
     }
 }
 
-window.showMatrixModal = (title, message, type = 'info') => {
-    const modal = document.getElementById("alertModal");
+const showMatrixModal = (title, message, type = 'info') => {
     const icon = document.getElementById("alertIcon");
     document.getElementById("alertTitle").innerText = title;
     document.getElementById("alertBody").innerText = message;
@@ -613,7 +609,6 @@ function drawWheel() {
 }
 setTimeout(drawWheel, 500);
 
-// === DATA ÇEKME MİMARİSİ (Sadece Backend) ===
 async function loadUserData() {
     try {
         const data = await fetchAPI('/api/me');
@@ -642,7 +637,7 @@ async function loadUserData() {
     } catch(e) { console.error("Data Sync Error:", e); }
 }
 
-window.claimBonus = async () => {
+const claimBonus = async () => {
     const input = document.getElementById("bonusInput");
     const feedback = document.getElementById("promoFeedback");
     const code = input.value.trim().toUpperCase();
@@ -662,9 +657,10 @@ window.claimBonus = async () => {
         feedback.classList.add("promo-error");
     }
 };
+document.getElementById('bonusSubmitBtn').addEventListener('click', claimBonus);
 
 let currentRotation = 0;
-window.spinWheel = async () => {
+const spinWheel = async () => {
     const spinBtn = document.getElementById("spinBtn");
     const resultText = document.getElementById("wheelResultText");
     
@@ -696,6 +692,7 @@ window.spinWheel = async () => {
         resultText.innerText = "";
     }
 };
+document.getElementById('spinBtn').addEventListener('click', spinWheel);
 
 const avatarLinks = [
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQwyXlGFYmEebbJwy3udOoiY1aHks5DHDL-LjNe-O2rw&s=10",
@@ -726,12 +723,15 @@ function loadAvatars(current) {
     avatarLinks.forEach(link => {
         const div = document.createElement("div"); div.className = `avatar-item ${link === current ? 'active' : ''}`;
         div.innerHTML = `<img src="${link}" alt="Avatar Seçeneği">`; 
-        div.onclick = () => { document.querySelectorAll(".avatar-item").forEach(i => i.classList.remove("active")); div.classList.add("active"); selectedAvatar = link; };
+        div.addEventListener('click', () => { 
+            document.querySelectorAll(".avatar-item").forEach(i => i.classList.remove("active")); 
+            div.classList.add("active"); selectedAvatar = link; 
+        });
         container.appendChild(div);
     });
 }
 
-window.updateProfile = async () => {
+const updateProfile = async () => {
     const newName = document.getElementById("profNameSurname").value.trim();
     const newPhone = document.getElementById("profPhone").value.trim();
     const newUser = document.getElementById("profUser").value.trim();
@@ -743,6 +743,7 @@ window.updateProfile = async () => {
         await loadUserData();
     } catch(e) { showMatrixModal("Reddedildi", e.message, "error"); }
 };
+document.getElementById('profileSaveBtn').addEventListener('click', updateProfile);
 
 onAuthStateChanged(auth, async user => {
     const authBadges = document.querySelectorAll(".auth-badge");
@@ -757,15 +758,26 @@ onAuthStateChanged(auth, async user => {
     }
 });
 
-window.openModal = (id) => { 
+const openModal = (id) => { 
     const modal = document.getElementById(id); modal.style.display = 'flex'; setTimeout(() => { modal.classList.add('show'); }, 10);
     if(id === 'wheelModal') { drawWheel(); document.getElementById("wheelCanvas").style.transform = "rotate(0deg)"; currentRotation = 0; document.getElementById("wheelResultText").innerText = ""; checkWheelCooldown(); }
 };
 
-window.closeModal = (id) => { 
+const closeModal = (id) => { 
     const modal = document.getElementById(id); modal.classList.remove('show'); setTimeout(() => { modal.style.display = 'none'; }, 300);
     if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
 };
+
+// Modal ve Navigasyon Event Listener'ları
+document.getElementById('navProfileItem').addEventListener('click', () => openModal('profileModal'));
+document.getElementById('navWheelItem').addEventListener('click', () => openModal('wheelModal'));
+document.getElementById('navBonusItem').addEventListener('click', () => openModal('bonusModal'));
+
+document.getElementById('alertCloseBtn').addEventListener('click', () => closeModal('alertModal'));
+document.getElementById('profileCloseIcon').addEventListener('click', () => closeModal('profileModal'));
+document.getElementById('bonusCloseIcon').addEventListener('click', () => closeModal('bonusModal'));
+document.getElementById('wheelCloseIcon').addEventListener('click', () => closeModal('wheelModal'));
+document.getElementById('authCloseIcon').addEventListener('click', () => closeModal('authOverlay'));
 
 function checkWheelCooldown() {
     if(!globalUserData) return;
@@ -784,9 +796,9 @@ function checkWheelCooldown() {
 
 let isLogin = true;
 const authOverlay = document.getElementById("authOverlay");
-document.getElementById("loginBtn").onclick = () => { isLogin=true; updateAuthUI(); openModal('authOverlay'); };
-document.getElementById("regBtn").onclick = () => { isLogin=false; updateAuthUI(); openModal('authOverlay'); };
-document.getElementById("switchMode").onclick = () => { isLogin = !isLogin; updateAuthUI(); };
+document.getElementById("loginBtn").addEventListener('click', () => { isLogin=true; updateAuthUI(); openModal('authOverlay'); });
+document.getElementById("regBtn").addEventListener('click', () => { isLogin=false; updateAuthUI(); openModal('authOverlay'); });
+document.getElementById("switchMode").addEventListener('click', () => { isLogin = !isLogin; updateAuthUI(); });
 
 function updateAuthUI() { 
     document.getElementById("authTitle").innerText = isLogin ? "Sisteme Giriş Yap" : "Ağa Kayıt Ol"; 
@@ -796,7 +808,7 @@ function updateAuthUI() {
     document.getElementById("switchMode").innerHTML = isLogin ? 'Hesabın yok mu? <b style="color:var(--primary)">Hemen Kayıt Ol</b>' : 'Zaten hesabın var mı? <b style="color:var(--primary)">Giriş Yap</b>';
 }
 
-document.getElementById("authSubmit").onclick = async () => {
+document.getElementById("authSubmit").addEventListener('click', async () => {
     const errorMsg = document.getElementById("authErrorMsg");
     const pass = document.getElementById("authPassword").value;
     errorMsg.innerText = "";
@@ -822,19 +834,29 @@ document.getElementById("authSubmit").onclick = async () => {
         else if(e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") errorMsg.innerText = "Hatalı şifre veya e-posta!";
         else errorMsg.innerText = e.message;
     }
-};
+});
 
-document.getElementById("avatarTrigger").onclick = (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); };
-window.onclick = (e) => { if(!e.target.closest('#userPill')) { document.getElementById("userDropdown").classList.remove("active"); } };
-document.getElementById("logoutBtn").onclick = () => signOut(auth);
+document.getElementById("avatarTrigger").addEventListener('click', (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); });
+window.addEventListener('click', (e) => { if(!e.target.closest('#userPill')) { document.getElementById("userDropdown").classList.remove("active"); } });
+document.getElementById("logoutBtn").addEventListener('click', () => signOut(auth));
 
 const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
-function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; } window.onresize = resize; resize();
+function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; } window.addEventListener('resize', resize); resize();
 for(let i=0; i<70; i++) particles.push({x:Math.random()*canvasSnow.width, y:Math.random()*canvasSnow.height, r:Math.random()*2+0.5, d:Math.random()*1+0.5});
 function drawSnow() { ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height); ctxS.fillStyle = "rgba(0, 240, 255, 0.4)"; ctxS.beginPath(); particles.forEach(p => { ctxS.moveTo(p.x, p.y); ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); p.y += p.d; if(p.y > canvasSnow.height) p.y = -5; }); ctxS.fill(); requestAnimationFrame(drawSnow); }
 drawSnow();
 
-window.checkLogin = (url) => { if(!auth.currentUser) { openModal('authOverlay'); } else { location.href = url; } };
+const checkLogin = (url) => { if(!auth.currentUser) { openModal('authOverlay'); } else { location.href = url; } };
+
+// === OYUN KARTLARI DİNAMİK YÖNLENDİRME (İnline Onclick Temizliği İçin) ===
+document.querySelectorAll('.game-card').forEach(card => {
+    card.addEventListener('click', () => {
+        const authUrl = card.getAttribute('data-auth-url');
+        const freeUrl = card.getAttribute('data-free-url');
+        if (authUrl) checkLogin(authUrl);
+        if (freeUrl) location.href = freeUrl;
+    });
+});
 
 document.getElementById('searchInput').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
