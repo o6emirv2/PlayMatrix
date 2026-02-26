@@ -532,25 +532,27 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const API_URL = "https://emirhan-siye.onrender.com";
-
+// SADECE AUTH İŞLEMLERİ İÇİN FİREBASE (Tüm veritabanı Backend'de!)
 const firebaseConfig = {
-    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-    authDomain:"emirhan-site.firebaseapp.com",
-    projectId:"emirhan-site",
-    storageBucket:"emirhan-site.firebasestorage.app",
-    messagingSenderId:"668871888390",
-    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
+    apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain: "emirhan-site.firebaseapp.com",
+    projectId: "emirhan-site",
+    storageBucket: "emirhan-site.firebasestorage.app",
+    messagingSenderId: "668871888390",
+    appId: "1:668871888390:web:76568bda84cb1641f7bd87"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// === TEMA YÖNETİMİ (KARANLIK / AYDINLIK) ===
+// BACKEND API URL (Render üzerinde çalışan sunucun)
+const API_URL = "https://emirhan-siye.onrender.com";
+
+let globalUserData = null; // Backend'den gelen kullanıcı verisi
+
+// === TEMA YÖNETİMİ ===
 window.toggleTheme = () => {
     document.body.classList.toggle('light-mode');
     const icon = document.querySelector('#themeToggle i');
@@ -563,13 +565,29 @@ window.toggleTheme = () => {
     }
 };
 
-// Başlangıçta temayı kontrol et
 if(localStorage.getItem('matrixTheme') === 'light') {
     document.body.classList.add('light-mode');
     document.querySelector('#themeToggle i').className = 'fa-solid fa-sun';
 }
 
-// === ÖZEL MODAL ALERT FONKSİYONU (Glassmorphism Uyumlu) ===
+// === GÜVENLİ API İSTEK FONKSİYONU ===
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) throw new Error("Oturum bulunamadı!");
+    const token = await getIdToken(auth.currentUser);
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+    const options = { method, headers };
+    if (body) options.body = JSON.stringify(body);
+    
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
+}
+
+// === ÖZEL MODAL ALERT FONKSİYONU ===
 window.showMatrixModal = (title, message, type = 'info') => {
     const modal = document.getElementById("alertModal");
     const icon = document.getElementById("alertIcon");
@@ -632,76 +650,96 @@ function drawWheel() {
 }
 setTimeout(drawWheel, 500);
 
-// === GÜVENLİ BONUS KODU ===
+// === KULLANICI VERİLERİNİ BACKEND'DEN ÇEKME ===
+async function loadUserData() {
+    try {
+        const data = await fetchAPI('/api/me');
+        globalUserData = data.user || {};
+        
+        document.getElementById("userBalance").innerText = (data.balance || 0).toLocaleString();
+        document.getElementById("userProfileImg").src = globalUserData.avatar || avatarLinks[0];
+        document.getElementById("profEmail").value = globalUserData.email || auth.currentUser.email;
+        
+        const nameInp = document.getElementById("profNameSurname");
+        nameInp.value = globalUserData.fullName || "";
+        if(globalUserData.fullName) nameInp.disabled = true;
+        
+        const phoneInp = document.getElementById("profPhone");
+        phoneInp.value = globalUserData.phone || "";
+        if(globalUserData.phone) phoneInp.disabled = true;
+        
+        const userInp = document.getElementById("profUser");
+        userInp.value = globalUserData.username || "";
+        const changeCount = 3 - (globalUserData.userChangeCount || 0);
+        document.getElementById("userChangeCount").innerText = Math.max(0, changeCount);
+        if(changeCount <= 0) userInp.disabled = true;
+        
+        loadAvatars(globalUserData.avatar || avatarLinks[0]);
+        checkWheelCooldown();
+    } catch(e) {
+        console.error("Veri çekme hatası:", e);
+    }
+}
+
+// === GÜVENLİ PROMOSYON KODU (Backend Kontrollü) ===
 window.claimBonus = async () => {
-    if(!auth.currentUser) return;
-    const code = document.getElementById("bonusInput").value.trim().toUpperCase();
+    const input = document.getElementById("bonusInput");
+    const feedback = document.getElementById("promoFeedback");
+    const code = input.value.trim().toUpperCase();
     if(!code) return;
     
-    const feedback = document.getElementById("promoFeedback");
-    feedback.innerText = "Sunucu kontrol ediyor...";
+    feedback.innerText = "Sistem kontrol ediliyor...";
     feedback.className = "promo-msg";
-
+    
     try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch(`${API_URL}/api/bonus/claim`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code })
-        });
-        const data = await res.json();
-
-        if(!data.ok) throw new Error(data.error);
-
-        feedback.innerText = `BAŞARILI! ${data.amount.toLocaleString()} MC Eklendi.`;
+        const res = await fetchAPI('/api/bonus/claim', 'POST', { code });
+        feedback.innerText = `BAŞARILI! ${res.amount.toLocaleString()} MC Bakiyenize Eklendi.`;
         feedback.classList.add("promo-success");
-        document.getElementById("userBalance").innerText = data.balance.toLocaleString();
-    } catch (error) {
-        feedback.innerText = error.message;
+        input.value = "";
+        loadUserData(); // Bakiyeyi yenile
+    } catch(e) {
+        feedback.innerText = "Hata: " + e.message;
         feedback.classList.add("promo-error");
     }
 };
 
-// === GÜVENLİ ÇARK ÇEVİRME ===
+// === GÜVENLİ ÇARK ÇEVİRME (Backend Kontrollü) ===
 let currentRotation = 0;
 window.spinWheel = async () => {
-    if(!auth.currentUser) return;
-    const btn = document.getElementById("spinBtn");
+    const spinBtn = document.getElementById("spinBtn");
     const resultText = document.getElementById("wheelResultText");
     
-    btn.disabled = true;
-    resultText.innerText = "Sunucudan kriptografik onay bekleniyor...";
-    resultText.style.color = "var(--primary)";
-
     try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch(`${API_URL}/api/wheel/spin`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-        const data = await res.json();
-
-        if(!data.ok) throw new Error(data.error);
-
+        spinBtn.disabled = true;
+        resultText.innerText = "Kriptografik analiz yapılıyor...";
+        resultText.style.color = "var(--primary)";
+        
+        // Backend'e istek at
+        const res = await fetchAPI('/api/wheel/spin', 'POST');
+        const prize = res.prize;
+        const randomIndex = res.index;
+        
+        // Görsel Animasyon
+        const wheel = document.getElementById("wheelCanvas");
         const segmentDeg = 360 / rewards.length;
-        const stopAt = 360 - (data.index * segmentDeg); 
-        currentRotation += 3600 + stopAt; 
-        document.getElementById("wheelCanvas").style.transform = `rotate(${currentRotation}deg)`;
+        const stopAt = 360 - (randomIndex * segmentDeg); 
+        const extraTours = 3600; 
+        currentRotation += extraTours + stopAt;
+        wheel.style.transform = `rotate(${currentRotation}deg)`;
 
         setTimeout(() => {
-            resultText.innerText = `SİSTEM ONAYLANDI! ${data.prize.toLocaleString()} MC Kazandın!`;
+            resultText.innerText = `SİSTEM ONAYLANDI! ${prize.toLocaleString()} MC Aktarıldı.`;
             resultText.style.color = "var(--success)";
-            checkWheelCooldown();
+            loadUserData(); // Bakiye ve lastSpin güncellenir
         }, 5000);
-
-    } catch (error) {
-        showMatrixModal("Sistem Reddi", error.message, "error");
-        btn.disabled = false;
+        
+    } catch(e) {
+        showMatrixModal("Erişim Reddedildi", e.message, "error");
+        spinBtn.disabled = false;
         resultText.innerText = "";
     }
 };
 
-// EKSİKSİZ AVATAR LİSTESİ
 const avatarLinks = [
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQwyXlGFYmEebbJwy3udOoiY1aHks5DHDL-LjNe-O2rw&s=10",
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQujzeT1nbxD37pbAAGFoEQYZfH7nHKNHebtVxjQZo1vA&s=10",
@@ -736,61 +774,42 @@ function loadAvatars(current) {
     });
 }
 
-// === GÜVENLİ PROFİL GÜNCELLEME ===
+// === GÜVENLİ PROFİL GÜNCELLEME (Backend Kontrollü) ===
 window.updateProfile = async () => {
-    if(!auth.currentUser) return;
     const newName = document.getElementById("profNameSurname").value.trim();
     const newPhone = document.getElementById("profPhone").value.trim();
     const newUser = document.getElementById("profUser").value.trim();
-
+    
     try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch(`${API_URL}/api/profile/update`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fullName: newName, phone: newPhone, username: newUser, avatar: selectedAvatar })
+        await fetchAPI('/api/profile/update', 'POST', {
+            fullName: newName,
+            phone: newPhone,
+            username: newUser,
+            avatar: selectedAvatar || globalUserData.avatar
         });
-        const data = await res.json();
-
-        if(!data.ok) throw new Error(data.error);
         showMatrixModal("Sistem Güncellemesi", "Profil bilgileriniz ağa başarıyla kaydedildi.", "success");
         closeModal('profileModal');
-    } catch (error) {
-        showMatrixModal("Hata", error.message, "error");
+        loadUserData();
+    } catch(e) {
+        showMatrixModal("Hata Oluştu", e.message, "error");
     }
 };
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
     const authBadges = document.querySelectorAll(".auth-badge");
     if(user) {
         document.getElementById("loginBtn").style.display="none"; 
         document.getElementById("regBtn").style.display="none";
         document.getElementById("userPill").style.display="flex";
         authBadges.forEach(badge => { badge.innerText = "ARENAYA GİR"; badge.className = "badge auth-badge badge-success"; });
-        onSnapshot(doc(db, "users", user.uid), s => {
-            if(s.exists()) {
-                const data = s.data();
-                document.getElementById("userBalance").innerText = data.balance.toLocaleString();
-                document.getElementById("userProfileImg").src = data.avatar || avatarLinks[0];
-                document.getElementById("profEmail").value = user.email;
-                const nameInp = document.getElementById("profNameSurname");
-                nameInp.value = data.fullName || "";
-                if(data.fullName) nameInp.disabled = true;
-                const phoneInp = document.getElementById("profPhone");
-                phoneInp.value = data.phone || "";
-                if(data.phone) phoneInp.disabled = true;
-                const userInp = document.getElementById("profUser");
-                userInp.value = data.username;
-                document.getElementById("userChangeCount").innerText = 3 - (data.userChangeCount || 0);
-                if((3 - (data.userChangeCount || 0)) <= 0) userInp.disabled = true;
-                loadAvatars(data.avatar);
-            }
-        });
+        
+        await loadUserData(); // UI'ı backend verisiyle doldur
     } else {
         document.getElementById("loginBtn").style.display="block"; 
         document.getElementById("regBtn").style.display="block";
         document.getElementById("userPill").style.display="none";
         authBadges.forEach(badge => { badge.innerText = "GİRİŞ GEREKİR"; badge.className = "badge auth-badge badge-danger"; });
+        globalUserData = null;
     }
 });
 
@@ -812,14 +831,12 @@ window.closeModal = (id) => {
     const modal = document.getElementById(id);
     modal.classList.remove('show');
     setTimeout(() => { modal.style.display = 'none'; }, 300);
-    
     if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
 };
 
-async function checkWheelCooldown() {
-    if(!auth.currentUser) return;
-    const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-    const lastSpin = userDoc.data().lastSpin || 0;
+function checkWheelCooldown() {
+    if(!globalUserData) return;
+    const lastSpin = globalUserData.lastSpin || 0;
     const diff = 86400000 - (Date.now() - lastSpin);
     const btn = document.getElementById("spinBtn");
     const timer = document.getElementById("wheelTimer");
@@ -844,7 +861,7 @@ document.getElementById("switchMode").onclick = () => { isLogin = !isLogin; upda
 
 function updateAuthUI() { 
     document.getElementById("authTitle").innerText = isLogin ? "Sisteme Giriş Yap" : "Ağa Kayıt Ol"; 
-    document.getElementById("authEmail").placeholder = isLogin ? "E-posta veya Kullanıcı Adı" : "E-posta Adresi";
+    document.getElementById("authEmail").placeholder = "E-posta Adresi";
     document.getElementById("regEmail").style.display = isLogin ? "none" : "block";
     document.getElementById("authUsername").style.display = isLogin ? "none" : "block"; 
     document.getElementById("authEmail").style.display = isLogin ? "block" : "none";
@@ -858,35 +875,31 @@ document.getElementById("authSubmit").onclick = async () => {
     errorMsg.innerText = "";
     try {
         if(isLogin) {
-            const loginInput = document.getElementById("authEmail").value.trim();
-            let finalEmail = loginInput;
-            if(!loginInput.includes("@")) {
-                const q = query(collection(db, "users"), where("username", "==", loginInput));
-                const qs = await getDocs(q);
-                if(qs.empty) throw new Error("Kullanıcı adı ağda bulunamadı!");
-                finalEmail = qs.docs[0].data().email;
-            }
-            await signInWithEmailAndPassword(auth, finalEmail, pass);
+            const email = document.getElementById("authEmail").value.trim();
+            if(!email || !pass) throw new Error("Lütfen e-posta ve şifrenizi girin.");
+            await signInWithEmailAndPassword(auth, email, pass);
             closeModal('authOverlay');
         } else {
             const email = document.getElementById("regEmail").value.trim();
             const userN = document.getElementById("authUsername").value.trim();
             if(!userN || !email || !pass) throw new Error("Lütfen tüm kimlik alanlarını doldurun!");
-            const q = query(collection(db, "users"), where("username", "==", userN));
-            const qs = await getDocs(q);
-            if(!qs.empty) throw new Error("Bu kullanıcı adı başka bir ajan tarafından kullanılıyor!");
+            
+            // Firebase Auth ile kullanıcıyı oluştur
             const res = await createUserWithEmailAndPassword(auth, email, pass);
-            await setDoc(doc(db, "users", res.user.uid), { 
-                username: userN, email: email, balance: 50000, lastSpin: 0, 
-                userChangeCount: 0, fullName: "", phone: "", avatar: avatarLinks[0], usedPromos: [] 
-            });
+            
+            // Backend tarafında db kaydını oluşturmak için API'yi tetikliyoruz
+            await fetchAPI('/api/me'); 
+            
+            // Kullanıcı adını güvenli bir şekilde backend üzerinden güncelliyoruz
+            await fetchAPI('/api/profile/update', 'POST', { username: userN, avatar: avatarLinks[0] });
+
             closeModal('authOverlay');
-            showMatrixModal("Ağa Hoş Geldiniz!", "Kaydınız başarıyla oluşturuldu. Başlangıç desteği olarak 50.000 MC hesabınıza tanımlandı.", "success");
+            showMatrixModal("Ağa Hoş Geldiniz!", "Kaydınız başarıyla oluşturuldu.", "success");
         }
     } catch(e) { 
         if(e.code === "auth/email-already-in-use") errorMsg.innerText = "Bu e-posta adresi sistemde zaten kayıtlı!";
-        else if(e.code === "auth/wrong-password") errorMsg.innerText = "Kimlik doğrulama başarısız. Hatalı şifre!";
-        else errorMsg.innerText = e.message;
+        else if(e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") errorMsg.innerText = "Kimlik doğrulama başarısız. Hatalı e-posta veya şifre!";
+        else errorMsg.innerText = e.message || "Bilinmeyen bir hata oluştu.";
     }
 };
 
@@ -939,5 +952,3 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
     });
 });
 </script>
-</body>
-</html>
