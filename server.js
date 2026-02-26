@@ -137,171 +137,359 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
 });
 
 // ==========================================
-// GRID CONQUEST API (GÜÇLENDİRİLMİŞ ZERO-TRUST, AKICI YAPI)
+// GRID CONQUEST API (FULL SERVER-AUTHORITATIVE)
+// Collection: conquest_rooms (tek kaynak)
+// Pass: conquest_pass (hash'li)
 // ==========================================
 
-// Oyunu bitiren merkezi sunucu fonksiyonu
-async function settleConquestRoom(rid) {
-  const roomRef = db.collection('conquest_rooms').doc(rid);
-  try {
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) return;
-      const data = snap.data();
+const CONQUEST_DURATION_MS = 60 * 1000;
+const CONQUEST_WAITING_TTL_MS = 70 * 1000;
+const CLICK_MIN_INTERVAL_MS = 140;
 
-      if (data.status !== "playing") return;
+const roomRef = (rid) => db.collection('conquest_rooms').doc(rid);
+const passRef = (rid) => db.collection('conquest_pass').doc(rid);
 
-      let s1 = 0, s2 = 0;
-      const cells = data.cells || {};
-      for (let i=0; i<36; i++) { if (cells[i] === 'p1') s1++; else if (cells[i] === 'p2') s2++; }
+const isValidRoomId = (rid) => /^[A-F0-9]{6}$/.test(String(rid || ''));
+const newRoomId = () => crypto.randomBytes(3).toString('hex').toUpperCase();
 
-      let winner = null;
-      if (s1 > s2) winner = data.p1;
-      else if (s2 > s1) winner = data.p2;
+const hashPass = (pass, saltHex) => {
+  const salt = Buffer.from(saltHex, 'hex');
+  const dk = crypto.pbkdf2Sync(String(pass), salt, 120000, 32, 'sha256');
+  return dk.toString('hex');
+};
 
-      tx.update(roomRef, { status: "finished", winner: winner || "draw" });
+const makePassRecord = (pass) => {
+  const saltHex = crypto.randomBytes(16).toString('hex');
+  return { salt: saltHex, hash: hashPass(pass, saltHex), updatedAtMs: nowMs() };
+};
 
-      if (winner && winner !== "draw") {
-          tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
-      }
+const verifyPassHash = (pass, rec) => {
+  if (!rec || !rec.salt || !rec.hash) return false;
+  const a = Buffer.from(hashPass(pass, rec.salt), 'hex');
+  const b = Buffer.from(String(rec.hash), 'hex');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+};
+
+const computeScores = (cells) => {
+  let s1 = 0, s2 = 0;
+  const c = cells || {};
+  for (let i = 0; i < 36; i++) {
+    if (c[i] === 'p1') s1++;
+    else if (c[i] === 'p2') s2++;
+  }
+  return { s1, s2 };
+};
+
+const settleRoomInTx = async (tx, rid, data) => {
+  if (!data || data.status !== 'playing') return;
+  const ended = Number.isFinite(data.endTimeMs) && nowMs() >= data.endTimeMs;
+  if (!ended) return;
+
+  const { s1, s2 } = computeScores(data.cells);
+  let winner = null;
+  if (s1 > s2) winner = data.p1 || null;
+  else if (s2 > s1) winner = data.p2 || null;
+
+  tx.update(roomRef(rid), {
+    status: 'finished',
+    winner,
+    score1: s1,
+    score2: s2,
+    finishedAtMs: nowMs(),
+    updatedAtMs: nowMs(),
+  });
+
+  if (winner) {
+    tx.update(db.collection('users').doc(winner), {
+      balance: admin.firestore.FieldValue.increment(500),
     });
-  } catch(e) { console.error("Oda bitirme hatası:", e); }
-}
+  }
+};
 
+// Odayı SUNUCU oluşturur ve Firebase'e yazar
 app.post('/api/conquest/create', verifyAuth, async (req, res) => {
   try {
-    const pass = cleanStr(req.body.pass);
+    const pass = cleanStr((req.body || {}).pass);
     const isPrivate = pass.length >= 5;
-    const rid = crypto.randomBytes(3).toString('hex').toUpperCase();
 
-    const userRef = db.collection('users').doc(req.user.uid);
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
+    const rid = newRoomId();
+    const uRef = db.collection('users').doc(req.user.uid);
 
     await db.runTransaction(async (tx) => {
-      const uSnap = await tx.get(userRef);
-      const uData = uSnap.exists ? uSnap.data() : {};
-      // İsim bulma garantilendi
-      const uname = uData.username || uData.fullName || "Pilot";
+      const uSnap = await tx.get(uRef);
+      const uname = uSnap.exists ? cleanStr(uSnap.data().username) || "Pilot" : "Pilot";
 
-      tx.set(roomRef, { 
-        id: rid, p1: req.user.uid, p1Name: uname, p2: null, p2Name: null, 
-        status: "waiting", isPrivate, cells: {}, createdAt: admin.firestore.FieldValue.serverTimestamp() 
+      tx.set(roomRef(rid), {
+        id: rid,
+        status: 'waiting',
+        isPrivate,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAtMs: nowMs(),
+        updatedAtMs: nowMs(),
+
+        p1: req.user.uid,
+        p1Name: uname,
+        p2: null,
+        p2Name: null,
+
+        startedAtMs: null,
+        endTimeMs: null,
+
+        cells: {},
+        score1: 0,
+        score2: 0,
+
+        p1_lastClick: 0,
+        p2_lastClick: 0,
+
+        terminatedBy: null,
+        terminatedAtMs: null,
+
+        winner: null,
+        finishedAtMs: null,
       });
-      if (isPrivate) tx.set(passRef, { pass });
+
+      if (isPrivate) {
+        tx.set(passRef(rid), makePassRecord(pass));
+      }
     });
 
-    res.json({ ok: true, roomId: rid });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+    res.json({ ok: true, roomId: rid, role: 'p1' });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
 });
 
+// Join: Şifre/kapasite kontrolü SUNUCUDA
 app.post('/api/conquest/join', verifyAuth, async (req, res) => {
   try {
-    const rid = cleanStr(req.body.roomId);
-    const pass = cleanStr(req.body.pass);
-    if (!rid) throw new Error("Arena ID gerekli!");
+    const rid = cleanStr((req.body || {}).roomId).toUpperCase();
+    const pass = cleanStr((req.body || {}).pass);
 
-    const userRef = db.collection('users').doc(req.user.uid);
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
+    if (!isValidRoomId(rid)) throw new Error("Arena ID geçersiz!");
+
+    const uRef = db.collection('users').doc(req.user.uid);
 
     await db.runTransaction(async (tx) => {
-      const rSnap = await tx.get(roomRef);
+      const rSnap = await tx.get(roomRef(rid));
       if (!rSnap.exists) throw new Error("Arena kapalı!");
-      const rData = rSnap.data();
 
-      if (rData.status !== "waiting") throw new Error("Arena dolu!");
-      if (rData.isPrivate) {
-          const passData = await tx.get(passRef);
-          if (!passData.exists || passData.data().pass !== pass) throw new Error("Hatalı şifre!");
+      const r = rSnap.data();
+
+      // waiting odaları TTL (lobi şişmesin)
+      const age = nowMs() - safeNum(r.createdAtMs, 0);
+      if (r.status === 'waiting' && age > CONQUEST_WAITING_TTL_MS) {
+        tx.delete(roomRef(rid));
+        tx.delete(passRef(rid));
+        throw new Error("Arena süresi doldu!");
       }
-      if (rData.p1 === req.user.uid) throw new Error("Kendi arenana giremezsin.");
 
-      const uSnap = await tx.get(userRef);
-      const uData = uSnap.exists ? uSnap.data() : {};
-      const uname = uData.username || uData.fullName || "Pilot";
+      if (r.status !== 'waiting') throw new Error("Arena dolu/meşgul!");
+      if (r.p1 === req.user.uid) throw new Error("Kendi arenana giremezsin!");
 
-      const now = Date.now();
-      // Sunucu bitiş süresini belirler (60 saniye)
-      tx.update(roomRef, { 
-        p2: req.user.uid, 
-        p2Name: uname, 
-        status: "playing",
-        startedAtMs: now,
-        endTimeMs: now + 60000 
+      if (r.isPrivate) {
+        const pSnap = await tx.get(passRef(rid));
+        if (!pSnap.exists) throw new Error("Şifre gerekli!");
+        const ok = verifyPassHash(pass, pSnap.data());
+        if (!ok) throw new Error("Hatalı şifre!");
+      }
+
+      const uSnap = await tx.get(uRef);
+      const uname = uSnap.exists ? cleanStr(uSnap.data().username) || "Pilot" : "Pilot";
+
+      const start = nowMs();
+      const end = start + CONQUEST_DURATION_MS;
+
+      tx.update(roomRef(rid), {
+        p2: req.user.uid,
+        p2Name: uname,
+        status: 'playing',
+        startedAtMs: start,
+        endTimeMs: end,
+        updatedAtMs: nowMs(),
       });
     });
 
-    // Sunucu içindeki sayaç oyunu tam 60.5 saniye sonra kapatır!
-    setTimeout(() => settleConquestRoom(rid), 60500);
-
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+    res.json({ ok: true, role: 'p2' });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
 });
 
-// Oyunun akıcılığını artırmak için Transaction YERİNE Direct Update kullanıldı. 
+// Click: tamamen server doğrular + skor server hesaplar
 app.post('/api/conquest/click', verifyAuth, async (req, res) => {
   try {
-    const rid = cleanStr(req.body.roomId);
-    const idx = parseInt(req.body.cellIndex, 10);
-    if (!rid || isNaN(idx) || idx < 0 || idx > 35) return res.json({ok:false});
+    const rid = cleanStr((req.body || {}).roomId).toUpperCase();
+    const idx = parseInt((req.body || {}).cellIndex, 10);
 
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-    const snap = await roomRef.get();
-    if (!snap.exists) return res.json({ok:false});
-    const data = snap.data();
-
-    if (data.status !== "playing") return res.json({ok:false});
-
-    // Süre dolmuşsa tıklamaları iptal et ve sunucu çökme durumuna karşı oyunu bitir
-    if (data.endTimeMs && Date.now() > data.endTimeMs) {
-        settleConquestRoom(rid);
-        return res.json({ok:false});
-    }
-
-    let role = null;
-    if (data.p1 === req.user.uid) role = "p1";
-    else if (data.p2 === req.user.uid) role = "p2";
-    if (!role) return res.json({ok:false});
-
-    if (data.cells && data.cells[idx] === role) return res.json({ok:true});
-
-    // Direkt yazma ile donma ihtimali %0'a indirildi
-    await roomRef.update({ [`cells.${idx}`]: role });
-    
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false }); }
-});
-
-app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
-  try {
-    const rid = cleanStr(req.body.roomId);
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
+    if (!isValidRoomId(rid)) return res.json({ ok: false });
+    if (!Number.isInteger(idx) || idx < 0 || idx > 35) return res.json({ ok: false });
 
     await db.runTransaction(async (tx) => {
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) return;
-      const data = snap.data();
+      const rSnap = await tx.get(roomRef(rid));
+      if (!rSnap.exists) return;
+
+      const r = rSnap.data();
+
+      // bitiş kontrolü: süre geçtiyse server settle eder
+      await settleRoomInTx(tx, rid, r);
+
+      if (r.status !== 'playing') return;
+      if (Number.isFinite(r.endTimeMs) && nowMs() >= r.endTimeMs) return;
 
       let role = null;
-      if (data.p1 === req.user.uid) role = "p1";
-      else if (data.p2 === req.user.uid) role = "p2";
-      if (!role) return;
+      let lastField = null;
 
-      if (data.status === "waiting") {
-        if (role === "p1") { tx.delete(roomRef); tx.delete(passRef); }
-        else { tx.update(roomRef, { p2: null, p2Name: null, status: "waiting" }); }
-      } else if (data.status === "playing") {
-        // Çıkan kaybeder, diğeri kazanır
-        const winner = (role === "p1") ? data.p2 : data.p1;
-        tx.update(roomRef, { status: "terminated", winner: winner });
-        if(winner) tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
+      if (r.p1 === req.user.uid) { role = 'p1'; lastField = 'p1_lastClick'; }
+      else if (r.p2 === req.user.uid) { role = 'p2'; lastField = 'p2_lastClick'; }
+      else return;
+
+      const last = safeNum(r[lastField], 0);
+      if (nowMs() - last < CLICK_MIN_INTERVAL_MS) return; // macro/spam
+
+      const cells = r.cells || {};
+      if (cells[idx] === role) {
+        tx.update(roomRef(rid), { [lastField]: nowMs(), updatedAtMs: nowMs() });
+        return;
       }
-      // "finished" olanları ellemeyin, istemci skoru görebilsin
+
+      // update
+      cells[idx] = role;
+      const { s1, s2 } = computeScores(cells);
+
+      tx.update(roomRef(rid), {
+        [`cells.${idx}`]: role,
+        score1: s1,
+        score2: s2,
+        [lastField]: nowMs(),
+        updatedAtMs: nowMs(),
+      });
     });
+
     res.json({ ok: true });
-  } catch (e) { res.json({ ok: false }); }
+  } catch (e) {
+    // hilecilere detay vermiyoruz
+    res.json({ ok: false });
+  }
+});
+
+// Heartbeat: oyunu ayakta tutar + süre bittiğinde server settle eder
+app.post('/api/conquest/heartbeat', verifyAuth, async (req, res) => {
+  try {
+    const rid = cleanStr((req.body || {}).roomId).toUpperCase();
+    if (!isValidRoomId(rid)) return res.json({ ok: false });
+
+    let out = { ok: true };
+
+    await db.runTransaction(async (tx) => {
+      const rSnap = await tx.get(roomRef(rid));
+      if (!rSnap.exists) { out = { ok: false }; return; }
+
+      const r = rSnap.data();
+
+      // süre bittiyse settle
+      await settleRoomInTx(tx, rid, r);
+
+      // tekrar oku (tx içinde güvenli şekilde)
+      const rSnap2 = await tx.get(roomRef(rid));
+      if (!rSnap2.exists) { out = { ok: false }; return; }
+      const rr = rSnap2.data();
+
+      // dışa minimal state dön
+      out = {
+        ok: true,
+        status: rr.status,
+        endTimeMs: rr.endTimeMs || null,
+        score1: safeNum(rr.score1, 0),
+        score2: safeNum(rr.score2, 0),
+        winner: rr.winner || null,
+      };
+    });
+
+    res.json(out);
+  } catch (e) {
+    res.json({ ok: false });
+  }
+});
+
+// Kullanıcının aktif odası var mı? (resume için)
+app.get('/api/conquest/myroom', verifyAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+
+    const q1 = await db.collection('conquest_rooms')
+      .where('p1', '==', uid)
+      .where('status', 'in', ['waiting', 'playing'])
+      .limit(1).get();
+
+    if (!q1.empty) {
+      const d = q1.docs[0];
+      return res.json({ ok: true, roomId: d.id, role: 'p1' });
+    }
+
+    const q2 = await db.collection('conquest_rooms')
+      .where('p2', '==', uid)
+      .where('status', 'in', ['waiting', 'playing'])
+      .limit(1).get();
+
+    if (!q2.empty) {
+      const d = q2.docs[0];
+      return res.json({ ok: true, roomId: d.id, role: 'p2' });
+    }
+
+    res.json({ ok: true, roomId: null });
+  } catch (e) {
+    res.json({ ok: false });
+  }
+});
+
+// Leave: SADECE butondan (client artık pagehide'da çağırmayacak)
+app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
+  try {
+    const rid = cleanStr((req.body || {}).roomId).toUpperCase();
+    if (!isValidRoomId(rid)) return res.json({ ok: false });
+
+    await db.runTransaction(async (tx) => {
+      const rSnap = await tx.get(roomRef(rid));
+      if (!rSnap.exists) return;
+
+      const r = rSnap.data();
+
+      let role = null;
+      if (r.p1 === req.user.uid) role = 'p1';
+      else if (r.p2 === req.user.uid) role = 'p2';
+      else return;
+
+      if (r.status === 'waiting') {
+        // waiting'de p1 çıkarsa oda tamamen silinsin
+        if (role === 'p1') {
+          tx.delete(roomRef(rid));
+          tx.delete(passRef(rid));
+        } else {
+          tx.update(roomRef(rid), { p2: null, p2Name: null, updatedAtMs: nowMs() });
+        }
+        return;
+      }
+
+      // playing'de biri çıkarsa terminated
+      if (r.status === 'playing') {
+        tx.update(roomRef(rid), {
+          status: 'terminated',
+          terminatedBy: req.user.uid,
+          terminatedAtMs: nowMs(),
+          updatedAtMs: nowMs(),
+        });
+        return;
+      }
+
+      // finished/terminated ise dokunma (istersen burada cleanup yazabiliriz)
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false });
+  }
 });
 
 // ==========================================
