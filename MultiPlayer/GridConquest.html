@@ -24,9 +24,10 @@
 
         /* EKRAN KAYMASI VE ZOOM KESİN ENGELLEME */
         html, body { 
-            background: var(--bg); color: #e0e0e0; height: 100vh; overflow: hidden; 
-            display: flex; flex-direction: column; position: relative;
-            overscroll-behavior: none; touch-action: none; 
+            background: var(--bg); color: #e0e0e0; 
+            width: 100vw; height: 100vh; overflow: hidden; 
+            display: flex; flex-direction: column; position: fixed; 
+            top: 0; left: 0; overscroll-behavior: none; touch-action: none; 
             user-select: none; -webkit-user-select: none;
         }
 
