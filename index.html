@@ -528,7 +528,7 @@ const API_URL = window.location.hostname === "localhost" || window.location.host
 
 let globalUserData = null; 
 
-// === EVENT LISTENER MİMARİSİ (Inline XSS Koruması) ===
+// === EVENT LISTENER MİMARİSİ ===
 const toggleTheme = () => {
     document.body.classList.toggle('light-mode');
     const icon = document.querySelector('#themeToggle i');
@@ -853,8 +853,8 @@ document.querySelectorAll('.game-card').forEach(card => {
     card.addEventListener('click', () => {
         const authUrl = card.getAttribute('data-auth-url');
         const freeUrl = card.getAttribute('data-free-url');
-        if (authUrl) checkLogin(authUrl);
-        if (freeUrl) location.href = freeUrl;
+        if (authUrl) return checkLogin(authUrl);
+        if (freeUrl) return (location.href = freeUrl);
     });
 });
 
