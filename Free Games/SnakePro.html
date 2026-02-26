@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix Snake Pro | Retro Yılan Oyunu Oyna</title>
+<meta name="description" content="PlayMatrix Snake Pro ile nostaljiye dön! Klasik yılan oyununu modern ve hızlandırılmış versiyonuyla oyna, en yüksek skoru yap, reflekslerini test et. Ücretsiz tarayıcı oyunu.">
+<meta name="keywords" content="yılan oyunu, snake oyna, klasik snake oyunu, nokia yılan oyunu, retro oyunlar, PlayMatrix, ücretsiz beceri oyunu, tarayıcı oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#03050a">
+<link rel="canonical" href="https://playmatrix.com.tr/SnakePro.html">
+
+<meta property="og:title" content="PlayMatrix Snake Pro | Klasik Yılan Oyunu">
+<meta property="og:description" content="Nostaljik yeşil ekran, hızlanan oyun yapısı ve elmalar... En uzun yılanı sen yapabilir misin? Hemen oyna!">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/snake-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/SnakePro.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix Snake Pro Oyna">
+<meta name="twitter:description" content="Klasik yılan oyunu deneyimini ücretsiz olarak telefonunda veya bilgisayarında yaşa.">
+
+<script>
+    if (window.history.replaceState) {
+        // SnakePro.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
+        window.history.replaceState(null, null, "/");
+    }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --primary: #4fd1ff;
+    --bg-dark: #03050a;
+    --border: #1e2642;
+    --nokia-dark: #0f380f;
+    --nokia-screen: #9bbc0f;
+}
+
+/* Çift tıklama ve zoom sorununu kökten çözen profesyonel reset */
+* { 
+    margin:0; padding:0; box-sizing:border-box; 
+    -webkit-tap-highlight-color:transparent; 
+    outline: none; 
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none; /* iOS tarayıcı seviyesi tüm hareketleri kapatır, sadece bizim kod çalışır */
+}
+
+body {
+    background: var(--bg-dark);
+    background-image: radial-gradient(circle at 50% 50%, #1a2248 0%, #03050a 100%);
+    height: 100vh; width: 100vw; overflow: hidden;
+    font-family: 'Press Start 2P', monospace;
+    display: flex; flex-direction: column;
+}
+
+/* SEO İÇİN GİZLİ H1 SINIFI */
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+}
+
+/* --- ÜST BAR --- */
+.top-bar {
+    width: 100%; height: 60px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; background: rgba(10, 15, 30, 0.9); backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(79, 209, 255, 0.2); z-index: 100;
+}
+
+.back-btn {
+    color: var(--primary); text-decoration: none; font-size: 10px; padding: 8px 12px; border-radius: 8px;
+    background: rgba(79, 209, 255, 0.1); border: 1px solid rgba(79, 209, 255, 0.3); transition: 0.2s;
+}
+.back-btn:active { transform: scale(0.95); background: rgba(79, 209, 255, 0.2); }
+
+.brand {
+    font-size: 14px; font-weight: 900; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--primary), #fff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 10px rgba(79, 209, 255, 0.4);
+}
+
+/* --- OYUN ALANI --- */
+.main-container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 10px; width: 100%;}
+
+.console {
+    width: 100%; max-width: 350px; background: #2a2f3a; padding: 20px; border-radius: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.1); 
+    border: 1px solid #444; position: relative;
+}
+
+.score-panel {
+    display: flex; justify-content: space-between; background: #8bac0f;
+    padding: 8px; font-size: 8px; color: var(--nokia-dark); border-bottom: 2px solid var(--nokia-dark);
+    border-top-left-radius: 4px; border-top-right-radius: 4px;
+}
+
+.screen-container { 
+    position: relative; background: var(--nokia-screen); border: 8px solid #111; 
+    border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; overflow: hidden; 
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5); /* Retro ekran derinliği */
+}
+
+canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+
+/* --- KONTROLLER --- */
+.controls { display: grid; grid-template-columns: repeat(3, 1fr); grid-gap: 12px; margin-top: 25px; }
+
+.btn {
+    aspect-ratio: 1/1; background: linear-gradient(145deg, #242933, #1e222a); border-radius: 50%; display: flex;
+    justify-content: center; align-items: center; color: #888; font-size: 20px;
+    border: 1px solid #333; box-shadow: 0 6px 0 #111, inset 0 2px 5px rgba(255,255,255,0.05); cursor: pointer;
+    touch-action: none; /* Buton bazlı zoom engelleme */
+}
+
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #111; color: var(--primary); background: #1a1d24; }
+
+.btn-up { grid-column: 2; }
+.btn-left { grid-column: 1; }
+.btn-down { grid-column: 2; }
+.btn-right { grid-column: 3; }
+
+.overlay {
+    position: absolute; inset: 0; background: rgba(155, 188, 15, 0.85); display: flex;
+    flex-direction: column; justify-content: center; align-items: center;
+    z-index: 10; text-align: center; cursor: pointer; backdrop-filter: blur(2px);
+}
+
+.blink { animation: blinker 1s linear infinite; }
+@keyframes blinker { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<h1 class="sr-only">PlayMatrix Snake Pro - Retro Nostaljik Yılan Oyunu</h1>
+
+<header class="top-bar">
+    <a href="index.html" class="back-btn" aria-label="Ana Sayfaya Dön">GERİ</a>
+    <div class="brand">Snake Pro</div>
+    <div style="width:50px;"></div>
+</header>
+
+<main class="main-container">
+    <div class="console" aria-label="Oyun Konsolu">
+        
+        <div class="score-panel" aria-live="polite">
+            <span>SCORE:<span id="score">0</span></span>
+            <span>BEST:<span id="high">0</span></span>
+        </div>
+
+        <div class="screen-container">
+            <canvas id="game" width="300" height="300" aria-label="Yılan Oyunu Alanı"></canvas>
+            
+            <div id="startup" class="overlay" role="button" aria-label="Oyunu Başlat">
+                <div style="font-size:16px; color:var(--nokia-dark); margin-bottom:15px; text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">SNAKE PRO</div>
+                <div class="blink" style="font-size:8px; color:var(--nokia-dark);">BAŞLAMAK İÇİN DOKUN</div>
+            </div>
+
+            <div id="gameover" class="overlay" style="display:none;" role="button" aria-label="Tekrar Oyna">
+                <div style="font-size:14px; color:var(--nokia-dark); text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">EYVAH!</div>
+                <div id="finalScore" style="font-size:10px; color:var(--nokia-dark); margin: 10px 0;"></div>
+                <div class="blink" style="font-size:7px; color:var(--nokia-dark);">TEKRAR DENE</div>
+            </div>
+        </div>
+
+        <div class="controls" aria-label="Yön Kontrolleri">
+            <button class="btn btn-up" id="btn-UP" aria-label="Yukarı Git">↑</button>
+            <button class="btn btn-left" id="btn-LEFT" aria-label="Sola Git">←</button>
+            <button class="btn btn-down" id="btn-DOWN" aria-label="Aşağı Git">↓</button>
+            <button class="btn btn-right" id="btn-RIGHT" aria-label="Sağa Git">→</button>
+        </div>
+    </div>
+</main>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const box = 15;
+const size = 300;
+
+let snake, direction, nextDirection, food, score, started = false;
+let currentSpeed, lastMoveTime, gameInterval;
+
+// --- ⚡ AGRESİF SES MOTORU (iOS İÇİN ÖZEL) ---
+let audioCtx = null;
+
+function forceUnlockAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    // iOS kilit açma: Boş bir ses üretip oynatıyoruz
+    const buffer = audioCtx.createBuffer(1, 1, 22050);
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioCtx.destination);
+    source.start(0);
+}
+
+function playSound(freq, type, dur, vol = 0.1) {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+}
+
+const sounds = {
+    move: () => playSound(450, 'sine', 0.04, 0.05),
+    eatGreen: () => playSound(880, 'square', 0.1, 0.1), // 🍏 sesi
+    eatRed: () => { // 🍎 sesi (çift bip)
+        playSound(1000, 'square', 0.1, 0.1);
+        setTimeout(() => playSound(1300, 'square', 0.1, 0.1), 60);
+    },
+    dead: () => { // Kaybetme sesi (kalınlaşan ses)
+        playSound(220, 'sawtooth', 0.3, 0.2);
+        setTimeout(() => playSound(110, 'sawtooth', 0.5, 0.2), 150);
+    }
+};
+
+const getHigh = () => localStorage.getItem("snake_pro_best") || 0;
+document.getElementById("high").innerText = getHigh();
+
+function spawnFood() {
+    const isSpecial = Math.random() < 0.15; // %15 şansla nadir 🍎
+    food = {
+        x: Math.floor(Math.random() * (size/box)) * box,
+        y: Math.floor(Math.random() * (size/box)) * box,
+        type: isSpecial ? '🍎' : '🍏',
+        value: isSpecial ? 3 : 1
+    };
+    if(snake.some(s => s.x === food.x && s.y === food.y)) spawnFood();
+}
+
+function startGame() {
+    forceUnlockAudio(); // Dokunulduğu an ses kanalını aç
+    snake = [{x: 10*box, y: 10*box}, {x: 9*box, y: 10*box}, {x: 8*box, y: 10*box}];
+    direction = "RIGHT";
+    nextDirection = "RIGHT";
+    score = 0;
+    currentSpeed = 150;
+    lastMoveTime = 0;
+    spawnFood();
+    
+    document.getElementById("score").innerText = "0";
+    document.getElementById("startup").style.display = "none";
+    document.getElementById("gameover").style.display = "none";
+    
+    started = true;
+    if(gameInterval) cancelAnimationFrame(gameInterval);
+    gameInterval = requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(time) {
+    if (!started) return;
+    if (time - lastMoveTime > currentSpeed) {
+        update();
+        lastMoveTime = time;
+    }
+    draw();
+    gameInterval = requestAnimationFrame(gameLoop);
+}
+
+function update() {
+    direction = nextDirection;
+    let head = { x: snake[0].x, y: snake[0].y };
+
+    if (direction === "UP") head.y -= box;
+    if (direction === "DOWN") head.y += box;
+    if (direction === "LEFT") head.x -= box;
+    if (direction === "RIGHT") head.x += box;
+
+    // Çarpışma kontrolü
+    if (head.x < 0 || head.y < 0 || head.x >= size || head.y >= size || 
+        snake.some(s => s.x === head.x && s.y === head.y)) {
+        return endGame();
+    }
+
+    // Yemek yeme
+    if (head.x === food.x && head.y === food.y) {
+        score += food.value;
+        document.getElementById("score").innerText = score;
+        
+        // Ses tetikleyici
+        if(food.type === '🍎') sounds.eatRed(); else sounds.eatGreen();
+
+        spawnFood();
+        if(currentSpeed > 60) currentSpeed -= 2;
+    } else {
+        snake.pop();
+    }
+    snake.unshift(head);
+}
+
+function draw() {
+    ctx.fillStyle = "#9bbc0f";
+    ctx.fillRect(0, 0, size, size);
+    
+    // Yemek Çizimi
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(food.type, food.x + box/2, food.y + box/2);
+
+    // Yılan Çizimi
+    snake.forEach(s => {
+        ctx.fillStyle = "#0f380f";
+        ctx.fillRect(s.x + 1, s.y + 1, box - 2, box - 2);
+    });
+}
+
+function endGame() {
+    started = false;
+    sounds.dead();
+    if (score > getHigh()) localStorage.setItem("snake_pro_best", score);
+    document.getElementById("high").innerText = getHigh();
+    document.getElementById("finalScore").innerText = "SKORUN: " + score;
+    document.getElementById("gameover").style.display = "flex";
+}
+
+function moveAction(dir) {
+    forceUnlockAudio(); // Her butonda ses kontrolünü tazele
+    if(!started) return;
+    
+    sounds.move(); // Buton tık sesi
+
+    if (dir === "UP" && direction !== "DOWN") nextDirection = "UP";
+    if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
+    if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
+    if (dir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
+}
+
+// Klavye (Masaüstü için)
+document.addEventListener("keydown", e => {
+    if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
+    if (e.key === "ArrowUp") moveAction("UP");
+    if (e.key === "ArrowDown") moveAction("DOWN");
+    if (e.key === "ArrowLeft") moveAction("LEFT");
+    if (e.key === "ArrowRight") moveAction("RIGHT");
+});
+
+// BUTONLAR: touchstart kullanarak hem gecikmeyi hem zoomu sıfırlıyoruz
+const btns = ["UP", "DOWN", "LEFT", "RIGHT"];
+btns.forEach(id => {
+    const el = document.getElementById("btn-" + id);
+    el.addEventListener("touchstart", (e) => {
+        e.preventDefault(); 
+        moveAction(id);
+    }, { passive: false });
+});
+
+// Başlatma ve Restart Arayüzleri
+const startUI = document.getElementById("startup");
+const restartUI = document.getElementById("gameover");
+
+[startUI, restartUI].forEach(el => {
+    el.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        startGame();
+    }, { passive: false });
+});
+
+</script>
+</body>
+</html>
