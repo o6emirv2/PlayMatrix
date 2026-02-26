@@ -290,7 +290,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-/* ✅ Cloud Shell API (VerifyIdToken duvarı) */
+/* ✅ Cloud Shell API / Render Backend */
 const API_BASE = "https://emirhan-siye.onrender.com";
 
 const firebaseConfig = {
@@ -305,7 +305,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-/* ✅ Güvenli API Fetch Mantığı (Mines'tan Birebir Aktarıldı) */
+/* ✅ Mines'tan Alınan Güvenli API Fetch Mantığı */
 async function apiFetch(path, method = "POST", body = null) {
     if (!auth.currentUser) throw new Error("Oturum yok.");
 
@@ -340,16 +340,23 @@ async function apiFetch(path, method = "POST", body = null) {
     return data;
 }
 
-/* API Bakiye Güncelleme Fonksiyonu (Eski updateDoc increment yerine) */
+/* API Bakiye Güncelleme Fonksiyonu (Firestore increment() Yerine Kullanılır) */
 async function updateBalanceAPI(amount) {
     if (amount === 0) return;
-    // Sunucunuzdaki bakiye eksiltme/artırma endpoint'ine istek atar
-    const data = await apiFetch("/api/balance/update", "POST", { amount: amount });
-    if (data.balance !== undefined) {
-        balance = Number(data.balance);
-        document.getElementById("balance").innerText = Math.floor(balance).toLocaleString('tr-TR');
-    } else {
-        await refreshMe();
+    try {
+        const data = await apiFetch("/api/balance/update", "POST", { amount: amount });
+        if (data && data.balance !== undefined) {
+            balance = Number(data.balance);
+            // Oyun sırasında bakiye değişimleri ekrana hemen yansımasın ki akış bozulmasın
+            if(gameState === "loading" || gameState === "betting") {
+                document.getElementById("balance").innerText = Math.floor(balance).toLocaleString('tr-TR');
+            }
+        } else {
+            await refreshMe();
+        }
+    } catch (e) {
+        console.error("Bakiye güncellenemedi:", e);
+        throw e; // Hata fırlatılsın ki bahis reddedilirse kod devam etmesin
     }
 }
 
@@ -415,7 +422,7 @@ function playSound(name) {
     source.start(0);
 }
 
-/* API Üzerinden Kullanıcı Verilerini Çekme (Mines'taki refreshMe) */
+/* ✅ Mines'taki refreshMe Mantığı (Sadece Backend'den Veri Çeker) */
 async function refreshMe() {
     try {
         const me = await apiFetch("/api/me", "GET");
@@ -435,6 +442,7 @@ onAuthStateChanged(auth, async (user) => {
     
     await refreshMe();
     
+    // Polling mantığı: Eğer oyun oynanmıyorsa her 8 saniyede bir bakiyeyi eşitle
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(() => {
         if (!isProcessing && (gameState === "loading" || gameState === "betting")) {
@@ -564,8 +572,11 @@ async function startGame(){
     setControlsDisabled(true);
     createDeck(); 
     
-    try { await updateBalanceAPI(-initialBet); } 
-    catch(e) { cancelBet(); document.getElementById("chipsArea").style.display = "flex"; return; }
+    try { 
+        await updateBalanceAPI(-initialBet); 
+    } catch(e) { 
+        cancelBet(); document.getElementById("chipsArea").style.display = "flex"; return; 
+    }
 
     await draw(playerHands[0].cards, "hand0", true);
     await draw(dealer, "dealerCards", true);
