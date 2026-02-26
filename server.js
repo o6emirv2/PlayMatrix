@@ -3,6 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 
 process.on('uncaughtException', (err) => console.error('Kritik Hata (Çökme Engellendi):', err));
 process.on('unhandledRejection', (reason) => console.error('İşlenmeyen Promise Hatası:', reason));
@@ -10,14 +11,14 @@ process.on('unhandledRejection', (reason) => console.error('İşlenmeyen Promise
 // -------------------- Firebase Admin Init --------------------
 try {
   if (!admin.apps.length) {
-    let serviceAccount;
     if (process.env.FIREBASE_KEY) {
-      serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
+      const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
       admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
       console.log("✅ Firebase Admin bağlandı (FIREBASE_KEY).");
     } else {
       console.error("🔴 FIREBASE_KEY ortam değişkeni yok! (Render Env'e ekle)");
-      admin.initializeApp({ projectId: "emirhan-site" });
+      // fallback (prod’da kullanma)
+      admin.initializeApp();
     }
   }
 } catch (e) {
@@ -32,7 +33,7 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/ping', (req, res) => res.send('✅ PlayMatrix Backend Aktif (Pişti API)'));
+app.get('/ping', (req, res) => res.send('✅ PlayMatrix Backend Aktif'));
 
 // -------------------- Auth Middleware --------------------
 const verifyAuth = async (req, res, next) => {
@@ -41,7 +42,7 @@ const verifyAuth = async (req, res, next) => {
   try {
     req.user = await auth.verifyIdToken(h.split(' ')[1]);
     next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ ok: false, error: 'Geçersiz token.' });
   }
 };
@@ -49,6 +50,7 @@ const verifyAuth = async (req, res, next) => {
 // -------------------- Helpers --------------------
 const safeNum = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const cleanStr = (v) => (typeof v === 'string' ? v.trim() : '');
+const nowMs = () => Date.now();
 
 const CARD_POINTS = { "D0": 3, "C2": 2 }; // Karo10 / Sinek2
 const normalizeCardVal = (c) => {
@@ -84,46 +86,61 @@ function createShuffledDeck(isDouble) {
 function maxPlayersByType(type) {
   return String(type || "2-52").startsWith("4") ? 4 : 2;
 }
-
 function is104(type) {
   return String(type || "").includes("104");
 }
 
-function nowMs() {
-  return Date.now();
-}
+// -------------------- Collections --------------------
+const colUsers = () => db.collection('users');
+const colPublic = () => db.collection('rooms_public');
+const colState  = () => db.collection('rooms_state');
+const colPass   = () => db.collection('rooms_passwords');
+const colPromos = () => db.collection('promo_codes'); // (istersen adını değiştir)
+const playersSub = (roomId) => colPublic().doc(roomId).collection('players');
 
-// public doc builder (lobi için)
-function buildPublicDoc({ name, type, bet, status, createdAtMs, hasPassword, playersCount, maxP }) {
+// -------------------- Public doc builder (Lobby uyumlu) --------------------
+function buildPublicDoc({
+  name, type, bet, status, hasPassword,
+  playersCount, maxP, createdAtMs,
+  p1, p2, p3, p4, p1_name, p2_name, p3_name, p4_name
+}) {
   return {
     name: cleanStr(name) || "Arena",
     type: cleanStr(type) || "2-52",
     bet: safeNum(bet, 0),
     status: cleanStr(status) || "waiting",
     hasPassword: !!hasPassword,
+
+    // lobby uyumu:
     playersCount: safeNum(playersCount, 0),
     maxPlayers: safeNum(maxP, 2),
+
+    p1: p1 || null, p2: p2 || null, p3: p3 || null, p4: p4 || null,
+    p1_name: p1_name || null, p2_name: p2_name || null, p3_name: p3_name || null, p4_name: p4_name || null,
+
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
     createdAtMs: safeNum(createdAtMs, nowMs()),
     updatedAtMs: nowMs()
   };
 }
 
-// state doc builder
-function buildInitialState({ type, deck, initialTable }) {
+// -------------------- State doc builder --------------------
+function buildInitialState({ type, deck, initialTable, bet }) {
   const maxP = maxPlayersByType(type);
   const state = {
     type: cleanStr(type) || "2-52",
     status: "waiting",
+    bet: safeNum(bet, 0),          // ✅ client handleEnd için
     deck: deck || [],
     table: initialTable || [],
     turn: null,
     lastCollector: null,
     pistiSignal: 0,
     finishedAtMs: null,
-    settled: false, // payout/refund kilidi
+    settled: false
   };
   for (let i = 1; i <= 4; i++) {
-    state[`p${i}`] = null;            // uid
+    state[`p${i}`] = null;
     state[`p${i}_name`] = null;
     state[`p${i}_score`] = 0;
     state[`p${i}_count`] = 0;
@@ -142,21 +159,7 @@ function pickRole(state, maxP) {
   return null;
 }
 
-function listPlayers(state, maxP) {
-  const out = [];
-  for (let i = 1; i <= maxP; i++) if (state[`p${i}`]) out.push(state[`p${i}`]);
-  return out;
-}
-
-// -------------------- Collections --------------------
-const colUsers = () => db.collection('users');
-const colPublic = () => db.collection('rooms_public');
-const colState = () => db.collection('rooms_state');
-
-// players subcollection for lobby visibility & quick join
-const playersSub = (roomId) => colPublic().doc(roomId).collection('players');
-
-// -------------------- Basic profile endpoints (opsiyon) --------------------
+// -------------------- Basic profile endpoints --------------------
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
     const u = await colUsers().doc(req.user.uid).get();
@@ -167,17 +170,149 @@ app.get('/api/me', verifyAuth, async (req, res) => {
   }
 });
 
-app.post('/api/auth/bootstrap', verifyAuth, async (req, res) => {
+// index.html: /api/profile/update
+app.post('/api/profile/update', verifyAuth, async (req, res) => {
   try {
-    const { username, avatar } = req.body || {};
-    const userRef = colUsers().doc(req.user.uid);
-    await userRef.set({
-      balance: 50000,
-      username: cleanStr(username) || `Oyuncu_${req.user.uid.slice(0,5)}`,
-      avatar: cleanStr(avatar) || "",
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    res.json({ ok: true, balance: 50000 });
+    const { fullName, phone, username, avatar } = req.body || {};
+    const uid = req.user.uid;
+    const userRef = colUsers().doc(uid);
+
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists) throw new Error("Kullanıcı kaydı yok!");
+
+      const u = snap.data() || {};
+      const updates = {};
+
+      // fullName / phone (bir kez kilitlemek istersen: doluysa değiştirme)
+      if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
+      if (cleanStr(phone) && !cleanStr(u.phone)) updates.phone = cleanStr(phone);
+
+      // avatar serbest
+      if (typeof avatar === 'string') updates.avatar = avatar;
+
+      // username: max 3 kez değiştirsin
+      const wanted = cleanStr(username);
+      if (wanted && wanted !== cleanStr(u.username)) {
+        const used = safeNum(u.userChangeCount, 0);
+        if (used >= 3) throw new Error("Kullanıcı adı değiştirme hakkın bitti!");
+        // uniqueness kontrol:
+        const q = await tx.get(
+          db.collection('users').where('username', '==', wanted).limit(1)
+        );
+        if (!q.empty) {
+          // aynı uid ise problem yok
+          const doc0 = q.docs[0];
+          if (doc0.id !== uid) throw new Error("Bu kullanıcı adı başka bir ajan tarafından kullanılıyor!");
+        }
+        updates.username = wanted;
+        updates.userChangeCount = used + 1;
+      }
+
+      if (Object.keys(updates).length) tx.update(userRef, updates);
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// index.html: /api/wheel/spin
+app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
+  try {
+    const uid = req.user.uid;
+    const userRef = colUsers().doc(uid);
+
+    const rewards = [
+      { label: "2.500 MC",  val: 2500 },
+      { label: "5.000 MC",  val: 5000 },
+      { label: "7.500 MC",  val: 7500 },
+      { label: "12.500 MC", val: 12500 },
+      { label: "20.000 MC", val: 20000 },
+      { label: "25.000 MC", val: 25000 },
+      { label: "30.000 MC", val: 30000 },
+      { label: "50.000 MC", val: 50000 },
+    ];
+
+    const out = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(userRef);
+      if (!snap.exists) throw new Error("Kullanıcı kaydı yok!");
+      const u = snap.data() || {};
+      const lastSpin = safeNum(u.lastSpin, 0);
+
+      const cooldown = 86400000; // 24h
+      const diff = nowMs() - lastSpin;
+      if (diff < cooldown) {
+        const left = cooldown - diff;
+        const h = Math.floor(left / 3600000);
+        const m = Math.floor((left % 3600000) / 60000);
+        throw new Error(`Çark beklemede. Kalan: ${h} saat ${m} dk`);
+      }
+
+      // kriptografik random
+      const rnd = crypto.randomInt(0, rewards.length);
+      const prize = rewards[rnd].val;
+
+      tx.update(userRef, {
+        balance: admin.firestore.FieldValue.increment(prize),
+        lastSpin: nowMs()
+      });
+
+      const newBal = safeNum(u.balance, 0) + prize;
+      return { index: rnd, prize, balance: newBal };
+    });
+
+    res.json({ ok: true, ...out });
+  } catch (e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
+// index.html: /api/bonus/claim
+app.post('/api/bonus/claim', verifyAuth, async (req, res) => {
+  try {
+    const code = cleanStr((req.body || {}).code).toUpperCase();
+    if (!code) throw new Error("Kod boş olamaz.");
+
+    const uid = req.user.uid;
+    const userRef = colUsers().doc(uid);
+    const promoRef = colPromos().doc(code);
+
+    const out = await db.runTransaction(async (tx) => {
+      const [uSnap, pSnap] = await Promise.all([tx.get(userRef), tx.get(promoRef)]);
+      if (!uSnap.exists) throw new Error("Kullanıcı kaydı yok!");
+      if (!pSnap.exists) throw new Error("Kod geçersiz.");
+
+      const u = uSnap.data() || {};
+      const p = pSnap.data() || {};
+
+      const amount = safeNum(p.amount, 0);
+      if (amount <= 0) throw new Error("Kod aktif değil.");
+
+      // tek kullanımlık (kullanıcı bazlı)
+      const used = Array.isArray(u.usedPromos) ? u.usedPromos : [];
+      if (used.includes(code)) throw new Error("Bu kod daha önce kullanıldı.");
+
+      // global limit (opsiyon)
+      const limitLeft = safeNum(p.limitLeft, -1); // -1 = limitsiz
+      if (limitLeft === 0) throw new Error("Kod tükendi.");
+
+      const newBal = safeNum(u.balance, 0) + amount;
+
+      tx.update(userRef, {
+        balance: admin.firestore.FieldValue.increment(amount),
+        usedPromos: admin.firestore.FieldValue.arrayUnion(code)
+      });
+
+      if (limitLeft > 0) {
+        tx.update(promoRef, { limitLeft: admin.firestore.FieldValue.increment(-1) });
+      }
+
+      return { amount, balance: newBal };
+    });
+
+    res.json({ ok: true, ...out });
   } catch (e) {
     res.json({ ok: false, error: e.message });
   }
@@ -196,8 +331,9 @@ app.post('/api/pisti/create', verifyAuth, async (req, res) => {
 
     const roomId = `room_${nowMs()}_${req.user.uid.slice(0,4)}`;
     const userRef = colUsers().doc(req.user.uid);
-    const pubRef = colPublic().doc(roomId);
-    const stateRef = colState().doc(roomId);
+    const pubRef  = colPublic().doc(roomId);
+    const stateRef= colState().doc(roomId);
+    const passRef = colPass().doc(roomId);
 
     const deck = createShuffledDeck(is104(ttype));
     const initialTableCount = (ttype === "4-104") ? 8 : 4;
@@ -211,31 +347,34 @@ app.post('/api/pisti/create', verifyAuth, async (req, res) => {
 
       const uname = cleanStr(uData.username) || "Oyuncu";
 
-      // public lobby doc
+      // public lobby doc (client uyumu için p1/p1_name yazıyoruz)
       tx.set(pubRef, buildPublicDoc({
         name, type: ttype, bet: betNum, status: "waiting",
         createdAtMs: nowMs(),
         hasPassword,
         playersCount: 1,
-        maxP
+        maxP,
+        p1: req.user.uid,
+        p1_name: uname
       }));
 
-      // players subdoc (lobbyde kim var)
+      // lobby players subdoc
       tx.set(playersSub(roomId).doc(req.user.uid), {
-        uid: req.user.uid,
-        name: uname,
-        role: "p1",
-        joinedAtMs: nowMs()
+        uid: req.user.uid, name: uname, role: "p1", joinedAtMs: nowMs()
       });
 
       // state doc
-      const state = buildInitialState({ type: ttype, deck, initialTable });
+      const state = buildInitialState({ type: ttype, deck, initialTable, bet: betNum });
       state.p1 = req.user.uid;
       state.p1_name = uname;
-
       tx.set(stateRef, state);
 
-      // bet lock (parayı düş)
+      // ✅ password storage
+      if (hasPassword) {
+        tx.set(passRef, { password: cleanStr(pass), updatedAtMs: nowMs() }, { merge: true });
+      }
+
+      // bet lock
       tx.update(userRef, { balance: admin.firestore.FieldValue.increment(-betNum) });
     });
 
@@ -253,33 +392,22 @@ app.post('/api/pisti/join', verifyAuth, async (req, res) => {
     if (!rid) throw new Error("roomId gerekli");
 
     const userRef = colUsers().doc(req.user.uid);
-    const pubRef = colPublic().doc(rid);
-    const stateRef = colState().doc(rid);
+    const pubRef  = colPublic().doc(rid);
+    const stateRef= colState().doc(rid);
+    const passRef = colPass().doc(rid);
 
     const role = await db.runTransaction(async (tx) => {
-      const [uSnap, pubSnap, stSnap] = await Promise.all([
-        tx.get(userRef),
-        tx.get(pubRef),
-        tx.get(stateRef),
+      const [uSnap, pubSnap, stSnap, passSnap] = await Promise.all([
+        tx.get(userRef), tx.get(pubRef), tx.get(stateRef), tx.get(passRef)
       ]);
-
       if (!pubSnap.exists || !stSnap.exists) throw new Error("Oda bulunamadı / kapandı!");
 
       const pub = pubSnap.data() || {};
-      const st = stSnap.data() || {};
+      const st  = stSnap.data() || {};
 
-      const status = cleanStr(st.status || pub.status);
-      if (status !== "waiting") throw new Error("Oyun başlamış veya bitmiş!");
+      if (cleanStr(st.status) !== "waiting") throw new Error("Oyun başlamış veya bitmiş!");
 
-      // password check
-      // password sadece server tarafında kontrol edilir. public doc sadece hasPassword tutar.
-      // Burada password state içinde tutulmuyor => güvenli.
-      // Eğer şifreli oda istiyorsan şifreyi public doc'a değil ayrı secure yere yazmak gerekir.
-      // Basit çözüm: roomId için rooms_private collection. Şimdilik FIREBASE'da rooms_passwords yapalım.
-      const passDocRef = db.collection('rooms_passwords').doc(rid);
-      const passSnap = await tx.get(passDocRef);
       const storedPass = passSnap.exists ? cleanStr((passSnap.data() || {}).password) : "";
-
       if (storedPass && storedPass !== cleanStr(pass)) throw new Error("Hatalı şifre!");
 
       const uData = uSnap.exists ? (uSnap.data() || {}) : {};
@@ -299,27 +427,27 @@ app.post('/api/pisti/join', verifyAuth, async (req, res) => {
         [assigned + "_name"]: uname,
       });
 
-      // player subdoc
-      tx.set(playersSub(rid).doc(req.user.uid), {
-        uid: req.user.uid,
-        name: uname,
-        role: assigned,
-        joinedAtMs: nowMs()
-      });
-
-      // public playersCount + status
-      const newCount = safeNum(pub.playersCount, 0) + 1;
-      const pubUpdates = {
-        playersCount: newCount,
-        updatedAtMs: nowMs()
+      // public doc update (lobi isimleri + uid’ler)
+      const pubUp = {
+        playersCount: admin.firestore.FieldValue.increment(1),
+        updatedAtMs: nowMs(),
+        [assigned]: req.user.uid,
+        [assigned + "_name"]: uname,
       };
 
+      // full olduysa başlat
+      const newCount = safeNum(pub.playersCount, 0) + 1;
       if (newCount >= maxP) {
-        pubUpdates.status = "playing";
-        tx.update(stateRef, { status: "playing", turn: st.p1 || req.user.uid }); // p1 başlar
+        pubUp.status = "playing";
+        tx.update(stateRef, { status: "playing", turn: st.p1 || req.user.uid });
       }
 
-      tx.update(pubRef, pubUpdates);
+      tx.update(pubRef, pubUp);
+
+      // lobby players subdoc
+      tx.set(playersSub(rid).doc(req.user.uid), {
+        uid: req.user.uid, name: uname, role: assigned, joinedAtMs: nowMs()
+      });
 
       // bet lock
       tx.update(userRef, { balance: admin.firestore.FieldValue.increment(-bet) });
@@ -333,34 +461,7 @@ app.post('/api/pisti/join', verifyAuth, async (req, res) => {
   }
 });
 
-// -------------------- PISTI: CREATE password storage (optional) --------------------
-// CREATE sırasında şifre varsa güvenli koleksiyona yaz
-app.post('/api/pisti/setpass', verifyAuth, async (req, res) => {
-  try {
-    const { roomId, password } = req.body || {};
-    const rid = cleanStr(roomId);
-    const pw = cleanStr(password);
-    if (!rid) throw new Error("roomId gerekli");
-
-    const stRef = colState().doc(rid);
-    const passRef = db.collection('rooms_passwords').doc(rid);
-
-    await db.runTransaction(async (tx) => {
-      const stSnap = await tx.get(stRef);
-      if (!stSnap.exists) throw new Error("Oda yok");
-      const st = stSnap.data() || {};
-      if (st.p1 !== req.user.uid) throw new Error("Sadece oda sahibi ayarlayabilir");
-      tx.set(passRef, { password: pw, updatedAtMs: nowMs() }, { merge: true });
-      // public doc hasPassword zaten true/false olarak kalır
-    });
-
-    res.json({ ok: true });
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
-});
-
-// -------------------- PISTI: LEAVE (refund / quit) --------------------
+// -------------------- PISTI: LEAVE --------------------
 app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
   try {
     const { roomId } = req.body || {};
@@ -368,8 +469,9 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
     if (!rid) throw new Error("roomId gerekli");
 
     const userRef = colUsers().doc(req.user.uid);
-    const pubRef = colPublic().doc(rid);
-    const stateRef = colState().doc(rid);
+    const pubRef  = colPublic().doc(rid);
+    const stateRef= colState().doc(rid);
+    const passRef = colPass().doc(rid);
 
     await db.runTransaction(async (tx) => {
       const [uSnap, pubSnap, stSnap] = await Promise.all([
@@ -378,72 +480,56 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
       if (!pubSnap.exists || !stSnap.exists) return;
 
       const pub = pubSnap.data() || {};
-      const st = stSnap.data() || {};
+      const st  = stSnap.data() || {};
 
       const bet = safeNum(pub.bet, 0);
       const maxP = maxPlayersByType(st.type || pub.type);
 
       // role bul
       let myRole = null;
-      for (let i = 1; i <= maxP; i++) {
-        if (st[`p${i}`] === req.user.uid) myRole = `p${i}`;
-      }
+      for (let i = 1; i <= maxP; i++) if (st[`p${i}`] === req.user.uid) myRole = `p${i}`;
       if (!myRole) {
-        // oyuncu zaten yoksa subdoc'u temizle
         tx.delete(playersSub(rid).doc(req.user.uid));
         return;
       }
 
       const status = cleanStr(st.status || pub.status);
 
-      // Waiting'de ayrılan oyuncuya refund (tek taraf)
+      // waiting -> refund ve odadan çıkar
       if (status === "waiting") {
-        // state’den çıkar
         tx.update(stateRef, { [myRole]: null, [myRole + "_name"]: null });
 
-        // public playersCount düş
         const newCount = Math.max(0, safeNum(pub.playersCount, 0) - 1);
-        tx.update(pubRef, { playersCount: newCount, updatedAtMs: nowMs() });
+        tx.update(pubRef, {
+          playersCount: newCount,
+          updatedAtMs: nowMs(),
+          [myRole]: null,
+          [myRole + "_name"]: null
+        });
 
-        // refund (bet iade)
         tx.update(userRef, { balance: admin.firestore.FieldValue.increment(bet) });
-
-        // subdoc sil
         tx.delete(playersSub(rid).doc(req.user.uid));
 
-        // Eğer owner (p1) çıktı ve odada kimse kalmadıysa oda temizle
-        if (myRole === "p1") {
-          if (newCount <= 0) {
-            tx.delete(pubRef);
-            tx.delete(stateRef);
-            tx.delete(db.collection('rooms_passwords').doc(rid));
-          }
+        // owner çıktı ve oda boşaldıysa temizle
+        if (myRole === "p1" && newCount <= 0) {
+          tx.delete(pubRef);
+          tx.delete(stateRef);
+          tx.delete(passRef);
         }
         return;
       }
 
-      // Playing'de çıkarsa: oyunu bitir + refund/payout güvenli kilit
+      // playing -> finished
       if (status === "playing") {
-        // Oyunu finished yap
         tx.update(stateRef, { status: "finished", finishedAtMs: nowMs() });
-
-        // public doc status finished
         tx.update(pubRef, { status: "finished", updatedAtMs: nowMs() });
-
-        // DİKKAT: payout/refund işini burada yapmıyoruz,
-        // çünkü client handleEnd’de zaten sadece bilgilendiriyor.
-        // Settlement’i ayrı function: /api/pisti/settle
-        // Ama kullanıcı çıkınca otomatik settle çağıracağız:
       }
 
-      // subdoc sil
       tx.delete(playersSub(rid).doc(req.user.uid));
     });
 
-    // Otomatik settle dene (idempotent)
-    try {
-      await settleRoom(rid);
-    } catch (_) {}
+    // settle dene
+    try { await settleRoom(rid); } catch {}
 
     res.json({ ok: true });
   } catch (e) {
@@ -459,14 +545,14 @@ app.post('/api/pisti/refill', verifyAuth, async (req, res) => {
     if (!rid) throw new Error("roomId gerekli");
 
     const pubRef = colPublic().doc(rid);
-    const stateRef = colState().doc(rid);
+    const stateRef= colState().doc(rid);
 
     await db.runTransaction(async (tx) => {
       const [pubSnap, stSnap] = await Promise.all([tx.get(pubRef), tx.get(stateRef)]);
       if (!pubSnap.exists || !stSnap.exists) throw new Error("Oda yok!");
 
       const pub = pubSnap.data() || {};
-      const st = stSnap.data() || {};
+      const st  = stSnap.data() || {};
       if (cleanStr(st.status) !== "playing") return;
 
       const maxP = maxPlayersByType(st.type);
@@ -476,36 +562,23 @@ app.post('/api/pisti/refill', verifyAuth, async (req, res) => {
       let deck = Array.isArray(st.deck) ? [...st.deck] : [];
       let table = Array.isArray(st.table) ? [...st.table] : [];
 
-      // Güvenlik: deck hiç yoksa yeniden yaratma (hileye açık). YOKSA odayı bitir.
-      if (!deck.length && table.length && !st.finishedAtMs) {
-        tx.update(stateRef, { status: "finished", finishedAtMs: nowMs() });
-        tx.update(pubRef, { status: "finished", updatedAtMs: nowMs() });
-        return;
-      }
-
-      // Oyun başı: table boşsa ve deck full gibi görünüyorsa initial table aç
       if (table.length === 0 && deck.length === fullSize) {
         table = deck.splice(0, initialTableCount);
       }
 
-      // Herkese 4 kart dağıt
       const needed = maxP * 4;
       if (deck.length >= needed) {
         const up = { table, deck };
-        for (let i = 1; i <= maxP; i++) {
-          up[`p${i}_hand`] = deck.splice(0, 4);
-        }
+        for (let i = 1; i <= maxP; i++) up[`p${i}_hand`] = deck.splice(0, 4);
         up.deck = deck;
         tx.update(stateRef, up);
       } else {
-        // Deste bitti -> masadaki kartlar lastCollector'a yaz
+        // deste bitti -> masayı lastCollector’a yaz, finished
         const up = { table: [], deck: [], status: "finished", finishedAtMs: nowMs() };
 
         if (table.length > 0 && st.lastCollector) {
           let lcRole = null;
-          for (let i = 1; i <= maxP; i++) {
-            if (st[`p${i}`] === st.lastCollector) lcRole = `p${i}`;
-          }
+          for (let i = 1; i <= maxP; i++) if (st[`p${i}`] === st.lastCollector) lcRole = `p${i}`;
           if (lcRole) {
             up[lcRole + "_score"] = admin.firestore.FieldValue.increment(calculatePoints(table));
             up[lcRole + "_count"] = admin.firestore.FieldValue.increment(table.length);
@@ -517,9 +590,7 @@ app.post('/api/pisti/refill', verifyAuth, async (req, res) => {
       }
     });
 
-    // finished olduysa otomatik settle dene
-    try { await settleRoom(rid); } catch (_) {}
-
+    try { await settleRoom(rid); } catch {}
     res.json({ ok: true });
   } catch (e) {
     res.json({ ok: false, error: e.message });
@@ -536,21 +607,18 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
     if (!Number.isInteger(idx)) throw new Error("cardIndex geçersiz");
 
     const pubRef = colPublic().doc(rid);
-    const stateRef = colState().doc(rid);
+    const stateRef= colState().doc(rid);
 
     await db.runTransaction(async (tx) => {
       const [pubSnap, stSnap] = await Promise.all([tx.get(pubRef), tx.get(stateRef)]);
       if (!pubSnap.exists || !stSnap.exists) throw new Error("Oda yok!");
 
-      const st = stSnap.data() || {};
-      const pub = pubSnap.data() || {};
+      const st  = stSnap.data() || {};
       if (cleanStr(st.status) !== "playing") throw new Error("Oyun aktif değil!");
-
       if (st.turn !== req.user.uid) throw new Error("Sıra sizde değil!");
 
       const maxP = maxPlayersByType(st.type);
 
-      // role bul
       let myRole = null;
       for (let i = 1; i <= maxP; i++) if (st[`p${i}`] === req.user.uid) myRole = `p${i}`;
       if (!myRole) throw new Error("Odada değilsiniz!");
@@ -568,23 +636,14 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
         const isVale = normalizeCardVal(card) === "J";
 
         if (normalizeCardVal(card) === normalizeCardVal(top) || isVale) {
-          // Pişti: yerde 1 kart var ve VALE ile alınmadı
-          if (table.length === 1 && !isVale) {
-            scoreInc = 10;
-            pistiHit = true;
-          } else {
-            scoreInc = calculatePoints([...table, card]);
-          }
+          if (table.length === 1 && !isVale) { scoreInc = 10; pistiHit = true; }
+          else scoreInc = calculatePoints([...table, card]);
 
           countInc = table.length + 1;
           table = [];
           lastCollector = req.user.uid;
-        } else {
-          table.push(card);
-        }
-      } else {
-        table.push(card);
-      }
+        } else table.push(card);
+      } else table.push(card);
 
       // next turn
       const curIdx = parseInt(myRole.slice(1), 10);
@@ -597,14 +656,11 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
         [myRole + "_score"]: admin.firestore.FieldValue.increment(scoreInc),
         [myRole + "_count"]: admin.firestore.FieldValue.increment(countInc),
         lastCollector,
-        turn: nextUid || st.p1, // güvenlik
+        turn: nextUid || st.p1
       };
-
       if (pistiHit) up.pistiSignal = admin.firestore.FieldValue.increment(1);
 
       tx.update(stateRef, up);
-
-      // public doc updateAt (lobby “canlı” gözükmesi)
       tx.update(pubRef, { updatedAtMs: nowMs() });
     });
 
@@ -614,28 +670,26 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
   }
 });
 
-// -------------------- SETTLEMENT (payout/refund fix) --------------------
+// -------------------- SETTLEMENT (payout) --------------------
 async function settleRoom(roomId) {
   const rid = cleanStr(roomId);
   if (!rid) return;
 
   const pubRef = colPublic().doc(rid);
-  const stRef = colState().doc(rid);
+  const stRef  = colState().doc(rid);
 
   await db.runTransaction(async (tx) => {
     const [pubSnap, stSnap] = await Promise.all([tx.get(pubRef), tx.get(stRef)]);
     if (!pubSnap.exists || !stSnap.exists) return;
 
     const pub = pubSnap.data() || {};
-    const st = stSnap.data() || {};
-
-    if (st.settled) return; // idempotent
+    const st  = stSnap.data() || {};
+    if (st.settled) return;
     if (cleanStr(st.status) !== "finished" && cleanStr(pub.status) !== "finished") return;
 
-    const bet = safeNum(pub.bet, 0);
+    const bet = safeNum(st.bet, safeNum(pub.bet, 0));
     const maxP = maxPlayersByType(st.type || pub.type);
 
-    // oyuncular
     const players = [];
     for (let i = 1; i <= maxP; i++) {
       const uid = st[`p${i}`];
@@ -649,9 +703,7 @@ async function settleRoom(roomId) {
       });
     }
 
-    // Eğer oyuncu sayısı < 2 ise (ör: biri çıktı, oyun başlamadan bitti), refund
     if (players.length < 2) {
-      // kim ödeme yaptıysa refund: public players subcollection’da kimler var diye bakmak yerine state’de kalanlara refund
       for (const p of players) {
         tx.update(colUsers().doc(p.uid), { balance: admin.firestore.FieldValue.increment(bet) });
       }
@@ -659,14 +711,11 @@ async function settleRoom(roomId) {
       return;
     }
 
-    // Bonus: en çok kart alan +3
+    // en çok kart bonus +3
     const sortedByCount = [...players].sort((a, b) => b.count - a.count);
     const bonusRole = (sortedByCount[0].count > (sortedByCount[1]?.count || -1)) ? sortedByCount[0].role : null;
-    for (const p of players) {
-      if (p.role === bonusRole) p.score += 3;
-    }
+    for (const p of players) if (p.role === bonusRole) p.score += 3;
 
-    // winner(s)
     players.sort((a, b) => b.score - a.score);
     const topScore = players[0].score;
     const winners = players.filter(p => p.score === topScore);
@@ -678,12 +727,10 @@ async function settleRoom(roomId) {
       tx.update(colUsers().doc(w.uid), { balance: admin.firestore.FieldValue.increment(prizeEach) });
     }
 
-    // kilitle
     tx.update(stRef, { settled: true });
   });
 }
 
-// manuel settle endpoint (opsiyon)
 app.post('/api/pisti/settle', verifyAuth, async (req, res) => {
   try {
     const { roomId } = req.body || {};
