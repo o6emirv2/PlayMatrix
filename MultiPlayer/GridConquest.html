@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; connect-src 'self' https://emirhan-siye.onrender.com http://localhost:3000 https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src https://cdn.pixabay.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
+
     <title>PlayMatrix Neon Conquest | Çok Oyunculu Alan Ele Geçirme Oyunu</title>
     <meta name="description" content="Neon Conquest oyna! Rakiplerinle online arenada kapış, stratejini konuştur ve saniyeler içinde alanı ele geçirerek zafer kazan. Ücretsiz çok oyunculu (multiplayer) tarayıcı oyunu.">
     <meta name="keywords" content="neon oyunlar, alan ele geçirme, multiplayer oyun, çok oyunculu oyun, ücretsiz strateji oyunu, PlayMatrix, online arena, tarayıcı oyunu">
@@ -174,11 +176,12 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    // TEHLİKELİ FONKSİYONLAR SİLİNDİ
+    // VERİ YAZMA / GÜVENSİZ SORGULAR KALDIRILDI - YALNIZCA READ
     import { getFirestore, doc, onSnapshot, collection, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    const API_URL = "https://emirhan-siye.onrender.com";
+    // API URL (Ortam Uyarlamalı)
+    const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -193,6 +196,31 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // GÜVENLİ API İSTEK FONKSİYONU
+    async function fetchAPI(endpoint, method = 'GET', body = null) {
+        if (!auth.currentUser) throw new Error("Oturum bulunamadı!");
+        const token = await auth.currentUser.getIdToken();
+        const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+        const options = { method, headers };
+        if (body) options.body = JSON.stringify(body);
+        
+        try {
+            const res = await fetch(`${API_URL}${endpoint}`, options);
+            const contentType = res.headers.get("content-type");
+            if (!res.ok) {
+                let errStr = `Sunucu hatası: ${res.status}`;
+                if (contentType && contentType.includes("application/json")) {
+                    const errData = await res.json();
+                    errStr = errData.error || errStr;
+                }
+                throw new Error(errStr);
+            }
+            return await res.json();
+        } catch (e) {
+            throw new Error(e.message || "Bağlantı hatası.");
+        }
+    }
+
     const sfx = {
         lobby: new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3'),
         tap: new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3'),
@@ -200,26 +228,17 @@
         thunder: new Audio('https://cdn.pixabay.com/audio/2022/03/24/audio_924ebc01e6.mp3') 
     };
     
-    sfx.lobby.loop = true; 
-    sfx.rain.loop = true; 
-    sfx.lobby.volume = 0.4; 
-    sfx.tap.volume = 0.8;
-    sfx.rain.volume = 1.0; 
-    sfx.thunder.volume = 1.0; 
+    sfx.lobby.loop = true; sfx.rain.loop = true; 
+    sfx.lobby.volume = 0.4; sfx.tap.volume = 0.8; sfx.rain.volume = 1.0; sfx.thunder.volume = 1.0; 
 
     let audioUnlocked = false;
     const unlockAudio = () => {
         if (!audioUnlocked) {
             Object.values(sfx).forEach(a => { 
-                a.play().then(() => { 
-                    a.pause(); 
-                    a.currentTime = 0; 
-                }).catch(()=>{}); 
+                a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(()=>{}); 
             });
             audioUnlocked = true;
-            if(document.getElementById('lobby').style.display !== 'none') {
-                sfx.lobby.play().catch(()=>{});
-            }
+            if(document.getElementById('lobby').style.display !== 'none') sfx.lobby.play().catch(()=>{});
         }
     };
     document.body.addEventListener('touchstart', unlockAudio, {once:true});
@@ -229,46 +248,28 @@
     let unsubLobby = null, unsubGame = null;
     let localCells = {}; 
     let lastClickTime = 0;
-    
     let currentScene = 'lobby'; 
     let lightningTimer = null; 
 
     window.showModalAlert = (title, msg, onConfirmCallback) => {
         document.getElementById('alertTitle').innerText = title;
         document.getElementById('alertMsg').innerText = msg;
-        
         const okBtn = document.getElementById('alertOkBtn');
         const cancelBtn = document.getElementById('alertCancelBtn');
-        
         cancelBtn.style.display = onConfirmCallback ? 'block' : 'none';
-
-        okBtn.onclick = () => {
-            window.toggleModal('alertModal', false);
-            if(onConfirmCallback) onConfirmCallback();
-        };
+        okBtn.onclick = () => { window.toggleModal('alertModal', false); if(onConfirmCallback) onConfirmCallback(); };
         window.toggleModal('alertModal', true);
     };
 
-    // GÜVENLİ ÇIKIŞ İŞLEMİ
     window.onbeforeunload = function() {
         if (curRoomId && !isFin && auth.currentUser) {
-            auth.currentUser.getIdToken().then(token => {
-                fetch(`${API_URL}/api/conquest/leave`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId: curRoomId }),
-                    keepalive: true
-                });
-            });
+            fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }).catch(()=>{});
         }
     };
 
     window.handleExit = () => {
-        if (currentScene === 'game') {
-            window.showModalAlert('ONAY', 'Savaş alanından ayrılıp lobiye dönmek istediğine emin misin?', window.leaveToLobby);
-        } else {
-            window.location.href = "https://playmatrix.com.tr";
-        }
+        if (currentScene === 'game') window.showModalAlert('ONAY', 'Savaş alanından ayrılıp lobiye dönmek istediğine emin misin?', window.leaveToLobby);
+        else window.location.href = "index.html";
     };
 
     window.leaveToLobby = async () => {
@@ -276,35 +277,18 @@
             if (unsubGame) unsubGame();
             if (timerInt) clearInterval(timerInt);
             if (lightningTimer) clearTimeout(lightningTimer);
-            try {
-                const token = await auth.currentUser.getIdToken();
-                fetch(`${API_URL}/api/conquest/leave`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId: curRoomId })
-                });
-            } catch (e) {}
+            try { await fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }); } catch (e) {}
         }
         
-        curRoomId = null;
-        isFin = false;
-        canPlay = false;
-        myRole = null;
-        currentScene = 'lobby';
-        lightningFlash = 0;
+        curRoomId = null; isFin = false; canPlay = false; myRole = null;
+        currentScene = 'lobby'; lightningFlash = 0;
         
-        sfx.rain.pause();
-        sfx.thunder.pause();
-        if (audioUnlocked) {
-            sfx.lobby.currentTime = 0;
-            sfx.lobby.play().catch(()=>{});
-        }
+        sfx.rain.pause(); sfx.thunder.pause();
+        if (audioUnlocked) { sfx.lobby.currentTime = 0; sfx.lobby.play().catch(()=>{}); }
         
         document.getElementById('game-view').style.display = 'none';
         document.getElementById('lobby').style.display = 'flex';
-        window.toggleModal('resultModal', false);
-        window.toggleModal('alertModal', false);
-        
+        window.toggleModal('resultModal', false); window.toggleModal('alertModal', false);
         listenLobby(); 
     };
 
@@ -315,81 +299,35 @@
         });
     };
 
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let lobbyParticles = [];
-    let rainParticles = [];
-    let lightningFlash = 0;
+    const canvas = document.getElementById('bg-canvas'); const ctx = canvas.getContext('2d');
+    let lobbyParticles = [], rainParticles = [], lightningFlash = 0;
 
     function initParticles() {
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        
-        lobbyParticles = Array.from({length: 60}, () => ({ 
-            x: Math.random() * canvas.width, 
-            y: Math.random() * canvas.height, 
-            r: Math.random() * 2, 
-            s: Math.random() * 0.5 
-        }));
-
-        rainParticles = Array.from({length: 150}, () => ({ 
-            x: Math.random() * canvas.width, 
-            y: Math.random() * canvas.height, 
-            l: Math.random() * 25 + 15, 
-            s: Math.random() * 20 + 15, 
-            w: Math.random() * 1.5 + 0.5, 
-            o: Math.random() * 0.4 + 0.1 
-        }));
+        lobbyParticles = Array.from({length: 60}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 2, s: Math.random() * 0.5 }));
+        rainParticles = Array.from({length: 150}, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, l: Math.random() * 25 + 15, s: Math.random() * 20 + 15, w: Math.random() * 1.5 + 0.5, o: Math.random() * 0.4 + 0.1 }));
     }
 
     function triggerLightning() {
         if (currentScene !== 'game') return; 
-        
         lightningFlash = 3; 
-        
-        if (audioUnlocked) {
-            sfx.thunder.currentTime = 0;
-            sfx.thunder.play().catch(()=>{});
-        }
-        
+        if (audioUnlocked) { sfx.thunder.currentTime = 0; sfx.thunder.play().catch(()=>{}); }
         lightningTimer = setTimeout(triggerLightning, Math.random() * 10000 + 8000);
     }
 
     function drawBg() {
         if (currentScene === 'lobby') {
-            ctx.fillStyle = '#03050a'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#03050a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgba(0, 242, 255, 0.2)';
-            lobbyParticles.forEach(p => { 
-                p.y -= p.s; 
-                if(p.y < 0) p.y = canvas.height; 
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); 
-            });
+            lobbyParticles.forEach(p => { p.y -= p.s; if(p.y < 0) p.y = canvas.height; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill(); });
         } else if (currentScene === 'game') {
-            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            if (lightningFlash > 0) {
-                ctx.fillStyle = `rgba(230, 240, 255, ${Math.random() * 0.6 + 0.2})`;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                lightningFlash--;
-            }
-
+            ctx.fillStyle = 'rgba(3, 5, 10, 0.5)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (lightningFlash > 0) { ctx.fillStyle = `rgba(230, 240, 255, ${Math.random() * 0.6 + 0.2})`; ctx.fillRect(0, 0, canvas.width, canvas.height); lightningFlash--; }
             ctx.lineCap = 'round';
             rainParticles.forEach(p => { 
-                ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; 
-                p.y += p.s; 
-                p.x -= p.s * 0.1; 
-                
-                if(p.y > canvas.height) { 
-                    p.y = -20; 
-                    p.x = Math.random() * canvas.width + 50; 
-                } 
-                
-                ctx.beginPath(); 
-                ctx.lineWidth = p.w;
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p.x - p.l * 0.1, p.y - p.l);
-                ctx.stroke(); 
+                ctx.strokeStyle = `rgba(200, 220, 255, ${p.o})`; p.y += p.s; p.x -= p.s * 0.1; 
+                if(p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width + 50; } 
+                ctx.beginPath(); ctx.lineWidth = p.w; ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.l * 0.1, p.y - p.l); ctx.stroke(); 
             });
         }
         requestAnimationFrame(drawBg);
@@ -414,10 +352,8 @@
         const q = query(collection(db, "conquest_rooms"), where("status", "in", ["waiting", "playing"]));
         
         unsubLobby = onSnapshot(q, snap => {
-            const list = document.getElementById('roomList');
-            list.innerHTML = "";
-            let count = 0;
-            const now = Date.now();
+            const list = document.getElementById('roomList'); list.innerHTML = "";
+            let count = 0; const now = Date.now();
             
             snap.forEach(d => {
                 const r = d.data();
@@ -431,39 +367,25 @@
                     const ageSec = Math.floor(ageMs / 1000);
                     const timeStr = ageSec < 5 ? "Az önce" : `${ageSec} saniye önce`;
                     
-                    const card = document.createElement('div');
-                    card.className = "room-card";
+                    const card = document.createElement('div'); card.className = "room-card";
                     card.innerHTML = `
                         <div class="room-info">
                             <div class="room-title">BÖLGE: ${d.id} ${r.pass ? '🔒' : '🔓'}</div>
-                            <div class="room-players">
-                                <span style="color:var(--p1)">${r.p1Name}</span> 
-                                <span style="color:#555">vs</span> 
-                                <span style="color:var(--p2)">BEKLENİYOR...</span>
-                            </div>
+                            <div class="room-players"><span style="color:var(--p1)">${r.p1Name}</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">BEKLENİYOR...</span></div>
                             <div class="room-time">⏳ ${timeStr} açıldı</div>
                         </div>
-                        <div class="room-action">
-                            <button class="btn-neon var(--btn-sec)" onclick="window.joinHandler('${d.id}', '${r.pass||''}')">GİRİŞ YAP</button>
-                        </div>`;
+                        <div class="room-action"><button class="btn-neon var(--btn-sec)" onclick="window.joinHandler('${d.id}', '${r.pass||''}')">GİRİŞ YAP</button></div>`;
                     list.appendChild(card);
                 } else if(r.status === 'playing') {
                     count++;
-                    const card = document.createElement('div');
-                    card.className = "room-card";
+                    const card = document.createElement('div'); card.className = "room-card";
                     card.innerHTML = `
                         <div class="room-info">
                             <div class="room-title">BÖLGE: ${d.id} ⚔️</div>
-                            <div class="room-players">
-                                <span style="color:var(--p1)">${r.p1Name}</span> 
-                                <span style="color:#555">vs</span> 
-                                <span style="color:var(--p2)">${r.p2Name || 'GİZLİ'}</span>
-                            </div>
+                            <div class="room-players"><span style="color:var(--p1)">${r.p1Name}</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">${r.p2Name || 'GİZLİ'}</span></div>
                             <div class="room-time" style="color:var(--danger)">🔴 SAVAŞTA</div>
                         </div>
-                        <div class="room-action">
-                            <button class="btn-neon" style="background:#222; color:#555; cursor:not-allowed;" disabled>MEŞGUL</button>
-                        </div>`;
+                        <div class="room-action"><button class="btn-neon" style="background:#222; color:#555; cursor:not-allowed;" disabled>MEŞGUL</button></div>`;
                     list.appendChild(card);
                 }
             });
@@ -472,16 +394,13 @@
     }
 
     window.quickJoin = () => {
-        const rooms = document.querySelectorAll('.room-card');
-        let target = null;
+        const rooms = document.querySelectorAll('.room-card'); let target = null;
         rooms.forEach(card => { if(card.innerText.includes('🔓') && !card.innerText.includes('MEŞGUL')) target = card; });
-        if(target) target.querySelector('button').click();
-        else window.showModalAlert("ARENA BULUNAMADI", "Uygun şifresiz arena bulunamadı. Kendi arenanı kur.");
+        if(target) target.querySelector('button').click(); else window.showModalAlert("ARENA BULUNAMADI", "Uygun şifresiz arena bulunamadı. Kendi arenanı kur.");
     };
 
     window.showPrivateSettings = () => { window.toggleModal('roomTypeModal', false); window.toggleModal('privateSettingsModal', true); };
 
-    // GÜVENLİ ARENA KURMA
     window.createArena = async (isPrivate) => {
         let id = Math.floor(100 + Math.random() * 900).toString();
         let pass = "";
@@ -493,18 +412,9 @@
         }
 
         try {
-            const token = await auth.currentUser.getIdToken();
-            const res = await fetch(`${API_URL}/api/conquest/create`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId: id, pass })
-            });
-            const data = await res.json();
-            if(!data.ok) throw new Error(data.error);
-
+            await fetchAPI('/api/conquest/create', 'POST', { roomId: id, pass });
             curRoomId = id; myRole = 'p1';
-            window.toggleModal('roomTypeModal', false); 
-            window.toggleModal('privateSettingsModal', false);
+            window.toggleModal('roomTypeModal', false); window.toggleModal('privateSettingsModal', false);
             enterGame(id);
         } catch(e) { window.showModalAlert("HATA", e.message); }
     };
@@ -520,18 +430,9 @@
         } else completeJoin(id);
     };
 
-    // GÜVENLİ ARENAYA KATILMA
     async function completeJoin(id) {
         try {
-            const token = await auth.currentUser.getIdToken();
-            const res = await fetch(`${API_URL}/api/conquest/join`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId: id, pass: document.getElementById('joinRoomPassInput').value })
-            });
-            const data = await res.json();
-            if(!data.ok) throw new Error(data.error);
-
+            await fetchAPI('/api/conquest/join', 'POST', { roomId: id, pass: document.getElementById('joinRoomPassInput').value });
             curRoomId = id; myRole = 'p2';
             enterGame(id);
         } catch(e) { window.showModalAlert("HATA", e.message); }
@@ -539,16 +440,10 @@
 
     function enterGame(id) {
         if(unsubLobby) unsubLobby();
-        
         currentScene = 'game';
         
-        sfx.lobby.pause(); 
-        sfx.rain.currentTime = 0;
-        
-        if (audioUnlocked) {
-            sfx.rain.play().catch(()=>{}); 
-        }
-        
+        sfx.lobby.pause(); sfx.rain.currentTime = 0;
+        if (audioUnlocked) { sfx.rain.play().catch(()=>{}); }
         triggerLightning(); 
 
         document.getElementById('lobby').style.display = 'none';
@@ -556,30 +451,16 @@
         
         const g = document.getElementById('grid'); g.innerHTML = "";
         for(let i=0; i<36; i++) {
-            const c = document.createElement('div'); 
-            c.className = 'cell';
-            c.setAttribute('role', 'button');
-            c.setAttribute('aria-label', `Alan ${i+1}`);
+            const c = document.createElement('div'); c.className = 'cell';
+            c.setAttribute('role', 'button'); c.setAttribute('aria-label', `Alan ${i+1}`);
             
-            // GÜVENLİ KARE TIKLAMA (API İSTEĞİ)
             c.onclick = () => { 
                 const now = Date.now();
                 if(canPlay && !isFin && (now - lastClickTime > 150) && localCells[i] !== myRole) { 
-                    // Gecikme olmaması için önden boya
-                    c.className = 'cell ' + myRole;
-                    localCells[i] = myRole;
-                    
-                    sfx.tap.currentTime = 0; 
-                    if(audioUnlocked) sfx.tap.play().catch(()=>{});
+                    c.className = 'cell ' + myRole; localCells[i] = myRole; // UI Fast Response
+                    sfx.tap.currentTime = 0; if(audioUnlocked) sfx.tap.play().catch(()=>{});
                     lastClickTime = now;
-
-                    auth.currentUser.getIdToken().then(token => {
-                        fetch(`${API_URL}/api/conquest/click`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ roomId: id, cellIndex: i })
-                        });
-                    });
+                    fetchAPI('/api/conquest/click', 'POST', { roomId: id, cellIndex: i }).catch(()=>{});
                 }
             };
             g.appendChild(c);
@@ -591,8 +472,7 @@
             localCells = d.cells || {}; 
             
             if(d.status === 'terminated' && !isFin) {
-                isFin = true;
-                window.showModalAlert("BAĞLANTI KOPTU", "Rakip savaş alanından kaçtı!", window.leaveToLobby);
+                isFin = true; window.showModalAlert("BAĞLANTI KOPTU", "Rakip savaş alanından kaçtı!", window.leaveToLobby);
                 return;
             }
 
@@ -602,25 +482,13 @@
 
             if(d.status === 'playing') canPlay = true;
 
-            // GÜVENLİ SÜRE KONTROLÜ (API İLE)
             if(myRole === 'p1' && d.status === 'playing' && !timerInt) {
-                timerInt = setInterval(() => {
-                    auth.currentUser.getIdToken().then(token => {
-                        fetch(`${API_URL}/api/conquest/tick`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ roomId: id })
-                        });
-                    });
-                }, 1000);
+                timerInt = setInterval(() => { fetchAPI('/api/conquest/tick', 'POST', { roomId: id }).catch(()=>{}); }, 1000);
             }
 
             let s1=0, s2=0;
             document.querySelectorAll('.cell').forEach((c, i) => {
-                if(d.cells[i]) { 
-                    c.className = 'cell ' + d.cells[i]; 
-                    d.cells[i] === 'p1' ? s1++ : s2++; 
-                }
+                if(d.cells[i]) { c.className = 'cell ' + d.cells[i]; d.cells[i] === 'p1' ? s1++ : s2++; }
             });
             document.getElementById('s1').innerText = s1; document.getElementById('s2').innerText = s2;
 
@@ -639,17 +507,8 @@
         document.getElementById('finalS2').innerText = s2;
         window.toggleModal('resultModal', true);
         
-        // GÜVENLİ ODA TEMİZLİĞİ
         if(myRole === 'p1') {
-            setTimeout(() => {
-                auth.currentUser.getIdToken().then(token => {
-                    fetch(`${API_URL}/api/conquest/leave`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ roomId: id })
-                    });
-                });
-            }, 5000);
+            setTimeout(() => { fetchAPI('/api/conquest/leave', 'POST', { roomId: id }).catch(()=>{}); }, 5000);
         }
     }
 </script>
