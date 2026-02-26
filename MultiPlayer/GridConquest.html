@@ -14,19 +14,8 @@
     <meta name="theme-color" content="#03050a">
     <link rel="canonical" href="https://playmatrix.com.tr/GridConquest.html">
 
-    <meta property="og:title" content="PlayMatrix Neon Conquest | Online Strateji">
-    <meta property="og:description" content="Kendi arenanı kur veya hızlı savaşa katıl! Rakibinin rengini silip tüm ızgarayı ele geçir. Hemen ücretsiz oyna.">
-    <meta property="og:image" content="https://playmatrix.com.tr/assets/neon-conquest-promo.jpg">
-    <meta property="og:url" content="https://playmatrix.com.tr/GridConquest.html">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="PlayMatrix">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PlayMatrix Neon Conquest'te Savaşı Kazan">
-    <meta name="twitter:description" content="Gerçek zamanlı çok oyunculu arenada rakiplerine karşı hızını test et!">
-
     <script>
     if (window.history.replaceState) {
-        // GridConquest.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
     </script>
@@ -48,7 +37,6 @@
         }
         body { background: var(--bg); color: #e0e0e0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; position: relative; }
 
-        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
         .sr-only {
             position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
             overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
@@ -186,8 +174,11 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc, getDoc, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    // TEHLİKELİ FONKSİYONLAR SİLİNDİ
+    import { getFirestore, doc, onSnapshot, collection, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const API_URL = "https://emirhan-siye.onrender.com";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -211,7 +202,6 @@
     
     sfx.lobby.loop = true; 
     sfx.rain.loop = true; 
-    
     sfx.lobby.volume = 0.4; 
     sfx.tap.volume = 0.8;
     sfx.rain.volume = 1.0; 
@@ -259,8 +249,18 @@
         window.toggleModal('alertModal', true);
     };
 
+    // GÜVENLİ ÇIKIŞ İŞLEMİ
     window.onbeforeunload = function() {
-        if (curRoomId && !isFin) updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
+        if (curRoomId && !isFin && auth.currentUser) {
+            auth.currentUser.getIdToken().then(token => {
+                fetch(`${API_URL}/api/conquest/leave`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId: curRoomId }),
+                    keepalive: true
+                });
+            });
+        }
     };
 
     window.handleExit = () => {
@@ -277,8 +277,12 @@
             if (timerInt) clearInterval(timerInt);
             if (lightningTimer) clearTimeout(lightningTimer);
             try {
-                await updateDoc(doc(db, "conquest_rooms", curRoomId), { status: 'terminated' });
-                await deleteDoc(doc(db, "conquest_rooms", curRoomId));
+                const token = await auth.currentUser.getIdToken();
+                fetch(`${API_URL}/api/conquest/leave`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId: curRoomId })
+                });
             } catch (e) {}
         }
         
@@ -421,10 +425,7 @@
                 
                 if(r.status === 'waiting' && r.createdAt) {
                     const ageMs = now - r.createdAt.toMillis();
-                    if(ageMs > 65000) {
-                        deleteDoc(doc(db, "conquest_rooms", d.id)).catch(()=>{});
-                        return; 
-                    }
+                    if(ageMs > 65000) return; 
                     
                     count++;
                     const ageSec = Math.floor(ageMs / 1000);
@@ -480,6 +481,7 @@
 
     window.showPrivateSettings = () => { window.toggleModal('roomTypeModal', false); window.toggleModal('privateSettingsModal', true); };
 
+    // GÜVENLİ ARENA KURMA
     window.createArena = async (isPrivate) => {
         let id = Math.floor(100 + Math.random() * 900).toString();
         let pass = "";
@@ -489,13 +491,22 @@
             if(inputId.length < 3 || inputPass.length < 5) { document.getElementById('createError').style.display = 'block'; return; }
             id = inputId; pass = inputPass;
         }
-        curRoomId = id; myRole = 'p1';
-        await setDoc(doc(db, "conquest_rooms", id), {
-            p1: uid, p1Name: username, p2: null, cells: {}, 
-            timer: 60, status: 'waiting', pass: pass, createdAt: serverTimestamp()
-        });
-        window.toggleModal('roomTypeModal', false); window.toggleModal('privateSettingsModal', false);
-        enterGame(id);
+
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch(`${API_URL}/api/conquest/create`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId: id, pass })
+            });
+            const data = await res.json();
+            if(!data.ok) throw new Error(data.error);
+
+            curRoomId = id; myRole = 'p1';
+            window.toggleModal('roomTypeModal', false); 
+            window.toggleModal('privateSettingsModal', false);
+            enterGame(id);
+        } catch(e) { window.showModalAlert("HATA", e.message); }
     };
 
     window.joinHandler = (id, pass) => {
@@ -509,10 +520,21 @@
         } else completeJoin(id);
     };
 
+    // GÜVENLİ ARENAYA KATILMA
     async function completeJoin(id) {
-        curRoomId = id; myRole = 'p2';
-        await updateDoc(doc(db, "conquest_rooms", id), { p2: uid, p2Name: username, status: 'playing' });
-        enterGame(id);
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const res = await fetch(`${API_URL}/api/conquest/join`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId: id, pass: document.getElementById('joinRoomPassInput').value })
+            });
+            const data = await res.json();
+            if(!data.ok) throw new Error(data.error);
+
+            curRoomId = id; myRole = 'p2';
+            enterGame(id);
+        } catch(e) { window.showModalAlert("HATA", e.message); }
     }
 
     function enterGame(id) {
@@ -539,13 +561,25 @@
             c.setAttribute('role', 'button');
             c.setAttribute('aria-label', `Alan ${i+1}`);
             
+            // GÜVENLİ KARE TIKLAMA (API İSTEĞİ)
             c.onclick = () => { 
                 const now = Date.now();
                 if(canPlay && !isFin && (now - lastClickTime > 150) && localCells[i] !== myRole) { 
-                    updateDoc(doc(db, "conquest_rooms", id), { [`cells.${i}`]: myRole }); 
+                    // Gecikme olmaması için önden boya
+                    c.className = 'cell ' + myRole;
+                    localCells[i] = myRole;
+                    
                     sfx.tap.currentTime = 0; 
                     if(audioUnlocked) sfx.tap.play().catch(()=>{});
                     lastClickTime = now;
+
+                    auth.currentUser.getIdToken().then(token => {
+                        fetch(`${API_URL}/api/conquest/click`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ roomId: id, cellIndex: i })
+                        });
+                    });
                 }
             };
             g.appendChild(c);
@@ -568,16 +602,16 @@
 
             if(d.status === 'playing') canPlay = true;
 
+            // GÜVENLİ SÜRE KONTROLÜ (API İLE)
             if(myRole === 'p1' && d.status === 'playing' && !timerInt) {
-                let localTimer = d.timer; 
                 timerInt = setInterval(() => {
-                    localTimer--;
-                    if(localTimer > 0) {
-                        updateDoc(doc(db, "conquest_rooms", id), { timer: localTimer });
-                    } else {
-                        clearInterval(timerInt); 
-                        updateDoc(doc(db, "conquest_rooms", id), { timer: 0, status: 'finished' }); 
-                    }
+                    auth.currentUser.getIdToken().then(token => {
+                        fetch(`${API_URL}/api/conquest/tick`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ roomId: id })
+                        });
+                    });
                 }, 1000);
             }
 
@@ -589,12 +623,6 @@
                 }
             });
             document.getElementById('s1').innerText = s1; document.getElementById('s2').innerText = s2;
-
-            if(d.status === 'playing' && myRole === 'p1') {
-                if (s1 === 36 || s2 === 36) {
-                    updateDoc(doc(db, "conquest_rooms", id), { timer: 0, status: 'finished' });
-                }
-            }
 
             if(d.status === 'finished' && !isFin) finish(id, s1, s2);
         });
@@ -610,7 +638,19 @@
         document.getElementById('finalS1').innerText = s1;
         document.getElementById('finalS2').innerText = s2;
         window.toggleModal('resultModal', true);
-        if(myRole === 'p1') setTimeout(() => deleteDoc(doc(db, "conquest_rooms", id)), 5000);
+        
+        // GÜVENLİ ODA TEMİZLİĞİ
+        if(myRole === 'p1') {
+            setTimeout(() => {
+                auth.currentUser.getIdToken().then(token => {
+                    fetch(`${API_URL}/api/conquest/leave`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ roomId: id })
+                    });
+                });
+            }, 5000);
+        }
     }
 </script>
 </body>
