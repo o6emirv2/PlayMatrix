@@ -539,700 +539,678 @@
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore, doc, onSnapshot,
-      collection, query, where, getDocs, limit
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, onSnapshot,
+    collection, query, getDocs, limit
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const API_URL = "https://emirhan-siye.onrender.com";
+  const API_URL = "https://emirhan-siye.onrender.com";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-      authDomain: "emirhan-site.firebaseapp.com",
-      projectId: "emirhan-site",
-      storageBucket: "emirhan-site.firebasestorage.app",
-      messagingSenderId: "668871888390",
-      appId: "1:668871888390:web:76568bda84cb1641f7bd87"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain: "emirhan-site.firebaseapp.com",
+    projectId: "emirhan-site",
+    storageBucket: "emirhan-site.firebasestorage.app",
+    messagingSenderId: "668871888390",
+    appId: "1:668871888390:web:76568bda84cb1641f7bd87"
+  };
 
-    const $ = (id) => document.getElementById(id);
+  const $ = (id) => document.getElementById(id);
 
-    // ====== MODAL ======
-    function openModal(id) {
-      const el = $(id);
-      if (!el) return;
-      el.style.display = "flex";
-      el.setAttribute("aria-hidden", "false");
-    }
-    function closeModal(id) {
-      const el = $(id);
-      if (!el) return;
-      el.style.display = "none";
-      el.setAttribute("aria-hidden", "true");
-    }
-    function showInfoModal(message, title = "BİLGİ") {
-      $("modalTitle").innerText = title;
-      $("modalMsg").innerHTML = message;
-      openModal("infoModal");
-    }
-    window.openModal = openModal;
-    window.closeModal = closeModal;
-    window.showInfoModal = showInfoModal;
+  // ====== MODAL ======
+  function openModal(id) {
+    const el = $(id);
+    if (!el) return;
+    el.style.display = "flex";
+    el.setAttribute("aria-hidden", "false");
+  }
+  function closeModal(id) {
+    const el = $(id);
+    if (!el) return;
+    el.style.display = "none";
+    el.setAttribute("aria-hidden", "true");
+  }
+  function showInfoModal(message, title = "BİLGİ") {
+    $("modalTitle").innerText = title;
+    $("modalMsg").innerHTML = message;
+    openModal("infoModal");
+  }
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.showInfoModal = showInfoModal;
 
-    // ====== SES ======
-    const sfx = {
-      chip: new Audio("https://cdn.freesound.org/previews/253/253174_4404552-lq.mp3"),
-      deal: new Audio("https://cdn.freesound.org/previews/434/434472_7504780-lq.mp3"),
-      cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
-      win: new Audio("https://cdn.freesound.org/previews/609/609335_10292524-lq.mp3"),
-      lose: new Audio("https://cdn.freesound.org/previews/173/173859_2370158-lq.mp3"),
-      pisti: new Audio("https://cdn.freesound.org/previews/274/274180_4548252-lq.mp3")
-    };
+  // ====== SES ======
+  const sfx = {
+    chip: new Audio("https://cdn.freesound.org/previews/253/253174_4404552-lq.mp3"),
+    deal: new Audio("https://cdn.freesound.org/previews/434/434472_7504780-lq.mp3"),
+    cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
+    win: new Audio("https://cdn.freesound.org/previews/609/609335_10292524-lq.mp3"),
+    lose: new Audio("https://cdn.freesound.org/previews/173/173859_2370158-lq.mp3"),
+    pisti: new Audio("https://cdn.freesound.org/previews/274/274180_4548252-lq.mp3")
+  };
 
-    let audioUnlocked = false;
-    function unlockAudio() {
-      if (audioUnlocked) return;
-      Object.values(sfx).forEach((audio) => {
-        audio.load();
-        const p = audio.play();
-        if (p !== undefined) {
-          p.then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
-        }
-      });
-      audioUnlocked = true;
-      document.removeEventListener("click", unlockAudio);
-      document.removeEventListener("touchstart", unlockAudio);
-    }
-    document.addEventListener("click", unlockAudio);
-    document.addEventListener("touchstart", unlockAudio);
-
-    function playSound(audioObj) {
-      if (!audioObj) return;
-      const soundClone = audioObj.cloneNode(true);
-      soundClone.volume = 1;
-      soundClone.play().catch(() => {});
-    }
-
-    // ====== FIREBASE & STATE ======
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
-    let roomRef = null, myRole = null, gameState = null, inGame = false;
-    let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
-
-    let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
-    let pendingRoomId = null, pendingRoomBet = null;
-    let isRequestingCards = false;
-    let lobbyRoomsCache = [];
-
-    const safeNum = (v, def = 0) => (Number.isFinite(Number(v)) ? Number(v) : def);
-
-    const cleanStr = (v) => (typeof v === "string" ? v.trim() : "");
-    const normStatus = (s) => {
-      s = cleanStr(s).toLowerCase();
-      if (!s) return "waiting";
-      if (["wait", "waiting", "open", "lobby", "ready"].includes(s)) return "waiting";
-      if (["play", "playing", "live", "in_game"].includes(s)) return "playing";
-      if (["finish", "finished", "ended", "done"].includes(s)) return "finished";
-      return s;
-    };
-    const isRealPlayer = (v) => {
-      const s = cleanStr(v);
-      if (!s) return false;
-      const low = s.toLowerCase();
-      if (low === "..." || low === "bekleniyor" || low === "waiting") return false;
-      return true;
-    };
-
-    function getCreatedAtMs(v) {
-      if (typeof v === "number") return v;
-      if (v && typeof v.toMillis === "function") return v.toMillis();
-      return 0;
-    }
-
-    function updateUI() {
-      $("bet").innerText = currentBet.toLocaleString("tr-TR");
-      $("balance").innerText = balance.toLocaleString("tr-TR");
-    }
-
-    window.handleNavAction = () => {
-      if (inGame || roomRef) window.leaveRoom();
-      else window.location.href = "index.html";
-    };
-
-    window.openCreateModal = () => openModal("createRoomModal");
-
-    window.addBet = (a) => {
-      if (!Number.isInteger(a) || a <= 0) return;
-      if (balance >= a) {
-        currentBet += a;
-        balance -= a;
-        playSound(sfx.chip);
-        updateUI();
+  let audioUnlocked = false;
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    Object.values(sfx).forEach((audio) => {
+      audio.load();
+      const p = audio.play();
+      if (p !== undefined) {
+        p.then(() => { audio.pause(); audio.currentTime = 0; }).catch(() => {});
       }
-    };
+    });
+    audioUnlocked = true;
+    document.removeEventListener("click", unlockAudio);
+    document.removeEventListener("touchstart", unlockAudio);
+  }
+  document.addEventListener("click", unlockAudio);
+  document.addEventListener("touchstart", unlockAudio);
 
-    window.cancelBet = () => {
-      if (currentBet > 0) playSound(sfx.chip);
-      balance += currentBet;
-      currentBet = 0;
+  function playSound(audioObj) {
+    if (!audioObj) return;
+    const soundClone = audioObj.cloneNode(true);
+    soundClone.volume = 1;
+    soundClone.play().catch(() => {});
+  }
+
+  // ====== FIREBASE & STATE ======
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // ✅ Yeni koleksiyonlar
+  const ROOMS_PUBLIC = "rooms_public";
+  const ROOMS_STATE  = "rooms_state";
+
+  let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
+  let roomRef = null, myRole = null, gameState = null, inGame = false;
+
+  let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
+
+  let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
+  let pendingRoomId = null, pendingRoomBet = null;
+  let isRequestingCards = false;
+  let lobbyRoomsCache = [];
+
+  const safeNum = (v, def = 0) => (Number.isFinite(Number(v)) ? Number(v) : def);
+  const cleanStr = (v) => (typeof v === "string" ? v.trim() : "");
+
+  const normStatus = (s) => {
+    s = cleanStr(s).toLowerCase();
+    if (!s) return "waiting";
+    if (["wait","waiting","open","lobby","ready"].includes(s)) return "waiting";
+    if (["play","playing","live","in_game"].includes(s)) return "playing";
+    if (["finish","finished","ended","done"].includes(s)) return "finished";
+    return s;
+  };
+
+  const isRealPlayer = (v) => {
+    const s = cleanStr(v);
+    if (!s) return false;
+    const low = s.toLowerCase();
+    if (low === "..." || low === "bekleniyor" || low === "waiting") return false;
+    return true;
+  };
+
+  function getCreatedAtMs(v) {
+    if (typeof v === "number") return v;
+    if (v && typeof v.toMillis === "function") return v.toMillis();
+    return 0;
+  }
+
+  function updateUI() {
+    $("bet").innerText = currentBet.toLocaleString("tr-TR");
+    $("balance").innerText = balance.toLocaleString("tr-TR");
+  }
+
+  window.handleNavAction = () => {
+    if (inGame || roomRef) window.leaveRoom();
+    else window.location.href = "index.html";
+  };
+
+  window.openCreateModal = () => openModal("createRoomModal");
+
+  window.addBet = (a) => {
+    if (!Number.isInteger(a) || a <= 0) return;
+    if (balance >= a) {
+      currentBet += a;
+      balance -= a;
+      playSound(sfx.chip);
       updateUI();
-    };
+    }
+  };
 
-    // ====== LOBBY ======
-    function renderLobby() {
-      const list = $("roomList");
-      if (!list) return;
+  window.cancelBet = () => {
+    if (currentBet > 0) playSound(sfx.chip);
+    balance += currentBet;
+    currentBet = 0;
+    updateUI();
+  };
 
-      const filter = ($("roomSearch")?.value || "").toLowerCase();
-      const now = Date.now();
-      let html = "";
+  // ===================== LOBBY (rooms_public) =====================
+  function renderLobby() {
+    const list = $("roomList");
+    if (!list) return;
 
-      // ✅ FIX: createdAt yanlış yerden okunuyordu (a.createdAt değil a.data.createdAt)
-      const rooms = [...lobbyRoomsCache].sort(
-        (a, b) => getCreatedAtMs(b?.data?.createdAt) - getCreatedAtMs(a?.data?.createdAt)
-      );
+    const filter = ($("roomSearch")?.value || "").toLowerCase();
+    const now = Date.now();
+    let html = "";
 
-      for (const r of rooms) {
-        const data = r.data || {};
-        const status = normStatus(data.status);
-        if (status === "finished") continue;
+    const rooms = [...lobbyRoomsCache].sort(
+      (a, b) => getCreatedAtMs(b?.data?.createdAt) - getCreatedAtMs(a?.data?.createdAt)
+    );
 
-        const roomName = cleanStr(data.name) ? cleanStr(data.name) : "Arena";
-        const type = cleanStr(data.type) ? cleanStr(data.type) : "2-52";
-        const maxP = type.startsWith("4") ? 4 : 2;
+    for (const r of rooms) {
+      const data = r.data || {};
+      const status = normStatus(data.status);
+      if (status === "finished") continue;
 
-        const bet = safeNum(data.bet, 0);
-        const createdMs = getCreatedAtMs(data.createdAt);
-        const duration = createdMs ? Math.max(0, Math.floor((now - createdMs) / 60000)) : 0;
+      const roomName = cleanStr(data.name) ? cleanStr(data.name) : "Arena";
+      const type = cleanStr(data.type) ? cleanStr(data.type) : "2-52";
+      const maxP = type.startsWith("4") ? 4 : 2;
 
-        // ✅ FIX: boş/placeholder değerler "dolu" sayılmasın
-        const pList = [data.p1, data.p2, data.p3, data.p4].filter(isRealPlayer);
-        const isPlaying = status === "playing";
+      const bet = safeNum(data.bet, 0);
+      const createdMs = getCreatedAtMs(data.createdAt);
+      const duration = createdMs ? Math.max(0, Math.floor((now - createdMs) / 60000)) : 0;
 
-        // Şifre sadece "var/yok" amacıyla
-        const hasPassword = !!cleanStr(data.password);
+      const pList = [data.p1, data.p2, data.p3, data.p4].filter(isRealPlayer);
+      const isPlaying = status === "playing";
 
-        const p1n = cleanStr(data.p1_name) || "...";
-        const p2n = cleanStr(data.p2_name) || "...";
-        const p3n = cleanStr(data.p3_name) || "...";
-        const p4n = cleanStr(data.p4_name) || "...";
+      // ✅ artık password alanı yok → hasPassword var
+      const hasPassword = !!data.hasPassword;
 
-        let pNames = `${p1n}`;
-        if (maxP === 2) pNames += ` vs ${p2n}`;
-        else pNames += `, ${p2n}, ${p3n}, ${p4n}`;
+      const p1n = cleanStr(data.p1_name) || "...";
+      const p2n = cleanStr(data.p2_name) || "...";
+      const p3n = cleanStr(data.p3_name) || "...";
+      const p4n = cleanStr(data.p4_name) || "...";
 
-        const ridJS = JSON.stringify(r.id);
+      let pNames = `${p1n}`;
+      if (maxP === 2) pNames += ` vs ${p2n}`;
+      else pNames += `, ${p2n}, ${p3n}, ${p4n}`;
 
-        // ✅ FIX: status normalize edildiği için join doğru çalışır
-        const canJoin = (status === "waiting" && pList.length < maxP);
+      const ridJS = JSON.stringify(r.id);
+      const canJoin = (status === "waiting" && pList.length < maxP);
+      const displayStyle = roomName.toLowerCase().includes(filter) ? "flex" : "none";
 
-        const displayStyle = roomName.toLowerCase().includes(filter) ? "flex" : "none";
-
-        html += `
-          <div class="room-card" data-roomname="${roomName.toLowerCase()}" style="display: ${displayStyle}; ${isPlaying ? "border-left-color:#00ff88;" : ""}">
-            <div style="flex:1">
-              <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">
-                ${roomName} [${type}] (${pList.length}/${maxP})
-              </small>
-              ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ""}
-              <br>
-              <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
-              <div class="room-info-live">
-                <span style="color:#ffb700">Bahis: ${bet.toLocaleString("tr-TR")} MC</span>
-                | <span>${duration} dk</span>
-              </div>
+      html += `
+        <div class="room-card" data-roomname="${roomName.toLowerCase()}" style="display:${displayStyle}; ${isPlaying ? "border-left-color:#00ff88;" : ""}">
+          <div style="flex:1">
+            <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">
+              ${roomName} [${type}] (${pList.length}/${maxP})
+            </small>
+            ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ""}
+            <br>
+            <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
+            <div class="room-info-live">
+              <span style="color:#ffb700">Bahis: ${bet.toLocaleString("tr-TR")} MC</span>
+              | <span>${duration} dk</span>
             </div>
-            ${
-              canJoin
-                ? `<button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;"
-                     onclick="handleJoin(${ridJS}, ${hasPassword}, ${bet})">KATIL</button>`
-                : `<div style="font-size:0.75rem; color:${isPlaying ? "#00ff88" : "#666"}; font-weight:bold; text-align:right">
-                    ${isPlaying ? "CANLI" : "DOLU"}
-                  </div>`
-            }
           </div>
-        `;
-      }
-
-      list.innerHTML = html || `<div style="text-align:center; padding:30px; color:#555; font-size:1.1rem; font-weight:bold;">Uygun masa yok. Yeni Masa Kur!</div>`;
+          ${
+            canJoin
+              ? `<button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;"
+                   onclick="handleJoin(${ridJS}, ${hasPassword}, ${bet})">KATIL</button>`
+              : `<div style="font-size:0.75rem; color:${isPlaying ? "#00ff88" : "#666"}; font-weight:bold; text-align:right">
+                  ${isPlaying ? "CANLI" : "DOLU"}
+                </div>`
+          }
+        </div>
+      `;
     }
 
-    $("roomSearch")?.addEventListener("input", (e) => {
-      const filter = e.target.value.toLowerCase();
-      document.querySelectorAll('.room-card').forEach(card => {
-        const roomName = card.getAttribute('data-roomname') || "";
-        card.style.display = roomName.includes(filter) ? "flex" : "none";
+    list.innerHTML = html || `<div style="text-align:center; padding:30px; color:#555; font-size:1.1rem; font-weight:bold;">Uygun masa yok. Yeni Masa Kur!</div>`;
+  }
+
+  $("roomSearch")?.addEventListener("input", (e) => {
+    const filter = e.target.value.toLowerCase();
+    document.querySelectorAll(".room-card").forEach(card => {
+      const rn = card.getAttribute("data-roomname") || "";
+      card.style.display = rn.includes(filter) ? "flex" : "none";
+    });
+  });
+
+  function listenLobby() {
+    if (lobbyUnsub) lobbyUnsub();
+
+    // ✅ rooms_public dinleniyor
+    const q = query(collection(db, ROOMS_PUBLIC), limit(200));
+    lobbyUnsub = onSnapshot(
+      q,
+      { includeMetadataChanges: true },
+      (snap) => {
+        lobbyRoomsCache = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+        renderLobby();
+      },
+      (err) => {
+        lobbyRoomsCache = [];
+        renderLobby();
+        showInfoModal(
+          `Lobi odaları alınamadı.<br><br><b>${err.code || "HATA"}</b><br>${err.message || err}`,
+          "LOBİ HATASI"
+        );
+      }
+    );
+  }
+
+  // ===================== DISCONNECT / LEAVE =====================
+  async function handleDisconnect() {
+    if (!roomRef) return;
+    inGame = false;
+    try {
+      const token = await auth.currentUser.getIdToken();
+      await fetch(`${API_URL}/api/pisti/leave`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId: roomRef.id })
       });
+    } catch {}
+  }
+
+  window.addEventListener("pagehide", () => { if (inGame && roomRef) handleDisconnect(); });
+  window.addEventListener("beforeunload", () => { if (inGame && roomRef) handleDisconnect(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && inGame && roomRef) handleDisconnect();
+  });
+
+  window.leaveRoom = async () => {
+    if (roomRef && inGame) await handleDisconnect();
+    if (roomUnsub) { roomUnsub(); roomUnsub = null; }
+    inGame = false;
+    roomRef = null;
+    lastHandLength = 0;
+    currentBet = 0;
+
+    $("gameArea").style.display = "none";
+    $("lobbyScreen").style.display = "flex";
+    $("navActionBtn").innerText = "ÇIKIŞ";
+    listenLobby();
+  };
+
+  // ===================== AUTH =====================
+  onAuthStateChanged(auth, (user) => {
+    if (!user) { window.location.href = "index.html"; return; }
+
+    uid = user.uid;
+    userRef = doc(db, "users", uid);
+
+    if (userUnsub) userUnsub();
+    userUnsub = onSnapshot(userRef, (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data() || {};
+      const dbBalance = safeNum(data.balance, 0);
+
+      if (currentBet > dbBalance) {
+        currentBet = 0;
+        $("bet").innerText = "0";
+      }
+
+      balance = dbBalance - currentBet;
+      userName = cleanStr(data.username) ? cleanStr(data.username) : ("Oyuncu_" + uid.substring(0, 4));
+
+      updateUI();
+      renderLobby();
     });
 
-    function listenLobby() {
-      if (lobbyUnsub) lobbyUnsub();
+    listenLobby();
+  });
 
-      // ✅ FIX: orderBy kaldırıldı (createdAt/index sorunları lobiyi bozmasın)
-      const q = query(collection(db, "rooms"), limit(200));
+  // ===================== CREATE (API) =====================
+  window.confirmCreateRoom = async () => {
+    if (!Number.isInteger(currentBet) || currentBet < 100) return showInfoModal("Geçersiz veya min 100 MC bahis olmalı!", "UYARI");
+    if (isProcessingPlay) return;
 
-      lobbyUnsub = onSnapshot(
-        q,
-        { includeMetadataChanges: true },
-        (snap) => {
-          lobbyRoomsCache = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
-          renderLobby();
-        },
-        (err) => {
-          lobbyRoomsCache = [];
-          renderLobby();
-          showInfoModal(
-            `Lobi odaları alınamadı.<br><br><b>${err.code || "HATA"}</b><br>${err.message || err}`,
-            "LOBİ HATASI"
-          );
+    isProcessingPlay = true;
+
+    const name = $("newRoomName").value || "Arena";
+    const type = $("newRoomType").value;
+    const pass = $("newRoomPass").value || "";
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch(`${API_URL}/api/pisti/create`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name, type, pass, bet: currentBet })
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+
+      myRole = "p1";
+      // ✅ oyun state artık rooms_state
+      roomRef = doc(db, ROOMS_STATE, data.roomId);
+
+      closeModal("createRoomModal");
+      enterGameView();
+      listenRoom();
+    } catch (e) {
+      showInfoModal(String(e.message || e), "HATA");
+      cancelBet();
+    } finally {
+      isProcessingPlay = false;
+    }
+  };
+
+  // ===================== JOIN (API) =====================
+  window.handleJoin = (rid, hasPassword, bet) => {
+    if (currentBet > 0) cancelBet();
+
+    pendingRoomId = rid;
+    pendingRoomBet = bet;
+
+    if (hasPassword) {
+      $("joinRoomPass").value = "";
+      $("passError").style.display = "none";
+      openModal("passwordModal");
+    } else {
+      joinRoom(rid, bet, "");
+    }
+  };
+
+  window.confirmPasswordJoin = () => {
+    const typed = $("joinRoomPass").value || "";
+    closeModal("passwordModal");
+    joinRoom(pendingRoomId, pendingRoomBet, typed);
+  };
+
+  async function joinRoom(rid, bet, pass = "") {
+    if (!rid) return;
+    if (!Number.isFinite(Number(bet)) || bet < 0) return;
+
+    if (balance < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
+    if (isProcessingPlay) return;
+
+    isProcessingPlay = true;
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch(`${API_URL}/api/pisti/join`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId: rid, pass })
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+
+      myRole = data.role;
+      roomRef = doc(db, ROOMS_STATE, rid);
+
+      currentBet = Number(bet) || 0;
+      updateUI();
+
+      enterGameView();
+      listenRoom();
+    } catch (e) {
+      showInfoModal(String(e.message || e), "HATA");
+    } finally {
+      isProcessingPlay = false;
+    }
+  }
+
+  function enterGameView() {
+    inGame = true;
+    lastHandLength = 0;
+    isRequestingCards = false;
+    $("lobbyScreen").style.display = "none";
+    $("gameArea").style.display = "flex";
+    $("navActionBtn").innerText = "AYRIL";
+  }
+
+  // ===================== ROOM LISTEN (rooms_state) =====================
+  function listenRoom() {
+    if (roomUnsub) roomUnsub();
+
+    roomUnsub = onSnapshot(roomRef, async (snap) => {
+      if (!snap.exists()) {
+        if (inGame) {
+          window.leaveRoom();
+          showInfoModal("Oda bağlantısı koptu.", "BİLGİ");
         }
-      );
-    }
-
-    // ====== AYRIL / KOPMA ======
-    async function handleDisconnect() {
-      if (!roomRef) return;
-      inGame = false;
-
-      try {
-        const token = await auth.currentUser.getIdToken();
-        await fetch(`${API_URL}/api/pisti/leave`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: roomRef.id })
-        });
-      } catch (e) {}
-    }
-
-    window.addEventListener("pagehide", () => { if (inGame && roomRef) handleDisconnect(); });
-    window.addEventListener("beforeunload", () => { if (inGame && roomRef) handleDisconnect(); });
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && inGame && roomRef) handleDisconnect(); });
-
-    window.leaveRoom = async () => {
-      if (roomRef && inGame) await handleDisconnect();
-      if (roomUnsub) { roomUnsub(); roomUnsub = null; }
-      inGame = false;
-      roomRef = null;
-      lastHandLength = 0;
-      currentBet = 0;
-
-      $("gameArea").style.display = "none";
-      $("lobbyScreen").style.display = "flex";
-      $("navActionBtn").innerText = "ÇIKIŞ";
-      listenLobby();
-    };
-
-    // ====== AUTH ======
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "index.html";
         return;
       }
 
-      uid = user.uid;
-      userRef = doc(db, "users", uid);
+      gameState = snap.data();
 
-      if (userUnsub) userUnsub();
-      userUnsub = onSnapshot(
-        userRef,
-        (snap) => {
-          if (snap.exists()) {
-            const data = snap.data() || {};
-            const dbBalance = safeNum(data.balance, 0);
-
-            // currentBet UI rezervi dbBalance'den büyükse sıfırla
-            if (currentBet > dbBalance) {
-              currentBet = 0;
-              $("bet").innerText = "0";
-            }
-
-            balance = dbBalance - currentBet;
-
-            userName = (cleanStr(data.username))
-              ? cleanStr(data.username)
-              : ("Oyuncu_" + uid.substring(0, 4));
-
-            updateUI();
-            renderLobby();
-          }
+      if (gameState.quitter) {
+        if (gameState.quitter !== uid) {
+          showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
+          inGame = false;
+          setTimeout(() => window.leaveRoom(), 3000);
         }
-      );
+        return;
+      }
 
-      listenLobby();
+      if ((gameState.pistiSignal || 0) > lastPistiCount) {
+        lastPistiCount = gameState.pistiSignal || 0;
+        triggerPistiUI();
+      }
+
+      if (normStatus(gameState.status) === "playing") {
+        $("waitingStatus").style.display = "none";
+        const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
+
+        const handsEmpty = Array.from({ length: maxP }, (_, i) => gameState[`p${i + 1}_hand`])
+          .every(h => !h || h.length === 0);
+
+        if (!isProcessingPlay) {
+          if (handsEmpty && gameState.turn === uid) refillHands();
+          else render();
+        }
+      }
+
+      if (normStatus(gameState.status) === "finished") handleEnd();
+      renderHeads();
+    });
+  }
+
+  function renderHeads() {
+    const container = $("playerHeadsContainer");
+    const maxP = String(gameState?.type || "2-52").startsWith("4") ? 4 : 2;
+    let html = "";
+
+    for (let i = 1; i <= maxP; i++) {
+      const pUid = gameState?.[`p${i}`];
+      const pName = gameState?.[`p${i}_name`] || "...";
+      const isActive = gameState?.turn === pUid && normStatus(gameState?.status) === "playing";
+      html += `<div class="p-head ${isActive ? "active" : ""}">
+          <div class="name">${pUid === uid ? "SİZ" : pName}</div>
+          <div class="score">${gameState?.[`p${i}_score`] || 0}</div>
+        </div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // ===================== REFILL (API) =====================
+  async function refillHands() {
+    if (isProcessingPlay || isRequestingCards) return;
+    isProcessingPlay = true;
+    isRequestingCards = true;
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      await fetch(`${API_URL}/api/pisti/refill`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId: roomRef.id })
+      });
+    } catch (e) {
+      console.error("Kart dağıtma hatası", e);
+    } finally {
+      isProcessingPlay = false;
+      setTimeout(() => { isRequestingCards = false; }, 2000);
+    }
+  }
+
+  // ===================== PLAY (API) =====================
+  async function playCard(idx) {
+    if (gameState.turn !== uid || isProcessingPlay) return;
+    isProcessingPlay = true;
+
+    playSound(sfx.cardThrow);
+
+    const playedCard = gameState[myRole + "_hand"][idx];
+    gameState[myRole + "_hand"].splice(idx, 1);
+    gameState.table.push(playedCard);
+    gameState.turn = "processing";
+    render();
+
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch(`${API_URL}/api/pisti/play`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId: roomRef.id, cardIndex: idx })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+    } catch (e) {
+      console.error(e.message);
+      listenRoom();
+    } finally {
+      isProcessingPlay = false;
+    }
+  }
+
+  function render() {
+    const ph = $("playerHand"), tc = $("tableCards"), oh = $("oppHandVisual");
+    const isMyTurn = gameState.turn === uid;
+
+    ph.innerHTML = ""; tc.innerHTML = ""; oh.innerHTML = "";
+
+    const myHand = gameState[myRole + "_hand"] || [];
+    const isNewDeal = (myHand.length > 0 && lastHandLength === 0);
+    lastHandLength = myHand.length;
+
+    myHand.forEach((c, i) => {
+      const img = document.createElement("img");
+      img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
+      img.alt = `Eldeki Kart ${i + 1}`;
+      img.className = "card" + (isMyTurn ? "" : " passive");
+
+      if (isNewDeal) {
+        img.classList.add("anim-deal-p");
+        img.style.animationDelay = `${i * 0.12}s`;
+        setTimeout(() => playSound(sfx.deal), (i * 120) + 50);
+      }
+
+      img.onclick = () => playCard(i);
+      ph.appendChild(img);
     });
 
-    // ====== ODA OLUŞTUR (API ENTEGRELİ) ======
-    window.confirmCreateRoom = async () => {
-      if (!Number.isInteger(currentBet) || currentBet < 100) return showInfoModal("Geçersiz veya min 100 MC bahis olmalı!", "UYARI");
-      if (isProcessingPlay) return;
+    const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
+    let oppTotal = 0;
+    for (let i = 1; i <= maxP; i++) {
+      if (`p${i}` !== myRole) oppTotal += (gameState[`p${i}_hand`]?.length || 0);
+    }
 
-      isProcessingPlay = true;
-
-      const name = $("newRoomName").value || "Arena";
-      const type = $("newRoomType").value;
-      const pass = $("newRoomPass").value || "";
-
-      try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch(`${API_URL}/api/pisti/create`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, type, pass, bet: currentBet })
-        });
-
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
-
-        myRole = "p1";
-        roomRef = doc(db, "rooms", data.roomId);
-
-        closeModal("createRoomModal");
-        enterGameView();
-        listenRoom();
-      } catch (e) {
-        showInfoModal(String(e.message || e), "HATA");
-        cancelBet();
-      } finally {
-        isProcessingPlay = false;
+    for (let i = 0; i < Math.min(oppTotal, 12); i++) {
+      const d = document.createElement("div");
+      d.className = "card-mini";
+      if (isNewDeal) {
+        d.classList.add("anim-deal-o");
+        d.style.animationDelay = `${i * 0.08}s`;
       }
-    };
+      oh.appendChild(d);
+    }
 
-    // ====== ODAYA KATIL (API ENTEGRELİ) ======
-    window.handleJoin = (rid, hasPassword, bet) => {
-      // Join yaparken eldeki chip rezervini otomatik sıfırla (join'i bozmasın)
+    (gameState.table || []).forEach((c, i) => {
+      const img = document.createElement("img");
+      img.src = (i === (gameState.table.length - 1))
+        ? `https://deckofcardsapi.com/static/img/${c}.png`
+        : "https://deckofcardsapi.com/static/img/back.png";
+      img.alt = "Yerdeki Kart";
+      img.className = "stack-card";
+      img.style.transform = `translate(${i * 1.5}px, ${i * 1.5}px) rotate(${i * 2.5}deg)`;
+      img.style.zIndex = i;
+      tc.appendChild(img);
+    });
+  }
+
+  async function handleEnd() {
+    if (!inGame) return;
+    inGame = false;
+
+    const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
+
+    let finalScores = [];
+    let counts = [];
+
+    for (let i = 1; i <= maxP; i++) counts.push({ role: `p${i}`, count: gameState[`p${i}_count`] || 0 });
+    counts.sort((a, b) => b.count - a.count);
+
+    const bonusRole = (counts[0].count > (counts[1]?.count || -1)) ? counts[0].role : null;
+
+    for (let i = 1; i <= maxP; i++) {
+      let total = gameState[`p${i}_score`] || 0;
+      if (`p${i}` === bonusRole) total += 3;
+
+      finalScores.push({
+        role: `p${i}`,
+        name: gameState[`p${i}_name`],
+        score: total,
+        uid: gameState[`p${i}`]
+      });
+    }
+
+    finalScores.sort((a, b) => b.score - a.score);
+    const winners = finalScores.filter((s) => s.score === finalScores[0].score);
+
+    if (winners.some((w) => w.uid === uid)) {
+      const prize = Math.floor((gameState.bet * maxP) / winners.length);
+      playSound(sfx.win);
+      showInfoModal(`🎉 TEBRİKLER! ${prize} MC KAZANDINIZ.`, "OYUN BİTTİ");
+    } else {
+      playSound(sfx.lose);
+      showInfoModal(`KAYBETTİNİZ! Kazanan:<br> <b style="color:var(--border)">${finalScores[0].name} (${finalScores[0].score} Puan)</b>`, "OYUN BİTTİ");
+    }
+
+    setTimeout(() => window.leaveRoom(), 6000);
+  }
+
+  function triggerPistiUI() {
+    playSound(sfx.pisti);
+    const p = $("pistiDisplay");
+    p.classList.remove("pisti-active");
+    void p.offsetWidth;
+    p.classList.add("pisti-active");
+    setTimeout(() => p.classList.remove("pisti-active"), 2300);
+  }
+
+  // ===================== QUICK JOIN (rooms_public) =====================
+  window.handleQuickJoin = async () => {
+    try {
       if (currentBet > 0) cancelBet();
 
-      pendingRoomId = rid;
-      pendingRoomBet = bet;
+      const snap = await getDocs(query(collection(db, ROOMS_PUBLIC), limit(80)));
+      let best = null;
 
-      if (hasPassword) {
-        $("joinRoomPass").value = "";
-        $("passError").style.display = "none";
-        openModal("passwordModal");
-      } else {
-        joinRoom(rid, bet, "");
-      }
-    };
+      snap.forEach((d) => {
+        const data = d.data() || {};
+        const status = normStatus(data.status);
+        if (status === "finished" || status === "playing") return;
 
-    window.confirmPasswordJoin = () => {
-      const typed = $("joinRoomPass").value || "";
-      closeModal("passwordModal");
-      joinRoom(pendingRoomId, pendingRoomBet, typed);
-    };
+        const type = cleanStr(data.type) ? cleanStr(data.type) : "2-52";
+        const maxP = type.startsWith("4") ? 4 : 2;
 
-    async function joinRoom(rid, bet, pass = "") {
-      if (!rid) return;
-      if (!Number.isFinite(Number(bet)) || bet < 0) return;
+        const pList = [data.p1, data.p2, data.p3, data.p4].filter(isRealPlayer);
+        if (pList.length >= maxP) return;
 
-      // UI tarafı: bakiye kontrolü
-      if (balance < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
-      if (isProcessingPlay) return;
+        const bet = safeNum(data.bet, 0);
+        if (bet > balance) return;
 
-      isProcessingPlay = true;
+        if (data.hasPassword) return; // quick join: şifresiz
 
-      try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch(`${API_URL}/api/pisti/join`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: rid, pass })
-        });
-
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error);
-
-        myRole = data.role;
-        roomRef = doc(db, "rooms", rid);
-
-        // Join betini göster (asıl bakiye Firestore user snapshot ile güncellenecek)
-        currentBet = Number(bet) || 0;
-        updateUI();
-
-        enterGameView();
-        listenRoom();
-      } catch (e) {
-        showInfoModal(String(e.message || e), "HATA");
-      } finally {
-        isProcessingPlay = false;
-      }
-    }
-
-    function enterGameView() {
-      inGame = true;
-      lastHandLength = 0;
-      isRequestingCards = false;
-      $("lobbyScreen").style.display = "none";
-      $("gameArea").style.display = "flex";
-      $("navActionBtn").innerText = "AYRIL";
-    }
-
-    // ====== ROOM LISTEN ======
-    function listenRoom() {
-      if (roomUnsub) roomUnsub();
-
-      roomUnsub = onSnapshot(
-        roomRef,
-        async (snap) => {
-          if (!snap.exists()) {
-            if (inGame) {
-              window.leaveRoom();
-              showInfoModal("Oda bağlantısı koptu.", "BİLGİ");
-            }
-            return;
-          }
-
-          gameState = snap.data();
-
-          if (gameState.quitter) {
-            if (gameState.quitter !== uid) {
-              showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
-              inGame = false;
-              setTimeout(() => window.leaveRoom(), 3000);
-            }
-            return;
-          }
-
-          if ((gameState.pistiSignal || 0) > lastPistiCount) {
-            lastPistiCount = gameState.pistiSignal || 0;
-            triggerPistiUI();
-          }
-
-          if (normStatus(gameState.status) === "playing") {
-            $("waitingStatus").style.display = "none";
-            const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
-            const handsEmpty = Array.from({ length: maxP }, (_, i) => gameState[`p${i + 1}_hand`]).every((h) => !h || h.length === 0);
-
-            if (!isProcessingPlay) {
-              if (handsEmpty && gameState.turn === uid) refillHands();
-              else render();
-            }
-          }
-
-          if (normStatus(gameState.status) === "finished") handleEnd();
-          renderHeads();
-        }
-      );
-    }
-
-    function renderHeads() {
-      const container = $("playerHeadsContainer");
-      const maxP = String(gameState?.type || "2-52").startsWith("4") ? 4 : 2;
-      let html = "";
-
-      for (let i = 1; i <= maxP; i++) {
-        const pUid = gameState?.[`p${i}`];
-        const pName = gameState?.[`p${i}_name`] || "...";
-        const isActive = gameState?.turn === pUid && normStatus(gameState?.status) === "playing";
-        html += `<div class="p-head ${isActive ? "active" : ""}">
-            <div class="name">${pUid === uid ? "SİZ" : pName}</div>
-            <div class="score">${gameState?.[`p${i}_score`] || 0}</div>
-          </div>`;
-      }
-      container.innerHTML = html;
-    }
-
-    // ====== KART ÇEKME (API ENTEGRELİ) ======
-    async function refillHands() {
-      if (isProcessingPlay || isRequestingCards) return;
-      isProcessingPlay = true;
-      isRequestingCards = true;
-
-      try {
-        const token = await auth.currentUser.getIdToken();
-        await fetch(`${API_URL}/api/pisti/refill`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: roomRef.id })
-        });
-      } catch (e) {
-        console.error("Kart dağıtma hatası", e);
-      } finally {
-        isProcessingPlay = false;
-        setTimeout(() => { isRequestingCards = false; }, 2000);
-      }
-    }
-
-    // ====== KART ATMA (API ENTEGRELİ) ======
-    async function playCard(idx) {
-      if (gameState.turn !== uid || isProcessingPlay) return;
-      isProcessingPlay = true;
-
-      playSound(sfx.cardThrow);
-
-      // UI hızlı tepki için eli yerelde güncelle
-      const playedCard = gameState[myRole + "_hand"][idx];
-      gameState[myRole + "_hand"].splice(idx, 1);
-      gameState.table.push(playedCard);
-      gameState.turn = "processing";
-      render();
-
-      try {
-        const token = await auth.currentUser.getIdToken();
-        const res = await fetch(`${API_URL}/api/pisti/play`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: roomRef.id, cardIndex: idx })
-        });
-        const data = await res.json();
-
-        if (!data.ok) throw new Error(data.error);
-      } catch (e) {
-        console.error(e.message);
-        listenRoom(); // Hata olursa sunucudan güncel durumu çekip UI'yi düzelt
-      } finally {
-        isProcessingPlay = false;
-      }
-    }
-
-    function render() {
-      const ph = $("playerHand"), tc = $("tableCards"), oh = $("oppHandVisual");
-      const isMyTurn = gameState.turn === uid;
-
-      ph.innerHTML = ""; tc.innerHTML = ""; oh.innerHTML = "";
-
-      const myHand = gameState[myRole + "_hand"] || [];
-      const isNewDeal = (myHand.length > 0 && lastHandLength === 0);
-      lastHandLength = myHand.length;
-
-      myHand.forEach((c, i) => {
-        const img = document.createElement("img");
-        img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
-        img.alt = `Eldeki Kart ${i + 1}`;
-        img.className = "card" + (isMyTurn ? "" : " passive");
-
-        if (isNewDeal) {
-          img.classList.add("anim-deal-p");
-          img.style.animationDelay = `${i * 0.12}s`;
-          setTimeout(() => playSound(sfx.deal), (i * 120) + 50);
-        }
-
-        img.onclick = () => playCard(i);
-        ph.appendChild(img);
+        if (!best || bet < best.bet) best = { id: d.id, bet };
       });
 
-      const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
-      let oppTotal = 0;
-      for (let i = 1; i <= maxP; i++) {
-        if (`p${i}` !== myRole) oppTotal += (gameState[`p${i}_hand`]?.length || 0);
-      }
-
-      for (let i = 0; i < Math.min(oppTotal, 12); i++) {
-        const d = document.createElement("div");
-        d.className = "card-mini";
-        if (isNewDeal) {
-          d.classList.add("anim-deal-o");
-          d.style.animationDelay = `${i * 0.08}s`;
-        }
-        oh.appendChild(d);
-      }
-
-      (gameState.table || []).forEach((c, i) => {
-        const img = document.createElement("img");
-        img.src = (i === (gameState.table.length - 1))
-          ? `https://deckofcardsapi.com/static/img/${c}.png`
-          : "https://deckofcardsapi.com/static/img/back.png";
-        img.alt = "Yerdeki Kart";
-        img.className = "stack-card";
-        img.style.transform = `translate(${i * 1.5}px, ${i * 1.5}px) rotate(${i * 2.5}deg)`;
-        img.style.zIndex = i;
-        tc.appendChild(img);
-      });
+      if (!best) return showInfoModal("Uygun masa bulunamadı!", "LOBİ");
+      joinRoom(best.id, best.bet, "");
+    } catch (e) {
+      showInfoModal(`Hızlı masa hatası!<br><br><b>Hata:</b> ${e.message || e}`, "LOBİ");
     }
-
-    async function handleEnd() {
-      if (!inGame) return;
-      inGame = false;
-
-      const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
-
-      let finalScores = [];
-      let counts = [];
-
-      for (let i = 1; i <= maxP; i++) counts.push({ role: `p${i}`, count: gameState[`p${i}_count`] || 0 });
-      counts.sort((a, b) => b.count - a.count);
-
-      const bonusRole = (counts[0].count > (counts[1]?.count || -1)) ? counts[0].role : null;
-
-      for (let i = 1; i <= maxP; i++) {
-        let total = gameState[`p${i}_score`] || 0;
-        if (`p${i}` === bonusRole) total += 3;
-
-        finalScores.push({
-          role: `p${i}`,
-          name: gameState[`p${i}_name`],
-          score: total,
-          uid: gameState[`p${i}`]
-        });
-      }
-
-      finalScores.sort((a, b) => b.score - a.score);
-      const winners = finalScores.filter((s) => s.score === finalScores[0].score);
-
-      if (winners.some((w) => w.uid === uid)) {
-        const prize = Math.floor((gameState.bet * maxP) / winners.length);
-        playSound(sfx.win);
-        showInfoModal(`🎉 TEBRİKLER! ${prize} MC KAZANDINIZ.`, "OYUN BİTTİ");
-      } else {
-        playSound(sfx.lose);
-        showInfoModal(`KAYBETTİNİZ! Kazanan:<br> <b style="color:var(--border)">${finalScores[0].name} (${finalScores[0].score} Puan)</b>`, "OYUN BİTTİ");
-      }
-
-      setTimeout(async () => {
-        window.leaveRoom();
-      }, 6000);
-    }
-
-    function triggerPistiUI() {
-      playSound(sfx.pisti);
-      const p = $("pistiDisplay");
-      p.classList.remove("pisti-active");
-      void p.offsetWidth;
-      p.classList.add("pisti-active");
-      setTimeout(() => p.classList.remove("pisti-active"), 2300);
-    }
-
-    // ✅ FIX: Quick Join artık sadece status==waiting query'sine bağlı değil (open/ready vs kaçmasın)
-    window.handleQuickJoin = async () => {
-      try {
-        if (currentBet > 0) cancelBet();
-
-        const snap = await getDocs(query(collection(db, "rooms"), limit(80)));
-        let best = null;
-
-        snap.forEach((d) => {
-          const data = d.data() || {};
-          const status = normStatus(data.status);
-          if (status === "finished" || status === "playing") return;
-
-          const type = cleanStr(data.type) ? cleanStr(data.type) : "2-52";
-          const maxP = type.startsWith("4") ? 4 : 2;
-
-          const pList = [data.p1, data.p2, data.p3, data.p4].filter(isRealPlayer);
-          if (pList.length >= maxP) return;
-
-          const bet = safeNum(data.bet, 0);
-          if (bet > balance) return;
-
-          const hasPassword = !!cleanStr(data.password);
-          if (hasPassword) return; // quick join: sadece şifresiz
-
-          // En düşük betli en uygun odayı seç
-          if (!best || bet < best.bet) best = { id: d.id, bet };
-        });
-
-        if (!best) return showInfoModal("Uygun masa bulunamadı!", "LOBİ");
-
-        joinRoom(best.id, best.bet, "");
-      } catch (e) {
-        showInfoModal(`Hızlı masa hatası!<br><br><b>Hata:</b> ${e.message || e}`, "LOBİ");
-      }
-    };
-  </script>
-</body>
-</html>
+  };
+</script>
