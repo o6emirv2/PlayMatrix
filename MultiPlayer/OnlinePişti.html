@@ -378,7 +378,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, collection, query, orderBy, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, collection, query, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const API_URL = "https://emirhan-siye.onrender.com";
 
@@ -493,6 +493,7 @@
         document.getElementById("gameArea").style.display = "none";
         document.getElementById("lobbyScreen").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "ÇIKIŞ";
+        listenLobby(); // Lobiye dönünce listeyi yenile
     };
 
     window.handleNavAction = () => {
@@ -500,52 +501,72 @@
         else window.location.href = "index.html";
     };
 
+    // DİZİN (INDEX) SORUNUNU AŞAN YENİ LOBİ LİSTELEME
     function listenLobby() {
         if(lobbyUnsub) lobbyUnsub();
-        lobbyUnsub = onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snap) => {
+        
+        // HATA ÖNLEMEK İÇİN SADECE TÜM ODALARI ÇEKİYORUZ (Sıralamayı tarayıcıda yapacağız)
+        const q = query(collection(db, "rooms"), limit(50)); 
+        
+        lobbyUnsub = onSnapshot(q, (snap) => {
             const list = document.getElementById("roomList");
             const filter = document.getElementById("roomSearch").value.toLowerCase();
-            let html = ""; const now = Date.now();
+            const now = Date.now();
+            let roomsArray = [];
 
+            // Tüm odaları al ve filtrele
             snap.forEach(roomDoc => {
                 const data = roomDoc.data();
                 if (data.status === "finished") return; 
-                if (data.name && data.name.toLowerCase().includes(filter)) {
-                    
-                    // Güvenli Tarih Okuma Çözümü (Eski-Yeni Veri Çakışmasını Önler)
-                    let createdTime = now;
-                    if (data.createdAt) {
-                        createdTime = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt.toMillis ? data.createdAt.toMillis() : now);
-                    }
-                    const duration = Math.max(0, Math.floor((now - createdTime) / 60000));
-                    
-                    const isPlaying = data.status === "playing";
-                    const maxP = (data.type && data.type.startsWith("4")) ? 4 : 2;
-                    const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
-                    
-                    let pNames = `${data.p1_name || 'Gizli'}`;
-                    if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
-                    else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
-
-                    html += `
-                        <div class="room-card" style="${isPlaying ? 'border-left-color:#00ff88;' : ''}">
-                            <div style="flex:1">
-                                <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type || '2-52'}] (${pList.length}/${maxP})</small> 
-                                ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
-                                <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
-                                <div class="room-info-live">
-                                    <span style="color:#ffb700">Bahis: ${(data.bet || 0).toLocaleString()} MC</span> | <span>${duration} dk önce</span>
-                                </div>
-                            </div>
-                            ${(data.status === 'waiting' && pList.length < maxP) ? `
-                                <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet || 0})">KATIL</button>
-                            ` : `<div style="font-size:0.75rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
-                        </div>`;
+                
+                let createdTime = now;
+                if (data.createdAt) {
+                    createdTime = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt.toMillis ? data.createdAt.toMillis() : now);
                 }
+                
+                if (data.name && data.name.toLowerCase().includes(filter)) {
+                    roomsArray.push({ id: roomDoc.id, data: data, createdTime: createdTime });
+                }
+            });
+
+            // Tarayıcıda (Client-side) tarihe göre en yeniden eskiye sıralama
+            roomsArray.sort((a, b) => b.createdTime - a.createdTime);
+
+            let html = "";
+            roomsArray.forEach(room => {
+                const data = room.data;
+                const duration = Math.max(0, Math.floor((now - room.createdTime) / 60000));
+                const isPlaying = data.status === "playing";
+                const maxP = (data.type && data.type.startsWith("4")) ? 4 : 2;
+                const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
+                
+                let pNames = `${data.p1_name || 'Gizli'}`;
+                if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
+                else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
+
+                html += `
+                    <div class="room-card" style="${isPlaying ? 'border-left-color:#00ff88;' : ''}">
+                        <div style="flex:1">
+                            <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type || '2-52'}] (${pList.length}/${maxP})</small> 
+                            ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
+                            <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
+                            <div class="room-info-live">
+                                <span style="color:#ffb700">Bahis: ${(data.bet || 0).toLocaleString()} MC</span> | <span>${duration} dk önce</span>
+                            </div>
+                        </div>
+                        ${(data.status === 'waiting' && pList.length < maxP) ? `
+                            <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${room.id}', '${data.password || ''}', ${data.bet || 0})">KATIL</button>
+                        ` : `<div style="font-size:0.75rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
+                    </div>`;
             });
             list.innerHTML = html || `<div style="text-align:center; padding:30px; color:#555; font-size:1.1rem; font-weight:bold;">Uygun masa yok. Yeni Masa Kur!</div>`;
         });
     }
+
+    // Arama kutusuna yazınca listeyi anlık yenile
+    document.getElementById("roomSearch").addEventListener('input', () => {
+        listenLobby();
+    });
 
     window.addBet = (a) => { 
         if (!Number.isInteger(a) || a <= 0) return;
@@ -675,7 +696,13 @@
             if (gameState.status === "playing") {
                 document.getElementById("waitingStatus").style.display = "none";
                 const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2;
-                const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
+                
+                // OYUNUN BAŞLAMAMA HATASI BURADA DÜZELTİLDİ: Tüm ellerin boş olup olmadığı kontrolü
+                let handsEmpty = true;
+                for(let i=1; i<=maxP; i++) {
+                    const hand = gameState[`p${i}_hand`];
+                    if(hand && hand.length > 0) handsEmpty = false;
+                }
                 
                 if(!isProcessingPlay) {
                     if (handsEmpty && gameState.turn === uid) refillHands();
@@ -834,12 +861,13 @@
         openModal('infoModal');
     };
 
+    // Hızlı katılma butonunu da dizin hatasını aşacak şekilde güncelledik
     window.handleQuickJoin = async () => {
-        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting")));
+        const snap = await getDocs(query(collection(db, "rooms"), limit(20)));
         let found = false;
         snap.forEach(d => { 
             const data = d.data();
-            if(!found && !data.password && data.bet <= balance) { 
+            if(!found && data.status === "waiting" && !data.password && data.bet <= balance) { 
                 joinRoom(d.id, data.bet); 
                 found = true; 
             } 
