@@ -14,111 +14,265 @@
     <meta name="theme-color" content="#050711">
     <link rel="canonical" href="https://playmatrix.com.tr/OnlinePisti.html">
 
+    <meta property="og:title" content="PlayMatrix Elite Pişti | Canlı Kart Oyunu">
+    <meta property="og:description" content="Kendi özel masanı kur veya hızlıca bir masaya katıl. Kartları at, pişti yap ve zafere ulaş!">
+    <meta property="og:image" content="https://playmatrix.com.tr/assets/pisti-promo.jpg">
+    <meta property="og:url" content="https://playmatrix.com.tr/OnlinePisti.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Elite Pişti Oyna">
+    <meta name="twitter:description" content="Gerçek rakiplerle kıyasıya pişti mücadelesine katıl, kazancını katla!">
+
     <script>
     if (window.history.replaceState) {
+        // OnlinePisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
-    
-    // === %100 GÜVENLİK KALKANI: CONSOLE VE F12 ENGELLEME ===
-    document.addEventListener('contextmenu', e => e.preventDefault()); // Sağ tık yasak
-    document.onkeydown = function(e) {
-        if (e.keyCode == 123 || 
-            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
-            (e.ctrlKey && e.keyCode == 85)) {
-            return false; // F12, Ctrl+Shift+I/J/C ve Ctrl+U yasak
-        }
-    };
-    // Anti-Debugger: Konsol açıldığı an sekmeyi kilitler
-    (function() {
-        var block = function() {
-            setInterval(function() { debugger; }, 50);
-        };
-        try { block(); } catch (err) {}
-    })();
     </script>
     
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        /* CSS AYARI DEĞİŞMEDİ - GÖRSEL BÜTÜNLÜK KORUNDU */
         :root {
-            --bg: #050711; --glass: rgba(15, 20, 30, 0.7); --border: #00d2ff;
-            --danger: #ff2a2a; --warning: #ffb700; --accent: #8a2be2; --success: #00ff88;
+            --bg: #050711;
+            --glass: rgba(15, 20, 30, 0.7); 
+            --border: #00d2ff;
+            --danger: #ff2a2a; --warning: #ffb700; --accent: #8a2be2;
+            --success: #00ff88;
             --table-green: radial-gradient(circle at center, #1b6d43 0%, #0d3820 100%);
             --table-wood: #2c1a14;
         }
 
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Rajdhani', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
-        body { background: var(--bg); color: #e0e0e0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; width: 100%; overscroll-behavior: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
-        #bg-canvas { position: fixed; inset: 0; z-index: -1; background: #02040a; overflow: hidden; }
-        .bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; animation: floatOrb 20s infinite alternate ease-in-out; }
+        * { 
+            margin:0; padding:0; box-sizing:border-box; 
+            font-family: 'Rajdhani', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none;
+        }
+        
+        body { 
+            background: var(--bg); color: #e0e0e0; height: 100vh; 
+            overflow: hidden; display: flex; flex-direction: column; 
+            width: 100%; overscroll-behavior: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        }
+
+        /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+        }
+
+        #bg-canvas { 
+            position: fixed; inset: 0; z-index: -1; 
+            background: #02040a; overflow: hidden;
+        }
+        .bg-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4;
+            animation: floatOrb 20s infinite alternate ease-in-out;
+        }
         .orb-1 { width: 300px; height: 300px; background: var(--border); top: -10%; left: -10%; animation-delay: 0s; }
         .orb-2 { width: 400px; height: 400px; background: var(--accent); bottom: -20%; right: -10%; animation-delay: -5s; }
         .orb-3 { width: 200px; height: 200px; background: var(--success); top: 40%; left: 60%; animation-delay: -10s; opacity: 0.2; }
-        @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, 50px) scale(1.1); } 100% { transform: translate(-30px, -20px) scale(0.9); } }
+        
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, 50px) scale(1.1); }
+            100% { transform: translate(-30px, -20px) scale(0.9); }
+        }
 
-        .top-bar { height: 70px; flex-shrink: 0; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(5, 7, 12, 0.95); border-bottom: 1px solid rgba(0, 210, 255, 0.2); box-shadow: 0 4px 25px rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(10px); }
-        .brand { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; text-shadow: 0 0 12px rgba(0, 210, 255, 0.6); white-space: nowrap; flex-shrink: 0; margin-right: 10px; }
+        .top-bar { 
+            height: 70px; flex-shrink: 0; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; 
+            background: rgba(5, 7, 12, 0.95); border-bottom: 1px solid rgba(0, 210, 255, 0.2); 
+            box-shadow: 0 4px 25px rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .brand { 
+            font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); 
+            letter-spacing: 1px; text-shadow: 0 0 12px rgba(0, 210, 255, 0.6); 
+            white-space: nowrap; flex-shrink: 0; margin-right: 10px;
+        }
         .right-menu { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden; }
         
-        .user-pill-mini { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0; white-space: nowrap; }
+        .user-pill-mini { 
+            display: flex; align-items: center; gap: 5px; 
+            background: rgba(255,255,255,0.05); padding: 5px 10px; 
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); 
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0; white-space: nowrap;
+        }
         .balance-info { display: flex; align-items: center; }
         .balance-info b { font-size: 14px; color: var(--success); font-family: 'Inter', monospace; font-weight: 700; text-shadow: 0 0 8px rgba(0,255,136,0.4); }
-        .mc-chip { width: 20px; height: 20px; background: radial-gradient(circle at 30% 30%, #00d2ff, #0055ff); border-radius: 50%; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 900; color: #fff; box-shadow: 0 0 8px rgba(0, 210, 255, 0.5); border: 1px solid rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; flex-shrink: 0; }
-        #navActionBtn { background: var(--danger); border: none; color: white; padding: 8px 12px; font-weight: 900; font-size: 0.75rem; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 42, 42, 0.4); flex-shrink: 0; transition: 0.2s; }
+        .mc-chip {
+            width: 20px; height: 20px; background: radial-gradient(circle at 30% 30%, #00d2ff, #0055ff);
+            border-radius: 50%; margin-left: 5px; display: flex; align-items: center; justify-content: center;
+            font-size: 7px; font-weight: 900; color: #fff; box-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+            border: 1px solid rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; flex-shrink: 0;
+        }
+
+        #navActionBtn {
+            background: var(--danger); border: none; color: white; padding: 8px 12px; 
+            font-weight: 900; font-size: 0.75rem; border-radius: 6px; cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(255, 42, 42, 0.4); flex-shrink: 0; transition: 0.2s;
+        }
         #navActionBtn:active { transform: scale(0.95); }
 
-        #lobbyScreen { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
-        .search-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 255, 0.2); padding: 14px 15px; color: #fff; border-radius: 10px; outline: none; font-size: 16px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.6); transition: 0.3s; }
+        #lobbyScreen { 
+            flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 15px; 
+            overflow-y: auto; z-index: 10; touch-action: pan-y; -webkit-overflow-scrolling: touch;
+        }
+
+        .search-input { 
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 255, 0.2); 
+            padding: 14px 15px; color: #fff; border-radius: 10px; outline: none; font-size: 16px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.6); transition: 0.3s;
+        }
         .search-input:focus { border-color: var(--border); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
-        .btn-neon { background: var(--border); color: #000; border: none; padding: 14px; font-family: 'Black Ops One'; font-size: 0.9rem; cursor: pointer; border-radius: 8px; transition: 0.3s; text-align: center; width: 100%; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4); letter-spacing: 1px; }
+        
+        .btn-neon { 
+            background: var(--border); color: #000; border: none; padding: 14px; 
+            font-family: 'Black Ops One'; font-size: 0.9rem; cursor: pointer;
+            border-radius: 8px; transition: 0.3s; text-align: center; width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4); letter-spacing: 1px;
+        }
         .btn-neon:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(0, 210, 255, 0.4); }
-        .btn-fast-join { background: linear-gradient(45deg, #ff8a00, #e52e71); color: #fff; border: 1px solid #ffcc00; box-shadow: 0 4px 20px rgba(255, 138, 0, 0.6); text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .room-card { background: linear-gradient(145deg, rgba(25, 30, 45, 0.75), rgba(10, 15, 20, 0.85)); border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--border); padding: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); transition: all 0.3s ease; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+
+        .btn-fast-join {
+            background: linear-gradient(45deg, #ff8a00, #e52e71); color: #fff;
+            border: 1px solid #ffcc00; box-shadow: 0 4px 20px rgba(255, 138, 0, 0.6);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .room-card { 
+            background: linear-gradient(145deg, rgba(25, 30, 45, 0.75), rgba(10, 15, 20, 0.85)); 
+            border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--border); 
+            padding: 14px; display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 12px; border-radius: 12px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            transition: all 0.3s ease; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        }
         .room-card:active { transform: scale(0.98); border-left-width: 8px; }
+
         .room-info-live { font-size: 0.8rem; color: #8b9eb3; margin-top: 6px; font-weight: 600; }
         .live-tag { color: var(--success); font-weight: bold; animation: blink 1.5s infinite; text-shadow: 0 0 6px rgba(0,255,136,0.6); }
         @keyframes blink { 50% { opacity: 0.4; } }
+
         .chips { display: flex; gap: 10px; justify-content: center; margin: 5px 0; }
-        .chip { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; cursor:pointer; font-size: 11px; background: #222; box-shadow: 0 5px 15px rgba(0,0,0,0.6), inset 0 3px 6px rgba(255,255,255,0.2); border: 3px solid rgba(0,0,0,0.8); transition: 0.15s; touch-action: manipulation; }
+        .chip { 
+            width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; 
+            font-weight:900; cursor:pointer; font-size: 11px; background: #222;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.6), inset 0 3px 6px rgba(255,255,255,0.2);
+            border: 3px solid rgba(0,0,0,0.8); transition: 0.15s; touch-action: manipulation;
+        }
         .chip:active { transform: scale(1.15) translateY(-5px); filter: brightness(1.3); }
 
-        .player-heads { width: 100%; display: flex; justify-content: space-around; padding: 10px; background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.6)); border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 100; backdrop-filter: blur(5px); }
+        .player-heads {
+            width: 100%; display: flex; justify-content: space-around; padding: 10px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.6)); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 100; backdrop-filter: blur(5px);
+        }
         .p-head { text-align: center; flex: 1; transition: 0.3s; padding: 5px; opacity: 0.5; border-bottom: 3px solid transparent; }
         .p-head.active { border-bottom: 3px solid var(--border); background: radial-gradient(circle at bottom, rgba(0, 210, 255, 0.15), transparent); opacity: 1; }
         .p-head .name { font-weight: 700; font-size: 0.8rem; color: var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px; margin: 0 auto; text-transform: uppercase;}
         .p-head .score { font-size: 1.1rem; font-weight: 900; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 
         #gameArea { display: none; flex: 1; flex-direction: column; align-items: center; z-index: 5; position: relative; touch-action: none; }
-        .table { width: 96%; max-width: 650px; height: 450px; border-radius: 225px; position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); background: var(--table-green); box-shadow: inset 0 0 0 8px rgba(0,0,0,0.3), inset 0 0 40px 15px rgba(0,0,0,0.7), 0 30px 60px rgba(0,0,0,0.9); border: 14px solid var(--table-wood); }
-        .table::before { content: ''; position: absolute; inset: 20px; border-radius: 200px; border: 2px solid rgba(255,255,255,0.08); pointer-events: none; }
-        .table::after { content: 'ELİTE'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; font-family: 'Black Ops One'; font-size: 4rem; color: #fff; letter-spacing: 8px; pointer-events: none; }
+        
+        .table {
+            width: 96%; max-width: 650px; height: 450px; border-radius: 225px; 
+            position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--table-green);
+            box-shadow: 
+                inset 0 0 0 8px rgba(0,0,0,0.3), 
+                inset 0 0 40px 15px rgba(0,0,0,0.7), 
+                0 30px 60px rgba(0,0,0,0.9);
+            border: 14px solid var(--table-wood);
+        }
+        .table::before {
+            content: ''; position: absolute; inset: 20px; 
+            border-radius: 200px; border: 2px solid rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+        .table::after {
+            content: 'ELİTE'; position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); opacity: 0.06; 
+            font-family: 'Black Ops One'; font-size: 4rem; color: #fff; letter-spacing: 8px;
+            pointer-events: none;
+        }
+
         .table-cards { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width: 15vw; max-width:90px; height: 21vw; max-height:125px; z-index: 5; }
-        .stack-card { width: 100%; height: 100%; position:absolute; left:0; top:0; border-radius: 8px; box-shadow: 3px 3px 15px rgba(0,0,0,0.8); background:white; border: 1px solid #ccc; transition: transform 0.3s ease-out; }
+        .stack-card { 
+            width: 100%; height: 100%; position:absolute; left:0; top:0; border-radius: 8px; 
+            box-shadow: 3px 3px 15px rgba(0,0,0,0.8); background:white; border: 1px solid #ccc;
+            transition: transform 0.3s ease-out; 
+        }
+        
         .hand { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:10px; width: max-content; padding: 15px; bottom: 5px; z-index: 200; }
         .opp-hand-visual { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:5px; width: max-content; top: 15px; opacity: 0.9; }
 
-        .card { width: 12vw; max-width: 65px; height: 18vw; max-height: 95px; border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; box-shadow: 0 10px 20px rgba(0,0,0,0.7); background:white; border: 1px solid #fff; }
+        /* Mobil Uyumlu Kart Boyutları */
+        .card { 
+            width: 12vw; max-width: 65px; height: 18vw; max-height: 95px; 
+            border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.7); background:white; border: 1px solid #fff;
+        }
         .card.passive { pointer-events: none; filter: brightness(0.5) contrast(1.1); }
         .card:hover:not(.passive) { transform: translateY(-20px) scale(1.05); z-index: 100; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
         .card-mini { width: 6vw; max-width: 32px; height: 9vw; max-height: 48px; background: #ddd; border-radius: 4px; border: 1px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
 
-        @keyframes dealPlayer { 0% { opacity: 0; transform: translate(0, -250px) scale(0.3) rotate(45deg); } 100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); } }
-        @keyframes dealOpponent { 0% { opacity: 0; transform: translate(0, 250px) scale(0.3) rotate(-45deg); } 100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); } }
+        @keyframes dealPlayer {
+            0% { opacity: 0; transform: translate(0, -250px) scale(0.3) rotate(45deg); }
+            100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
+        }
+        @keyframes dealOpponent {
+            0% { opacity: 0; transform: translate(0, 250px) scale(0.3) rotate(-45deg); }
+            100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
+        }
         .anim-deal-p { animation: dealPlayer 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
         .anim-deal-o { animation: dealOpponent 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
 
-        .how-to-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #bbb; padding: 12px; border-radius: 10px; text-align: center; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
+        .how-to-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #bbb;
+            padding: 12px; border-radius: 10px; text-align: center; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s;
+        }
         .how-to-btn:active { background: rgba(255,255,255,0.1); }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
-        .modal-box { background: linear-gradient(145deg, #11151d, #090b0f); border: 1px solid rgba(0, 210, 255, 0.3); padding: 30px; width: 100%; max-width: 350px; text-align: center; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.9); position: relative; margin-top: -10vh; }
-        .modal-input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid #222a35; padding: 14px; color: #fff; margin-bottom: 15px; text-align: center; outline: none; border-radius: 8px; font-size: 16px; transition: 0.3s; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px;
+        }
+        .modal-box { 
+            background: linear-gradient(145deg, #11151d, #090b0f); border: 1px solid rgba(0, 210, 255, 0.3); 
+            padding: 30px; width: 100%; max-width: 350px; text-align: center; border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9); position: relative; margin-top: -10vh;
+        }
+        .modal-input { 
+            width: 100%; background: rgba(0,0,0,0.6); border: 1px solid #222a35; 
+            padding: 14px; color: #fff; margin-bottom: 15px; text-align: center; 
+            outline: none; border-radius: 8px; font-size: 16px; transition: 0.3s;
+        }
         .modal-input:focus { border-color: var(--border); }
+
         .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
 
-        #pistiDisplay { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0); font-size: 110px; font-weight: 900; text-align: center; background: linear-gradient(to bottom, #ffe600, #ff5e00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(255, 166, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.6)); display: none; z-index: 9999; font-family: 'Black Ops One'; letter-spacing: 5px; pointer-events: none; }
+        #pistiDisplay {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
+            font-size: 110px; font-weight: 900; text-align: center;
+            background: linear-gradient(to bottom, #ffe600, #ff5e00);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(255, 166, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.6));
+            display: none; z-index: 9999; font-family: 'Black Ops One'; letter-spacing: 5px;
+            pointer-events: none; 
+        }
+        
         .pisti-active { animation: pistiCinematic 2.2s ease-out forwards; display: block !important; }
-        @keyframes pistiCinematic { 0% { transform: translate(-50%,-50%) scale(0.1); opacity: 0; filter: brightness(3); } 15% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; filter: brightness(1.5); } 30% { transform: translate(-50%,-50%) scale(0.9); opacity: 1; filter: brightness(1); } 45% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; } 70% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.8)); } 100% { transform: translate(-50%,-50%) scale(5); opacity: 0; filter: blur(10px); } }
+        
+        @keyframes pistiCinematic {
+            0% { transform: translate(-50%,-50%) scale(0.1); opacity: 0; filter: brightness(3); }
+            15% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; filter: brightness(1.5); }
+            30% { transform: translate(-50%,-50%) scale(0.9); opacity: 1; filter: brightness(1); }
+            45% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; }
+            70% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.8)); }
+            100% { transform: translate(-50%,-50%) scale(5); opacity: 0; filter: blur(10px); }
+        }
     </style>
 </head>
 <body>
@@ -236,10 +390,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, collection, query, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const API_URL = "https://emirhan-siye.onrender.com";
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, setDoc, collection, query, where, getDocs, runTransaction, deleteDoc, increment, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -287,43 +439,71 @@
         soundClone.play().catch(e => console.warn("Ses Çalınamadı: ", e));
     }
 
-    let balance = 0, currentBet = 0, uid = null, userName = "Oyuncu";
+    let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
     let roomRef = null, myRole = null, gameState = null, inGame = false;
     let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
     let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
     let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
-    let isRequestingCards = false; // Sonsuz döngü kalkanı (Kart Dağıtım Flag'i)
 
-    // DÜZELTME 1: Yabancıları / Giriş yapmamış olanları Index.html'e Yönlendir
+    const CARD_POINTS = { "D0": 3, "C2": 2 };
+    const normalizeCardVal = (c) => {
+        if (!c) return "";
+        let v = c.substring(0, c.length - 1);
+        return (v === '0') ? '10' : v;
+    };
+
+    const calculatePoints = (cards) => {
+        let p = 0;
+        cards.forEach(c => {
+            if (CARD_POINTS[c]) p += CARD_POINTS[c];
+            else {
+                const val = normalizeCardVal(c);
+                if (val === 'A' || val === 'J') p += 1;
+            }
+        });
+        return p;
+    };
+
     onAuthStateChanged(auth, user => {
         if (!user) {
-            window.location.href = "index.html";
+            signInAnonymously(auth).catch(e => console.error("Giriş hatası:", e));
             return;
         }
 
         uid = user.uid;
+        userRef = doc(db, "users", uid);
         
         if(userUnsub) userUnsub();
-        userUnsub = onSnapshot(doc(db, "users", uid), snap => {
-            let dbBalance = 0;
+        userUnsub = onSnapshot(userRef, snap => {
             if(snap.exists()) {
                 const data = snap.data();
-                dbBalance = data.balance || 0;
-                userName = data.username || data.fullName || ("Oyuncu_" + uid.substring(0,4));
+                let dbBalance = data.balance || 0;
+                if (currentBet > dbBalance) {
+                    currentBet = 0;
+                    document.getElementById("bet").innerText = "0";
+                }
+                balance = dbBalance - currentBet;
+                userName = data.username || ("Oyuncu_" + uid.substring(0,4));
+                document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
             } else {
-                userName = "Oyuncu_" + uid.substring(0,4);
+                setDoc(userRef, { balance: 1000, username: "Oyuncu_" + uid.substring(0,4) });
             }
-
-            if (currentBet > dbBalance) {
-                currentBet = 0;
-                document.getElementById("bet").innerText = "0";
-            }
-            balance = dbBalance - currentBet;
-            document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
         });
         
+        cleanZombies();
         listenLobby();
     });
+
+    async function cleanZombies() {
+        try {
+            const snap = await getDocs(query(collection(db, "rooms")));
+            const now = Date.now();
+            snap.forEach(async (d) => {
+                const data = d.data();
+                if (data.createdAt && (now - data.createdAt > 1800000)) await deleteDoc(doc(db, "rooms", d.id));
+            });
+        } catch(e) {}
+    }
 
     window.onbeforeunload = function() {
         if (inGame && roomRef) handleDisconnect();
@@ -335,14 +515,15 @@
 
     async function handleDisconnect() {
         if (!roomRef) return;
+        const currentRef = roomRef;
         inGame = false;
         try {
-            const token = await auth.currentUser.getIdToken();
-            await fetch(`${API_URL}/api/pisti/leave`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId: roomRef.id })
-            });
+            if (gameState && gameState.status === "waiting") {
+                if (myRole === "p1") await deleteDoc(currentRef);
+                else await updateDoc(currentRef, { [myRole]: null, [myRole + "_name"]: null });
+            } else if (gameState && gameState.status === "playing") {
+                await updateDoc(currentRef, { quitter: uid, quitterName: userName, status: "finished" });
+            }
         } catch(e) {}
     }
 
@@ -354,7 +535,6 @@
         document.getElementById("gameArea").style.display = "none";
         document.getElementById("lobbyScreen").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "ÇIKIŞ";
-        listenLobby(); 
     };
 
     window.handleNavAction = () => {
@@ -364,70 +544,44 @@
 
     function listenLobby() {
         if(lobbyUnsub) lobbyUnsub();
-        const q = query(collection(db, "rooms"), limit(50)); 
-        
-        lobbyUnsub = onSnapshot(q, (snap) => {
+        lobbyUnsub = onSnapshot(query(collection(db, "rooms"), orderBy("createdAt", "desc")), (snap) => {
             const list = document.getElementById("roomList");
             const filter = document.getElementById("roomSearch").value.toLowerCase();
-            const now = Date.now();
-            let roomsArray = [];
+            let html = ""; const now = Date.now();
+            if(Math.random() < 0.1) cleanZombies();
 
             snap.forEach(roomDoc => {
                 const data = roomDoc.data();
                 if (data.status === "finished") return; 
-                
-                let createdTime = now;
-                if (data.createdAt) {
-                    createdTime = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt.toMillis ? data.createdAt.toMillis() : now);
-                }
-                
-                roomsArray.push({ id: roomDoc.id, data: data, createdTime: createdTime });
-            });
+                if (data.name.toLowerCase().includes(filter)) {
+                    const duration = data.createdAt ? Math.floor((now - data.createdAt) / 60000) : 0;
+                    const isPlaying = data.status === "playing";
+                    const maxP = data.type.startsWith("4") ? 4 : 2;
+                    const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
+                    
+                    let pNames = `${data.p1_name || '...'}`;
+                    if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
+                    else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
 
-            roomsArray.sort((a, b) => b.createdTime - a.createdTime);
-
-            let html = "";
-            roomsArray.forEach(room => {
-                const data = room.data;
-                const duration = Math.max(0, Math.floor((now - room.createdTime) / 60000));
-                const isPlaying = data.status === "playing";
-                const maxP = (data.type && data.type.startsWith("4")) ? 4 : 2;
-                const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
-                
-                let pNames = `${data.p1_name || 'Gizli'}`;
-                if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
-                else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
-
-                // DÜZELTME 2: Arama Kotasını (Quota Drain) Engelleyen "display" Mantığı İçin Data Attribute Eklendi
-                const displayStyle = (data.name && data.name.toLowerCase().includes(filter)) ? "flex" : "none";
-
-                html += `
-                    <div class="room-card" data-roomname="${data.name ? data.name.toLowerCase() : ''}" style="display: ${displayStyle}; ${isPlaying ? 'border-left-color:#00ff88;' : ''}">
-                        <div style="flex:1">
-                            <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type || '2-52'}] (${pList.length}/${maxP})</small> 
-                            ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
-                            <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
-                            <div class="room-info-live">
-                                <span style="color:#ffb700">Bahis: ${(data.bet || 0).toLocaleString()} MC</span> | <span>${duration} dk önce</span>
+                    html += `
+                        <div class="room-card" style="${isPlaying ? 'border-left-color:#00ff88;' : ''}">
+                            <div style="flex:1">
+                                <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type}] (${pList.length}/${maxP})</small> 
+                                ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
+                                <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
+                                <div class="room-info-live">
+                                    <span style="color:#ffb700">Bahis: ${data.bet.toLocaleString()} MC</span> | <span>${duration} dk</span>
+                                </div>
                             </div>
-                        </div>
-                        ${(data.status === 'waiting' && pList.length < maxP) ? `
-                            <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${room.id}', '${data.password || ''}', ${data.bet || 0})">KATIL</button>
-                        ` : `<div style="font-size:0.75rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
-                    </div>`;
+                            ${(data.status === 'waiting' && pList.length < maxP) ? `
+                                <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet})">KATIL</button>
+                            ` : `<div style="font-size:0.75rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
+                        </div>`;
+                }
             });
             list.innerHTML = html || `<div style="text-align:center; padding:30px; color:#555; font-size:1.1rem; font-weight:bold;">Uygun masa yok. Yeni Masa Kur!</div>`;
         });
     }
-
-    // DÜZELTME 2 (Devamı): Client-Side Arama (Firebase'e istek atmaz)
-    document.getElementById("roomSearch").addEventListener('input', (e) => {
-        const filter = e.target.value.toLowerCase();
-        document.querySelectorAll('.room-card').forEach(card => {
-            const roomName = card.getAttribute('data-roomname');
-            card.style.display = roomName.includes(filter) ? "flex" : "none";
-        });
-    });
 
     window.addBet = (a) => { 
         if (!Number.isInteger(a) || a <= 0) return;
@@ -454,31 +608,38 @@
         const name = document.getElementById("newRoomName").value || "Arena";
         const type = document.getElementById("newRoomType").value;
         const pass = document.getElementById("newRoomPass").value || "";
+        const roomId = "room_" + Date.now() + "_" + uid.substring(0,4);
+        roomRef = doc(db, "rooms", roomId); myRole = "p1";
+        
+        const isDouble = type.includes("104");
+        const finalDeck = createShuffledDeck(isDouble);
 
         try {
-            const token = await auth.currentUser.getIdToken();
-            const res = await fetch(`${API_URL}/api/pisti/create`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, type, pass, bet: currentBet })
+            await runTransaction(db, async (t) => {
+                const uSnap = await t.get(userRef);
+                if((uSnap.data().balance || 0) < currentBet) throw "Yetersiz bakiye!";
+                
+                t.set(roomRef, {
+                    p1: uid, p1_name: userName, bet: currentBet, status: "waiting", name, password: pass, type,
+                    deck: finalDeck, table: [], p1_score: 0, p2_score: 0, p3_score: 0, p4_score: 0, p1_count: 0, p2_count: 0, p3_count: 0, p4_count: 0,
+                    p1_hand: [], p2_hand: [], p3_hand: [], p4_hand: [], turn: null, quitter: null, createdAt: Date.now(), lastCollector: null, pistiSignal: 0
+                });
+                t.update(userRef, { balance: increment(-currentBet) });
             });
-            const data = await res.json();
-            
-            if(!data.ok) throw new Error(data.error);
-
-            myRole = "p1";
-            roomRef = doc(db, "rooms", data.roomId);
-            
-            closeModal('createRoomModal'); 
-            enterGameView(); 
-            listenRoom();
-        } catch(e) { 
-            showInfoModal(e.message, "HATA"); 
-            cancelBet(); 
-        } finally { 
-            isProcessingPlay = false; 
-        }
+            closeModal('createRoomModal'); enterGameView(); listenRoom();
+        } catch(e) { showInfoModal(e, "HATA"); } finally { isProcessingPlay = false; }
     };
+
+    function createShuffledDeck(isDouble) {
+        const s = ["H", "D", "C", "S"], v = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+        let d = []; s.forEach(x => v.forEach(y => d.push(y + x)));
+        if(isDouble) d = [...d, ...d];
+        for (let i = d.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [d[i], d[j]] = [d[j], d[i]];
+        }
+        return d;
+    }
 
     window.handleJoin = (rid, pass, bet) => {
         if(pass) {
@@ -502,31 +663,35 @@
         isProcessingPlay = true;
 
         try {
-            const token = await auth.currentUser.getIdToken();
-            const res = await fetch(`${API_URL}/api/pisti/join`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId: rid, pass: pendingRoomPass })
-            });
-            const data = await res.json();
-            
-            if(!data.ok) throw new Error(data.error);
+            const role = await runTransaction(db, async (transaction) => {
+                const rDoc = await transaction.get(doc(db, "rooms", rid));
+                const uDoc = await transaction.get(userRef);
+                if (!rDoc.exists()) throw "Oda kapandı veya bulunamadı!";
+                const data = rDoc.data();
+                if(uDoc.data().balance < bet) throw "Bakiye yetersiz!";
 
-            myRole = data.role; 
-            roomRef = doc(db, "rooms", rid); 
-            currentBet = bet; 
-            updateUI();
-            enterGameView(); 
-            listenRoom();
-        } catch(e) { 
-            showInfoModal(e.message, "HATA"); 
-        } finally { 
-            isProcessingPlay = false; 
-        }
+                const maxP = data.type.startsWith("4") ? 4 : 2;
+                let assignedRole = null;
+                if (!data.p2) assignedRole = "p2";
+                else if (maxP === 4 && !data.p3) assignedRole = "p3";
+                else if (maxP === 4 && !data.p4) assignedRole = "p4";
+                if (!assignedRole) throw "Oda dolu!";
+                
+                transaction.update(userRef, { balance: increment(-bet) });
+                const updates = { [assignedRole]: uid, [assignedRole + "_name"]: userName };
+                const pCount = [data.p1, data.p2, data.p3, data.p4].filter(p => p).length + 1;
+                
+                if(pCount === maxP) { updates.status = "playing"; updates.turn = data.p1; }
+                transaction.update(doc(db, "rooms", rid), updates);
+                return assignedRole;
+            });
+            myRole = role; roomRef = doc(db, "rooms", rid); currentBet = bet; updateUI();
+            enterGameView(); listenRoom();
+        } catch(e) { showInfoModal(e, "HATA"); } finally { isProcessingPlay = false; }
     }
 
     function enterGameView() {
-        inGame = true; lastHandLength = 0; isRequestingCards = false;
+        inGame = true; lastHandLength = 0;
         document.getElementById("lobbyScreen").style.display = "none";
         document.getElementById("gameArea").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "AYRIL";
@@ -543,7 +708,8 @@
             
             if(gameState.quitter) {
                 if(gameState.quitter !== uid) {
-                    showInfoModal(`${gameState.quitterName || 'Rakip'} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
+                    await updateDoc(userRef, { balance: increment(gameState.bet) });
+                    showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
                     inGame = false; setTimeout(() => window.leaveRoom(), 3000);
                 }
                 return;
@@ -556,20 +722,12 @@
             
             if (gameState.status === "playing") {
                 document.getElementById("waitingStatus").style.display = "none";
-                const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2;
-                
-                let handsEmpty = true;
-                for(let i=1; i<=maxP; i++) {
-                    const hand = gameState[`p${i}_hand`];
-                    if(hand && hand.length > 0) handsEmpty = false;
-                }
+                const maxP = gameState.type.startsWith("4") ? 4 : 2;
+                const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
                 
                 if(!isProcessingPlay) {
-                    if (handsEmpty && gameState.turn === uid) {
-                        refillHands();
-                    } else {
-                        render();
-                    }
+                    if (handsEmpty && gameState.turn === uid) refillHands();
+                    else render();
                 }
             }
             if (gameState.status === "finished") handleEnd();
@@ -579,9 +737,9 @@
 
     function renderHeads() {
         const container = document.getElementById("playerHeadsContainer");
-        const maxP = (gameState && gameState.type && gameState.type.startsWith("4")) ? 4 : 2; let html = "";
+        const maxP = gameState?.type.startsWith("4") ? 4 : 2; let html = "";
         for(let i=1; i<=maxP; i++) {
-            const pUid = gameState?.[`p${i}`], pName = gameState?.[`p${i}_name`] || "Gizli";
+            const pUid = gameState?.[`p${i}`], pName = gameState?.[`p${i}_name`] || "...";
             const isActive = gameState?.turn === pUid && gameState?.status === "playing";
             html += `<div class="p-head ${isActive ? 'active' : ''}"><div class="name">${pUid === uid ? "SİZ" : pName}</div><div class="score">${gameState?.[`p${i}_score`] || 0}</div></div>`;
         }
@@ -589,25 +747,43 @@
     }
 
     async function refillHands() {
-        // DÜZELTME 4: Sonsuz Döngü Engeli
-        if (isProcessingPlay || isRequestingCards) return;
         isProcessingPlay = true;
-        isRequestingCards = true; 
-
         try {
-            const token = await auth.currentUser.getIdToken();
-            await fetch(`${API_URL}/api/pisti/refill`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId: roomRef.id })
+            await runTransaction(db, async (t) => {
+                const d = (await t.get(roomRef)).data();
+                if (d.status !== "playing") return;
+                
+                const maxP = d.type.startsWith("4") ? 4 : 2;
+                let deck = [...d.deck], table = [...d.table], updates = {};
+                const is104 = d.type.includes("104");
+                const fullSize = is104 ? 104 : 52;
+                
+                let initialTableCount = (d.type === "4-104") ? 8 : 4; 
+                
+                if (table.length === 0 && deck.length === fullSize) {
+                    updates.table = deck.splice(0, initialTableCount);
+                }
+                
+                let neededCards = maxP * 4; 
+                
+                if (deck.length >= neededCards) {
+                    for (let i = 1; i <= maxP; i++) updates[`p${i}_hand`] = deck.splice(0, 4);
+                    updates.deck = deck;
+                } else {
+                    if (table.length > 0 && d.lastCollector) {
+                        let lcRole = null;
+                        for(let i=1; i<=maxP; i++) { if(d[`p${i}`] === d.lastCollector) lcRole = `p${i}`; }
+                        if (lcRole) {
+                            updates[lcRole + "_score"] = increment(calculatePoints(table));
+                            updates[lcRole + "_count"] = increment(table.length);
+                        }
+                    }
+                    updates.table = [];
+                    updates.status = "finished";
+                }
+                t.update(roomRef, updates);
             });
-        } catch (e) {
-            console.error("Kart dağıtma hatası", e);
-        } finally { 
-            isProcessingPlay = false; 
-            // 2 saniyelik gecikme koyuyoruz ki sunucu veriyi işleyip Snapshot atana kadar tekrar tekrar tetiklenmesin
-            setTimeout(() => { isRequestingCards = false; }, 2000); 
-        }
+        } catch (e) {} finally { isProcessingPlay = false; }
     }
 
     async function playCard(idx) {
@@ -615,29 +791,37 @@
         isProcessingPlay = true;
         
         playSound(sfx.cardThrow); 
-        
         const playedCard = gameState[myRole + "_hand"][idx];
+        
         gameState[myRole + "_hand"].splice(idx, 1);
         gameState.table.push(playedCard);
         gameState.turn = "processing"; 
         render(); 
 
         try {
-            const token = await auth.currentUser.getIdToken();
-            const res = await fetch(`${API_URL}/api/pisti/play`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId: roomRef.id, cardIndex: idx })
+            await runTransaction(db, async (t) => {
+                const d = (await t.get(roomRef)).data();
+                if(d.turn !== uid) throw "Sıra sizde değil!";
+                const hand = [...d[myRole + "_hand"]];
+                
+                const card = hand.splice(idx, 1)[0];
+                let table = [...d.table], scoreInc = 0, countInc = 0, pistiInc = 0, lastColl = d.lastCollector;
+                
+                if (table.length > 0) {
+                    const top = table[table.length - 1], isVale = normalizeCardVal(card) === "J";
+                    if (normalizeCardVal(card) === normalizeCardVal(top) || isVale) {
+                        if (table.length === 1 && !isVale) { scoreInc = 10; pistiInc = 1; } 
+                        else if (table.length === 1 && isVale && normalizeCardVal(top) === "J") { scoreInc = 20; pistiInc = 1; } 
+                        else { scoreInc = calculatePoints([...table, card]); }
+                        countInc = table.length + 1; table = []; lastColl = uid;
+                    } else table.push(card);
+                } else table.push(card);
+                
+                const maxP = d.type.startsWith("4") ? 4 : 2;
+                const nextIdx = (parseInt(myRole.at(-1)) % maxP) + 1;
+                t.update(roomRef, { [myRole + "_hand"]: hand, table, [myRole + "_score"]: increment(scoreInc), [myRole + "_count"]: increment(countInc), turn: d[`p${nextIdx}`], lastCollector: lastColl, pistiSignal: increment(pistiInc) });
             });
-            const data = await res.json();
-            if(!data.ok) throw new Error(data.error);
-
-        } catch(e) { 
-            console.error(e.message); 
-            listenRoom(); 
-        } finally { 
-            isProcessingPlay = false; 
-        }
+        } catch(e) { listenRoom(); } finally { isProcessingPlay = false; }
     }
 
     function render() {
@@ -663,7 +847,7 @@
             ph.appendChild(img);
         });
 
-        const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2; let oppTotal = 0;
+        const maxP = gameState.type.startsWith("4") ? 4 : 2; let oppTotal = 0;
         for(let i=1; i<=maxP; i++) if(`p${i}` !== myRole) oppTotal += (gameState[`p${i}_hand`]?.length || 0);
         
         for(let i=0; i<Math.min(oppTotal, 12); i++) {
@@ -672,22 +856,20 @@
             oh.appendChild(d);
         }
 
-        if(gameState.table) {
-            gameState.table.forEach((c, i) => {
-                let img = document.createElement("img");
-                img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
-                img.alt = "Yerdeki Kart";
-                img.className = "stack-card";
-                img.style.transform = `translate(${i*1.5}px, ${i*1.5}px) rotate(${i*2.5}deg)`;
-                img.style.zIndex = i;
-                tc.appendChild(img);
-            });
-        }
+        gameState.table.forEach((c, i) => {
+            let img = document.createElement("img");
+            img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
+            img.alt = "Yerdeki Kart";
+            img.className = "stack-card";
+            img.style.transform = `translate(${i*1.5}px, ${i*1.5}px) rotate(${i*2.5}deg)`;
+            img.style.zIndex = i;
+            tc.appendChild(img);
+        });
     }
 
     async function handleEnd() {
         if (!inGame) return; inGame = false;
-        const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2;
+        const maxP = gameState.type.startsWith("4") ? 4 : 2;
         let finalScores = [], counts = [];
         for(let i=1; i<=maxP; i++) counts.push({role: `p${i}`, count: gameState[`p${i}_count`] || 0});
         counts.sort((a,b) => b.count - a.count);
@@ -696,20 +878,24 @@
         for(let i=1; i<=maxP; i++) {
             let total = gameState[`p${i}_score`] || 0;
             if(`p${i}` === bonusRole) total += 3;
-            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`] || "Gizli", score: total, uid: gameState[`p${i}`] });
+            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`], score: total, uid: gameState[`p${i}`] });
         }
         finalScores.sort((a,b) => b.score - a.score);
         const winners = finalScores.filter(s => s.score === finalScores[0].score);
         
         if(winners.some(w => w.uid === uid)) {
             const prize = Math.floor((gameState.bet * maxP) / winners.length);
+            await updateDoc(userRef, { balance: increment(prize) });
             playSound(sfx.win); 
             showInfoModal(`🎉 TEBRİKLER! ${prize} MC KAZANDINIZ.`, "OYUN BİTTİ");
         } else {
             playSound(sfx.lose); 
             showInfoModal(`KAYBETTİNİZ! Kazanan:<br> <b style="color:var(--border)">${finalScores[0].name} (${finalScores[0].score} Puan)</b>`, "OYUN BİTTİ");
         }
-        setTimeout(() => window.leaveRoom(), 6000);
+        setTimeout(async () => {
+            if(myRole === "p1") { try { await deleteDoc(roomRef); } catch(e){} }
+            window.leaveRoom();
+        }, 6000);
     }
 
     function triggerPistiUI() {
@@ -730,14 +916,11 @@
     };
 
     window.handleQuickJoin = async () => {
-        const snap = await getDocs(query(collection(db, "rooms"), limit(20)));
+        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting")));
         let found = false;
         snap.forEach(d => { 
             const data = d.data();
-            if(!found && data.status === "waiting" && !data.password && data.bet <= balance) { 
-                joinRoom(d.id, data.bet); 
-                found = true; 
-            } 
+            if(!found && !data.password && data.bet <= balance) { joinRoom(d.id, data.bet); found = true; } 
         });
         if(!found) showInfoModal("Uygun masa bulunamadı!", "LOBİ");
     };
