@@ -6,137 +6,183 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Render env FIREBASE_KEY bazen "\\n" içerir -> gerçek newline'a çevir
-const rawKey = process.env.FIREBASE_KEY;
-if (!rawKey) throw new Error("FIREBASE_KEY env yok!");
+function getServiceAccount() {
+  const raw = process.env.FIREBASE_KEY;
+  if (!raw) throw new Error("FIREBASE_KEY env değişkeni yok.");
 
-const fixedKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
-const serviceAccount = JSON.parse(fixedKey);
+  // 1) Direkt JSON olarak parse dene
+  try {
+    const obj = JSON.parse(raw);
+    // Bazı paneller private_key içinde \\n bırakabiliyor
+    if (obj.private_key && obj.private_key.includes("\\n")) {
+      obj.private_key = obj.private_key.replace(/\\n/g, "\n");
+    }
+    return obj;
+  } catch (_) {}
 
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  // 2) Eğer biri base64 yapıştırdıysa (opsiyonel destek)
+  try {
+    const decoded = Buffer.from(raw, "base64").toString("utf8");
+    const obj = JSON.parse(decoded);
+    if (obj.private_key && obj.private_key.includes("\\n")) {
+      obj.private_key = obj.private_key.replace(/\\n/g, "\n");
+    }
+    return obj;
+  } catch (e) {
+    throw new Error("FIREBASE_KEY parse edilemedi. Service Account JSON'un TAMAMINI yapıştırmalısın.");
+  }
+}
+
+if (!admin.apps.length) {
+  const serviceAccount = getServiceAccount();
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+}
 const db = admin.firestore();
 
-// Token Doğrulama Middleware
+// Health
+app.get("/", (req, res) => res.send("OK"));
+
 const authUser = async (req, res, next) => {
   try {
-    const header = req.headers.authorization || "";
-    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!token) return res.status(401).json({ error: "Token yok" });
 
     const decoded = await admin.auth().verifyIdToken(token);
     req.uid = decoded.uid;
     next();
   } catch (e) {
-    res.status(401).json({ error: "Oturum Hatası" });
+    return res.status(401).json({ error: "Oturum Hatası" });
   }
 };
 
-// 1. Kullanıcı ve Aktif Oyun Durumu
 app.get("/api/me", authUser, async (req, res) => {
   const userRef = db.collection("users").doc(req.uid);
-  const doc = await userRef.get();
+  const snap = await userRef.get();
 
-  if (!doc.exists) {
-    await userRef.set({ balance: 5000, currentSession: { active: false } }, { merge: true });
+  if (!snap.exists) {
+    await userRef.set({ balance: 5000, currentSession: { active: false } });
     return res.json({ balance: 5000, session: { active: false } });
   }
 
-  const data = doc.data() || {};
-  res.json({ balance: data.balance || 0, session: data.currentSession || { active: false } });
+  const data = snap.data() || {};
+  res.json({
+    balance: Number(data.balance || 0),
+    session: data.currentSession || { active: false },
+  });
 });
 
-// 2. Oyunu Başlat
 app.post("/api/mines/start", authUser, async (req, res) => {
-  const { bet, mines } = req.body;
+  const bet = Number(req.body?.bet);
+  const mines = Number(req.body?.mines);
+
+  if (!Number.isFinite(bet) || bet < 1) return res.status(400).json({ error: "Geçersiz bahis" });
+  if (!Number.isFinite(mines) || mines < 1 || mines > 24) return res.status(400).json({ error: "Geçersiz mayın sayısı" });
+
   const userRef = db.collection("users").doc(req.uid);
 
-  try {
-    await db.runTransaction(async (t) => {
-      const snap = await t.get(userRef);
-      const user = snap.exists ? (snap.data() || {}) : { balance: 5000, currentSession: { active: false } };
+  await db.runTransaction(async (t) => {
+    const snap = await t.get(userRef);
+    let user = snap.exists ? (snap.data() || {}) : { balance: 5000, currentSession: { active: false } };
 
-      if (!snap.exists) t.set(userRef, user, { merge: true });
-      if (user.currentSession?.active) throw new Error("Zaten aktif oyun var!");
-      if ((user.balance || 0) < bet) throw new Error("Yetersiz Bakiye!");
+    const balance = Number(user.balance || 0);
+    if (balance < bet) throw new Error("Yetersiz Bakiye!");
 
-      const allMines = [];
-      while (allMines.length < mines) {
-        const r = Math.floor(Math.random() * 25);
-        if (!allMines.includes(r)) allMines.push(r);
-      }
+    const allMines = [];
+    while (allMines.length < mines) {
+      const r = Math.floor(Math.random() * 25);
+      if (!allMines.includes(r)) allMines.push(r);
+    }
 
-      t.set(
-        userRef,
-        {
-          balance: (user.balance || 0) - bet,
-          currentSession: {
-            active: true,
-            bet,
-            mines,
-            mineIndices: allMines,
-            openedIndices: [],
-            multiplier: 1.0,
-            opened: 0,
-          },
+    t.set(
+      userRef,
+      {
+        balance: balance - bet,
+        currentSession: {
+          active: true,
+          bet,
+          mines,
+          mineIndices: allMines,
+          openedIndices: [],
+          multiplier: 1.0,
+          opened: 0,
         },
-        { merge: true }
-      );
+      },
+      { merge: true }
+    );
+  });
+
+  const updated = (await userRef.get()).data() || {};
+  res.json({ ok: true, balance: updated.balance });
+});
+
+app.post("/api/mines/click", authUser, async (req, res) => {
+  const index = Number(req.body?.index);
+  if (!Number.isFinite(index) || index < 0 || index > 24) return res.status(400).json({ error: "Geçersiz index" });
+
+  const userRef = db.collection("users").doc(req.uid);
+
+  const out = await db.runTransaction(async (t) => {
+    const snap = await t.get(userRef);
+    if (!snap.exists) throw new Error("Kullanıcı yok");
+
+    const user = snap.data() || {};
+    const s = user.currentSession;
+
+    if (!s || !s.active) throw new Error("Aktif oyun yok");
+    if (Array.isArray(s.openedIndices) && s.openedIndices.includes(index)) {
+      return { result: "diamond", opened: s.opened, multiplier: s.multiplier };
+    }
+
+    if (Array.isArray(s.mineIndices) && s.mineIndices.includes(index)) {
+      t.update(userRef, { "currentSession.active": false });
+      return { result: "mine", mineIndices: s.mineIndices };
+    }
+
+    const n = Number(s.opened || 0) + 1;
+    const m = Number(s.mines || 1);
+
+    let mult = 1;
+    for (let i = 0; i < n; i++) mult *= (25 - i) / (25 - m - i);
+    mult = Math.round(mult * 100) / 100;
+
+    t.update(userRef, {
+      "currentSession.opened": n,
+      "currentSession.multiplier": mult,
+      "currentSession.openedIndices": admin.firestore.FieldValue.arrayUnion(index),
     });
 
-    const updated = (await userRef.get()).data() || {};
-    res.json({ ok: true, balance: updated.balance || 0 });
-  } catch (e) {
-    res.status(400).json({ error: e.message || "Başlatma hatası" });
-  }
-});
-
-// 3. Kutu Açma
-app.post("/api/mines/click", authUser, async (req, res) => {
-  const { index } = req.body;
-  const userRef = db.collection("users").doc(req.uid);
-  const user = (await userRef.get()).data() || {};
-  const s = user.currentSession;
-
-  if (!s || !s.active) return res.status(400).json({ error: "Aktif oyun yok" });
-
-  if (s.mineIndices.includes(index)) {
-    await userRef.update({ "currentSession.active": false });
-    return res.json({ result: "mine", mineIndices: s.mineIndices });
-  }
-
-  const n = (s.opened || 0) + 1;
-  let mult = 1;
-  for (let i = 0; i < n; i++) mult *= (25 - i) / (25 - s.mines - i);
-  mult = Math.round(mult * 100) / 100;
-
-  await userRef.update({
-    "currentSession.opened": n,
-    "currentSession.multiplier": mult,
-    "currentSession.openedIndices": admin.firestore.FieldValue.arrayUnion(index),
+    return { result: "diamond", opened: n, multiplier: mult };
   });
 
-  res.json({ result: "diamond", opened: n, multiplier: mult });
+  res.json(out);
 });
 
-// 4. Cashout
 app.post("/api/mines/cashout", authUser, async (req, res) => {
   const userRef = db.collection("users").doc(req.uid);
-  const user = (await userRef.get()).data() || {};
-  const s = user.currentSession;
 
-  if (!s || !s.active || (s.opened || 0) === 0) return res.status(400).json({ error: "Geçersiz işlem" });
+  const out = await db.runTransaction(async (t) => {
+    const snap = await t.get(userRef);
+    if (!snap.exists) throw new Error("Kullanıcı yok");
 
-  const win = Math.floor(s.bet * s.multiplier);
+    const user = snap.data() || {};
+    const s = user.currentSession;
 
-  await userRef.update({
-    balance: (user.balance || 0) + win,
-    "currentSession.active": false,
+    if (!s || !s.active || Number(s.opened || 0) === 0) throw new Error("Geçersiz işlem");
+
+    const balance = Number(user.balance || 0);
+    const win = Math.floor(Number(s.bet || 0) * Number(s.multiplier || 1));
+
+    t.update(userRef, {
+      balance: balance + win,
+      "currentSession.active": false,
+    });
+
+    return { ok: true, winAmount: win, balance: balance + win, mineIndices: s.mineIndices };
   });
 
-  res.json({ ok: true, winAmount: win, balance: (user.balance || 0) + win, mineIndices: s.mineIndices });
+  res.json(out);
 });
 
-app.get("/", (req, res) => res.send("OK"));
-
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Motor Hazir!", PORT));
+app.listen(PORT, () => console.log("Motor Hazir! PORT:", PORT));
