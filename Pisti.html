@@ -14,16 +14,6 @@
 <meta name="theme-color" content="#03050a">
 <link rel="canonical" href="https://playmatrix.com.tr/Pisti.html">
 
-<meta property="og:title" content="PlayMatrix Pişti | Krupiyere Karşı Oyna">
-<meta property="og:description" content="Taktiklerini konuştur, pişti yap ve MC bakiyeni ikiye katla! Kesintisiz kart oyunu heyecanı PlayMatrix'te.">
-<meta property="og:image" content="https://playmatrix.com.tr/assets/pisti-single-promo.jpg">
-<meta property="og:url" content="https://playmatrix.com.tr/Pisti.html">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="PlayMatrix">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PlayMatrix Pişti Oyunu">
-<meta name="twitter:description" content="Gerçekçi kart deneyimiyle bilgisayara karşı pişti oyna, kazandıkça katla!">
-
 <script>
     if (window.history.replaceState) {
         window.history.replaceState(null, null, "/");
@@ -186,7 +176,7 @@
         
         <div class="user-pill-mini" style="border-color: #ffcc00;">
             <div class="balance-info">
-                <b id="bet" style="color:#ffcc00">0</b>
+                <b id="betDisplay" style="color:#ffcc00">0</b>
                 <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00);">MC</div>
             </div>
         </div>
@@ -227,8 +217,10 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* Render API Bağlantısı (Mines ile birebir aynı sistem) */
+const API_BASE = "https://emirhan-siye.onrender.com";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -241,115 +233,112 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
-// GÜVENLİK: IIFE (Kapsülleme) ile tarayıcı konsolundan hile yapılmasını engelliyoruz.
-(function() {
-    "use strict";
-
-    const sfx = {
-        chip: new Audio("https://cdn.freesound.org/previews/201/201491_3325145-lq.mp3"),
-        cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
-        cardCollect: new Audio("https://cdn.freesound.org/previews/202/202029_3325145-lq.mp3"),
-        win: new Audio("https://cdn.freesound.org/previews/391/391539_5235550-lq.mp3"),
-        lose: new Audio("https://cdn.freesound.org/previews/174/174499_1079313-lq.mp3"),
-        pisti: new Audio("https://cdn.freesound.org/previews/253/253177_4404552-lq.mp3"),
-        deal: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3")
-    };
-
-    window.unlockAudioAndStart = function() {
-        Object.values(sfx).forEach(sound => {
-            sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(() => {});
-        });
-        startGame();
-    }
-
-    function playSfx(name) {
-        if(sfx[name]) {
-            sfx[name].currentTime = 0;
-            sfx[name].volume = 0.8;
-            sfx[name].play().catch(() => {});
-        }
-    }
-
-    let balance = 0, bet = 0, currentBet = 0, userRef = null, gameStarted = false, dealing = false, turnLock = false;
-    let deck = [], player = [], computer = [], table = [];
-    let ps = 0, cs = 0, round = 0;
-
-    onAuthStateChanged(auth, user => {
-        if (!user) return;
-        userRef = doc(db, "users", user.uid);
-        onSnapshot(userRef, snap => {
-            balance = snap.data()?.balance || 0;
-            updateUI();
-        });
+/* Güvenli API İstek Fonksiyonu */
+async function apiFetch(path, method = "POST", body = null) {
+    if (!auth.currentUser) throw new Error("Oturum yok.");
+    let token = await auth.currentUser.getIdToken();
+    let res = await fetch(API_BASE + path, {
+        method,
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: body ? JSON.stringify(body) : null,
+        mode: "cors"
     });
-
-    function updateUI() {
-        document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
-        document.getElementById("bet").innerText = currentBet.toLocaleString('tr-TR');
-        
-        [100, 500, 2000, 10000].forEach(val => {
-            const el = document.getElementById("chip" + val);
-            if (balance < val || currentBet + val > 50000) el.classList.add("disabled");
-            else el.classList.remove("disabled");
+    if (res.status === 401) {
+        token = await auth.currentUser.getIdToken(true);
+        res = await fetch(API_BASE + path, {
+            method,
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: body ? JSON.stringify(body) : null,
+            mode: "cors"
         });
     }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) throw new Error(data?.error || "Sunucu hatası.");
+    return data;
+}
 
-    window.addBet = function(amount) {
-        if (gameStarted) return;
-        if (balance < amount || currentBet + amount > 50000) return;
-        currentBet += amount;
-        balance -= amount;
-        playSfx("chip");
+// Global değişkenler
+let balance = 0, bet = 0, currentBet = 0, gameStarted = false, dealing = false, turnLock = false;
+let deck = [], player = [], computer = [], table = [];
+let ps = 0, cs = 0, round = 0;
+
+const sfx = {
+    chip: new Audio("https://cdn.freesound.org/previews/201/201491_3325145-lq.mp3"),
+    cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
+    cardCollect: new Audio("https://cdn.freesound.org/previews/202/202029_3325145-lq.mp3"),
+    win: new Audio("https://cdn.freesound.org/previews/391/391539_5235550-lq.mp3"),
+    lose: new Audio("https://cdn.freesound.org/previews/174/174499_1079313-lq.mp3"),
+    pisti: new Audio("https://cdn.freesound.org/previews/253/253177_4404552-lq.mp3"),
+    deal: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3")
+};
+
+function playSfx(name) {
+    if(sfx[name]) {
+        sfx[name].currentTime = 0;
+        sfx[name].volume = 0.8;
+        sfx[name].play().catch(() => {});
+    }
+}
+
+// Sunucudan Bakiye Çekme
+async function refreshMe() {
+    try {
+        const me = await apiFetch("/api/me", "GET");
+        balance = Number(me.balance || 0);
         updateUI();
+    } catch (e) {
+        console.error("Bakiye çekilemedi:", e);
     }
+}
 
-    window.cancelBet = function() {
-        if (gameStarted) return;
-        balance += currentBet;
-        currentBet = 0;
-        playSfx("chip");
+function updateUI() {
+    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+    document.getElementById("betDisplay").innerText = currentBet.toLocaleString('tr-TR');
+    
+    [100, 500, 2000, 10000].forEach(val => {
+        const el = document.getElementById("chip" + val);
+        if (balance < val || currentBet + val > 50000) el.classList.add("disabled");
+        else el.classList.remove("disabled");
+    });
+}
+
+window.addBet = function(amount) {
+    if (gameStarted) return;
+    if (balance < amount || currentBet + amount > 50000) return;
+    currentBet += amount;
+    balance -= amount;
+    playSfx("chip");
+    updateUI();
+}
+
+window.cancelBet = function() {
+    if (gameStarted) return;
+    balance += currentBet;
+    currentBet = 0;
+    playSfx("chip");
+    updateUI();
+}
+
+window.unlockAudioAndStart = async function() {
+    Object.values(sfx).forEach(sound => {
+        sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(() => {});
+    });
+    
+    if (currentBet < 100) { showModal("Minimum MC 100 olmalıdır!"); return; }
+    if (gameStarted) return;
+
+    gameStarted = true;
+    bet = currentBet;
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("startBtn").innerText = "SİSTEM BEKLENİYOR...";
+
+    try {
+        // Sunucudan bahis düşümü işlemi
+        const res = await apiFetch("/api/pisti/start", "POST", { bet: bet });
+        balance = Number(res.balance || balance);
         updateUI();
-    }
-
-    async function animateDeals(targetId, count) {
-        dealing = true;
-        const targetEl = document.getElementById(targetId);
-        for (let i = 0; i < count; i++) {
-            const animCard = document.createElement("div");
-            animCard.className = "deal-anim-card";
-            animCard.style.left = "50%";
-            animCard.style.top = "-100px";
-            document.body.appendChild(animCard);
-            await new Promise(r => setTimeout(r, 50)); 
-            const rect = targetEl.getBoundingClientRect();
-            playSfx("deal");
-            animCard.style.left = (rect.left + (i * 10)) + "px";
-            animCard.style.top = rect.top + "px";
-            animCard.style.transform = "rotate(360deg)";
-            await new Promise(r => setTimeout(r, 150)); 
-            setTimeout(() => animCard.remove(), 500);
-        }
-        dealing = false;
-    }
-
-    async function startGame() {
-        if (currentBet < 100) { showModal("Minimum MC 100 olmalıdır!"); return; }
-        if (gameStarted) return;
-
-        gameStarted = true;
-        bet = currentBet;
         
-        // GÜVENLİK: Bakiyeyi anlık sayıya eşitlemek yerine Increment (Güvenli düşüm) yapıyoruz.
-        try {
-            await updateDoc(userRef, { balance: increment(-bet) });
-        } catch(e) {
-            showModal("Bakiye düşülemedi, bağlantınızı kontrol edin.");
-            gameStarted = false;
-            return;
-        }
-
         document.getElementById("chipsArea").style.display = "none";
         document.getElementById("startBtn").style.display = "none";
         ps = 0; cs = 0; round = 0;
@@ -358,181 +347,231 @@ const db = getFirestore(app);
         table = ["BACK", "BACK", "BACK", deck.shift()];
         render();
         setTimeout(dealRound, 500);
-    }
 
-    function createDeck() {
-        const suits = ["H", "D", "C", "S"], vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
-        deck = [];
-        suits.forEach(s => vals.forEach(v => deck.push(v + s)));
-        deck.sort(() => Math.random() - 0.5);
-    }
-
-    async function dealRound() {
-        if (round >= 6) { endGame(); return; }
-        await animateDeals("computerHand", 4);
-        for (let i = 0; i < 4; i++) computer.push(deck.shift());
-        await animateDeals("playerHand", 4);
-        for (let i = 0; i < 4; i++) player.push(deck.shift());
-        round++;
-        render();
-    }
-
-    function render() {
-        const ph = document.getElementById("playerHand");
-        const ch = document.getElementById("computerHand");
-        const tc = document.getElementById("tableCards");
-        ph.innerHTML = ""; ch.innerHTML = ""; tc.innerHTML = "";
-
-        player.forEach((c, i) => {
-            let img = document.createElement("img");
-            img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
-            img.className = "card";
-            img.alt = `Sizin Kartınız ${i+1}`;
-            img.onclick = () => play(i);
-            ph.appendChild(img);
-        });
-        computer.forEach(() => {
-            let img = document.createElement("img");
-            img.src = "https://deckofcardsapi.com/static/img/back.png";
-            img.className = "card";
-            img.alt = "Bilgisayarın Kartı";
-            ch.appendChild(img);
-        });
-        table.forEach((c, i) => {
-            let img = document.createElement("img");
-            img.src = c === "BACK" ? "https://deckofcardsapi.com/static/img/back.png" : `https://deckofcardsapi.com/static/img/${c}.png`;
-            img.className = "stack-card";
-            img.alt = "Yerdeki Kart";
-            img.style.transform = `rotate(${i * 2}deg) translate(${i}px, ${i}px)`;
-            img.style.zIndex = i;
-            tc.appendChild(img);
-        });
-        document.getElementById("ps").innerText = ps;
-        document.getElementById("cs").innerText = cs;
-    }
-
-    function play(i) {
-        if (dealing || !gameStarted || turnLock) return;
-        turnLock = true;
-        const card = player.splice(i, 1)[0];
-        const imgEl = document.querySelectorAll("#playerHand img")[i];
-        animateThrow(imgEl, card, "player");
-    }
-
-    function compPlay() {
-        if (computer.length === 0) return;
-        
-        let cardIndex = 0;
-        const topCard = table.length > 0 ? table[table.length - 1] : null;
-
-        if (bet >= 15000) { 
-            let match = computer.findIndex(c => topCard && c[0] === topCard[0]);
-            let jack = computer.findIndex(c => c[0] === 'J');
-            if (match !== -1) cardIndex = match;
-            else if (jack !== -1 && table.length > 1) cardIndex = jack;
-            else cardIndex = Math.floor(Math.random() * computer.length);
-        } 
-        else {
-            cardIndex = Math.floor(Math.random() * computer.length);
-        }
-
-        const card = computer.splice(cardIndex, 1)[0];
-        const el = document.querySelectorAll("#computerHand img")[0];
-        animateThrow(el, card, "comp");
-    }
-
-    function animateThrow(el, card, owner) {
-        playSfx("cardThrow");
-        const rect = el.getBoundingClientRect();
-        const clone = el.cloneNode();
-        clone.className = "card-throw";
-        clone.style.left = rect.left + "px";
-        clone.style.top = rect.top + "px";
-        document.body.appendChild(clone);
-        setTimeout(() => {
-            const target = document.getElementById("tableCards").getBoundingClientRect();
-            clone.style.left = target.left + "px";
-            clone.style.top = target.top + "px";
-        }, 10);
-        setTimeout(() => {
-            clone.remove();
-            table.push(card);
-            checkRule(owner);
-            render();
-            if (owner === "player") setTimeout(compPlay, 800);
-            else {
-                turnLock = false;
-                if(player.length === 0 && computer.length === 0) {
-                    if (deck.length > 0) setTimeout(dealRound, 500);
-                    else setTimeout(endGame, 1000);
-                }
-            }
-        }, 400);
-    }
-
-    function checkRule(owner) {
-        if (table.length < 2) return;
-        const last = table[table.length - 1];
-        const prev = table[table.length - 2];
-        if (prev === "BACK") return;
-        if (last[0] === "J" || last[0] === prev[0]) {
-            playSfx("cardCollect");
-            let points = table.length;
-            if (table.length === 2 && last[0] === prev[0]) {
-                points = 10; 
-                showPistiEffect();
-            }
-            if (owner === "player") ps += points; else cs += points;
-            table = [];
-        }
-    }
-
-    function showPistiEffect() {
-        playSfx("pisti");
-        const el = document.getElementById("pistiDisplay");
-        el.style.display = "block";
-        setTimeout(() => el.style.display = "none", 1500);
-    }
-
-    async function endGame() {
+    } catch(e) {
+        showModal(e.message || "Bağlantı hatası, bahis alınamadı.");
         gameStarted = false;
-        let msg = "";
-        try {
-            if (ps > cs) {
-                let winValue = bet * 2;
-                // GÜVENLİK: Kazançlar increment ile güvenli eklenir
-                await updateDoc(userRef, { balance: increment(winValue) });
-                playSfx("win");
-                msg = `TEBRİKLER!\n${winValue.toLocaleString('tr-TR')} MC Kazandınız.`;
-            } else if (ps < cs) {
-                playSfx("lose");
-                msg = "KAYBETTİNİZ!\nKrupiyer kazandı.";
-            } else {
-                // Beraberlik durumunda bahsi iade et
-                await updateDoc(userRef, { balance: increment(bet) });
-                msg = "BERABERE!\nMC iade edildi.";
-            }
-        } catch (e) {
-            msg = "Sonuç kaydedilirken bir hata oluştu!";
-        }
-
-        currentBet = 0; bet = 0;
-        document.getElementById("chipsArea").style.display = "flex";
-        document.getElementById("startBtn").style.display = "block";
-        showModal(msg);
+        balance += bet; // Hata durumunda bakiyeyi geri ver
+        bet = 0;
+        currentBet = 0;
         updateUI();
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("startBtn").innerText = "MASAYA OTUR";
+    }
+}
+
+async function animateDeals(targetId, count) {
+    dealing = true;
+    const targetEl = document.getElementById(targetId);
+    for (let i = 0; i < count; i++) {
+        const animCard = document.createElement("div");
+        animCard.className = "deal-anim-card";
+        animCard.style.left = "50%";
+        animCard.style.top = "-100px";
+        document.body.appendChild(animCard);
+        await new Promise(r => setTimeout(r, 50)); 
+        const rect = targetEl.getBoundingClientRect();
+        playSfx("deal");
+        animCard.style.left = (rect.left + (i * 10)) + "px";
+        animCard.style.top = rect.top + "px";
+        animCard.style.transform = "rotate(360deg)";
+        await new Promise(r => setTimeout(r, 150)); 
+        setTimeout(() => animCard.remove(), 500);
+    }
+    dealing = false;
+}
+
+function createDeck() {
+    const suits = ["H", "D", "C", "S"], vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+    deck = [];
+    suits.forEach(s => vals.forEach(v => deck.push(v + s)));
+    deck.sort(() => Math.random() - 0.5);
+}
+
+async function dealRound() {
+    if (round >= 6) { endGame(); return; }
+    await animateDeals("computerHand", 4);
+    for (let i = 0; i < 4; i++) computer.push(deck.shift());
+    await animateDeals("playerHand", 4);
+    for (let i = 0; i < 4; i++) player.push(deck.shift());
+    round++;
+    render();
+}
+
+function render() {
+    const ph = document.getElementById("playerHand");
+    const ch = document.getElementById("computerHand");
+    const tc = document.getElementById("tableCards");
+    ph.innerHTML = ""; ch.innerHTML = ""; tc.innerHTML = "";
+
+    player.forEach((c, i) => {
+        let img = document.createElement("img");
+        img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
+        img.className = "card";
+        img.alt = `Sizin Kartınız ${i+1}`;
+        img.onclick = () => play(i);
+        ph.appendChild(img);
+    });
+    computer.forEach(() => {
+        let img = document.createElement("img");
+        img.src = "https://deckofcardsapi.com/static/img/back.png";
+        img.className = "card";
+        img.alt = "Bilgisayarın Kartı";
+        ch.appendChild(img);
+    });
+    table.forEach((c, i) => {
+        let img = document.createElement("img");
+        img.src = c === "BACK" ? "https://deckofcardsapi.com/static/img/back.png" : `https://deckofcardsapi.com/static/img/${c}.png`;
+        img.className = "stack-card";
+        img.alt = "Yerdeki Kart";
+        img.style.transform = `rotate(${i * 2}deg) translate(${i}px, ${i}px)`;
+        img.style.zIndex = i;
+        tc.appendChild(img);
+    });
+    document.getElementById("ps").innerText = ps;
+    document.getElementById("cs").innerText = cs;
+}
+
+function play(i) {
+    if (dealing || !gameStarted || turnLock) return;
+    turnLock = true;
+    const card = player.splice(i, 1)[0];
+    const imgEl = document.querySelectorAll("#playerHand img")[i];
+    animateThrow(imgEl, card, "player");
+}
+
+function compPlay() {
+    if (computer.length === 0) return;
+    
+    let cardIndex = 0;
+    const topCard = table.length > 0 ? table[table.length - 1] : null;
+
+    if (bet >= 15000) { 
+        let match = computer.findIndex(c => topCard && c[0] === topCard[0]);
+        let jack = computer.findIndex(c => c[0] === 'J');
+        if (match !== -1) cardIndex = match;
+        else if (jack !== -1 && table.length > 1) cardIndex = jack;
+        else cardIndex = Math.floor(Math.random() * computer.length);
+    } 
+    else {
+        cardIndex = Math.floor(Math.random() * computer.length);
+    }
+
+    const card = computer.splice(cardIndex, 1)[0];
+    const el = document.querySelectorAll("#computerHand img")[0];
+    animateThrow(el, card, "comp");
+}
+
+function animateThrow(el, card, owner) {
+    playSfx("cardThrow");
+    const rect = el.getBoundingClientRect();
+    const clone = el.cloneNode();
+    clone.className = "card-throw";
+    clone.style.left = rect.left + "px";
+    clone.style.top = rect.top + "px";
+    document.body.appendChild(clone);
+    setTimeout(() => {
+        const target = document.getElementById("tableCards").getBoundingClientRect();
+        clone.style.left = target.left + "px";
+        clone.style.top = target.top + "px";
+    }, 10);
+    setTimeout(() => {
+        clone.remove();
+        table.push(card);
+        checkRule(owner);
         render();
+        if (owner === "player") setTimeout(compPlay, 800);
+        else {
+            turnLock = false;
+            if(player.length === 0 && computer.length === 0) {
+                if (deck.length > 0) setTimeout(dealRound, 500);
+                else setTimeout(endGame, 1000);
+            }
+        }
+    }, 400);
+}
+
+function checkRule(owner) {
+    if (table.length < 2) return;
+    const last = table[table.length - 1];
+    const prev = table[table.length - 2];
+    if (prev === "BACK") return;
+    if (last[0] === "J" || last[0] === prev[0]) {
+        playSfx("cardCollect");
+        let points = table.length;
+        if (table.length === 2 && last[0] === prev[0]) {
+            points = 10; 
+            showPistiEffect();
+        }
+        if (owner === "player") ps += points; else cs += points;
+        table = [];
+    }
+}
+
+function showPistiEffect() {
+    playSfx("pisti");
+    const el = document.getElementById("pistiDisplay");
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 1500);
+}
+
+async function endGame() {
+    let msg = "İşleniyor...";
+    let status = "draw";
+    let winValue = 0;
+
+    if (ps > cs) {
+        status = "win";
+        winValue = bet * 2;
+        msg = `TEBRİKLER!\n${winValue.toLocaleString('tr-TR')} MC Kazandınız.`;
+        playSfx("win");
+    } else if (ps < cs) {
+        status = "lose";
+        msg = "KAYBETTİNİZ!\nKrupiyer kazandı.";
+        playSfx("lose");
+    } else {
+        status = "draw";
+        msg = "BERABERE!\nMC iade edildi.";
     }
 
-    window.showModal = function(msg) {
-        document.getElementById("modalMsg").innerText = msg;
-        document.getElementById("modalOverlay").style.display = "flex";
-    }
-    window.closeModal = function() {
-        document.getElementById("modalOverlay").style.display = "none";
+    try {
+        // Sonucu güvenli sunucuya gönder ve bakiyeyi güncelle
+        const out = await apiFetch("/api/pisti/result", "POST", { bet: bet, status: status });
+        balance = Number(out.balance || balance);
+    } catch (e) {
+        console.error("Sonuç sunucuya işlenemedi", e);
+        msg = "Sonuç sunucuya iletilemedi! Sayfayı yenileyin.";
     }
 
-})();
+    gameStarted = false;
+    currentBet = 0; bet = 0;
+    
+    document.getElementById("startBtn").disabled = false;
+    document.getElementById("startBtn").innerText = "MASAYA OTUR";
+    document.getElementById("chipsArea").style.display = "flex";
+    document.getElementById("startBtn").style.display = "block";
+    
+    updateUI();
+    showModal(msg);
+    render();
+}
+
+window.showModal = function(msg) {
+    document.getElementById("modalMsg").innerText = msg;
+    document.getElementById("modalOverlay").style.display = "flex";
+}
+window.closeModal = function() {
+    document.getElementById("modalOverlay").style.display = "none";
+}
+
+/* Oturum Kontrolü ve Başlatma */
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        await signInAnonymously(auth);
+        return;
+    }
+    refreshMe();
+});
 </script>
 </body>
 </html>
