@@ -140,6 +140,34 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
 // GRID CONQUEST API (GÜÇLENDİRİLMİŞ ZERO-TRUST, AKICI YAPI)
 // ==========================================
 
+// Oyunu bitiren merkezi sunucu fonksiyonu
+async function settleConquestRoom(rid) {
+  const roomRef = db.collection('conquest_rooms').doc(rid);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(roomRef);
+      if (!snap.exists) return;
+      const data = snap.data();
+
+      if (data.status !== "playing") return;
+
+      let s1 = 0, s2 = 0;
+      const cells = data.cells || {};
+      for (let i=0; i<36; i++) { if (cells[i] === 'p1') s1++; else if (cells[i] === 'p2') s2++; }
+
+      let winner = null;
+      if (s1 > s2) winner = data.p1;
+      else if (s2 > s1) winner = data.p2;
+
+      tx.update(roomRef, { status: "finished", winner: winner || "draw" });
+
+      if (winner && winner !== "draw") {
+          tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
+      }
+    });
+  } catch(e) { console.error("Oda bitirme hatası:", e); }
+}
+
 app.post('/api/conquest/create', verifyAuth, async (req, res) => {
   try {
     const pass = cleanStr(req.body.pass);
@@ -152,7 +180,9 @@ app.post('/api/conquest/create', verifyAuth, async (req, res) => {
 
     await db.runTransaction(async (tx) => {
       const uSnap = await tx.get(userRef);
-      const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
+      const uData = uSnap.exists ? uSnap.data() : {};
+      // İsim bulma garantilendi
+      const uname = uData.username || uData.fullName || "Pilot";
 
       tx.set(roomRef, { 
         id: rid, p1: req.user.uid, p1Name: uname, p2: null, p2Name: null, 
@@ -188,10 +218,22 @@ app.post('/api/conquest/join', verifyAuth, async (req, res) => {
       if (rData.p1 === req.user.uid) throw new Error("Kendi arenana giremezsin.");
 
       const uSnap = await tx.get(userRef);
-      const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
+      const uData = uSnap.exists ? uSnap.data() : {};
+      const uname = uData.username || uData.fullName || "Pilot";
 
-      tx.update(roomRef, { p2: req.user.uid, p2Name: uname, status: "playing" });
+      const now = Date.now();
+      // Sunucu bitiş süresini belirler (60 saniye)
+      tx.update(roomRef, { 
+        p2: req.user.uid, 
+        p2Name: uname, 
+        status: "playing",
+        startedAtMs: now,
+        endTimeMs: now + 60000 
+      });
     });
+
+    // Sunucu içindeki sayaç oyunu tam 60.5 saniye sonra kapatır!
+    setTimeout(() => settleConquestRoom(rid), 60500);
 
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
@@ -211,47 +253,22 @@ app.post('/api/conquest/click', verifyAuth, async (req, res) => {
 
     if (data.status !== "playing") return res.json({ok:false});
 
+    // Süre dolmuşsa tıklamaları iptal et ve sunucu çökme durumuna karşı oyunu bitir
+    if (data.endTimeMs && Date.now() > data.endTimeMs) {
+        settleConquestRoom(rid);
+        return res.json({ok:false});
+    }
+
     let role = null;
     if (data.p1 === req.user.uid) role = "p1";
     else if (data.p2 === req.user.uid) role = "p2";
     if (!role) return res.json({ok:false});
 
-    // Zaten kendi rengiyse veritabanını yorma
     if (data.cells && data.cells[idx] === role) return res.json({ok:true});
 
     // Direkt yazma ile donma ihtimali %0'a indirildi
     await roomRef.update({ [`cells.${idx}`]: role });
     
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false }); }
-});
-
-app.post('/api/conquest/settle', verifyAuth, async (req, res) => {
-  try {
-    const rid = cleanStr(req.body.roomId);
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) return;
-      const data = snap.data();
-
-      if (data.status !== "playing") return;
-
-      let s1 = 0, s2 = 0;
-      const cells = data.cells || {};
-      for (let i=0; i<36; i++) { if (cells[i] === 'p1') s1++; else if (cells[i] === 'p2') s2++; }
-
-      let winner = null;
-      if (s1 > s2) winner = data.p1;
-      else if (s2 > s1) winner = data.p2;
-
-      tx.update(roomRef, { status: "finished", winner });
-
-      if (winner) {
-          tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
-      }
-    });
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false }); }
 });
@@ -272,12 +289,16 @@ app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
       else if (data.p2 === req.user.uid) role = "p2";
       if (!role) return;
 
-      if (data.status === "waiting" || data.status === "finished") {
+      if (data.status === "waiting") {
         if (role === "p1") { tx.delete(roomRef); tx.delete(passRef); }
         else { tx.update(roomRef, { p2: null, p2Name: null, status: "waiting" }); }
       } else if (data.status === "playing") {
-        tx.update(roomRef, { status: "terminated" });
+        // Çıkan kaybeder, diğeri kazanır
+        const winner = (role === "p1") ? data.p2 : data.p1;
+        tx.update(roomRef, { status: "terminated", winner: winner });
+        if(winner) tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
       }
+      // "finished" olanları ellemeyin, istemci skoru görebilsin
     });
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false }); }
