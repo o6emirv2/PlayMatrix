@@ -378,8 +378,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    // TEHLİKELİ FONKSİYONLAR (runTransaction, updateDoc, deleteDoc, setDoc) SİLİNDİ - GÜVENLİK MAKSİMUM
-    import { getFirestore, doc, onSnapshot, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, collection, query, orderBy, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const API_URL = "https://emirhan-siye.onrender.com";
 
@@ -445,17 +444,21 @@
         
         if(userUnsub) userUnsub();
         userUnsub = onSnapshot(doc(db, "users", uid), snap => {
+            let dbBalance = 0;
             if(snap.exists()) {
                 const data = snap.data();
-                let dbBalance = data.balance || 0;
-                if (currentBet > dbBalance) {
-                    currentBet = 0;
-                    document.getElementById("bet").innerText = "0";
-                }
-                balance = dbBalance - currentBet;
-                userName = data.username || ("Oyuncu_" + uid.substring(0,4));
-                document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+                dbBalance = data.balance || 0;
+                userName = data.username || data.fullName || ("Oyuncu_" + uid.substring(0,4));
+            } else {
+                userName = "Oyuncu_" + uid.substring(0,4);
             }
+
+            if (currentBet > dbBalance) {
+                currentBet = 0;
+                document.getElementById("bet").innerText = "0";
+            }
+            balance = dbBalance - currentBet;
+            document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
         });
         
         listenLobby();
@@ -469,7 +472,6 @@
         if (document.visibilityState === 'hidden' && inGame && roomRef) handleDisconnect();
     });
 
-    // === GÜVENLİ ÇIKIŞ İŞLEMİ ===
     async function handleDisconnect() {
         if (!roomRef) return;
         inGame = false;
@@ -508,28 +510,35 @@
             snap.forEach(roomDoc => {
                 const data = roomDoc.data();
                 if (data.status === "finished") return; 
-                if (data.name.toLowerCase().includes(filter)) {
-                    const duration = data.createdAt ? Math.floor((now - data.createdAt) / 60000) : 0;
+                if (data.name && data.name.toLowerCase().includes(filter)) {
+                    
+                    // Güvenli Tarih Okuma Çözümü (Eski-Yeni Veri Çakışmasını Önler)
+                    let createdTime = now;
+                    if (data.createdAt) {
+                        createdTime = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt.toMillis ? data.createdAt.toMillis() : now);
+                    }
+                    const duration = Math.max(0, Math.floor((now - createdTime) / 60000));
+                    
                     const isPlaying = data.status === "playing";
-                    const maxP = data.type.startsWith("4") ? 4 : 2;
+                    const maxP = (data.type && data.type.startsWith("4")) ? 4 : 2;
                     const pList = [data.p1, data.p2, data.p3, data.p4].filter(p => p);
                     
-                    let pNames = `${data.p1_name || '...'}`;
+                    let pNames = `${data.p1_name || 'Gizli'}`;
                     if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
                     else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
 
                     html += `
                         <div class="room-card" style="${isPlaying ? 'border-left-color:#00ff88;' : ''}">
                             <div style="flex:1">
-                                <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type}] (${pList.length}/${maxP})</small> 
+                                <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type || '2-52'}] (${pList.length}/${maxP})</small> 
                                 ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
                                 <b style="font-size:0.85rem; color:#fff; display:block; margin-top:3px;">${pNames}</b>
                                 <div class="room-info-live">
-                                    <span style="color:#ffb700">Bahis: ${data.bet.toLocaleString()} MC</span> | <span>${duration} dk</span>
+                                    <span style="color:#ffb700">Bahis: ${(data.bet || 0).toLocaleString()} MC</span> | <span>${duration} dk önce</span>
                                 </div>
                             </div>
                             ${(data.status === 'waiting' && pList.length < maxP) ? `
-                                <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet})">KATIL</button>
+                                <button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;" onclick="handleJoin('${roomDoc.id}', '${data.password || ''}', ${data.bet || 0})">KATIL</button>
                             ` : `<div style="font-size:0.75rem; color:#666; font-weight:bold; text-align:right">DOLU</div>`}
                         </div>`;
                 }
@@ -555,7 +564,6 @@
 
     window.openCreateModal = () => { openModal('createRoomModal'); };
 
-    // === GÜVENLİ ODA KURMA ===
     window.confirmCreateRoom = async () => {
         if (!Number.isInteger(currentBet) || currentBet < 100) return showInfoModal("Geçersiz veya min 100 MC bahis olmalı!", "UYARI");
         if (isProcessingPlay) return;
@@ -584,7 +592,7 @@
             listenRoom();
         } catch(e) { 
             showInfoModal(e.message, "HATA"); 
-            cancelBet(); // Hata durumunda bahsi geri yükle
+            cancelBet(); 
         } finally { 
             isProcessingPlay = false; 
         }
@@ -605,7 +613,6 @@
         } else document.getElementById("passError").style.display = "block";
     };
 
-    // === GÜVENLİ ODAYA KATILMA ===
     async function joinRoom(rid, bet) {
         if (!Number.isInteger(bet) || bet < 0) return; 
         if (balance + currentBet < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
@@ -654,7 +661,7 @@
             
             if(gameState.quitter) {
                 if(gameState.quitter !== uid) {
-                    showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
+                    showInfoModal(`${gameState.quitterName || 'Rakip'} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
                     inGame = false; setTimeout(() => window.leaveRoom(), 3000);
                 }
                 return;
@@ -667,7 +674,7 @@
             
             if (gameState.status === "playing") {
                 document.getElementById("waitingStatus").style.display = "none";
-                const maxP = gameState.type.startsWith("4") ? 4 : 2;
+                const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2;
                 const handsEmpty = Array.from({length: maxP}, (_, i) => gameState[`p${i+1}_hand`]).every(h => !h || h.length === 0);
                 
                 if(!isProcessingPlay) {
@@ -682,16 +689,15 @@
 
     function renderHeads() {
         const container = document.getElementById("playerHeadsContainer");
-        const maxP = gameState?.type.startsWith("4") ? 4 : 2; let html = "";
+        const maxP = (gameState && gameState.type && gameState.type.startsWith("4")) ? 4 : 2; let html = "";
         for(let i=1; i<=maxP; i++) {
-            const pUid = gameState?.[`p${i}`], pName = gameState?.[`p${i}_name`] || "...";
+            const pUid = gameState?.[`p${i}`], pName = gameState?.[`p${i}_name`] || "Gizli";
             const isActive = gameState?.turn === pUid && gameState?.status === "playing";
             html += `<div class="p-head ${isActive ? 'active' : ''}"><div class="name">${pUid === uid ? "SİZ" : pName}</div><div class="score">${gameState?.[`p${i}_score`] || 0}</div></div>`;
         }
         container.innerHTML = html;
     }
 
-    // === GÜVENLİ KART DAĞITIMI İSTEĞİ ===
     async function refillHands() {
         if (isProcessingPlay) return;
         isProcessingPlay = true;
@@ -709,14 +715,12 @@
         }
     }
 
-    // === GÜVENLİ KART OYNAMA İSTEĞİ ===
     async function playCard(idx) {
         if (gameState.turn !== uid || isProcessingPlay) return;
         isProcessingPlay = true;
         
         playSound(sfx.cardThrow); 
         
-        // Görsel gecikmeyi önlemek için geçici (optimistic) UI güncellemesi
         const playedCard = gameState[myRole + "_hand"][idx];
         gameState[myRole + "_hand"].splice(idx, 1);
         gameState.table.push(playedCard);
@@ -735,7 +739,7 @@
 
         } catch(e) { 
             console.error(e.message); 
-            listenRoom(); // Hata olursa sunucu verisini tekrar çek
+            listenRoom(); 
         } finally { 
             isProcessingPlay = false; 
         }
@@ -764,7 +768,7 @@
             ph.appendChild(img);
         });
 
-        const maxP = gameState.type.startsWith("4") ? 4 : 2; let oppTotal = 0;
+        const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2; let oppTotal = 0;
         for(let i=1; i<=maxP; i++) if(`p${i}` !== myRole) oppTotal += (gameState[`p${i}_hand`]?.length || 0);
         
         for(let i=0; i<Math.min(oppTotal, 12); i++) {
@@ -773,21 +777,22 @@
             oh.appendChild(d);
         }
 
-        gameState.table.forEach((c, i) => {
-            let img = document.createElement("img");
-            img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
-            img.alt = "Yerdeki Kart";
-            img.className = "stack-card";
-            img.style.transform = `translate(${i*1.5}px, ${i*1.5}px) rotate(${i*2.5}deg)`;
-            img.style.zIndex = i;
-            tc.appendChild(img);
-        });
+        if(gameState.table) {
+            gameState.table.forEach((c, i) => {
+                let img = document.createElement("img");
+                img.src = (i === gameState.table.length - 1) ? `https://deckofcardsapi.com/static/img/${c}.png` : "https://deckofcardsapi.com/static/img/back.png";
+                img.alt = "Yerdeki Kart";
+                img.className = "stack-card";
+                img.style.transform = `translate(${i*1.5}px, ${i*1.5}px) rotate(${i*2.5}deg)`;
+                img.style.zIndex = i;
+                tc.appendChild(img);
+            });
+        }
     }
 
-    // === KAZANÇ EKRANI (Bakiye Ekleme Sunucuda Yapılır) ===
     async function handleEnd() {
         if (!inGame) return; inGame = false;
-        const maxP = gameState.type.startsWith("4") ? 4 : 2;
+        const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2;
         let finalScores = [], counts = [];
         for(let i=1; i<=maxP; i++) counts.push({role: `p${i}`, count: gameState[`p${i}_count`] || 0});
         counts.sort((a,b) => b.count - a.count);
@@ -796,7 +801,7 @@
         for(let i=1; i<=maxP; i++) {
             let total = gameState[`p${i}_score`] || 0;
             if(`p${i}` === bonusRole) total += 3;
-            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`], score: total, uid: gameState[`p${i}`] });
+            finalScores.push({ role: `p${i}`, name: gameState[`p${i}_name`] || "Gizli", score: total, uid: gameState[`p${i}`] });
         }
         finalScores.sort((a,b) => b.score - a.score);
         const winners = finalScores.filter(s => s.score === finalScores[0].score);
@@ -830,11 +835,11 @@
     };
 
     window.handleQuickJoin = async () => {
-        const snap = await getDocs(query(collection(db, "rooms")));
+        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting")));
         let found = false;
         snap.forEach(d => { 
             const data = d.data();
-            if(!found && data.status === "waiting" && !data.password && data.bet <= balance) { 
+            if(!found && !data.password && data.bet <= balance) { 
                 joinRoom(d.id, data.bet); 
                 found = true; 
             } 
