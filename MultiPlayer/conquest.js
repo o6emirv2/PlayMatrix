@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, onSnapshot, collection, query, where, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const API_URL = "https://emirhan-siye.onrender.com";
@@ -18,7 +18,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 async function fetchAPI(endpoint, method = 'GET', body = null) {
-    if (!auth.currentUser) throw new Error("Oturum bulunamadı!");
+    if (!auth.currentUser) return { ok: false };
     const token = await auth.currentUser.getIdToken();
     const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
     if (body) options.body = JSON.stringify(body);
@@ -48,7 +48,6 @@ const unlockAudio = () => {
 document.body.addEventListener('touchstart', unlockAudio, {once:true});
 document.body.addEventListener('click', unlockAudio, {once:true});
 
-// Değişkenler (uid eksikliği çökmeye sebep oluyordu, eklendi)
 let uid = null, curRoomId = null, myRole, isFin = false, canPlay = false, timerInt = null;
 let unsubLobby = null, unsubGame = null;
 let currentScene = 'lobby'; 
@@ -63,7 +62,6 @@ const showModalAlert = (title, msg, onConfirm) => {
     toggleModal('alertModal', true);
 };
 
-// Arka Plan Animasyonu
 const canvas = document.getElementById('bg-canvas'); const ctx = canvas.getContext('2d');
 let lobbyParticles = [], rainParticles = [], lightningFlash = 0;
 function initParticles() {
@@ -74,7 +72,7 @@ function initParticles() {
 function triggerLightning() {
     if (currentScene !== 'game') return; 
     lightningFlash = 3; 
-    if (audioUnlocked) sfx.thunder.currentTime = 0; sfx.thunder.play().catch(()=>{});
+    if (audioUnlocked) { sfx.thunder.currentTime = 0; sfx.thunder.play().catch(()=>{}); }
     lightningTimer = setTimeout(triggerLightning, Math.random() * 10000 + 8000);
 }
 function drawBg() {
@@ -98,31 +96,30 @@ initParticles(); drawBg();
 
 onAuthStateChanged(auth, async user => {
     if(!user) { window.location.href = '/'; return; }
-    uid = user.uid; // Cok Kritik Hata Düzeltildi
-    const { user: userData } = await fetchAPI('/api/me');
-    document.getElementById('meName').textContent = userData.username || "PİLOT";
+    uid = user.uid;
+    const res = await fetchAPI('/api/me');
+    document.getElementById('meName').textContent = res?.user?.username || "PİLOT";
     document.getElementById('createRoomBtn').disabled = false;
     document.getElementById('quickJoinBtn').disabled = false;
     listenLobby();
 });
 
-// Güvenli Lobi Dinleyicisi
+// ZERO-TRUST LOBİ SİSTEMİ (Tek veritabanı, isim bug'ı çözüldü)
 function listenLobby() {
     if(unsubLobby) unsubLobby();
-    const q = query(collection(db, "conquest_pub"), where("status", "in", ["waiting", "playing"]));
+    const q = query(collection(db, "conquest_rooms"), where("status", "in", ["waiting", "playing"]));
     
     unsubLobby = onSnapshot(q, snap => {
         try {
             const list = document.getElementById('roomList'); list.innerHTML = "";
-            let count = 0; const now = Date.now();
+            let count = 0;
             
             snap.forEach(d => {
                 const r = d.data();
-                if (r.p1 === uid) return; // Kendi odanı lobide görme
+                if (r.p1 === uid) return; 
                 
-                // Güvenli isim okuması (Null crash hatası engellendi)
-                const p1n = (r.p1Name || "PİLOT").replace(/</g,"");
-                const p2n = (r.p2Name || "BEKLENİYOR...").replace(/</g,"");
+                const p1n = r.p1Name || "PİLOT";
+                const p2n = r.p2Name || "BEKLENİYOR...";
 
                 if(r.status === 'waiting') {
                     count++;
@@ -141,18 +138,21 @@ function listenLobby() {
                     card.append(info, act); list.appendChild(card);
                 } else if(r.status === 'playing') {
                     count++;
+                    
+                    // Lobide Canlı Skor Hesaplama
+                    let s1 = 0, s2 = 0;
+                    if(r.cells) {
+                        for(let i=0; i<36; i++) { if(r.cells[i] === 'p1') s1++; else if(r.cells[i] === 'p2') s2++; }
+                    }
+
                     const card = document.createElement('div'); card.className = "room-card";
                     const info = document.createElement('div'); info.className = "room-info";
                     const title = document.createElement('div'); title.className = "room-title"; title.textContent = `BÖLGE: ${d.id} ⚔️`;
                     const players = document.createElement('div'); players.className = "room-players";
-                    players.innerHTML = `<span style="color:var(--p1)">${p1n}</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">${p2n}</span>`;
-                    
-                    // Lobide Canlı Zamanlayıcı
-                    let timeLeft = 60;
-                    if(r.endTimeMs) timeLeft = Math.max(0, Math.ceil((r.endTimeMs - now) / 1000));
+                    players.innerHTML = `<span style="color:var(--p1)">${p1n} (${s1})</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">${p2n} (${s2})</span>`;
                     
                     const timeDiv = document.createElement('div'); timeDiv.className = "room-time"; timeDiv.style.color = "var(--danger)";
-                    timeDiv.textContent = `🔴 SAVAŞTA (${timeLeft}s)`;
+                    timeDiv.textContent = `🔴 SAVAŞTA`;
                     
                     info.append(title, players, timeDiv);
                     
@@ -164,7 +164,7 @@ function listenLobby() {
                 }
             });
             document.getElementById('emptyLobbyMsg').style.display = (count === 0) ? 'block' : 'none';
-        } catch(e) { console.error("Lobby sync failed", e); }
+        } catch(e) { console.error("Lobi Hatası", e); }
     });
 }
 
@@ -233,9 +233,12 @@ function enterGame(id) {
     const g = document.getElementById('grid'); g.innerHTML = "";
     for(let i=0; i<36; i++) {
         const c = document.createElement('div'); c.className = 'cell'; c.setAttribute('role', 'button');
-        c.addEventListener('click', () => {
+        
+        // Hızlı Tıklama Sorunu Tamamen Giderildi (Direct Update Mimarisi)
+        c.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); // Mobildeki zoom/kaydırmayı engeller
             if(canPlay && !isFin && c.className !== `cell ${myRole}`) {
-                c.className = `cell ${myRole}`; // Anında Tepki
+                c.className = `cell ${myRole}`; 
                 sfx.tap.currentTime = 0; if(audioUnlocked) sfx.tap.play().catch(()=>{});
                 fetchAPI('/api/conquest/click', 'POST', { roomId: id, cellIndex: i }).catch(()=>{});
             }
@@ -243,42 +246,40 @@ function enterGame(id) {
         g.appendChild(c);
     }
 
-    unsubGame = onSnapshot(doc(db, "conquest_state", id), snap => {
+    unsubGame = onSnapshot(doc(db, "conquest_rooms", id), snap => {
         try {
             if(!snap.exists()) { if(!isFin) leaveToLobby(); return; }
             const d = snap.data();
             
             if(d.status === 'terminated' && !isFin) { isFin = true; showModalAlert("BAĞLANTI KOPTU", "Rakip kaçtı!", leaveToLobby); return; }
 
-            // İsimleri Senkronize Et
-            getDoc(doc(db, "conquest_pub", id)).then(pubSnap => {
-                if(pubSnap.exists()) {
-                    document.getElementById('n1').textContent = pubSnap.data().p1Name;
-                    document.getElementById('n2').textContent = pubSnap.data().p2Name || "BEKLENİYOR...";
-                }
-            });
+            document.getElementById('n1').textContent = d.p1Name || "PİLOT";
+            document.getElementById('n2').textContent = d.p2Name || "BEKLENİYOR...";
 
             if(d.status === 'playing') canPlay = true;
 
-            // Zamanlayıcı Çökme ve Durma Hataları Giderildi
-            if(d.status === 'playing' && d.endTimeMs) {
-                if(!timerInt) {
-                    timerInt = setInterval(() => {
-                        const left = Math.max(0, Math.ceil((d.endTimeMs - Date.now()) / 1000));
-                        document.getElementById('timer-display').textContent = left;
-                        if(left === 0 && !isFin) {
-                            clearInterval(timerInt); timerInt = null;
-                            if(myRole === 'p1') fetchAPI('/api/conquest/settle', 'POST', { roomId: id }).catch(()=>{});
-                        }
-                    }, 500);
-                }
+            // Güvenli Senkronize Süre Tutucu
+            if(d.status === 'playing' && !timerInt && !isFin) {
+                let localTime = 60;
+                document.getElementById('timer-display').textContent = localTime;
+                timerInt = setInterval(() => {
+                    localTime--;
+                    if(localTime <= 0) {
+                        localTime = 0;
+                        document.getElementById('timer-display').textContent = localTime;
+                        clearInterval(timerInt); timerInt = null;
+                        if(myRole === 'p1') fetchAPI('/api/conquest/settle', 'POST', { roomId: id }).catch(()=>{});
+                    } else {
+                        document.getElementById('timer-display').textContent = localTime;
+                    }
+                }, 1000);
             }
 
             let s1=0, s2=0;
             document.querySelectorAll('.cell').forEach((c, i) => {
                 if(d.cells && d.cells[i]) { 
                     c.className = 'cell ' + d.cells[i]; d.cells[i] === 'p1' ? s1++ : s2++; 
-                } else c.className = 'cell'; // Eğer boşsa temizle
+                } else c.className = 'cell'; 
             });
             document.getElementById('s1').textContent = s1; document.getElementById('s2').textContent = s2;
 
@@ -301,7 +302,7 @@ function finish(id, s1, s2, winner) {
 async function leaveToLobby() {
     if (curRoomId) {
         if (unsubGame) unsubGame(); if (timerInt) { clearInterval(timerInt); timerInt = null; } if (lightningTimer) clearTimeout(lightningTimer);
-        try { await fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }); } catch (e) {}
+        try { fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }); } catch (e) {} // Bekleme yapmadan çık (Daha hızlı)
     }
     curRoomId = null; isFin = false; canPlay = false; myRole = null; currentScene = 'lobby'; lightningFlash = 0;
     sfx.rain.pause(); sfx.thunder.pause(); if (audioUnlocked) { sfx.lobby.currentTime = 0; sfx.lobby.play().catch(()=>{}); }
@@ -309,4 +310,10 @@ async function leaveToLobby() {
     toggleModal('resultModal', false); toggleModal('alertModal', false);
     listenLobby(); 
 }
-window.onbeforeunload = () => { if (curRoomId && !isFin && auth.currentUser) fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }).catch(()=>{}); };
+
+// Sekme Kapatıldığında Gizlice Sil
+window.addEventListener("pagehide", () => {
+    if (curRoomId && !isFin && auth.currentUser) {
+        fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }).catch(()=>{});
+    }
+});
