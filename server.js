@@ -5,44 +5,106 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 
+// (opsiyonel ama önerilir) güvenlik hardening:
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+// -------------------- Process guards --------------------
 process.on('uncaughtException', (err) => console.error('Kritik Hata (Çökme Engellendi):', err));
 process.on('unhandledRejection', (reason) => console.error('İşlenmeyen Promise Hatası:', reason));
 
+// -------------------- ENV --------------------
+const NODE_ENV = process.env.NODE_ENV || 'production';
+const PORT = process.env.PORT || 3000;
+
+// Render / prod için: domainlerini buraya yaz (virgülle)
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 // -------------------- Firebase Admin Init --------------------
-try {
-  if (!admin.apps.length) {
-    if (process.env.FIREBASE_KEY) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-      console.log("✅ Firebase Admin bağlandı (FIREBASE_KEY).");
-    } else {
-      console.error("🔴 FIREBASE_KEY ortam değişkeni yok! (Render Env'e ekle)");
-      // fallback (prod’da kullanma)
-      admin.initializeApp();
-    }
+(function initFirebase() {
+  if (admin.apps.length) return;
+
+  if (!process.env.FIREBASE_KEY) {
+    // prod’da fallback YOK: yanlış deploy’u erken yakala
+    console.error('🔴 FIREBASE_KEY yok. Render Env Variables içine FIREBASE_KEY eklemelisin.');
+    throw new Error('FIREBASE_KEY missing');
   }
-} catch (e) {
-  console.error("🔴 Firebase Başlatma Hatası:", e.message);
-}
+
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
+  } catch (e) {
+    console.error('🔴 FIREBASE_KEY JSON parse hatası. Değer tek satır JSON olmalı.');
+    throw e;
+  }
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  console.log('✅ Firebase Admin bağlandı (FIREBASE_KEY).');
+})();
 
 const db = admin.firestore();
 const auth = admin.auth();
 
 // -------------------- Express --------------------
 const app = express();
-app.use(cors({ origin: '*' }));
+app.set('trust proxy', 1);
+
+// Helmet
+app.use(helmet({
+  contentSecurityPolicy: false, // backend API olduğu için kapalı bırakıyoruz
+}));
+
+// Rate limit (özellikle auth olmayan endpointler için)
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 180,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
+// JSON limit
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/ping', (req, res) => res.send('✅ PlayMatrix Backend Aktif'));
+// CORS (domainlerini kısıtla)
+app.use(cors({
+  origin: function (origin, cb) {
+    // Mobil / curl gibi Origin olmayan istekler
+    if (!origin) return cb(null, true);
+
+    if (ALLOWED_ORIGINS.length === 0) {
+      // ALLOWED_ORIGINS tanımlamazsan, geliştirmede açık bırakır (istersen kaldır)
+      return cb(null, true);
+    }
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS blocked: ' + origin));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Root (Render’da "Cannot GET /" görmeyesin)
+app.get('/', (req, res) => res.status(200).send('✅ PlayMatrix API is running'));
+
+// Ping/Health
+app.get('/ping', (req, res) => res.status(200).send('✅ PlayMatrix Backend Aktif'));
+app.get('/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // -------------------- Auth Middleware --------------------
 const verifyAuth = async (req, res, next) => {
-  const h = req.headers.authorization || "";
+  const h = req.headers.authorization || '';
   if (!h.startsWith('Bearer ')) return res.status(401).json({ ok: false, error: 'Oturum yok.' });
+
   try {
-    req.user = await auth.verifyIdToken(h.split(' ')[1]);
-    next();
-  } catch {
+    const token = h.split(' ')[1];
+    req.user = await auth.verifyIdToken(token);
+    return next();
+  } catch (e) {
     return res.status(401).json({ ok: false, error: 'Geçersiz token.' });
   }
 };
@@ -55,7 +117,7 @@ const nowMs = () => Date.now();
 const CARD_POINTS = { "D0": 3, "C2": 2 }; // Karo10 / Sinek2
 const normalizeCardVal = (c) => {
   if (!c) return "";
-  let v = c.substring(0, c.length - 1);
+  const v = c.substring(0, c.length - 1);
   return (v === '0') ? '10' : v;
 };
 const calculatePoints = (cards) => {
@@ -77,7 +139,7 @@ function createShuffledDeck(isDouble) {
   for (const suit of s) for (const val of v) d.push(val + suit);
   if (isDouble) d = [...d, ...d];
   for (let i = d.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = crypto.randomInt(0, i + 1);
     [d[i], d[j]] = [d[j], d[i]];
   }
   return d;
@@ -95,7 +157,7 @@ const colUsers = () => db.collection('users');
 const colPublic = () => db.collection('rooms_public');
 const colState  = () => db.collection('rooms_state');
 const colPass   = () => db.collection('rooms_passwords');
-const colPromos = () => db.collection('promo_codes'); // (istersen adını değiştir)
+const colPromos = () => db.collection('promo_codes');
 const playersSub = (roomId) => colPublic().doc(roomId).collection('players');
 
 // -------------------- Public doc builder (Lobby uyumlu) --------------------
@@ -111,7 +173,6 @@ function buildPublicDoc({
     status: cleanStr(status) || "waiting",
     hasPassword: !!hasPassword,
 
-    // lobby uyumu:
     playersCount: safeNum(playersCount, 0),
     maxPlayers: safeNum(maxP, 2),
 
@@ -126,11 +187,10 @@ function buildPublicDoc({
 
 // -------------------- State doc builder --------------------
 function buildInitialState({ type, deck, initialTable, bet }) {
-  const maxP = maxPlayersByType(type);
   const state = {
     type: cleanStr(type) || "2-52",
     status: "waiting",
-    bet: safeNum(bet, 0),          // ✅ client handleEnd için
+    bet: safeNum(bet, 0),
     deck: deck || [],
     table: initialTable || [],
     turn: null,
@@ -159,18 +219,26 @@ function pickRole(state, maxP) {
   return null;
 }
 
-// -------------------- Basic profile endpoints --------------------
+// -------------------- /api/me --------------------
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
-    const u = await colUsers().doc(req.user.uid).get();
-    const data = u.exists ? (u.data() || {}) : {};
+    const uRef = colUsers().doc(req.user.uid);
+    const snap = await uRef.get();
+    const data = snap.exists ? (snap.data() || {}) : {};
+
+    // email field yoksa düzelt (username login için kritik)
+    if (!data.email && req.user.email) {
+      await uRef.set({ email: req.user.email }, { merge: true });
+      data.email = req.user.email;
+    }
+
     res.json({ ok: true, balance: safeNum(data.balance, 0), user: data });
   } catch (e) {
     res.json({ ok: false, error: e.message });
   }
 });
 
-// index.html: /api/profile/update
+// -------------------- /api/profile/update --------------------
 app.post('/api/profile/update', verifyAuth, async (req, res) => {
   try {
     const { fullName, phone, username, avatar } = req.body || {};
@@ -184,27 +252,30 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
       const u = snap.data() || {};
       const updates = {};
 
-      // fullName / phone (bir kez kilitlemek istersen: doluysa değiştirme)
+      // email yoksa set et (username login için)
+      if (!u.email && req.user.email) updates.email = req.user.email;
+
+      // fullName / phone (bir kez kilitle)
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
       if (cleanStr(phone) && !cleanStr(u.phone)) updates.phone = cleanStr(phone);
 
       // avatar serbest
       if (typeof avatar === 'string') updates.avatar = avatar;
 
-      // username: max 3 kez değiştirsin
+      // username: max 3 kez
       const wanted = cleanStr(username);
       if (wanted && wanted !== cleanStr(u.username)) {
         const used = safeNum(u.userChangeCount, 0);
         if (used >= 3) throw new Error("Kullanıcı adı değiştirme hakkın bitti!");
-        // uniqueness kontrol:
-        const q = await tx.get(
+
+        const qSnap = await tx.get(
           db.collection('users').where('username', '==', wanted).limit(1)
         );
-        if (!q.empty) {
-          // aynı uid ise problem yok
-          const doc0 = q.docs[0];
-          if (doc0.id !== uid) throw new Error("Bu kullanıcı adı başka bir ajan tarafından kullanılıyor!");
+        if (!qSnap.empty) {
+          const doc0 = qSnap.docs[0];
+          if (doc0.id !== uid) throw new Error("Bu kullanıcı adı başka biri tarafından kullanılıyor!");
         }
+
         updates.username = wanted;
         updates.userChangeCount = used + 1;
       }
@@ -218,7 +289,7 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
   }
 });
 
-// index.html: /api/wheel/spin
+// -------------------- /api/wheel/spin --------------------
 app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -241,7 +312,7 @@ app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
       const u = snap.data() || {};
       const lastSpin = safeNum(u.lastSpin, 0);
 
-      const cooldown = 86400000; // 24h
+      const cooldown = 86400000;
       const diff = nowMs() - lastSpin;
       if (diff < cooldown) {
         const left = cooldown - diff;
@@ -250,7 +321,6 @@ app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
         throw new Error(`Çark beklemede. Kalan: ${h} saat ${m} dk`);
       }
 
-      // kriptografik random
       const rnd = crypto.randomInt(0, rewards.length);
       const prize = rewards[rnd].val;
 
@@ -269,7 +339,7 @@ app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   }
 });
 
-// index.html: /api/bonus/claim
+// -------------------- /api/bonus/claim --------------------
 app.post('/api/bonus/claim', verifyAuth, async (req, res) => {
   try {
     const code = cleanStr((req.body || {}).code).toUpperCase();
@@ -290,12 +360,10 @@ app.post('/api/bonus/claim', verifyAuth, async (req, res) => {
       const amount = safeNum(p.amount, 0);
       if (amount <= 0) throw new Error("Kod aktif değil.");
 
-      // tek kullanımlık (kullanıcı bazlı)
       const used = Array.isArray(u.usedPromos) ? u.usedPromos : [];
       if (used.includes(code)) throw new Error("Bu kod daha önce kullanıldı.");
 
-      // global limit (opsiyon)
-      const limitLeft = safeNum(p.limitLeft, -1); // -1 = limitsiz
+      const limitLeft = safeNum(p.limitLeft, -1); // -1 limitsiz
       if (limitLeft === 0) throw new Error("Kod tükendi.");
 
       const newBal = safeNum(u.balance, 0) + amount;
@@ -347,7 +415,6 @@ app.post('/api/pisti/create', verifyAuth, async (req, res) => {
 
       const uname = cleanStr(uData.username) || "Oyuncu";
 
-      // public lobby doc (client uyumu için p1/p1_name yazıyoruz)
       tx.set(pubRef, buildPublicDoc({
         name, type: ttype, bet: betNum, status: "waiting",
         createdAtMs: nowMs(),
@@ -358,23 +425,19 @@ app.post('/api/pisti/create', verifyAuth, async (req, res) => {
         p1_name: uname
       }));
 
-      // lobby players subdoc
       tx.set(playersSub(roomId).doc(req.user.uid), {
         uid: req.user.uid, name: uname, role: "p1", joinedAtMs: nowMs()
       });
 
-      // state doc
       const state = buildInitialState({ type: ttype, deck, initialTable, bet: betNum });
       state.p1 = req.user.uid;
       state.p1_name = uname;
       tx.set(stateRef, state);
 
-      // ✅ password storage
       if (hasPassword) {
         tx.set(passRef, { password: cleanStr(pass), updatedAtMs: nowMs() }, { merge: true });
       }
 
-      // bet lock
       tx.update(userRef, { balance: admin.firestore.FieldValue.increment(-betNum) });
     });
 
@@ -421,13 +484,8 @@ app.post('/api/pisti/join', verifyAuth, async (req, res) => {
 
       const uname = cleanStr(uData.username) || "Oyuncu";
 
-      // state update
-      tx.update(stateRef, {
-        [assigned]: req.user.uid,
-        [assigned + "_name"]: uname,
-      });
+      tx.update(stateRef, { [assigned]: req.user.uid, [assigned + "_name"]: uname });
 
-      // public doc update (lobi isimleri + uid’ler)
       const pubUp = {
         playersCount: admin.firestore.FieldValue.increment(1),
         updatedAtMs: nowMs(),
@@ -435,7 +493,6 @@ app.post('/api/pisti/join', verifyAuth, async (req, res) => {
         [assigned + "_name"]: uname,
       };
 
-      // full olduysa başlat
       const newCount = safeNum(pub.playersCount, 0) + 1;
       if (newCount >= maxP) {
         pubUp.status = "playing";
@@ -444,12 +501,10 @@ app.post('/api/pisti/join', verifyAuth, async (req, res) => {
 
       tx.update(pubRef, pubUp);
 
-      // lobby players subdoc
       tx.set(playersSub(rid).doc(req.user.uid), {
         uid: req.user.uid, name: uname, role: assigned, joinedAtMs: nowMs()
       });
 
-      // bet lock
       tx.update(userRef, { balance: admin.firestore.FieldValue.increment(-bet) });
 
       return assigned;
@@ -485,7 +540,6 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
       const bet = safeNum(pub.bet, 0);
       const maxP = maxPlayersByType(st.type || pub.type);
 
-      // role bul
       let myRole = null;
       for (let i = 1; i <= maxP; i++) if (st[`p${i}`] === req.user.uid) myRole = `p${i}`;
       if (!myRole) {
@@ -495,7 +549,6 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
 
       const status = cleanStr(st.status || pub.status);
 
-      // waiting -> refund ve odadan çıkar
       if (status === "waiting") {
         tx.update(stateRef, { [myRole]: null, [myRole + "_name"]: null });
 
@@ -510,7 +563,6 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
         tx.update(userRef, { balance: admin.firestore.FieldValue.increment(bet) });
         tx.delete(playersSub(rid).doc(req.user.uid));
 
-        // owner çıktı ve oda boşaldıysa temizle
         if (myRole === "p1" && newCount <= 0) {
           tx.delete(pubRef);
           tx.delete(stateRef);
@@ -519,7 +571,6 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
         return;
       }
 
-      // playing -> finished
       if (status === "playing") {
         tx.update(stateRef, { status: "finished", finishedAtMs: nowMs() });
         tx.update(pubRef, { status: "finished", updatedAtMs: nowMs() });
@@ -528,7 +579,6 @@ app.post('/api/pisti/leave', verifyAuth, async (req, res) => {
       tx.delete(playersSub(rid).doc(req.user.uid));
     });
 
-    // settle dene
     try { await settleRoom(rid); } catch {}
 
     res.json({ ok: true });
@@ -545,7 +595,7 @@ app.post('/api/pisti/refill', verifyAuth, async (req, res) => {
     if (!rid) throw new Error("roomId gerekli");
 
     const pubRef = colPublic().doc(rid);
-    const stateRef= colState().doc(rid);
+    const stateRef = colState().doc(rid);
 
     await db.runTransaction(async (tx) => {
       const [pubSnap, stSnap] = await Promise.all([tx.get(pubRef), tx.get(stateRef)]);
@@ -573,7 +623,6 @@ app.post('/api/pisti/refill', verifyAuth, async (req, res) => {
         up.deck = deck;
         tx.update(stateRef, up);
       } else {
-        // deste bitti -> masayı lastCollector’a yaz, finished
         const up = { table: [], deck: [], status: "finished", finishedAtMs: nowMs() };
 
         if (table.length > 0 && st.lastCollector) {
@@ -607,13 +656,13 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
     if (!Number.isInteger(idx)) throw new Error("cardIndex geçersiz");
 
     const pubRef = colPublic().doc(rid);
-    const stateRef= colState().doc(rid);
+    const stateRef = colState().doc(rid);
 
     await db.runTransaction(async (tx) => {
       const [pubSnap, stSnap] = await Promise.all([tx.get(pubRef), tx.get(stateRef)]);
       if (!pubSnap.exists || !stSnap.exists) throw new Error("Oda yok!");
 
-      const st  = stSnap.data() || {};
+      const st = stSnap.data() || {};
       if (cleanStr(st.status) !== "playing") throw new Error("Oyun aktif değil!");
       if (st.turn !== req.user.uid) throw new Error("Sıra sizde değil!");
 
@@ -645,7 +694,6 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
         } else table.push(card);
       } else table.push(card);
 
-      // next turn
       const curIdx = parseInt(myRole.slice(1), 10);
       const nextIdx = (curIdx % maxP) + 1;
       const nextUid = st[`p${nextIdx}`];
@@ -670,7 +718,7 @@ app.post('/api/pisti/play', verifyAuth, async (req, res) => {
   }
 });
 
-// -------------------- SETTLEMENT (payout) --------------------
+// -------------------- SETTLEMENT --------------------
 async function settleRoom(roomId) {
   const rid = cleanStr(roomId);
   if (!rid) return;
@@ -697,7 +745,6 @@ async function settleRoom(roomId) {
       players.push({
         role: `p${i}`,
         uid,
-        name: st[`p${i}_name`] || "Oyuncu",
         score: safeNum(st[`p${i}_score`], 0),
         count: safeNum(st[`p${i}_count`], 0)
       });
@@ -711,7 +758,6 @@ async function settleRoom(roomId) {
       return;
     }
 
-    // en çok kart bonus +3
     const sortedByCount = [...players].sort((a, b) => b.count - a.count);
     const bonusRole = (sortedByCount[0].count > (sortedByCount[1]?.count || -1)) ? sortedByCount[0].role : null;
     for (const p of players) if (p.role === bonusRole) p.score += 3;
@@ -742,5 +788,4 @@ app.post('/api/pisti/settle', verifyAuth, async (req, res) => {
 });
 
 // -------------------- Start --------------------
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 PlayMatrix Backend Started. Port: ${PORT}`));
