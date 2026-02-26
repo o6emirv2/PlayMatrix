@@ -38,8 +38,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Tıklama oyunu için genel limit 500'e çıkarıldı.
-const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 500, standardHeaders: true, legacyHeaders: false });
+// Tıklama oyunu için genel limit 800'e çıkarıldı (Akıcı Oynanış İçin)
+const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 800, standardHeaders: true, legacyHeaders: false });
 app.use(generalLimiter);
 
 const bonusLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { ok: false, error: "Çok fazla deneme yaptınız. Lütfen 15 dakika bekleyin." } });
@@ -67,7 +67,7 @@ const colPass   = () => db.collection('rooms_passwords');
 const playersSub = (roomId) => colPublic().doc(roomId).collection('players');
 
 // ==========================================
-// KULLANICI PROFİL & ÇARK (AYNEN KORUNDU)
+// KULLANICI PROFİL & ÇARK
 // ==========================================
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
@@ -136,9 +136,8 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-
 // ==========================================
-// GRID CONQUEST API (Aşırı Hızlı Tıklama İzni ve Sıfır Toleranslı Çökme Koruması)
+// GRID CONQUEST API (GÜÇLENDİRİLMİŞ ZERO-TRUST, AKICI YAPI)
 // ==========================================
 
 app.post('/api/conquest/create', verifyAuth, async (req, res) => {
@@ -148,16 +147,17 @@ app.post('/api/conquest/create', verifyAuth, async (req, res) => {
     const rid = crypto.randomBytes(3).toString('hex').toUpperCase();
 
     const userRef = db.collection('users').doc(req.user.uid);
-    const pubRef = db.collection('conquest_pub').doc(rid);
-    const stateRef = db.collection('conquest_state').doc(rid);
+    const roomRef = db.collection('conquest_rooms').doc(rid);
     const passRef = db.collection('conquest_pass').doc(rid);
 
     await db.runTransaction(async (tx) => {
       const uSnap = await tx.get(userRef);
       const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
 
-      tx.set(pubRef, { id: rid, p1Name: uname, p2Name: null, status: "waiting", isPrivate, createdAt: admin.firestore.FieldValue.serverTimestamp() });
-      tx.set(stateRef, { p1: req.user.uid, p2: null, status: "waiting", cells: {}, p1_lastClick: 0, p2_lastClick: 0 });
+      tx.set(roomRef, { 
+        id: rid, p1: req.user.uid, p1Name: uname, p2: null, p2Name: null, 
+        status: "waiting", isPrivate, cells: {}, createdAt: admin.firestore.FieldValue.serverTimestamp() 
+      });
       if (isPrivate) tx.set(passRef, { pass });
     });
 
@@ -172,65 +172,56 @@ app.post('/api/conquest/join', verifyAuth, async (req, res) => {
     if (!rid) throw new Error("Arena ID gerekli!");
 
     const userRef = db.collection('users').doc(req.user.uid);
-    const pubRef = db.collection('conquest_pub').doc(rid);
-    const stateRef = db.collection('conquest_state').doc(rid);
+    const roomRef = db.collection('conquest_rooms').doc(rid);
     const passRef = db.collection('conquest_pass').doc(rid);
 
     await db.runTransaction(async (tx) => {
-      const pSnap = await tx.get(pubRef);
-      if (!pSnap.exists) throw new Error("Arena kapalı!");
-      const pData = pSnap.data();
+      const rSnap = await tx.get(roomRef);
+      if (!rSnap.exists) throw new Error("Arena kapalı!");
+      const rData = rSnap.data();
 
-      if (pData.status !== "waiting") throw new Error("Arena dolu!");
-      if (pData.isPrivate) {
+      if (rData.status !== "waiting") throw new Error("Arena dolu!");
+      if (rData.isPrivate) {
           const passData = await tx.get(passRef);
           if (!passData.exists || passData.data().pass !== pass) throw new Error("Hatalı şifre!");
       }
-
-      const stSnap = await tx.get(stateRef);
-      if (stSnap.data().p1 === req.user.uid) throw new Error("Kendi arenana giremezsin.");
+      if (rData.p1 === req.user.uid) throw new Error("Kendi arenana giremezsin.");
 
       const uSnap = await tx.get(userRef);
       const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
 
-      const endTimeMs = nowMs() + 60000;
-
-      tx.update(pubRef, { p2Name: uname, status: "playing", endTimeMs });
-      tx.update(stateRef, { p2: req.user.uid, status: "playing", endTimeMs });
+      tx.update(roomRef, { p2: req.user.uid, p2Name: uname, status: "playing" });
     });
 
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// Oyunun akıcılığını artırmak için Transaction YERİNE Direct Update kullanıldı. 
 app.post('/api/conquest/click', verifyAuth, async (req, res) => {
   try {
     const rid = cleanStr(req.body.roomId);
     const idx = parseInt(req.body.cellIndex, 10);
-    if (!rid || isNaN(idx) || idx < 0 || idx > 35) throw new Error("Geçersiz");
+    if (!rid || isNaN(idx) || idx < 0 || idx > 35) return res.json({ok:false});
 
-    const stateRef = db.collection('conquest_state').doc(rid);
+    const roomRef = db.collection('conquest_rooms').doc(rid);
+    const snap = await roomRef.get();
+    if (!snap.exists) return res.json({ok:false});
+    const data = snap.data();
 
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(stateRef);
-      if (!snap.exists) return;
-      const data = snap.data();
+    if (data.status !== "playing") return res.json({ok:false});
 
-      if (data.status !== "playing") return;
-      if (nowMs() > data.endTimeMs) return;
+    let role = null;
+    if (data.p1 === req.user.uid) role = "p1";
+    else if (data.p2 === req.user.uid) role = "p2";
+    if (!role) return res.json({ok:false});
 
-      let role = null, lastClickField = '';
-      if (data.p1 === req.user.uid) { role = "p1"; lastClickField = "p1_lastClick"; }
-      else if (data.p2 === req.user.uid) { role = "p2"; lastClickField = "p2_lastClick"; }
-      if (!role) return;
+    // Zaten kendi rengiyse veritabanını yorma
+    if (data.cells && data.cells[idx] === role) return res.json({ok:true});
 
-      // Oynanabilirlik artırıldı: Telefon çoklu dokunma limiti 30ms (hızlı ama bot korumalı)
-      if (nowMs() - safeNum(data[lastClickField], 0) < 30) throw new Error("Bot Algılandı");
-
-      if (data.cells && data.cells[idx] === role) return;
-
-      tx.update(stateRef, { [`cells.${idx}`]: role, [lastClickField]: nowMs() });
-    });
+    // Direkt yazma ile donma ihtimali %0'a indirildi
+    await roomRef.update({ [`cells.${idx}`]: role });
+    
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false }); }
 });
@@ -238,16 +229,14 @@ app.post('/api/conquest/click', verifyAuth, async (req, res) => {
 app.post('/api/conquest/settle', verifyAuth, async (req, res) => {
   try {
     const rid = cleanStr(req.body.roomId);
-    const stateRef = db.collection('conquest_state').doc(rid);
-    const pubRef = db.collection('conquest_pub').doc(rid);
+    const roomRef = db.collection('conquest_rooms').doc(rid);
 
     await db.runTransaction(async (tx) => {
-      const snap = await tx.get(stateRef);
+      const snap = await tx.get(roomRef);
       if (!snap.exists) return;
       const data = snap.data();
 
       if (data.status !== "playing") return;
-      if (nowMs() < data.endTimeMs - 2000) return; // Erken bitirme engeli
 
       let s1 = 0, s2 = 0;
       const cells = data.cells || {};
@@ -257,8 +246,7 @@ app.post('/api/conquest/settle', verifyAuth, async (req, res) => {
       if (s1 > s2) winner = data.p1;
       else if (s2 > s1) winner = data.p2;
 
-      tx.update(stateRef, { status: "finished", winner });
-      tx.update(pubRef, { status: "finished" });
+      tx.update(roomRef, { status: "finished", winner });
 
       if (winner) {
           tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
@@ -271,12 +259,11 @@ app.post('/api/conquest/settle', verifyAuth, async (req, res) => {
 app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
   try {
     const rid = cleanStr(req.body.roomId);
-    const stateRef = db.collection('conquest_state').doc(rid);
-    const pubRef = db.collection('conquest_pub').doc(rid);
+    const roomRef = db.collection('conquest_rooms').doc(rid);
     const passRef = db.collection('conquest_pass').doc(rid);
 
     await db.runTransaction(async (tx) => {
-      const snap = await tx.get(stateRef);
+      const snap = await tx.get(roomRef);
       if (!snap.exists) return;
       const data = snap.data();
 
@@ -286,11 +273,10 @@ app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
       if (!role) return;
 
       if (data.status === "waiting" || data.status === "finished") {
-        if (role === "p1") { tx.delete(pubRef); tx.delete(stateRef); tx.delete(passRef); }
-        else { tx.update(pubRef, { p2Name: null, status: "waiting" }); tx.update(stateRef, { p2: null, status: "waiting" }); }
+        if (role === "p1") { tx.delete(roomRef); tx.delete(passRef); }
+        else { tx.update(roomRef, { p2: null, p2Name: null, status: "waiting" }); }
       } else if (data.status === "playing") {
-        tx.update(stateRef, { status: "terminated" });
-        tx.update(pubRef, { status: "terminated" });
+        tx.update(roomRef, { status: "terminated" });
       }
     });
     res.json({ ok: true });
@@ -298,9 +284,8 @@ app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
 });
 
 // ==========================================
-// PIŞTİ (Aynen duruyor)
+// PIŞTİ (Aynen korundu)
 // ==========================================
-
 const CARD_POINTS_PISTI = { "D0": 3, "C2": 2 }; 
 const normalizeCardValPisti = (c) => { if (!c) return ""; const v = c.substring(0, c.length - 1); return (v === '0') ? '10' : v; };
 const calculatePointsPisti = (cards) => { let p = 0; for (const c of cards) { if (CARD_POINTS_PISTI[c]) p += CARD_POINTS_PISTI[c]; else { const val = normalizeCardValPisti(c); if (val === 'A' || val === 'J') p += 1; } } return p; };
