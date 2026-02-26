@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://emirhan-siye.onrender.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://encrypted-tbn0.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
+
 <title>PlayMatrix | Ücretsiz Online Multiplayer, Zeka ve Casino Oyunları</title>
 <meta name="description" content="PlayMatrix: Türkiye'nin en iyi ücretsiz online multiplayer arena, zeka ve strateji oyunları platformu. Kayıt ol, şans çarkını çevir, anında MC kazan ve oynamaya başla!">
 <meta name="keywords" content="online oyunlar, ücretsiz oyun oyna, multiplayer oyunlar, online pişti, zeka oyunları, casino oyunları, tarayıcı oyunları, PlayMatrix">
@@ -25,13 +27,11 @@
 <meta name="twitter:description" content="Tarayıcından tek tıkla ücretsiz oyunlara katıl ve rekabete başla.">
 
 <script>
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, "/");
-    }
+    if (window.history.replaceState) { window.history.replaceState(null, null, "/"); }
 </script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <style>
 /* === GELİŞMİŞ TEMA DEĞİŞKENLERİ === */
@@ -76,7 +76,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 #snow { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0.4; mix-blend-mode: screen; }
 .light-mode #snow { opacity: 0.1; filter: invert(1); mix-blend-mode: multiply; }
 
-/* === ÜST BAR (TAŞMA YAPMAZ, DÜZENLİ) === */
+/* === ÜST BAR === */
 .top-bar {
     position: fixed; top: 0; width: 100%; height: 70px;
     display: flex; align-items: center; justify-content: space-between;
@@ -85,7 +85,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     border-bottom: 1px solid var(--glass-border); z-index: 2000;
 }
 
-/* === 3D HAREKETLİ VE PARILTILI YAZI EFEKTİ === */
 .brand-3d {
     font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 900; 
     color: var(--text-primary); text-transform: uppercase; letter-spacing: 2px;
@@ -104,7 +103,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
 .right-menu { display: flex; gap: 12px; align-items: center; }
 
-/* TEMA BUTONU */
 .theme-btn {
     background: transparent; border: 1px solid var(--glass-border); color: var(--text-primary);
     width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; 
@@ -112,7 +110,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 }
 .theme-btn:hover { background: var(--primary-glow); border-color: var(--primary); transform: rotate(15deg); }
 
-/* PROFİL ALANI */
 .user-pill { 
     display: none; align-items: center; gap: 12px; background: var(--bg-surface); 
     padding: 5px 5px 5px 15px; border-radius: 50px; border: 1px solid var(--glass-border); 
@@ -130,7 +127,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); padding: 2px; }
 .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
-/* AÇILIR MENÜ (DROPDOWN) */
 .dropdown {
     position: absolute; top: 65px; right: 0; width: 240px;
     background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
@@ -146,14 +142,12 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .drop-item i { width: 20px; font-size: 16px; color: var(--primary); text-align: center; }
 .drop-item:hover { background: var(--bg-surface); transform: translateX(5px); color: var(--primary); }
 
-/* GENEL BUTONLAR */
 .btn { padding: 10px 20px; border-radius: 12px; border: none; font-weight: 800; font-size: 12px; letter-spacing: 0.5px; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
 .login-btn { background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--glass-border); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 .login-btn:hover { background: rgba(255,255,255,0.1); }
 .register-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; box-shadow: 0 5px 20px var(--primary-glow); text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 .register-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--primary-glow); }
 
-/* === GELİŞMİŞ DUYURU ALANI === */
 .announcement-bar {
     position: fixed; top: 70px; width: 100%; height: 38px;
     background: linear-gradient(90deg, rgba(0,240,255,0.05), rgba(0,85,255,0.1), rgba(0,240,255,0.05));
@@ -169,7 +163,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .announcement-text span { color: var(--primary); font-weight: 900; }
 @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-/* ARAMA VE SEO BAŞLIK ALANI */
 .hero-search { margin-top: 130px; padding: 0 20px; text-align: center; position: relative; z-index: 10; }
 .seo-h1 { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 900; color: var(--text-primary); margin-bottom: 15px; text-shadow: 0 0 15px var(--primary-glow); padding: 0 15px; }
 .seo-desc { font-size: 14px; color: var(--text-secondary); max-width: 700px; margin: 0 auto 25px auto; line-height: 1.6; padding: 0 15px; font-weight: 500; }
@@ -184,7 +177,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 #searchInput:focus { border-color: var(--primary); box-shadow: 0 0 25px var(--primary-glow); background: var(--bg-surface); }
 #searchInput:focus + i { color: var(--primary); }
 
-/* KATEGORİ BAŞLIKLARI */
 .section-title {
     padding: 40px 10% 20px; font-size: 14px; font-weight: 900;
     text-transform: uppercase; letter-spacing: 3px; color: var(--text-secondary);
@@ -193,7 +185,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .section-title::before { content: ''; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); }
 .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--glass-border), transparent); }
 
-/* === OYUN KARTLARI (PROFESYONEL DÜZEN) === */
 .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; padding: 0 10%; position: relative; z-index: 10; }
 .game-card {
     background: var(--bg-surface); border-radius: 24px; padding: 35px 20px;
@@ -212,13 +203,11 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .game-card:hover .game-icon { transform: scale(1.1); }
 .game-card span { font-weight: 800; font-size: 17px; display: block; margin-bottom: 12px; color: var(--text-primary); position: relative; z-index: 1; }
 
-/* ROZETLER */
 .badge { font-size: 10px; font-weight: 900; padding: 6px 12px; border-radius: 8px; display: inline-block; background: rgba(255, 255, 255, 0.05); text-transform: uppercase; transition: all 0.3s ease; letter-spacing: 1px; position: relative; z-index: 1; }
 .badge-free { color: var(--success) !important; background: rgba(0, 255, 163, 0.1) !important; border: 1px solid rgba(0, 255, 163, 0.2); }
 .badge-danger { color: var(--danger) !important; background: rgba(255, 77, 77, 0.1) !important; border: 1px solid rgba(255, 77, 77, 0.2); }
 .badge-success { color: var(--success) !important; background: rgba(0, 255, 163, 0.1) !important; border: 1px solid rgba(0, 255, 163, 0.2); }
 
-/* === FOOTER VE 3D FLOOD ALANI === */
 .footer { background: var(--bg-surface); padding: 50px 20px; border-top: 1px solid var(--glass-border); text-align: center; margin-top: 80px; position: relative; z-index: 10; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); }
 .social-icons { display: flex; justify-content: center; gap: 15px; margin: 25px 0; }
 .social-btn {
@@ -228,7 +217,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 }
 .social-btn:hover { background: linear-gradient(135deg, var(--primary), var(--secondary)); transform: translateY(-5px) rotate(10deg); color: #fff; border-color: transparent; box-shadow: 0 10px 20px var(--primary-glow); }
 
-/* === PROFESYONEL MODALLAR (GLASSMORPHISM) === */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -262,20 +250,17 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 }
 .modal-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px var(--primary-glow); }
 
-/* AVATAR GRID - EKSİKSİZ VE DÜZENLİ */
 .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; background: var(--input-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); }
 .avatar-item { width: 100%; aspect-ratio: 1/1; border-radius: 12px; cursor: pointer; border: 3px solid transparent; transition: 0.3s; overflow: hidden; position: relative; }
 .avatar-item img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
 .avatar-item:hover { transform: scale(1.05); }
 .avatar-item.active { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); transform: scale(1.1); z-index: 2; }
 
-/* PROMO MESAJLARI */
 .promo-msg { font-size: 13px; margin-top: 5px; font-weight: 800; min-height: 20px; letter-spacing: 0.5px; }
 .promo-error { color: var(--danger); text-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
 .promo-success { color: var(--success); text-shadow: 0 0 10px rgba(0, 255, 163, 0.4); }
 .auth-error-area { color: var(--danger); font-size: 13px; font-weight: 800; margin-top: 10px; min-height: 20px; display: block; text-align: center; }
 
-/* ÇARK ALANI - ZARAR GÖRMEDİ, GÜZELLEŞTİRİLDİ */
 .wheel-container { position: relative; width: 280px; height: 280px; margin: 25px auto; }
 #wheelCanvas { 
     width: 100%; height: 100%; border-radius: 50%; 
@@ -298,7 +283,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .wheel-center::after { content: 'SPIN'; color: var(--primary); font-weight: 900; font-size: 14px; letter-spacing: 1px; }
 #wheelResultText { color: var(--success); font-weight: 900; font-size: 16px; margin-top: 20px; min-height: 28px; text-shadow: 0 0 15px rgba(0, 255, 163, 0.4); letter-spacing: 0.5px;}
 
-/* MOBİL UYUM (TAŞMA ENGELLENDİ) */
 @media(max-width: 768px) {
     .seo-h1 { font-size: 20px; }
     .seo-desc { font-size: 12px; margin-bottom: 20px; }
@@ -482,7 +466,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
             <label style="font-size:12px; color:var(--text-secondary); font-weight:700; margin-left:5px;">Kullanıcı Adı (Kalan Hak: <span id="userChangeCount" style="color:var(--primary)">3</span>)</label>
             <input type="text" id="profUser" placeholder="Kullanıcı Adı">
         </div>
-        <div style="text-align: left; font-size: 13px; color: var(--text-primary); font-weight: 900; margin-top: 15px; text-transform:uppercase;">Avatar Seçimi (Eksiksiz)</div>
+        <div style="text-align: left; font-size: 13px; color: var(--text-primary); font-weight: 900; margin-top: 15px; text-transform:uppercase;">Avatar Seçimi</div>
         <div class="avatar-grid" id="avatarLibrary"></div>
         <button class="modal-btn" onclick="updateProfile()">DEĞİŞİKLİKLERİ KAYDET</button>
     </div>
@@ -520,7 +504,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
         <i class="fa-solid fa-xmark modal-close-btn" onclick="closeModal('authOverlay')"></i>
         <div style="font-size:40px; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-shield-halved"></i></div>
         <h2 id="authTitle">Sisteme Giriş Yap</h2>
-        <input type="text" id="authEmail" placeholder="E-posta veya Kullanıcı Adı">
+        <input type="text" id="authEmail" placeholder="E-posta Adresi">
         <input type="password" id="authPassword" placeholder="Güvenli Şifre">
         <input type="email" id="regEmail" placeholder="E-posta Adresi" style="display:none;">
         <input type="text" id="authUsername" placeholder="Kullanıcı Adı Belirle" style="display:none;">
@@ -534,7 +518,6 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// SADECE AUTH İŞLEMLERİ İÇİN FİREBASE (Tüm veritabanı Backend'de!)
 const firebaseConfig = {
     apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
     authDomain: "emirhan-site.firebaseapp.com",
@@ -547,12 +530,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// BACKEND API URL (Render üzerinde çalışan sunucun)
-const API_URL = "https://emirhan-siye.onrender.com";
+// KONFİGÜRE EDİLEBİLİR API URL (Render veya Localhost)
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-let globalUserData = null; // Backend'den gelen kullanıcı verisi
+let globalUserData = null; 
 
-// === TEMA YÖNETİMİ ===
 window.toggleTheme = () => {
     document.body.classList.toggle('light-mode');
     const icon = document.querySelector('#themeToggle i');
@@ -565,55 +547,50 @@ window.toggleTheme = () => {
     }
 };
 
-if(localStorage.getItem('matrixTheme') === 'light') {
-    document.body.classList.add('light-mode');
-    document.querySelector('#themeToggle i').className = 'fa-solid fa-sun';
-}
+if(localStorage.getItem('matrixTheme') === 'light') { document.body.classList.add('light-mode'); document.querySelector('#themeToggle i').className = 'fa-solid fa-sun'; }
 
-// === GÜVENLİ API İSTEK FONKSİYONU ===
+// === GÜVENLİ VE HATA TOLERANSLI API İSTEK FONKSİYONU ===
 async function fetchAPI(endpoint, method = 'GET', body = null) {
-    if (!auth.currentUser) throw new Error("Oturum bulunamadı!");
+    if (!auth.currentUser) throw new Error("Güvenlik İhlali: Oturum bulunamadı!");
     const token = await getIdToken(auth.currentUser);
-    const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-    };
+    const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
     const options = { method, headers };
     if (body) options.body = JSON.stringify(body);
     
-    const res = await fetch(`${API_URL}${endpoint}`, options);
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
-    return data;
+    try {
+        const res = await fetch(`${API_URL}${endpoint}`, options);
+        const contentType = res.headers.get("content-type");
+        
+        if (!res.ok) {
+            let errStr = `Sunucu hatası. (Durum Kodu: ${res.status})`;
+            if (contentType && contentType.includes("application/json")) {
+                const errData = await res.json();
+                errStr = errData.error || errStr;
+            }
+            throw new Error(errStr);
+        }
+        
+        return await res.json();
+    } catch (e) {
+        throw new Error(e.message || "Sunucuyla bağlantı kurulamadı.");
+    }
 }
 
-// === ÖZEL MODAL ALERT FONKSİYONU ===
 window.showMatrixModal = (title, message, type = 'info') => {
     const modal = document.getElementById("alertModal");
     const icon = document.getElementById("alertIcon");
     document.getElementById("alertTitle").innerText = title;
     document.getElementById("alertBody").innerText = message;
-    
-    if(type === 'error') {
-        icon.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:var(--danger)"></i>';
-    } else if(type === 'success') {
-        icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>';
-    } else {
-        icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>';
-    }
-    
+    if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:var(--danger)"></i>'; } 
+    else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>'; } 
+    else { icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>'; }
     openModal('alertModal');
 };
 
 const rewards = [
-    { label: "2.500 MC", val: 2500, color: "#0a0e17" },
-    { label: "5.000 MC", val: 5000, color: "#111827" },
-    { label: "7.500 MC", val: 7500, color: "#0a0e17" },
-    { label: "12.500 MC", val: 12500, color: "#111827" },
-    { label: "20.000 MC", val: 20000, color: "#0a0e17" },
-    { label: "25.000 MC", val: 25000, color: "#111827" },
-    { label: "30.000 MC", val: 30000, color: "#0a0e17" },
-    { label: "50.000 MC", val: 50000, color: "#111827" }
+    { label: "2.500 MC", val: 2500, color: "#0a0e17" }, { label: "5.000 MC", val: 5000, color: "#111827" }, { label: "7.500 MC", val: 7500, color: "#0a0e17" },
+    { label: "12.500 MC", val: 12500, color: "#111827" }, { label: "20.000 MC", val: 20000, color: "#0a0e17" }, { label: "25.000 MC", val: 25000, color: "#111827" },
+    { label: "30.000 MC", val: 30000, color: "#0a0e17" }, { label: "50.000 MC", val: 50000, color: "#111827" }
 ];
 
 function drawWheel() {
@@ -624,33 +601,19 @@ function drawWheel() {
     const centerY = canvas.height / 2;
     const radius = canvas.width / 2;
     const sliceAngle = (2 * Math.PI) / rewards.length;
-
     ctx.clearRect(0,0,canvas.width, canvas.height);
-
     rewards.forEach((reward, i) => {
         const angle = i * sliceAngle - Math.PI / 2;
-        ctx.beginPath();
-        ctx.fillStyle = reward.color;
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, angle, angle + sliceAngle);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0, 240, 255, 0.3)";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(angle + sliceAngle / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = i % 2 === 0 ? "#00f0ff" : "#ffffff";
-        ctx.font = "bold 24px Inter";
-        ctx.fillText(reward.label, radius - 30, 10);
-        ctx.restore();
+        ctx.beginPath(); ctx.fillStyle = reward.color; ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, angle, angle + sliceAngle);
+        ctx.closePath(); ctx.fill(); ctx.strokeStyle = "rgba(0, 240, 255, 0.3)"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(angle + sliceAngle / 2);
+        ctx.textAlign = "right"; ctx.fillStyle = i % 2 === 0 ? "#00f0ff" : "#ffffff"; ctx.font = "bold 24px Inter";
+        ctx.fillText(reward.label, radius - 30, 10); ctx.restore();
     });
 }
 setTimeout(drawWheel, 500);
 
-// === KULLANICI VERİLERİNİ BACKEND'DEN ÇEKME ===
+// === DATA ÇEKME MİMARİSİ (Sadece Backend) ===
 async function loadUserData() {
     try {
         const data = await fetchAPI('/api/me');
@@ -662,48 +625,44 @@ async function loadUserData() {
         
         const nameInp = document.getElementById("profNameSurname");
         nameInp.value = globalUserData.fullName || "";
-        if(globalUserData.fullName) nameInp.disabled = true;
+        if(globalUserData.fullName) nameInp.disabled = true; 
         
         const phoneInp = document.getElementById("profPhone");
         phoneInp.value = globalUserData.phone || "";
-        if(globalUserData.phone) phoneInp.disabled = true;
+        if(globalUserData.phone) phoneInp.disabled = true; 
         
         const userInp = document.getElementById("profUser");
         userInp.value = globalUserData.username || "";
         const changeCount = 3 - (globalUserData.userChangeCount || 0);
         document.getElementById("userChangeCount").innerText = Math.max(0, changeCount);
-        if(changeCount <= 0) userInp.disabled = true;
+        if(changeCount <= 0) userInp.disabled = true; 
         
         loadAvatars(globalUserData.avatar || avatarLinks[0]);
         checkWheelCooldown();
-    } catch(e) {
-        console.error("Veri çekme hatası:", e);
-    }
+    } catch(e) { console.error("Data Sync Error:", e); }
 }
 
-// === GÜVENLİ PROMOSYON KODU (Backend Kontrollü) ===
 window.claimBonus = async () => {
     const input = document.getElementById("bonusInput");
     const feedback = document.getElementById("promoFeedback");
     const code = input.value.trim().toUpperCase();
     if(!code) return;
     
-    feedback.innerText = "Sistem kontrol ediliyor...";
+    feedback.innerText = "Güvenli ağda doğrulanıyor...";
     feedback.className = "promo-msg";
     
     try {
         const res = await fetchAPI('/api/bonus/claim', 'POST', { code });
-        feedback.innerText = `BAŞARILI! ${res.amount.toLocaleString()} MC Bakiyenize Eklendi.`;
+        feedback.innerText = `ONAYLANDI! ${res.amount.toLocaleString()} MC Bakiyenize Eklendi.`;
         feedback.classList.add("promo-success");
         input.value = "";
-        loadUserData(); // Bakiyeyi yenile
+        await loadUserData(); 
     } catch(e) {
-        feedback.innerText = "Hata: " + e.message;
+        feedback.innerText = e.message;
         feedback.classList.add("promo-error");
     }
 };
 
-// === GÜVENLİ ÇARK ÇEVİRME (Backend Kontrollü) ===
 let currentRotation = 0;
 window.spinWheel = async () => {
     const spinBtn = document.getElementById("spinBtn");
@@ -711,15 +670,13 @@ window.spinWheel = async () => {
     
     try {
         spinBtn.disabled = true;
-        resultText.innerText = "Kriptografik analiz yapılıyor...";
+        resultText.innerText = "Sunucuda hesaplanıyor...";
         resultText.style.color = "var(--primary)";
         
-        // Backend'e istek at
-        const res = await fetchAPI('/api/wheel/spin', 'POST');
+        const res = await fetchAPI('/api/wheel/spin', 'POST'); 
         const prize = res.prize;
         const randomIndex = res.index;
         
-        // Görsel Animasyon
         const wheel = document.getElementById("wheelCanvas");
         const segmentDeg = 360 / rewards.length;
         const stopAt = 360 - (randomIndex * segmentDeg); 
@@ -727,14 +684,14 @@ window.spinWheel = async () => {
         currentRotation += extraTours + stopAt;
         wheel.style.transform = `rotate(${currentRotation}deg)`;
 
-        setTimeout(() => {
-            resultText.innerText = `SİSTEM ONAYLANDI! ${prize.toLocaleString()} MC Aktarıldı.`;
+        setTimeout(async () => {
+            resultText.innerText = `BAŞARILI! ${prize.toLocaleString()} MC Kazandınız.`;
             resultText.style.color = "var(--success)";
-            loadUserData(); // Bakiye ve lastSpin güncellenir
+            await loadUserData(); 
         }, 5000);
         
     } catch(e) {
-        showMatrixModal("Erişim Reddedildi", e.message, "error");
+        showMatrixModal("Sistem Reddi", e.message, "error");
         spinBtn.disabled = false;
         resultText.innerText = "";
     }
@@ -768,69 +725,45 @@ function loadAvatars(current) {
     const container = document.getElementById("avatarLibrary"); container.innerHTML = "";
     avatarLinks.forEach(link => {
         const div = document.createElement("div"); div.className = `avatar-item ${link === current ? 'active' : ''}`;
-        div.innerHTML = `<img src="${link}" alt="Kullanıcı Avatar Seçeneği">`; 
+        div.innerHTML = `<img src="${link}" alt="Avatar Seçeneği">`; 
         div.onclick = () => { document.querySelectorAll(".avatar-item").forEach(i => i.classList.remove("active")); div.classList.add("active"); selectedAvatar = link; };
         container.appendChild(div);
     });
 }
 
-// === GÜVENLİ PROFİL GÜNCELLEME (Backend Kontrollü) ===
 window.updateProfile = async () => {
     const newName = document.getElementById("profNameSurname").value.trim();
     const newPhone = document.getElementById("profPhone").value.trim();
     const newUser = document.getElementById("profUser").value.trim();
     
     try {
-        await fetchAPI('/api/profile/update', 'POST', {
-            fullName: newName,
-            phone: newPhone,
-            username: newUser,
-            avatar: selectedAvatar || globalUserData.avatar
-        });
-        showMatrixModal("Sistem Güncellemesi", "Profil bilgileriniz ağa başarıyla kaydedildi.", "success");
+        await fetchAPI('/api/profile/update', 'POST', { fullName: newName, phone: newPhone, username: newUser, avatar: selectedAvatar || globalUserData.avatar });
+        showMatrixModal("Başarılı", "Profiliniz güvenle güncellendi.", "success");
         closeModal('profileModal');
-        loadUserData();
-    } catch(e) {
-        showMatrixModal("Hata Oluştu", e.message, "error");
-    }
+        await loadUserData();
+    } catch(e) { showMatrixModal("Reddedildi", e.message, "error"); }
 };
 
 onAuthStateChanged(auth, async user => {
     const authBadges = document.querySelectorAll(".auth-badge");
     if(user) {
-        document.getElementById("loginBtn").style.display="none"; 
-        document.getElementById("regBtn").style.display="none";
-        document.getElementById("userPill").style.display="flex";
+        document.getElementById("loginBtn").style.display="none"; document.getElementById("regBtn").style.display="none"; document.getElementById("userPill").style.display="flex";
         authBadges.forEach(badge => { badge.innerText = "ARENAYA GİR"; badge.className = "badge auth-badge badge-success"; });
-        
-        await loadUserData(); // UI'ı backend verisiyle doldur
+        await loadUserData(); 
     } else {
-        document.getElementById("loginBtn").style.display="block"; 
-        document.getElementById("regBtn").style.display="block";
-        document.getElementById("userPill").style.display="none";
+        document.getElementById("loginBtn").style.display="block"; document.getElementById("regBtn").style.display="block"; document.getElementById("userPill").style.display="none";
         authBadges.forEach(badge => { badge.innerText = "GİRİŞ GEREKİR"; badge.className = "badge auth-badge badge-danger"; });
         globalUserData = null;
     }
 });
 
 window.openModal = (id) => { 
-    const modal = document.getElementById(id);
-    modal.style.display = 'flex';
-    setTimeout(() => { modal.classList.add('show'); }, 10);
-    
-    if(id === 'wheelModal') {
-        drawWheel();
-        document.getElementById("wheelCanvas").style.transform = "rotate(0deg)";
-        currentRotation = 0;
-        document.getElementById("wheelResultText").innerText = "";
-        checkWheelCooldown();
-    }
+    const modal = document.getElementById(id); modal.style.display = 'flex'; setTimeout(() => { modal.classList.add('show'); }, 10);
+    if(id === 'wheelModal') { drawWheel(); document.getElementById("wheelCanvas").style.transform = "rotate(0deg)"; currentRotation = 0; document.getElementById("wheelResultText").innerText = ""; checkWheelCooldown(); }
 };
 
 window.closeModal = (id) => { 
-    const modal = document.getElementById(id);
-    modal.classList.remove('show');
-    setTimeout(() => { modal.style.display = 'none'; }, 300);
+    const modal = document.getElementById(id); modal.classList.remove('show'); setTimeout(() => { modal.style.display = 'none'; }, 300);
     if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
 };
 
@@ -841,15 +774,11 @@ function checkWheelCooldown() {
     const btn = document.getElementById("spinBtn");
     const timer = document.getElementById("wheelTimer");
     if (diff > 0) {
-        btn.disabled = true;
-        btn.style.opacity = "0.5";
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        timer.innerText = `Sistem Bekleme Süresi: ${h} Saat ${m} Dakika`;
+        btn.disabled = true; btn.style.opacity = "0.5";
+        const h = Math.floor(diff / 3600000); const m = Math.floor((diff % 3600000) / 60000);
+        timer.innerText = `Kilitli: ${h} Saat ${m} Dakika Kaldı`;
     } else {
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        timer.innerText = "Çark Çevirmeye Hazır!";
+        btn.disabled = false; btn.style.opacity = "1"; timer.innerText = "Çark Çevirmeye Hazır!";
     }
 }
 
@@ -862,9 +791,7 @@ document.getElementById("switchMode").onclick = () => { isLogin = !isLogin; upda
 function updateAuthUI() { 
     document.getElementById("authTitle").innerText = isLogin ? "Sisteme Giriş Yap" : "Ağa Kayıt Ol"; 
     document.getElementById("authEmail").placeholder = "E-posta Adresi";
-    document.getElementById("regEmail").style.display = isLogin ? "none" : "block";
-    document.getElementById("authUsername").style.display = isLogin ? "none" : "block"; 
-    document.getElementById("authEmail").style.display = isLogin ? "block" : "none";
+    document.getElementById("regEmail").style.display = isLogin ? "none" : "block"; document.getElementById("authUsername").style.display = isLogin ? "none" : "block"; document.getElementById("authEmail").style.display = isLogin ? "block" : "none";
     document.getElementById("authErrorMsg").innerText = "";
     document.getElementById("switchMode").innerHTML = isLogin ? 'Hesabın yok mu? <b style="color:var(--primary)">Hemen Kayıt Ol</b>' : 'Zaten hesabın var mı? <b style="color:var(--primary)">Giriş Yap</b>';
 }
@@ -876,79 +803,46 @@ document.getElementById("authSubmit").onclick = async () => {
     try {
         if(isLogin) {
             const email = document.getElementById("authEmail").value.trim();
-            if(!email || !pass) throw new Error("Lütfen e-posta ve şifrenizi girin.");
+            if(!email || !pass) throw new Error("Kimlik bilgileri eksik.");
             await signInWithEmailAndPassword(auth, email, pass);
             closeModal('authOverlay');
         } else {
             const email = document.getElementById("regEmail").value.trim();
             const userN = document.getElementById("authUsername").value.trim();
-            if(!userN || !email || !pass) throw new Error("Lütfen tüm kimlik alanlarını doldurun!");
+            if(!userN || !email || !pass) throw new Error("Tüm alanları doldurmalısınız.");
             
-            // Firebase Auth ile kullanıcıyı oluştur
-            const res = await createUserWithEmailAndPassword(auth, email, pass);
-            
-            // Backend tarafında db kaydını oluşturmak için API'yi tetikliyoruz
+            await createUserWithEmailAndPassword(auth, email, pass);
             await fetchAPI('/api/me'); 
-            
-            // Kullanıcı adını güvenli bir şekilde backend üzerinden güncelliyoruz
             await fetchAPI('/api/profile/update', 'POST', { username: userN, avatar: avatarLinks[0] });
-
             closeModal('authOverlay');
-            showMatrixModal("Ağa Hoş Geldiniz!", "Kaydınız başarıyla oluşturuldu.", "success");
+            showMatrixModal("Kayıt Başarılı!", "Sisteme hoş geldiniz.", "success");
         }
     } catch(e) { 
-        if(e.code === "auth/email-already-in-use") errorMsg.innerText = "Bu e-posta adresi sistemde zaten kayıtlı!";
-        else if(e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") errorMsg.innerText = "Kimlik doğrulama başarısız. Hatalı e-posta veya şifre!";
-        else errorMsg.innerText = e.message || "Bilinmeyen bir hata oluştu.";
+        if(e.code === "auth/email-already-in-use") errorMsg.innerText = "E-posta kullanımda!";
+        else if(e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") errorMsg.innerText = "Hatalı şifre veya e-posta!";
+        else errorMsg.innerText = e.message;
     }
 };
 
 document.getElementById("avatarTrigger").onclick = (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); };
-window.onclick = (e) => {
-    if(!e.target.closest('#userPill')) {
-        document.getElementById("userDropdown").classList.remove("active");
-    }
-};
+window.onclick = (e) => { if(!e.target.closest('#userPill')) { document.getElementById("userDropdown").classList.remove("active"); } };
 document.getElementById("logoutBtn").onclick = () => signOut(auth);
 
 const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
-function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; }
-window.onresize = resize; resize();
+function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; } window.onresize = resize; resize();
 for(let i=0; i<70; i++) particles.push({x:Math.random()*canvasSnow.width, y:Math.random()*canvasSnow.height, r:Math.random()*2+0.5, d:Math.random()*1+0.5});
-function drawSnow() { 
-    ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height); 
-    ctxS.fillStyle = "rgba(0, 240, 255, 0.4)"; 
-    ctxS.beginPath(); 
-    particles.forEach(p => { 
-        ctxS.moveTo(p.x, p.y); 
-        ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); 
-        p.y += p.d; 
-        if(p.y > canvasSnow.height) p.y = -5; 
-    }); 
-    ctxS.fill(); 
-    requestAnimationFrame(drawSnow); 
-}
+function drawSnow() { ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height); ctxS.fillStyle = "rgba(0, 240, 255, 0.4)"; ctxS.beginPath(); particles.forEach(p => { ctxS.moveTo(p.x, p.y); ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); p.y += p.d; if(p.y > canvasSnow.height) p.y = -5; }); ctxS.fill(); requestAnimationFrame(drawSnow); }
 drawSnow();
 
-window.checkLogin = (url) => { 
-    if(!auth.currentUser) {
-        openModal('authOverlay');
-    } else {
-        location.href = url;
-    } 
-};
+window.checkLogin = (url) => { if(!auth.currentUser) { openModal('authOverlay'); } else { location.href = url; } };
 
 document.getElementById('searchInput').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     document.querySelectorAll('.game-card').forEach(card => {
-        const name = card.getAttribute('data-name').toLowerCase();
-        if(name.includes(term)) {
-            card.style.display = 'block';
-            setTimeout(() => card.style.opacity = '1', 10);
-        } else {
-            card.style.opacity = '0';
-            setTimeout(() => card.style.display = 'none', 300);
-        }
+        if(card.getAttribute('data-name').toLowerCase().includes(term)) { card.style.display = 'block'; setTimeout(() => card.style.opacity = '1', 10); } 
+        else { card.style.opacity = '0'; setTimeout(() => card.style.display = 'none', 300); }
     });
 });
 </script>
+</body>
+</html>
