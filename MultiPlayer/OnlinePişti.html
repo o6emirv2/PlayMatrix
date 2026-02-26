@@ -29,21 +29,21 @@
       // OnlinePisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
       window.history.replaceState(null, null, "/");
     }
-    
+
     // === %100 GÜVENLİK KALKANI: CONSOLE VE F12 ENGELLEME ===
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.onkeydown = function(e) {
-        if (e.keyCode == 123 || 
-            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
-            (e.ctrlKey && e.keyCode == 85)) {
-            return false;
-        }
+      if (e.keyCode == 123 ||
+          (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) ||
+          (e.ctrlKey && e.keyCode == 85)) {
+        return false;
+      }
     };
     (function() {
-        var block = function() {
-            setInterval(function() { debugger; }, 50);
-        };
-        try { block(); } catch (err) {}
+      var block = function() {
+        setInterval(function() { debugger; }, 50);
+      };
+      try { block(); } catch (err) {}
     })();
   </script>
 
@@ -543,8 +543,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
-      getFirestore, doc, onSnapshot, updateDoc,
-      collection, query, where, getDocs, limit, orderBy
+      getFirestore, doc, onSnapshot,
+      collection, query, where, getDocs, limit
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const API_URL = "https://emirhan-siye.onrender.com";
@@ -626,11 +626,28 @@
     let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
 
     let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
-    let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
-    let isRequestingCards = false; 
+    let pendingRoomId = null, pendingRoomBet = null;
+    let isRequestingCards = false;
     let lobbyRoomsCache = [];
 
     const safeNum = (v, def = 0) => (Number.isFinite(Number(v)) ? Number(v) : def);
+
+    const cleanStr = (v) => (typeof v === "string" ? v.trim() : "");
+    const normStatus = (s) => {
+      s = cleanStr(s).toLowerCase();
+      if (!s) return "waiting";
+      if (["wait", "waiting", "open", "lobby", "ready"].includes(s)) return "waiting";
+      if (["play", "playing", "live", "in_game"].includes(s)) return "playing";
+      if (["finish", "finished", "ended", "done"].includes(s)) return "finished";
+      return s;
+    };
+    const isRealPlayer = (v) => {
+      const s = cleanStr(v);
+      if (!s) return false;
+      const low = s.toLowerCase();
+      if (low === "..." || low === "bekleniyor" || low === "waiting") return false;
+      return true;
+    };
 
     function getCreatedAtMs(v) {
       if (typeof v === "number") return v;
@@ -676,36 +693,45 @@
       const now = Date.now();
       let html = "";
 
-      const rooms = [...lobbyRoomsCache].sort((a, b) => getCreatedAtMs(b.createdAt) - getCreatedAtMs(a.createdAt));
+      // ✅ FIX: createdAt yanlış yerden okunuyordu (a.createdAt değil a.data.createdAt)
+      const rooms = [...lobbyRoomsCache].sort(
+        (a, b) => getCreatedAtMs(b?.data?.createdAt) - getCreatedAtMs(a?.data?.createdAt)
+      );
 
       for (const r of rooms) {
         const data = r.data || {};
-        const status = data.status || "waiting";
+        const status = normStatus(data.status);
         if (status === "finished") continue;
 
-        const roomName = (typeof data.name === "string" && data.name.trim()) ? data.name.trim() : "Arena";
-        const type = (typeof data.type === "string" && data.type) ? data.type : "2-52";
+        const roomName = cleanStr(data.name) ? cleanStr(data.name) : "Arena";
+        const type = cleanStr(data.type) ? cleanStr(data.type) : "2-52";
         const maxP = type.startsWith("4") ? 4 : 2;
+
         const bet = safeNum(data.bet, 0);
         const createdMs = getCreatedAtMs(data.createdAt);
         const duration = createdMs ? Math.max(0, Math.floor((now - createdMs) / 60000)) : 0;
 
-        const pList = [data.p1, data.p2, data.p3, data.p4].filter(Boolean);
+        // ✅ FIX: boş/placeholder değerler "dolu" sayılmasın
+        const pList = [data.p1, data.p2, data.p3, data.p4].filter(isRealPlayer);
         const isPlaying = status === "playing";
-        const password = (typeof data.password === "string") ? data.password : "";
 
-        const p1n = data.p1_name || "...";
-        const p2n = data.p2_name || "...";
-        const p3n = data.p3_name || "...";
-        const p4n = data.p4_name || "...";
+        // Şifre sadece "var/yok" amacıyla
+        const hasPassword = !!cleanStr(data.password);
+
+        const p1n = cleanStr(data.p1_name) || "...";
+        const p2n = cleanStr(data.p2_name) || "...";
+        const p3n = cleanStr(data.p3_name) || "...";
+        const p4n = cleanStr(data.p4_name) || "...";
 
         let pNames = `${p1n}`;
         if (maxP === 2) pNames += ` vs ${p2n}`;
         else pNames += `, ${p2n}, ${p3n}, ${p4n}`;
 
         const ridJS = JSON.stringify(r.id);
-        const passJS = JSON.stringify(password);
+
+        // ✅ FIX: status normalize edildiği için join doğru çalışır
         const canJoin = (status === "waiting" && pList.length < maxP);
+
         const displayStyle = roomName.toLowerCase().includes(filter) ? "flex" : "none";
 
         html += `
@@ -725,7 +751,7 @@
             ${
               canJoin
                 ? `<button class="btn-neon" style="width:75px; padding:10px; font-size:0.75rem;"
-                     onclick="handleJoin(${ridJS}, ${passJS}, ${bet})">KATIL</button>`
+                     onclick="handleJoin(${ridJS}, ${hasPassword}, ${bet})">KATIL</button>`
                 : `<div style="font-size:0.75rem; color:${isPlaying ? "#00ff88" : "#666"}; font-weight:bold; text-align:right">
                     ${isPlaying ? "CANLI" : "DOLU"}
                   </div>`
@@ -738,36 +764,33 @@
     }
 
     $("roomSearch")?.addEventListener("input", (e) => {
-        const filter = e.target.value.toLowerCase();
-        document.querySelectorAll('.room-card').forEach(card => {
-            const roomName = card.getAttribute('data-roomname');
-            card.style.display = roomName.includes(filter) ? "flex" : "none";
-        });
+      const filter = e.target.value.toLowerCase();
+      document.querySelectorAll('.room-card').forEach(card => {
+        const roomName = card.getAttribute('data-roomname') || "";
+        card.style.display = roomName.includes(filter) ? "flex" : "none";
+      });
     });
 
     function listenLobby() {
       if (lobbyUnsub) lobbyUnsub();
 
-      const q = query(collection(db, "rooms"), orderBy("createdAt", "desc"));
+      // ✅ FIX: orderBy kaldırıldı (createdAt/index sorunları lobiyi bozmasın)
+      const q = query(collection(db, "rooms"), limit(200));
+
       lobbyUnsub = onSnapshot(
         q,
+        { includeMetadataChanges: true },
         (snap) => {
           lobbyRoomsCache = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
           renderLobby();
         },
         (err) => {
-          console.error("Lobby onSnapshot error:", err);
-          try {
-            if (lobbyUnsub) lobbyUnsub();
-            const q2 = query(collection(db, "rooms"));
-            lobbyUnsub = onSnapshot(
-              q2,
-              (snap2) => {
-                lobbyRoomsCache = snap2.docs.map((d) => ({ id: d.id, data: d.data() }));
-                renderLobby();
-              }
-            );
-          } catch (e) {}
+          lobbyRoomsCache = [];
+          renderLobby();
+          showInfoModal(
+            `Lobi odaları alınamadı.<br><br><b>${err.code || "HATA"}</b><br>${err.message || err}`,
+            "LOBİ HATASI"
+          );
         }
       );
     }
@@ -780,9 +803,9 @@
       try {
         const token = await auth.currentUser.getIdToken();
         await fetch(`${API_URL}/api/pisti/leave`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: roomRef.id })
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: roomRef.id })
         });
       } catch (e) {}
     }
@@ -823,14 +846,16 @@
             const data = snap.data() || {};
             const dbBalance = safeNum(data.balance, 0);
 
+            // currentBet UI rezervi dbBalance'den büyükse sıfırla
             if (currentBet > dbBalance) {
               currentBet = 0;
               $("bet").innerText = "0";
             }
 
             balance = dbBalance - currentBet;
-            userName = (typeof data.username === "string" && data.username.trim())
-              ? data.username.trim()
+
+            userName = (cleanStr(data.username))
+              ? cleanStr(data.username)
               : ("Oyuncu_" + uid.substring(0, 4));
 
             updateUI();
@@ -856,17 +881,17 @@
       try {
         const token = await auth.currentUser.getIdToken();
         const res = await fetch(`${API_URL}/api/pisti/create`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, type, pass, bet: currentBet })
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, type, pass, bet: currentBet })
         });
+
         const data = await res.json();
-        
-        if(!data.ok) throw new Error(data.error);
+        if (!data.ok) throw new Error(data.error);
 
         myRole = "p1";
         roomRef = doc(db, "rooms", data.roomId);
-        
+
         closeModal("createRoomModal");
         enterGameView();
         listenRoom();
@@ -879,32 +904,34 @@
     };
 
     // ====== ODAYA KATIL (API ENTEGRELİ) ======
-    window.handleJoin = (rid, pass, bet) => {
-      if (pass) {
-        pendingRoomId = rid;
-        pendingRoomPass = pass;
-        pendingRoomBet = bet;
+    window.handleJoin = (rid, hasPassword, bet) => {
+      // Join yaparken eldeki chip rezervini otomatik sıfırla (join'i bozmasın)
+      if (currentBet > 0) cancelBet();
 
+      pendingRoomId = rid;
+      pendingRoomBet = bet;
+
+      if (hasPassword) {
         $("joinRoomPass").value = "";
         $("passError").style.display = "none";
         openModal("passwordModal");
       } else {
-        joinRoom(rid, bet);
+        joinRoom(rid, bet, "");
       }
     };
 
     window.confirmPasswordJoin = () => {
-      if ($("joinRoomPass").value === pendingRoomPass) {
-        closeModal("passwordModal");
-        joinRoom(pendingRoomId, pendingRoomBet);
-      } else {
-        $("passError").style.display = "block";
-      }
+      const typed = $("joinRoomPass").value || "";
+      closeModal("passwordModal");
+      joinRoom(pendingRoomId, pendingRoomBet, typed);
     };
 
-    async function joinRoom(rid, bet) {
-      if (!Number.isInteger(bet) || bet < 0) return;
-      if (balance + currentBet < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
+    async function joinRoom(rid, bet, pass = "") {
+      if (!rid) return;
+      if (!Number.isFinite(Number(bet)) || bet < 0) return;
+
+      // UI tarafı: bakiye kontrolü
+      if (balance < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
       if (isProcessingPlay) return;
 
       isProcessingPlay = true;
@@ -912,18 +939,19 @@
       try {
         const token = await auth.currentUser.getIdToken();
         const res = await fetch(`${API_URL}/api/pisti/join`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: rid, pass: pendingRoomPass })
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: rid, pass })
         });
+
         const data = await res.json();
-        
-        if(!data.ok) throw new Error(data.error);
+        if (!data.ok) throw new Error(data.error);
 
         myRole = data.role;
         roomRef = doc(db, "rooms", rid);
 
-        currentBet = bet;
+        // Join betini göster (asıl bakiye Firestore user snapshot ile güncellenecek)
+        currentBet = Number(bet) || 0;
         updateUI();
 
         enterGameView();
@@ -970,12 +998,12 @@
             return;
           }
 
-          if (gameState.pistiSignal > lastPistiCount) {
-            lastPistiCount = gameState.pistiSignal;
+          if ((gameState.pistiSignal || 0) > lastPistiCount) {
+            lastPistiCount = gameState.pistiSignal || 0;
             triggerPistiUI();
           }
 
-          if (gameState.status === "playing") {
+          if (normStatus(gameState.status) === "playing") {
             $("waitingStatus").style.display = "none";
             const maxP = String(gameState.type || "2-52").startsWith("4") ? 4 : 2;
             const handsEmpty = Array.from({ length: maxP }, (_, i) => gameState[`p${i + 1}_hand`]).every((h) => !h || h.length === 0);
@@ -986,7 +1014,7 @@
             }
           }
 
-          if (gameState.status === "finished") handleEnd();
+          if (normStatus(gameState.status) === "finished") handleEnd();
           renderHeads();
         }
       );
@@ -1000,7 +1028,7 @@
       for (let i = 1; i <= maxP; i++) {
         const pUid = gameState?.[`p${i}`];
         const pName = gameState?.[`p${i}_name`] || "...";
-        const isActive = gameState?.turn === pUid && gameState?.status === "playing";
+        const isActive = gameState?.turn === pUid && normStatus(gameState?.status) === "playing";
         html += `<div class="p-head ${isActive ? "active" : ""}">
             <div class="name">${pUid === uid ? "SİZ" : pName}</div>
             <div class="score">${gameState?.[`p${i}_score`] || 0}</div>
@@ -1018,9 +1046,9 @@
       try {
         const token = await auth.currentUser.getIdToken();
         await fetch(`${API_URL}/api/pisti/refill`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: roomRef.id })
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: roomRef.id })
         });
       } catch (e) {
         console.error("Kart dağıtma hatası", e);
@@ -1047,14 +1075,13 @@
       try {
         const token = await auth.currentUser.getIdToken();
         const res = await fetch(`${API_URL}/api/pisti/play`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: roomRef.id, cardIndex: idx })
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: roomRef.id, cardIndex: idx })
         });
         const data = await res.json();
-        
-        if(!data.ok) throw new Error(data.error);
 
+        if (!data.ok) throw new Error(data.error);
       } catch (e) {
         console.error(e.message);
         listenRoom(); // Hata olursa sunucudan güncel durumu çekip UI'yi düzelt
@@ -1170,23 +1197,38 @@
       setTimeout(() => p.classList.remove("pisti-active"), 2300);
     }
 
+    // ✅ FIX: Quick Join artık sadece status==waiting query'sine bağlı değil (open/ready vs kaçmasın)
     window.handleQuickJoin = async () => {
       try {
-        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting"), limit(20)));
-        let found = false;
+        if (currentBet > 0) cancelBet();
+
+        const snap = await getDocs(query(collection(db, "rooms"), limit(80)));
+        let best = null;
 
         snap.forEach((d) => {
           const data = d.data() || {};
-          const bet = safeNum(data.bet, 0);
-          const pass = (typeof data.password === "string") ? data.password : "";
+          const status = normStatus(data.status);
+          if (status === "finished" || status === "playing") return;
 
-          if (!found && !pass && bet <= balance) {
-            joinRoom(d.id, bet);
-            found = true;
-          }
+          const type = cleanStr(data.type) ? cleanStr(data.type) : "2-52";
+          const maxP = type.startsWith("4") ? 4 : 2;
+
+          const pList = [data.p1, data.p2, data.p3, data.p4].filter(isRealPlayer);
+          if (pList.length >= maxP) return;
+
+          const bet = safeNum(data.bet, 0);
+          if (bet > balance) return;
+
+          const hasPassword = !!cleanStr(data.password);
+          if (hasPassword) return; // quick join: sadece şifresiz
+
+          // En düşük betli en uygun odayı seç
+          if (!best || bet < best.bet) best = { id: d.id, bet };
         });
 
-        if (!found) showInfoModal("Uygun masa bulunamadı!", "LOBİ");
+        if (!best) return showInfoModal("Uygun masa bulunamadı!", "LOBİ");
+
+        joinRoom(best.id, best.bet, "");
       } catch (e) {
         showInfoModal(`Hızlı masa hatası!<br><br><b>Hata:</b> ${e.message || e}`, "LOBİ");
       }
