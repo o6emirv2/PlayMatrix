@@ -29,6 +29,22 @@
       // OnlinePisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
       window.history.replaceState(null, null, "/");
     }
+    
+    // === %100 GÜVENLİK KALKANI: CONSOLE VE F12 ENGELLEME ===
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+            (e.ctrlKey && e.keyCode == 85)) {
+            return false;
+        }
+    };
+    (function() {
+        var block = function() {
+            setInterval(function() { debugger; }, 50);
+        };
+        try { block(); } catch (err) {}
+    })();
   </script>
 
   <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
@@ -68,7 +84,6 @@
       top: 0; left: 0; right: 0; bottom: 0;
     }
 
-    /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
     .sr-only {
       position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
       overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
@@ -303,7 +318,6 @@
     .hand { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; width: max-content; padding: 15px; bottom: 5px; z-index: 200; }
     .opp-hand-visual { position: absolute; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; width: max-content; top: 15px; opacity: 0.9; }
 
-    /* Mobil Uyumlu Kart Boyutları */
     .card {
       width: 12vw; max-width: 65px; height: 18vw; max-height: 95px;
       border-radius: 6px; cursor: pointer;
@@ -527,12 +541,13 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
-      getFirestore, doc, onSnapshot, updateDoc, setDoc,
-      collection, query, where, getDocs, runTransaction,
-      deleteDoc, increment, orderBy, serverTimestamp
+      getFirestore, doc, onSnapshot, updateDoc,
+      collection, query, where, getDocs, limit, orderBy
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const API_URL = "https://emirhan-siye.onrender.com";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -545,7 +560,7 @@
 
     const $ = (id) => document.getElementById(id);
 
-    // ====== MODAL (önce tanımlı: hata olursa gösterebilsin) ======
+    // ====== MODAL ======
     function openModal(id) {
       const el = $(id);
       if (!el) return;
@@ -601,47 +616,23 @@
       soundClone.play().catch(() => {});
     }
 
-    // ====== FIREBASE ======
+    // ====== FIREBASE & STATE ======
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ====== OYUN STATE ======
     let balance = 0, currentBet = 0, userRef = null, uid = null, userName = "Oyuncu";
     let roomRef = null, myRole = null, gameState = null, inGame = false;
     let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
 
     let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
     let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
-
-    // Lobby cache (arama yazınca anında listelensin)
+    let isRequestingCards = false; 
     let lobbyRoomsCache = [];
 
-    // ====== HELPERS ======
-    const CARD_POINTS = { "D0": 3, "C2": 2 };
-    const normalizeCardVal = (c) => {
-      if (!c) return "";
-      const v = c.substring(0, c.length - 1);
-      return (v === "0") ? "10" : v;
-    };
-
-    const calculatePoints = (cards) => {
-      let p = 0;
-      cards.forEach((c) => {
-        if (CARD_POINTS[c]) p += CARD_POINTS[c];
-        else {
-          const val = normalizeCardVal(c);
-          if (val === "A" || val === "J") p += 1;
-        }
-      });
-      return p;
-    };
-
-    const safeLower = (v) => (typeof v === "string" ? v.toLowerCase() : "");
     const safeNum = (v, def = 0) => (Number.isFinite(Number(v)) ? Number(v) : def);
 
     function getCreatedAtMs(v) {
-      // number veya Firestore Timestamp veya serverTimestamp placeholder
       if (typeof v === "number") return v;
       if (v && typeof v.toMillis === "function") return v.toMillis();
       return 0;
@@ -652,16 +643,13 @@
       $("balance").innerText = balance.toLocaleString("tr-TR");
     }
 
-    // ====== NAV ======
     window.handleNavAction = () => {
       if (inGame || roomRef) window.leaveRoom();
       else window.location.href = "index.html";
     };
 
-    // ====== MODALS ======
     window.openCreateModal = () => openModal("createRoomModal");
 
-    // ====== BAHİS ======
     window.addBet = (a) => {
       if (!Number.isInteger(a) || a <= 0) return;
       if (balance >= a) {
@@ -679,18 +667,15 @@
       updateUI();
     };
 
-    // ====== LOBBY RENDER (ASIL FIX: eksik alanlarda patlamasın + arama anında çalışsın) ======
+    // ====== LOBBY ======
     function renderLobby() {
       const list = $("roomList");
       if (!list) return;
 
-      const filter = safeLower($("roomSearch")?.value || "");
+      const filter = ($("roomSearch")?.value || "").toLowerCase();
       const now = Date.now();
-
-      // Cache boşsa yine de mesaj göster
       let html = "";
 
-      // createdAt'e göre client-side da sıralayalım (orderBy bozulsa bile düzgün dursun)
       const rooms = [...lobbyRoomsCache].sort((a, b) => getCreatedAtMs(b.createdAt) - getCreatedAtMs(a.createdAt));
 
       for (const r of rooms) {
@@ -699,8 +684,6 @@
         if (status === "finished") continue;
 
         const roomName = (typeof data.name === "string" && data.name.trim()) ? data.name.trim() : "Arena";
-        if (!safeLower(roomName).includes(filter)) continue;
-
         const type = (typeof data.type === "string" && data.type) ? data.type : "2-52";
         const maxP = type.startsWith("4") ? 4 : 2;
         const bet = safeNum(data.bet, 0);
@@ -720,14 +703,13 @@
         if (maxP === 2) pNames += ` vs ${p2n}`;
         else pNames += `, ${p2n}, ${p3n}, ${p4n}`;
 
-        // inline onclick kırılmasın diye JSON.stringify ile güvenli gömme
         const ridJS = JSON.stringify(r.id);
         const passJS = JSON.stringify(password);
-
         const canJoin = (status === "waiting" && pList.length < maxP);
+        const displayStyle = roomName.toLowerCase().includes(filter) ? "flex" : "none";
 
         html += `
-          <div class="room-card" style="${isPlaying ? "border-left-color:#00ff88;" : ""}">
+          <div class="room-card" data-roomname="${roomName.toLowerCase()}" style="display: ${displayStyle}; ${isPlaying ? "border-left-color:#00ff88;" : ""}">
             <div style="flex:1">
               <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">
                 ${roomName} [${type}] (${pList.length}/${maxP})
@@ -755,10 +737,14 @@
       list.innerHTML = html || `<div style="text-align:center; padding:30px; color:#555; font-size:1.1rem; font-weight:bold;">Uygun masa yok. Yeni Masa Kur!</div>`;
     }
 
-    // Arama yazınca anında filtre uygula
-    $("roomSearch")?.addEventListener("input", renderLobby);
+    $("roomSearch")?.addEventListener("input", (e) => {
+        const filter = e.target.value.toLowerCase();
+        document.querySelectorAll('.room-card').forEach(card => {
+            const roomName = card.getAttribute('data-roomname');
+            card.style.display = roomName.includes(filter) ? "flex" : "none";
+        });
+    });
 
-    // ====== LOBBY LISTEN (ASIL FIX: onSnapshot error yakala + cache'e yaz + render) ======
     function listenLobby() {
       if (lobbyUnsub) lobbyUnsub();
 
@@ -767,14 +753,10 @@
         q,
         (snap) => {
           lobbyRoomsCache = snap.docs.map((d) => ({ id: d.id, data: d.data() }));
-          // çok sık değilken temizle
-          if (Math.random() < 0.06) cleanZombies();
           renderLobby();
         },
         (err) => {
           console.error("Lobby onSnapshot error:", err);
-          showInfoModal(`Lobi dinlenemedi!<br><br><b>Hata:</b> ${err.message || err}`, "FIREBASE");
-          // orderBy yüzünden hata olursa fallback: orderBy'sız dinle
           try {
             if (lobbyUnsub) lobbyUnsub();
             const q2 = query(collection(db, "rooms"));
@@ -783,62 +765,31 @@
               (snap2) => {
                 lobbyRoomsCache = snap2.docs.map((d) => ({ id: d.id, data: d.data() }));
                 renderLobby();
-              },
-              (err2) => {
-                console.error("Lobby fallback error:", err2);
-                showInfoModal(`Lobi dinlenemedi!<br><br><b>Hata:</b> ${err2.message || err2}`, "FIREBASE");
               }
             );
-          } catch (e) {
-            showInfoModal(`Lobi başlatılamadı!<br><br><b>Hata:</b> ${e?.message || e}`, "FIREBASE");
-          }
+          } catch (e) {}
         }
       );
     }
 
-    // ====== ROOM CLEANUP ======
-    async function cleanZombies() {
-      try {
-        const snap = await getDocs(query(collection(db, "rooms")));
-        const now = Date.now();
-        snap.forEach(async (d) => {
-          const data = d.data();
-          const createdMs = getCreatedAtMs(data.createdAt);
-          if (createdMs && (now - createdMs > 1800000)) {
-            await deleteDoc(doc(db, "rooms", d.id));
-          }
-        });
-      } catch (e) {
-        // sessiz
-      }
-    }
-
-    // ====== ÇIKIŞ / AYRIL ======
+    // ====== AYRIL / KOPMA ======
     async function handleDisconnect() {
       if (!roomRef) return;
-      const currentRef = roomRef;
       inGame = false;
 
       try {
-        if (gameState && gameState.status === "waiting") {
-          if (myRole === "p1") await deleteDoc(currentRef);
-          else await updateDoc(currentRef, { [myRole]: null, [myRole + "_name"]: null });
-        } else if (gameState && gameState.status === "playing") {
-          await updateDoc(currentRef, { quitter: uid, quitterName: userName, status: "finished" });
-        }
+        const token = await auth.currentUser.getIdToken();
+        await fetch(`${API_URL}/api/pisti/leave`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: roomRef.id })
+        });
       } catch (e) {}
     }
 
-    // iOS için daha sağlıklı: pagehide
-    window.addEventListener("pagehide", () => {
-      if (inGame && roomRef) handleDisconnect();
-    });
-    window.addEventListener("beforeunload", () => {
-      if (inGame && roomRef) handleDisconnect();
-    });
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "hidden" && inGame && roomRef) handleDisconnect();
-    });
+    window.addEventListener("pagehide", () => { if (inGame && roomRef) handleDisconnect(); });
+    window.addEventListener("beforeunload", () => { if (inGame && roomRef) handleDisconnect(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && inGame && roomRef) handleDisconnect(); });
 
     window.leaveRoom = async () => {
       if (roomRef && inGame) await handleDisconnect();
@@ -851,16 +802,13 @@
       $("gameArea").style.display = "none";
       $("lobbyScreen").style.display = "flex";
       $("navActionBtn").innerText = "ÇIKIŞ";
-      updateUI();
+      listenLobby();
     };
 
-    // ====== AUTH + USER ======
+    // ====== AUTH ======
     onAuthStateChanged(auth, (user) => {
       if (!user) {
-        signInAnonymously(auth).catch((e) => {
-          console.error("Giriş hatası:", e);
-          showInfoModal(`Anonim giriş başarısız!<br><br><b>Hata:</b> ${e.message || e}`, "GİRİŞ");
-        });
+        window.location.href = "index.html";
         return;
       }
 
@@ -875,41 +823,29 @@
             const data = snap.data() || {};
             const dbBalance = safeNum(data.balance, 0);
 
-            // DB bakiyesi düştüyse currentBet sıfırla
             if (currentBet > dbBalance) {
               currentBet = 0;
               $("bet").innerText = "0";
             }
 
-            // Kullanıcı görünen bakiye: dbBalance - seçili bahis
             balance = dbBalance - currentBet;
             userName = (typeof data.username === "string" && data.username.trim())
               ? data.username.trim()
               : ("Oyuncu_" + uid.substring(0, 4));
 
             updateUI();
-            // lobby’de buton uygunluğu için yeniden render (bahis/bakiye değiştiğinde)
             renderLobby();
-          } else {
-            setDoc(userRef, { balance: 1000, username: "Oyuncu_" + uid.substring(0, 4) })
-              .catch((e) => showInfoModal(`Kullanıcı kaydı oluşturulamadı!<br><br><b>Hata:</b> ${e.message || e}`, "FIREBASE"));
           }
-        },
-        (err) => {
-          console.error("User onSnapshot error:", err);
-          showInfoModal(`Kullanıcı bilgisi okunamadı!<br><br><b>Hata:</b> ${err.message || err}`, "FIREBASE");
         }
       );
 
-      cleanZombies();
       listenLobby();
     });
 
-    // ====== ODA OLUŞTUR ======
+    // ====== ODA OLUŞTUR (API ENTEGRELİ) ======
     window.confirmCreateRoom = async () => {
       if (!Number.isInteger(currentBet) || currentBet < 100) return showInfoModal("Geçersiz veya min 100 MC bahis olmalı!", "UYARI");
       if (isProcessingPlay) return;
-      if (!uid || !userRef) return showInfoModal("Giriş tamamlanmadı!", "HATA");
 
       isProcessingPlay = true;
 
@@ -917,67 +853,32 @@
       const type = $("newRoomType").value;
       const pass = $("newRoomPass").value || "";
 
-      const roomId = "room_" + Date.now() + "_" + uid.substring(0, 4);
-      roomRef = doc(db, "rooms", roomId);
-      myRole = "p1";
-
-      const isDouble = String(type).includes("104");
-      const finalDeck = createShuffledDeck(isDouble);
-
       try {
-        await runTransaction(db, async (t) => {
-          const uSnap = await t.get(userRef);
-          const uBal = safeNum(uSnap.data()?.balance, 0);
-          if (uBal < currentBet) throw "Yetersiz bakiye!";
-
-          t.set(roomRef, {
-            p1: uid, p1_name: userName,
-            bet: currentBet,
-            status: "waiting",
-            name,
-            password: pass,
-            type,
-
-            deck: finalDeck,
-            table: [],
-            p1_score: 0, p2_score: 0, p3_score: 0, p4_score: 0,
-            p1_count: 0, p2_count: 0, p3_count: 0, p4_count: 0,
-            p1_hand: [], p2_hand: [], p3_hand: [], p4_hand: [],
-            turn: null,
-            quitter: null,
-
-            createdAt: serverTimestamp(),    // FIX: tutarlı zaman
-            lastCollector: null,
-            pistiSignal: 0
-          });
-
-          t.update(userRef, { balance: increment(-currentBet) });
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch(`${API_URL}/api/pisti/create`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, type, pass, bet: currentBet })
         });
+        const data = await res.json();
+        
+        if(!data.ok) throw new Error(data.error);
 
+        myRole = "p1";
+        roomRef = doc(db, "rooms", data.roomId);
+        
         closeModal("createRoomModal");
         enterGameView();
         listenRoom();
       } catch (e) {
-        showInfoModal(String(e), "HATA");
+        showInfoModal(String(e.message || e), "HATA");
+        cancelBet();
       } finally {
         isProcessingPlay = false;
       }
     };
 
-    function createShuffledDeck(isDouble) {
-      const s = ["H", "D", "C", "S"];
-      const v = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
-      let d = [];
-      s.forEach((x) => v.forEach((y) => d.push(y + x)));
-      if (isDouble) d = [...d, ...d];
-      for (let i = d.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [d[i], d[j]] = [d[j], d[i]];
-      }
-      return d;
-    }
-
-    // ====== ODAYA KATIL ======
+    // ====== ODAYA KATIL (API ENTEGRELİ) ======
     window.handleJoin = (rid, pass, bet) => {
       if (pass) {
         pendingRoomId = rid;
@@ -1003,52 +904,23 @@
 
     async function joinRoom(rid, bet) {
       if (!Number.isInteger(bet) || bet < 0) return;
-      if (!uid || !userRef) return showInfoModal("Giriş tamamlanmadı!", "HATA");
-
-      // Kullanıcı arayüzü bakiyesi: balance (dbBalance-currentBet)
-      // Katılım bet'i, currentBet'ten bağımsız: bet kadar karşılayabilmeli
       if (balance + currentBet < bet) return showInfoModal("Yetersiz bakiye!", "HATA");
       if (isProcessingPlay) return;
 
       isProcessingPlay = true;
 
       try {
-        const role = await runTransaction(db, async (transaction) => {
-          const rRef = doc(db, "rooms", rid);
-          const rDoc = await transaction.get(rRef);
-          const uDoc = await transaction.get(userRef);
-
-          if (!rDoc.exists()) throw "Oda kapandı veya bulunamadı!";
-
-          const data = rDoc.data() || {};
-          const uBal = safeNum(uDoc.data()?.balance, 0);
-          if (uBal < bet) throw "Bakiye yetersiz!";
-
-          const type = (typeof data.type === "string" && data.type) ? data.type : "2-52";
-          const maxP = type.startsWith("4") ? 4 : 2;
-
-          let assignedRole = null;
-          if (!data.p2) assignedRole = "p2";
-          else if (maxP === 4 && !data.p3) assignedRole = "p3";
-          else if (maxP === 4 && !data.p4) assignedRole = "p4";
-
-          if (!assignedRole) throw "Oda dolu!";
-
-          transaction.update(userRef, { balance: increment(-bet) });
-
-          const updates = { [assignedRole]: uid, [assignedRole + "_name"]: userName };
-
-          const pCount = [data.p1, data.p2, data.p3, data.p4].filter((p) => p).length + 1;
-          if (pCount === maxP) {
-            updates.status = "playing";
-            updates.turn = data.p1;
-          }
-
-          transaction.update(rRef, updates);
-          return assignedRole;
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch(`${API_URL}/api/pisti/join`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: rid, pass: pendingRoomPass })
         });
+        const data = await res.json();
+        
+        if(!data.ok) throw new Error(data.error);
 
-        myRole = role;
+        myRole = data.role;
         roomRef = doc(db, "rooms", rid);
 
         currentBet = bet;
@@ -1057,7 +929,7 @@
         enterGameView();
         listenRoom();
       } catch (e) {
-        showInfoModal(String(e), "HATA");
+        showInfoModal(String(e.message || e), "HATA");
       } finally {
         isProcessingPlay = false;
       }
@@ -1066,6 +938,7 @@
     function enterGameView() {
       inGame = true;
       lastHandLength = 0;
+      isRequestingCards = false;
       $("lobbyScreen").style.display = "none";
       $("gameArea").style.display = "flex";
       $("navActionBtn").innerText = "AYRIL";
@@ -1090,7 +963,6 @@
 
           if (gameState.quitter) {
             if (gameState.quitter !== uid) {
-              await updateDoc(userRef, { balance: increment(gameState.bet) });
               showInfoModal(`${gameState.quitterName} ayrıldı! Bahis iade edildi.`, "OYUN İPTAL");
               inGame = false;
               setTimeout(() => window.leaveRoom(), 3000);
@@ -1116,10 +988,6 @@
 
           if (gameState.status === "finished") handleEnd();
           renderHeads();
-        },
-        (err) => {
-          console.error("Room onSnapshot error:", err);
-          showInfoModal(`Oda dinlenemedi!<br><br><b>Hata:</b> ${err.message || err}`, "FIREBASE");
         }
       );
     }
@@ -1141,114 +1009,55 @@
       container.innerHTML = html;
     }
 
+    // ====== KART ÇEKME (API ENTEGRELİ) ======
     async function refillHands() {
+      if (isProcessingPlay || isRequestingCards) return;
       isProcessingPlay = true;
+      isRequestingCards = true;
+
       try {
-        await runTransaction(db, async (t) => {
-          const d = (await t.get(roomRef)).data();
-          if (!d || d.status !== "playing") return;
-
-          const maxP = String(d.type || "2-52").startsWith("4") ? 4 : 2;
-          let deck = [...(d.deck || [])];
-          let table = [...(d.table || [])];
-          let updates = {};
-
-          const is104 = String(d.type || "").includes("104");
-          const fullSize = is104 ? 104 : 52;
-
-          const initialTableCount = (d.type === "4-104") ? 8 : 4;
-
-          // ilk dağıtım
-          if (table.length === 0 && deck.length === fullSize) {
-            updates.table = deck.splice(0, initialTableCount);
-          }
-
-          const neededCards = maxP * 4;
-          if (deck.length >= neededCards) {
-            for (let i = 1; i <= maxP; i++) updates[`p${i}_hand`] = deck.splice(0, 4);
-            updates.deck = deck;
-          } else {
-            // oyun bitişi: masadaki kartları son toplayana yaz
-            if (table.length > 0 && d.lastCollector) {
-              let lcRole = null;
-              for (let i = 1; i <= maxP; i++) {
-                if (d[`p${i}`] === d.lastCollector) lcRole = `p${i}`;
-              }
-              if (lcRole) {
-                updates[lcRole + "_score"] = increment(calculatePoints(table));
-                updates[lcRole + "_count"] = increment(table.length);
-              }
-            }
-            updates.table = [];
-            updates.status = "finished";
-          }
-
-          t.update(roomRef, updates);
+        const token = await auth.currentUser.getIdToken();
+        await fetch(`${API_URL}/api/pisti/refill`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: roomRef.id })
         });
       } catch (e) {
-        // sessiz
+        console.error("Kart dağıtma hatası", e);
       } finally {
         isProcessingPlay = false;
+        setTimeout(() => { isRequestingCards = false; }, 2000);
       }
     }
 
+    // ====== KART ATMA (API ENTEGRELİ) ======
     async function playCard(idx) {
       if (gameState.turn !== uid || isProcessingPlay) return;
       isProcessingPlay = true;
 
       playSound(sfx.cardThrow);
 
-      // UI hızlı tepki
+      // UI hızlı tepki için eli yerelde güncelle
+      const playedCard = gameState[myRole + "_hand"][idx];
       gameState[myRole + "_hand"].splice(idx, 1);
+      gameState.table.push(playedCard);
       gameState.turn = "processing";
       render();
 
       try {
-        await runTransaction(db, async (t) => {
-          const d = (await t.get(roomRef)).data();
-          if (!d || d.turn !== uid) throw "Sıra sizde değil!";
-
-          const hand = [...(d[myRole + "_hand"] || [])];
-          const card = hand.splice(idx, 1)[0];
-
-          let table = [...(d.table || [])];
-          let scoreInc = 0, countInc = 0, pistiInc = 0, lastColl = d.lastCollector;
-
-          if (table.length > 0) {
-            const top = table[table.length - 1];
-            const isVale = normalizeCardVal(card) === "J";
-
-            if (normalizeCardVal(card) === normalizeCardVal(top) || isVale) {
-              if (table.length === 1 && !isVale) { scoreInc = 10; pistiInc = 1; }
-              else if (table.length === 1 && isVale && normalizeCardVal(top) === "J") { scoreInc = 20; pistiInc = 1; }
-              else { scoreInc = calculatePoints([...table, card]); }
-
-              countInc = table.length + 1;
-              table = [];
-              lastColl = uid;
-            } else {
-              table.push(card);
-            }
-          } else {
-            table.push(card);
-          }
-
-          const maxP = String(d.type || "2-52").startsWith("4") ? 4 : 2;
-          const nextIdx = (parseInt(myRole.at(-1)) % maxP) + 1;
-
-          t.update(roomRef, {
-            [myRole + "_hand"]: hand,
-            table,
-            [myRole + "_score"]: increment(scoreInc),
-            [myRole + "_count"]: increment(countInc),
-            turn: d[`p${nextIdx}`],
-            lastCollector: lastColl,
-            pistiSignal: increment(pistiInc)
-          });
+        const token = await auth.currentUser.getIdToken();
+        const res = await fetch(`${API_URL}/api/pisti/play`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: roomRef.id, cardIndex: idx })
         });
+        const data = await res.json();
+        
+        if(!data.ok) throw new Error(data.error);
+
       } catch (e) {
-        // tekrar bağlan
-        listenRoom();
+        console.error(e.message);
+        listenRoom(); // Hata olursa sunucudan güncel durumu çekip UI'yi düzelt
       } finally {
         isProcessingPlay = false;
       }
@@ -1340,7 +1149,6 @@
 
       if (winners.some((w) => w.uid === uid)) {
         const prize = Math.floor((gameState.bet * maxP) / winners.length);
-        await updateDoc(userRef, { balance: increment(prize) });
         playSound(sfx.win);
         showInfoModal(`🎉 TEBRİKLER! ${prize} MC KAZANDINIZ.`, "OYUN BİTTİ");
       } else {
@@ -1349,7 +1157,6 @@
       }
 
       setTimeout(async () => {
-        if (myRole === "p1") { try { await deleteDoc(roomRef); } catch (e) {} }
         window.leaveRoom();
       }, 6000);
     }
@@ -1363,10 +1170,9 @@
       setTimeout(() => p.classList.remove("pisti-active"), 2300);
     }
 
-    // ====== HIZLI MASA ======
     window.handleQuickJoin = async () => {
       try {
-        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting")));
+        const snap = await getDocs(query(collection(db, "rooms"), where("status", "==", "waiting"), limit(20)));
         let found = false;
 
         snap.forEach((d) => {
