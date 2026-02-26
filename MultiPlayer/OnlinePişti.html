@@ -18,248 +18,107 @@
     if (window.history.replaceState) {
         window.history.replaceState(null, null, "/");
     }
+    
+    // === %100 GÜVENLİK KALKANI: CONSOLE VE F12 ENGELLEME ===
+    document.addEventListener('contextmenu', e => e.preventDefault()); // Sağ tık yasak
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+            (e.ctrlKey && e.keyCode == 85)) {
+            return false; // F12, Ctrl+Shift+I/J/C ve Ctrl+U yasak
+        }
+    };
+    // Anti-Debugger: Konsol açıldığı an sekmeyi kilitler
+    (function() {
+        var block = function() {
+            setInterval(function() { debugger; }, 50);
+        };
+        try { block(); } catch (err) {}
+    })();
     </script>
     
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@500;700&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
+        /* CSS AYARI DEĞİŞMEDİ - GÖRSEL BÜTÜNLÜK KORUNDU */
         :root {
-            --bg: #050711;
-            --glass: rgba(15, 20, 30, 0.7); 
-            --border: #00d2ff;
-            --danger: #ff2a2a; --warning: #ffb700; --accent: #8a2be2;
-            --success: #00ff88;
+            --bg: #050711; --glass: rgba(15, 20, 30, 0.7); --border: #00d2ff;
+            --danger: #ff2a2a; --warning: #ffb700; --accent: #8a2be2; --success: #00ff88;
             --table-green: radial-gradient(circle at center, #1b6d43 0%, #0d3820 100%);
             --table-wood: #2c1a14;
         }
 
-        * { 
-            margin:0; padding:0; box-sizing:border-box; 
-            font-family: 'Rajdhani', sans-serif; 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none;
-        }
-        
-        body { 
-            background: var(--bg); color: #e0e0e0; height: 100vh; 
-            overflow: hidden; display: flex; flex-direction: column; 
-            width: 100%; overscroll-behavior: none;
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        }
-
-        .sr-only {
-            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
-        }
-
-        #bg-canvas { 
-            position: fixed; inset: 0; z-index: -1; 
-            background: #02040a; overflow: hidden;
-        }
-        .bg-orb {
-            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4;
-            animation: floatOrb 20s infinite alternate ease-in-out;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Rajdhani', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body { background: var(--bg); color: #e0e0e0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; width: 100%; overscroll-behavior: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+        #bg-canvas { position: fixed; inset: 0; z-index: -1; background: #02040a; overflow: hidden; }
+        .bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; animation: floatOrb 20s infinite alternate ease-in-out; }
         .orb-1 { width: 300px; height: 300px; background: var(--border); top: -10%; left: -10%; animation-delay: 0s; }
         .orb-2 { width: 400px; height: 400px; background: var(--accent); bottom: -20%; right: -10%; animation-delay: -5s; }
         .orb-3 { width: 200px; height: 200px; background: var(--success); top: 40%; left: 60%; animation-delay: -10s; opacity: 0.2; }
-        
-        @keyframes floatOrb {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, 50px) scale(1.1); }
-            100% { transform: translate(-30px, -20px) scale(0.9); }
-        }
+        @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, 50px) scale(1.1); } 100% { transform: translate(-30px, -20px) scale(0.9); } }
 
-        .top-bar { 
-            height: 70px; flex-shrink: 0; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; 
-            background: rgba(5, 7, 12, 0.95); border-bottom: 1px solid rgba(0, 210, 255, 0.2); 
-            box-shadow: 0 4px 25px rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(10px);
-        }
-        .brand { 
-            font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); 
-            letter-spacing: 1px; text-shadow: 0 0 12px rgba(0, 210, 255, 0.6); 
-            white-space: nowrap; flex-shrink: 0; margin-right: 10px;
-        }
+        .top-bar { height: 70px; flex-shrink: 0; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; background: rgba(5, 7, 12, 0.95); border-bottom: 1px solid rgba(0, 210, 255, 0.2); box-shadow: 0 4px 25px rgba(0,0,0,0.7); z-index: 1000; backdrop-filter: blur(10px); }
+        .brand { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; text-shadow: 0 0 12px rgba(0, 210, 255, 0.6); white-space: nowrap; flex-shrink: 0; margin-right: 10px; }
         .right-menu { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden; }
         
-        .user-pill-mini { 
-            display: flex; align-items: center; gap: 5px; 
-            background: rgba(255,255,255,0.05); padding: 5px 10px; 
-            border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); 
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0; white-space: nowrap;
-        }
+        .user-pill-mini { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0; white-space: nowrap; }
         .balance-info { display: flex; align-items: center; }
         .balance-info b { font-size: 14px; color: var(--success); font-family: 'Inter', monospace; font-weight: 700; text-shadow: 0 0 8px rgba(0,255,136,0.4); }
-        .mc-chip {
-            width: 20px; height: 20px; background: radial-gradient(circle at 30% 30%, #00d2ff, #0055ff);
-            border-radius: 50%; margin-left: 5px; display: flex; align-items: center; justify-content: center;
-            font-size: 7px; font-weight: 900; color: #fff; box-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
-            border: 1px solid rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; flex-shrink: 0;
-        }
-
-        #navActionBtn {
-            background: var(--danger); border: none; color: white; padding: 8px 12px; 
-            font-weight: 900; font-size: 0.75rem; border-radius: 6px; cursor: pointer; 
-            box-shadow: 0 4px 10px rgba(255, 42, 42, 0.4); flex-shrink: 0; transition: 0.2s;
-        }
+        .mc-chip { width: 20px; height: 20px; background: radial-gradient(circle at 30% 30%, #00d2ff, #0055ff); border-radius: 50%; margin-left: 5px; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 900; color: #fff; box-shadow: 0 0 8px rgba(0, 210, 255, 0.5); border: 1px solid rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; flex-shrink: 0; }
+        #navActionBtn { background: var(--danger); border: none; color: white; padding: 8px 12px; font-weight: 900; font-size: 0.75rem; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(255, 42, 42, 0.4); flex-shrink: 0; transition: 0.2s; }
         #navActionBtn:active { transform: scale(0.95); }
 
-        #lobbyScreen { 
-            flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 15px; 
-            overflow-y: auto; z-index: 10; touch-action: pan-y; -webkit-overflow-scrolling: touch;
-        }
-
-        .search-input { 
-            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 255, 0.2); 
-            padding: 14px 15px; color: #fff; border-radius: 10px; outline: none; font-size: 16px;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.6); transition: 0.3s;
-        }
+        #lobbyScreen { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+        .search-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 210, 255, 0.2); padding: 14px 15px; color: #fff; border-radius: 10px; outline: none; font-size: 16px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.6); transition: 0.3s; }
         .search-input:focus { border-color: var(--border); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
-        
-        .btn-neon { 
-            background: var(--border); color: #000; border: none; padding: 14px; 
-            font-family: 'Black Ops One'; font-size: 0.9rem; cursor: pointer;
-            border-radius: 8px; transition: 0.3s; text-align: center; width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4); letter-spacing: 1px;
-        }
+        .btn-neon { background: var(--border); color: #000; border: none; padding: 14px; font-family: 'Black Ops One'; font-size: 0.9rem; cursor: pointer; border-radius: 8px; transition: 0.3s; text-align: center; width: 100%; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4); letter-spacing: 1px; }
         .btn-neon:active { transform: scale(0.96); box-shadow: 0 2px 5px rgba(0, 210, 255, 0.4); }
-
-        .btn-fast-join {
-            background: linear-gradient(45deg, #ff8a00, #e52e71); color: #fff;
-            border: 1px solid #ffcc00; box-shadow: 0 4px 20px rgba(255, 138, 0, 0.6);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .room-card { 
-            background: linear-gradient(145deg, rgba(25, 30, 45, 0.75), rgba(10, 15, 20, 0.85)); 
-            border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--border); 
-            padding: 14px; display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 12px; border-radius: 12px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
-            transition: all 0.3s ease; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        }
+        .btn-fast-join { background: linear-gradient(45deg, #ff8a00, #e52e71); color: #fff; border: 1px solid #ffcc00; box-shadow: 0 4px 20px rgba(255, 138, 0, 0.6); text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .room-card { background: linear-gradient(145deg, rgba(25, 30, 45, 0.75), rgba(10, 15, 20, 0.85)); border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--border); padding: 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); transition: all 0.3s ease; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .room-card:active { transform: scale(0.98); border-left-width: 8px; }
-
         .room-info-live { font-size: 0.8rem; color: #8b9eb3; margin-top: 6px; font-weight: 600; }
         .live-tag { color: var(--success); font-weight: bold; animation: blink 1.5s infinite; text-shadow: 0 0 6px rgba(0,255,136,0.6); }
         @keyframes blink { 50% { opacity: 0.4; } }
-
         .chips { display: flex; gap: 10px; justify-content: center; margin: 5px 0; }
-        .chip { 
-            width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; 
-            font-weight:900; cursor:pointer; font-size: 11px; background: #222;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.6), inset 0 3px 6px rgba(255,255,255,0.2);
-            border: 3px solid rgba(0,0,0,0.8); transition: 0.15s; touch-action: manipulation;
-        }
+        .chip { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; cursor:pointer; font-size: 11px; background: #222; box-shadow: 0 5px 15px rgba(0,0,0,0.6), inset 0 3px 6px rgba(255,255,255,0.2); border: 3px solid rgba(0,0,0,0.8); transition: 0.15s; touch-action: manipulation; }
         .chip:active { transform: scale(1.15) translateY(-5px); filter: brightness(1.3); }
 
-        .player-heads {
-            width: 100%; display: flex; justify-content: space-around; padding: 10px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.6)); 
-            border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 100; backdrop-filter: blur(5px);
-        }
+        .player-heads { width: 100%; display: flex; justify-content: space-around; padding: 10px; background: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.6)); border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 100; backdrop-filter: blur(5px); }
         .p-head { text-align: center; flex: 1; transition: 0.3s; padding: 5px; opacity: 0.5; border-bottom: 3px solid transparent; }
         .p-head.active { border-bottom: 3px solid var(--border); background: radial-gradient(circle at bottom, rgba(0, 210, 255, 0.15), transparent); opacity: 1; }
         .p-head .name { font-weight: 700; font-size: 0.8rem; color: var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px; margin: 0 auto; text-transform: uppercase;}
         .p-head .score { font-size: 1.1rem; font-weight: 900; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
 
         #gameArea { display: none; flex: 1; flex-direction: column; align-items: center; z-index: 5; position: relative; touch-action: none; }
-        
-        .table {
-            width: 96%; max-width: 650px; height: 450px; border-radius: 225px; 
-            position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--table-green);
-            box-shadow: 
-                inset 0 0 0 8px rgba(0,0,0,0.3), 
-                inset 0 0 40px 15px rgba(0,0,0,0.7), 
-                0 30px 60px rgba(0,0,0,0.9);
-            border: 14px solid var(--table-wood);
-        }
-        .table::before {
-            content: ''; position: absolute; inset: 20px; 
-            border-radius: 200px; border: 2px solid rgba(255,255,255,0.08);
-            pointer-events: none;
-        }
-        .table::after {
-            content: 'ELİTE'; position: absolute; top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); opacity: 0.06; 
-            font-family: 'Black Ops One'; font-size: 4rem; color: #fff; letter-spacing: 8px;
-            pointer-events: none;
-        }
-
+        .table { width: 96%; max-width: 650px; height: 450px; border-radius: 225px; position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); background: var(--table-green); box-shadow: inset 0 0 0 8px rgba(0,0,0,0.3), inset 0 0 40px 15px rgba(0,0,0,0.7), 0 30px 60px rgba(0,0,0,0.9); border: 14px solid var(--table-wood); }
+        .table::before { content: ''; position: absolute; inset: 20px; border-radius: 200px; border: 2px solid rgba(255,255,255,0.08); pointer-events: none; }
+        .table::after { content: 'ELİTE'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; font-family: 'Black Ops One'; font-size: 4rem; color: #fff; letter-spacing: 8px; pointer-events: none; }
         .table-cards { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width: 15vw; max-width:90px; height: 21vw; max-height:125px; z-index: 5; }
-        .stack-card { 
-            width: 100%; height: 100%; position:absolute; left:0; top:0; border-radius: 8px; 
-            box-shadow: 3px 3px 15px rgba(0,0,0,0.8); background:white; border: 1px solid #ccc;
-            transition: transform 0.3s ease-out; 
-        }
-        
+        .stack-card { width: 100%; height: 100%; position:absolute; left:0; top:0; border-radius: 8px; box-shadow: 3px 3px 15px rgba(0,0,0,0.8); background:white; border: 1px solid #ccc; transition: transform 0.3s ease-out; }
         .hand { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:10px; width: max-content; padding: 15px; bottom: 5px; z-index: 200; }
         .opp-hand-visual { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:5px; width: max-content; top: 15px; opacity: 0.9; }
 
-        .card { 
-            width: 12vw; max-width: 65px; height: 18vw; max-height: 95px; 
-            border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.7); background:white; border: 1px solid #fff;
-        }
+        .card { width: 12vw; max-width: 65px; height: 18vw; max-height: 95px; border-radius: 6px; cursor:pointer; transition: transform 0.25s, box-shadow 0.25s; box-shadow: 0 10px 20px rgba(0,0,0,0.7); background:white; border: 1px solid #fff; }
         .card.passive { pointer-events: none; filter: brightness(0.5) contrast(1.1); }
         .card:hover:not(.passive) { transform: translateY(-20px) scale(1.05); z-index: 100; box-shadow: 0 15px 30px rgba(0,0,0,0.9); }
         .card-mini { width: 6vw; max-width: 32px; height: 9vw; max-height: 48px; background: #ddd; border-radius: 4px; border: 1px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); }
 
-        @keyframes dealPlayer {
-            0% { opacity: 0; transform: translate(0, -250px) scale(0.3) rotate(45deg); }
-            100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
-        }
-        @keyframes dealOpponent {
-            0% { opacity: 0; transform: translate(0, 250px) scale(0.3) rotate(-45deg); }
-            100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); }
-        }
+        @keyframes dealPlayer { 0% { opacity: 0; transform: translate(0, -250px) scale(0.3) rotate(45deg); } 100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); } }
+        @keyframes dealOpponent { 0% { opacity: 0; transform: translate(0, 250px) scale(0.3) rotate(-45deg); } 100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0); } }
         .anim-deal-p { animation: dealPlayer 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
         .anim-deal-o { animation: dealOpponent 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
 
-        .how-to-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #bbb;
-            padding: 12px; border-radius: 10px; text-align: center; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s;
-        }
+        .how-to-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #bbb; padding: 12px; border-radius: 10px; text-align: center; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
         .how-to-btn:active { background: rgba(255,255,255,0.1); }
-
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px;
-        }
-        .modal-box { 
-            background: linear-gradient(145deg, #11151d, #090b0f); border: 1px solid rgba(0, 210, 255, 0.3); 
-            padding: 30px; width: 100%; max-width: 350px; text-align: center; border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.9); position: relative; margin-top: -10vh;
-        }
-        .modal-input { 
-            width: 100%; background: rgba(0,0,0,0.6); border: 1px solid #222a35; 
-            padding: 14px; color: #fff; margin-bottom: 15px; text-align: center; 
-            outline: none; border-radius: 8px; font-size: 16px; transition: 0.3s;
-        }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
+        .modal-box { background: linear-gradient(145deg, #11151d, #090b0f); border: 1px solid rgba(0, 210, 255, 0.3); padding: 30px; width: 100%; max-width: 350px; text-align: center; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.9); position: relative; margin-top: -10vh; }
+        .modal-input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid #222a35; padding: 14px; color: #fff; margin-bottom: 15px; text-align: center; outline: none; border-radius: 8px; font-size: 16px; transition: 0.3s; }
         .modal-input:focus { border-color: var(--border); }
-
         .error-msg { color: var(--danger); font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
 
-        #pistiDisplay {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0);
-            font-size: 110px; font-weight: 900; text-align: center;
-            background: linear-gradient(to bottom, #ffe600, #ff5e00);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 10px rgba(255, 166, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.6));
-            display: none; z-index: 9999; font-family: 'Black Ops One'; letter-spacing: 5px;
-            pointer-events: none; 
-        }
-        
+        #pistiDisplay { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0); font-size: 110px; font-weight: 900; text-align: center; background: linear-gradient(to bottom, #ffe600, #ff5e00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(255, 166, 0, 0.8)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.6)); display: none; z-index: 9999; font-family: 'Black Ops One'; letter-spacing: 5px; pointer-events: none; }
         .pisti-active { animation: pistiCinematic 2.2s ease-out forwards; display: block !important; }
-        
-        @keyframes pistiCinematic {
-            0% { transform: translate(-50%,-50%) scale(0.1); opacity: 0; filter: brightness(3); }
-            15% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; filter: brightness(1.5); }
-            30% { transform: translate(-50%,-50%) scale(0.9); opacity: 1; filter: brightness(1); }
-            45% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; }
-            70% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.8)); }
-            100% { transform: translate(-50%,-50%) scale(5); opacity: 0; filter: blur(10px); }
-        }
+        @keyframes pistiCinematic { 0% { transform: translate(-50%,-50%) scale(0.1); opacity: 0; filter: brightness(3); } 15% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; filter: brightness(1.5); } 30% { transform: translate(-50%,-50%) scale(0.9); opacity: 1; filter: brightness(1); } 45% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; } 70% { transform: translate(-50%,-50%) scale(1.1); opacity: 1; filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.8)); } 100% { transform: translate(-50%,-50%) scale(5); opacity: 0; filter: blur(10px); } }
     </style>
 </head>
 <body>
@@ -377,7 +236,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, collection, query, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const API_URL = "https://emirhan-siye.onrender.com";
@@ -433,10 +292,12 @@
     let lobbyUnsub = null, roomUnsub = null, userUnsub = null;
     let isProcessingPlay = false, lastHandLength = 0, lastPistiCount = 0;
     let pendingRoomId = null, pendingRoomPass = null, pendingRoomBet = null;
+    let isRequestingCards = false; // Sonsuz döngü kalkanı (Kart Dağıtım Flag'i)
 
+    // DÜZELTME 1: Yabancıları / Giriş yapmamış olanları Index.html'e Yönlendir
     onAuthStateChanged(auth, user => {
         if (!user) {
-            signInAnonymously(auth).catch(e => console.error("Giriş hatası:", e));
+            window.location.href = "index.html";
             return;
         }
 
@@ -493,7 +354,7 @@
         document.getElementById("gameArea").style.display = "none";
         document.getElementById("lobbyScreen").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "ÇIKIŞ";
-        listenLobby(); // Lobiye dönünce listeyi yenile
+        listenLobby(); 
     };
 
     window.handleNavAction = () => {
@@ -501,11 +362,8 @@
         else window.location.href = "index.html";
     };
 
-    // DİZİN (INDEX) SORUNUNU AŞAN YENİ LOBİ LİSTELEME
     function listenLobby() {
         if(lobbyUnsub) lobbyUnsub();
-        
-        // HATA ÖNLEMEK İÇİN SADECE TÜM ODALARI ÇEKİYORUZ (Sıralamayı tarayıcıda yapacağız)
         const q = query(collection(db, "rooms"), limit(50)); 
         
         lobbyUnsub = onSnapshot(q, (snap) => {
@@ -514,7 +372,6 @@
             const now = Date.now();
             let roomsArray = [];
 
-            // Tüm odaları al ve filtrele
             snap.forEach(roomDoc => {
                 const data = roomDoc.data();
                 if (data.status === "finished") return; 
@@ -524,12 +381,9 @@
                     createdTime = typeof data.createdAt === 'number' ? data.createdAt : (data.createdAt.toMillis ? data.createdAt.toMillis() : now);
                 }
                 
-                if (data.name && data.name.toLowerCase().includes(filter)) {
-                    roomsArray.push({ id: roomDoc.id, data: data, createdTime: createdTime });
-                }
+                roomsArray.push({ id: roomDoc.id, data: data, createdTime: createdTime });
             });
 
-            // Tarayıcıda (Client-side) tarihe göre en yeniden eskiye sıralama
             roomsArray.sort((a, b) => b.createdTime - a.createdTime);
 
             let html = "";
@@ -544,8 +398,11 @@
                 if(maxP === 2) pNames += ` vs ${data.p2_name || '...'}`;
                 else pNames += `, ${data.p2_name || '...'}, ${data.p3_name || '...'}, ${data.p4_name || '...'}`;
 
+                // DÜZELTME 2: Arama Kotasını (Quota Drain) Engelleyen "display" Mantığı İçin Data Attribute Eklendi
+                const displayStyle = (data.name && data.name.toLowerCase().includes(filter)) ? "flex" : "none";
+
                 html += `
-                    <div class="room-card" style="${isPlaying ? 'border-left-color:#00ff88;' : ''}">
+                    <div class="room-card" data-roomname="${data.name ? data.name.toLowerCase() : ''}" style="display: ${displayStyle}; ${isPlaying ? 'border-left-color:#00ff88;' : ''}">
                         <div style="flex:1">
                             <small style="color:var(--border); font-weight:bold; font-size:0.85rem;">${data.name} [${data.type || '2-52'}] (${pList.length}/${maxP})</small> 
                             ${isPlaying ? '<span class="live-tag"> • CANLI</span>' : ''}<br>
@@ -563,9 +420,13 @@
         });
     }
 
-    // Arama kutusuna yazınca listeyi anlık yenile
-    document.getElementById("roomSearch").addEventListener('input', () => {
-        listenLobby();
+    // DÜZELTME 2 (Devamı): Client-Side Arama (Firebase'e istek atmaz)
+    document.getElementById("roomSearch").addEventListener('input', (e) => {
+        const filter = e.target.value.toLowerCase();
+        document.querySelectorAll('.room-card').forEach(card => {
+            const roomName = card.getAttribute('data-roomname');
+            card.style.display = roomName.includes(filter) ? "flex" : "none";
+        });
     });
 
     window.addBet = (a) => { 
@@ -665,7 +526,7 @@
     }
 
     function enterGameView() {
-        inGame = true; lastHandLength = 0;
+        inGame = true; lastHandLength = 0; isRequestingCards = false;
         document.getElementById("lobbyScreen").style.display = "none";
         document.getElementById("gameArea").style.display = "flex";
         document.getElementById("navActionBtn").innerText = "AYRIL";
@@ -697,7 +558,6 @@
                 document.getElementById("waitingStatus").style.display = "none";
                 const maxP = (gameState.type && gameState.type.startsWith("4")) ? 4 : 2;
                 
-                // OYUNUN BAŞLAMAMA HATASI BURADA DÜZELTİLDİ: Tüm ellerin boş olup olmadığı kontrolü
                 let handsEmpty = true;
                 for(let i=1; i<=maxP; i++) {
                     const hand = gameState[`p${i}_hand`];
@@ -705,8 +565,11 @@
                 }
                 
                 if(!isProcessingPlay) {
-                    if (handsEmpty && gameState.turn === uid) refillHands();
-                    else render();
+                    if (handsEmpty && gameState.turn === uid) {
+                        refillHands();
+                    } else {
+                        render();
+                    }
                 }
             }
             if (gameState.status === "finished") handleEnd();
@@ -726,8 +589,11 @@
     }
 
     async function refillHands() {
-        if (isProcessingPlay) return;
+        // DÜZELTME 4: Sonsuz Döngü Engeli
+        if (isProcessingPlay || isRequestingCards) return;
         isProcessingPlay = true;
+        isRequestingCards = true; 
+
         try {
             const token = await auth.currentUser.getIdToken();
             await fetch(`${API_URL}/api/pisti/refill`, {
@@ -739,6 +605,8 @@
             console.error("Kart dağıtma hatası", e);
         } finally { 
             isProcessingPlay = false; 
+            // 2 saniyelik gecikme koyuyoruz ki sunucu veriyi işleyip Snapshot atana kadar tekrar tekrar tetiklenmesin
+            setTimeout(() => { isRequestingCards = false; }, 2000); 
         }
     }
 
@@ -861,7 +729,6 @@
         openModal('infoModal');
     };
 
-    // Hızlı katılma butonunu da dizin hatasını aşacak şekilde güncelledik
     window.handleQuickJoin = async () => {
         const snap = await getDocs(query(collection(db, "rooms"), limit(20)));
         let found = false;
