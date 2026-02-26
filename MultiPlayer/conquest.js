@@ -6,6 +6,8 @@ import {
   collection,
   query,
   where,
+  orderBy,
+  limit,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth,
@@ -85,6 +87,10 @@ const unlockAudio = () => {
 document.body.addEventListener("touchstart", unlockAudio, { once: true });
 document.body.addEventListener("click", unlockAudio, { once: true });
 
+// ✅ Double-tap zoom kesin engel (JS tarafı)
+document.addEventListener("dblclick", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+
 // -------------------- UI helpers --------------------
 const toggleModal = (id, show) => {
   const el = document.getElementById(id);
@@ -102,6 +108,24 @@ const showModalAlert = (title, msg, onConfirm) => {
   toggleModal("alertModal", true);
 };
 
+// ✅ Header üst bar isimleri
+function setTopNames(p1, p2, show) {
+  const topNames = document.getElementById("topNames");
+  const topP1 = document.getElementById("topP1");
+  const topP2 = document.getElementById("topP2");
+  if (!topNames || !topP1 || !topP2) return;
+
+  if (show) {
+    topP1.textContent = p1 || "-";
+    topP2.textContent = p2 || "-";
+    topNames.style.display = "flex";
+    topNames.setAttribute("aria-hidden", "false");
+  } else {
+    topNames.style.display = "none";
+    topNames.setAttribute("aria-hidden", "true");
+  }
+}
+
 // -------------------- State --------------------
 let uid = null;
 let curRoomId = null;
@@ -118,7 +142,7 @@ let timerUiInt = null;
 let currentScene = "lobby";
 let lightningTimer = null;
 
-// -------------------- Background Canvas (senin tasarımın aynen) --------------------
+// -------------------- Background Canvas --------------------
 const canvas = document.getElementById("bg-canvas");
 const ctx = canvas.getContext("2d");
 let lobbyParticles = [],
@@ -201,8 +225,6 @@ drawBg();
 // -------------------- Auth boot --------------------
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    // “atıyor / oynanmıyor” problemini bitiren kritik adım:
-    // auth yoksa anon aç → rules okunsun → lobby/game çalışsın
     try { await signInAnonymously(auth); } catch {}
     return;
   }
@@ -220,7 +242,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("createRoomBtn").disabled = false;
   document.getElementById("quickJoinBtn").disabled = false;
 
-  // Resume: kullanıcı oyundayken sayfa yenilense bile lobiye atmaz
+  // Resume
   try {
     const r = await fetchAPI("/api/conquest/myroom", "GET");
     if (r.ok && r.roomId) {
@@ -234,29 +256,36 @@ onAuthStateChanged(auth, async (user) => {
   listenLobby();
 });
 
-// -------------------- Lobby --------------------
+// -------------------- Lobby (CANLI) --------------------
 function listenLobby() {
   if (unsubLobby) unsubLobby();
 
+  // ✅ waiting + playing odaları kesin görünsün (AÇIK / DOLU)
+  // orderBy ile daha stabil liste (en yeni üstte) — tek alan, pratikte sorun çıkarmaz
   const q = query(
     collection(db, "conquest_rooms"),
-    where("status", "in", ["waiting", "playing"])
+    where("status", "in", ["waiting", "playing"]),
+    orderBy("createdAtMs", "desc"),
+    limit(100)
   );
 
   unsubLobby = onSnapshot(
     q,
+    { includeMetadataChanges: true },
     (snap) => {
       const list = document.getElementById("roomList");
       list.innerHTML = "";
       let count = 0;
-
       const now = Date.now();
 
       snap.forEach((d) => {
         const r = d.data();
         if (!r) return;
 
-        // waiting TTL (stale oda göstermesin)
+        // ✅ finished zaten query’ye gelmez, ama cache garipliği olursa yine de filtrele
+        if (r.status === "finished") return;
+
+        // waiting TTL (client-side filtre: server da temizleyecek)
         if (r.status === "waiting") {
           const age = now - (Number(r.createdAtMs) || 0);
           if (age > 70000) return;
@@ -266,35 +295,65 @@ function listenLobby() {
         const p1n = r.p1Name || "PİLOT";
         const p2n = r.p2Name || "BEKLENİYOR...";
 
+        const s1 = Number.isFinite(Number(r.score1)) ? Number(r.score1) : 0;
+        const s2 = Number.isFinite(Number(r.score2)) ? Number(r.score2) : 0;
+
+        // ---- CARD ----
+        const card = document.createElement("div");
+        card.className = "room-card";
+
+        const info = document.createElement("div");
+        info.className = "room-info";
+
+        const title = document.createElement("div");
+        title.className = "room-title";
+
+        const badge = document.createElement("div");
+        badge.className = "room-badge " + (r.status === "waiting" ? "open" : "full");
+        badge.textContent = (r.status === "waiting" ? "AÇIK" : "DOLU");
+
         if (r.status === "waiting") {
-          count++;
-
-          const card = document.createElement("div");
-          card.className = "room-card";
-
-          const info = document.createElement("div");
-          info.className = "room-info";
-
-          const title = document.createElement("div");
-          title.className = "room-title";
           title.textContent = `BÖLGE: ${d.id} ${r.isPrivate ? "🔒" : "🔓"} ${iAmInThis ? "• SENİN" : ""}`;
+        } else {
+          title.textContent = `BÖLGE: ${d.id} ⚔️ ${iAmInThis ? "• SENİN" : ""}`;
+        }
 
-          const players = document.createElement("div");
-          players.className = "room-players";
-          players.innerHTML = `<span style="color:var(--p1)">${p1n}</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">BEKLENİYOR...</span>`;
+        const players = document.createElement("div");
+        players.className = "room-players";
 
-          const time = document.createElement("div");
-          time.className = "room-time";
+        // ✅ (4) Lobby’de isim + skor bilgisi (waiting’de de 0-0 göster)
+        if (r.status === "waiting") {
+          players.innerHTML =
+            `<span style="color:var(--p1)">${p1n} (${s1})</span>
+             <span style="color:#555">vs</span>
+             <span style="color:var(--p2)">BEKLENİYOR... (${s2})</span>`;
+        } else {
+          players.innerHTML =
+            `<span style="color:var(--p1)">${p1n} (${s1})</span>
+             <span style="color:#555">vs</span>
+             <span style="color:var(--p2)">${p2n} (${s2})</span>`;
+        }
+
+        const time = document.createElement("div");
+        time.className = "room-time";
+
+        if (r.status === "waiting") {
           const sec = Math.max(0, Math.floor((now - (Number(r.createdAtMs) || now)) / 1000));
           time.textContent = sec < 5 ? "Az önce" : `${sec}s önce`;
+        } else {
+          time.style.color = "var(--warning)";
+          const left = Math.max(0, Math.ceil(((Number(r.endTimeMs) || 0) - now) / 1000));
+          time.textContent = `⏳ ${left}s`;
+        }
 
-          info.append(title, players, time);
+        info.append(title, badge, players, time);
 
-          const act = document.createElement("div");
-          act.className = "room-action";
+        const act = document.createElement("div");
+        act.className = "room-action";
 
-          const btn = document.createElement("button");
-          btn.className = "btn-neon btn-sec";
+        const btn = document.createElement("button");
+        btn.className = "btn-neon " + (r.status === "waiting" ? "btn-sec" : "");
+        if (r.status === "waiting") {
           btn.textContent = iAmInThis ? "DEVAM ET" : "GİRİŞ YAP";
           btn.addEventListener("click", () => {
             if (iAmInThis) {
@@ -304,44 +363,7 @@ function listenLobby() {
             }
             joinHandler(d.id, !!r.isPrivate);
           });
-
-          act.appendChild(btn);
-          card.append(info, act);
-          list.appendChild(card);
-        }
-
-        if (r.status === "playing") {
-          count++;
-
-          const card = document.createElement("div");
-          card.className = "room-card";
-
-          const info = document.createElement("div");
-          info.className = "room-info";
-
-          const title = document.createElement("div");
-          title.className = "room-title";
-          title.textContent = `BÖLGE: ${d.id} ⚔️ ${iAmInThis ? "• SENİN" : ""}`;
-
-          const players = document.createElement("div");
-          players.className = "room-players";
-          const s1 = Number.isFinite(Number(r.score1)) ? r.score1 : 0;
-          const s2 = Number.isFinite(Number(r.score2)) ? r.score2 : 0;
-          players.innerHTML = `<span style="color:var(--p1)">${p1n} (${s1})</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">${p2n} (${s2})</span>`;
-
-          const time = document.createElement("div");
-          time.className = "room-time";
-          time.style.color = "var(--warning)";
-          const left = Math.max(0, Math.ceil(((Number(r.endTimeMs) || 0) - now) / 1000));
-          time.textContent = `⏳ ${left}s`;
-
-          info.append(title, players, time);
-
-          const act = document.createElement("div");
-          act.className = "room-action";
-
-          const btn = document.createElement("button");
-          btn.className = "btn-neon";
+        } else {
           btn.textContent = iAmInThis ? "DEVAM ET" : "MEŞGUL";
           btn.disabled = !iAmInThis;
           if (!iAmInThis) {
@@ -353,17 +375,20 @@ function listenLobby() {
             curRoomId = d.id;
             enterGame(curRoomId, true);
           });
-
-          act.appendChild(btn);
-          card.append(info, act);
-          list.appendChild(card);
         }
+
+        act.appendChild(btn);
+        card.append(info, act);
+        list.appendChild(card);
+
+        count++;
       });
 
       document.getElementById("emptyLobbyMsg").style.display = count === 0 ? "block" : "none";
     },
     (err) => {
       console.error("Lobby snapshot error", err);
+      showModalAlert("HATA", "Lobby canlı bağlantı hatası. CSP/Network kontrol et.");
     }
   );
 }
@@ -502,6 +527,9 @@ function enterGame(id) {
   document.getElementById("lobby").style.display = "none";
   document.getElementById("game-view").style.display = "flex";
 
+  // ✅ üst bar isimleri aç
+  setTopNames("-", "-", true);
+
   isFin = false;
   canPlay = false;
 
@@ -513,7 +541,6 @@ function enterGame(id) {
     c.className = "cell";
     c.setAttribute("role", "button");
 
-    // zoom/scroll engelle (tasarıma dokunmadan)
     c.addEventListener(
       "pointerdown",
       (e) => {
@@ -531,14 +558,12 @@ function enterGame(id) {
     g.appendChild(c);
   }
 
-  // snapshot
   const ref = doc(db, "conquest_rooms", id);
 
   unsubGame = onSnapshot(
     ref,
     { includeMetadataChanges: true },
     (snap) => {
-      // cache'den "yok" gelirse anında atma (iOS'ta en büyük atma sebebi)
       if (!snap.exists()) {
         if (snap.metadata.fromCache) return;
         showModalAlert("HATA", "Oda bulunamadı / kapandı.", () => leaveToLobby(false));
@@ -547,7 +572,6 @@ function enterGame(id) {
 
       const d = snap.data();
 
-      // role'ü server doc'tan doğrula (yanlış role = oynanmıyor)
       if (d.p1 === uid) myRole = "p1";
       else if (d.p2 === uid) myRole = "p2";
       else {
@@ -555,23 +579,26 @@ function enterGame(id) {
         return;
       }
 
-      document.getElementById("n1").textContent = d.p1Name || "PİLOT";
-      document.getElementById("n2").textContent = d.p2Name || "BEKLENİYOR...";
+      const p1Name = d.p1Name || "PİLOT";
+      const p2Name = d.p2Name || "BEKLENİYOR...";
 
-      // skor server’dan
+      document.getElementById("n1").textContent = p1Name;
+      document.getElementById("n2").textContent = p2Name;
+
+      // ✅ Üst barda isimler
+      setTopNames(p1Name, p2Name, true);
+
       const s1 = Number.isFinite(Number(d.score1)) ? d.score1 : 0;
       const s2 = Number.isFinite(Number(d.score2)) ? d.score2 : 0;
       document.getElementById("s1").textContent = s1;
       document.getElementById("s2").textContent = s2;
 
-      // hücreler
       const cells = d.cells || {};
       document.querySelectorAll(".cell").forEach((cell, i) => {
         const v = cells[i];
         cell.className = v ? `cell ${v}` : "cell";
       });
 
-      // oyun durumu
       if (d.status === "playing") {
         canPlay = true;
         startHeartbeat(id);
@@ -579,7 +606,6 @@ function enterGame(id) {
       }
 
       if (d.status === "terminated" && !isFin) {
-        // Otomatik “lobiye atma” yok. Kullanıcı karar verir.
         isFin = true;
         canPlay = false;
         stopHeartbeat();
@@ -614,7 +640,6 @@ function enterGame(id) {
 
 // -------------------- Leave / Back to Lobby --------------------
 async function leaveToLobby(callServerLeave) {
-  // cleanup locals
   if (unsubGame) unsubGame();
   unsubGame = null;
 
@@ -625,7 +650,6 @@ async function leaveToLobby(callServerLeave) {
   lightningTimer = null;
   lightningFlash = 0;
 
-  // server leave sadece butonla (callServerLeave=true)
   if (callServerLeave && curRoomId) {
     fetchAPI("/api/conquest/leave", "POST", { roomId: curRoomId }).catch(() => {});
   }
@@ -636,6 +660,9 @@ async function leaveToLobby(callServerLeave) {
   canPlay = false;
 
   currentScene = "lobby";
+
+  // ✅ üst bar isimleri kapat
+  setTopNames("-", "-", false);
 
   sfx.rain.pause();
   sfx.thunder.pause();
@@ -652,5 +679,4 @@ async function leaveToLobby(callServerLeave) {
   listenLobby();
 }
 
-// ❌ ÖNEMLİ: pagehide/beforeunload ile leave yok!
-// Bu “oyundan lobiye atıyor” probleminin #1 sebebiydi.
+// ❌ pagehide/beforeunload leave yok (atıyor sorununu önler)
