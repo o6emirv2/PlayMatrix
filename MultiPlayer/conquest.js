@@ -98,13 +98,14 @@ onAuthStateChanged(auth, async user => {
     if(!user) { window.location.href = '/'; return; }
     uid = user.uid;
     const res = await fetchAPI('/api/me');
-    document.getElementById('meName').textContent = res?.user?.username || "PİLOT";
+    // İsim Garantileme Yöntemi
+    document.getElementById('meName').textContent = res?.user?.username || res?.user?.fullName || "PİLOT";
     document.getElementById('createRoomBtn').disabled = false;
     document.getElementById('quickJoinBtn').disabled = false;
     listenLobby();
 });
 
-// ZERO-TRUST LOBİ SİSTEMİ (Tek veritabanı, isim bug'ı çözüldü)
+// ZERO-TRUST LOBİ SİSTEMİ 
 function listenLobby() {
     if(unsubLobby) unsubLobby();
     const q = query(collection(db, "conquest_rooms"), where("status", "in", ["waiting", "playing"]));
@@ -139,7 +140,6 @@ function listenLobby() {
                 } else if(r.status === 'playing') {
                     count++;
                     
-                    // Lobide Canlı Skor Hesaplama
                     let s1 = 0, s2 = 0;
                     if(r.cells) {
                         for(let i=0; i<36; i++) { if(r.cells[i] === 'p1') s1++; else if(r.cells[i] === 'p2') s2++; }
@@ -234,9 +234,8 @@ function enterGame(id) {
     for(let i=0; i<36; i++) {
         const c = document.createElement('div'); c.className = 'cell'; c.setAttribute('role', 'button');
         
-        // Hızlı Tıklama Sorunu Tamamen Giderildi (Direct Update Mimarisi)
         c.addEventListener('pointerdown', (e) => {
-            e.preventDefault(); // Mobildeki zoom/kaydırmayı engeller
+            e.preventDefault();
             if(canPlay && !isFin && c.className !== `cell ${myRole}`) {
                 c.className = `cell ${myRole}`; 
                 sfx.tap.currentTime = 0; if(audioUnlocked) sfx.tap.play().catch(()=>{});
@@ -248,31 +247,39 @@ function enterGame(id) {
 
     unsubGame = onSnapshot(doc(db, "conquest_rooms", id), snap => {
         try {
-            if(!snap.exists()) { if(!isFin) leaveToLobby(); return; }
+            // Oda bittiğinde veya silindiğinde istemciyi kendi kendine atmasını engelledik
+            if(!snap.exists()) { 
+                if(!isFin && currentScene === 'game') leaveToLobby(); 
+                return; 
+            }
             const d = snap.data();
             
-            if(d.status === 'terminated' && !isFin) { isFin = true; showModalAlert("BAĞLANTI KOPTU", "Rakip kaçtı!", leaveToLobby); return; }
+            // Eğer oyun oynanırken biri çıkarsa sunucu 'terminated' yapar
+            if(d.status === 'terminated' && !isFin) { 
+                isFin = true; 
+                let msg = d.winner === uid ? "Rakip kaçtı, SAVAŞI KAZANDIN!" : "Oyun koptu!";
+                showModalAlert("SAVAŞ SONA ERDİ", msg, leaveToLobby); 
+                return; 
+            }
 
             document.getElementById('n1').textContent = d.p1Name || "PİLOT";
             document.getElementById('n2').textContent = d.p2Name || "BEKLENİYOR...";
 
             if(d.status === 'playing') canPlay = true;
 
-            // Güvenli Senkronize Süre Tutucu
-            if(d.status === 'playing' && !timerInt && !isFin) {
-                let localTime = 60;
-                document.getElementById('timer-display').textContent = localTime;
-                timerInt = setInterval(() => {
-                    localTime--;
-                    if(localTime <= 0) {
-                        localTime = 0;
-                        document.getElementById('timer-display').textContent = localTime;
-                        clearInterval(timerInt); timerInt = null;
-                        if(myRole === 'p1') fetchAPI('/api/conquest/settle', 'POST', { roomId: id }).catch(()=>{});
-                    } else {
-                        document.getElementById('timer-display').textContent = localTime;
-                    }
-                }, 1000);
+            // Sadece görsel geri sayım, işlemi sunucu yapacak
+            if(d.status === 'playing' && d.endTimeMs && !isFin) {
+                if(!timerInt) {
+                    timerInt = setInterval(() => {
+                        let left = Math.ceil((d.endTimeMs - Date.now()) / 1000);
+                        if(left <= 0) { 
+                            left = 0; 
+                            clearInterval(timerInt); timerInt = null; 
+                            canPlay = false; // Tıklamalar kapanır, sunucunun karar vermesi beklenir
+                        }
+                        document.getElementById('timer-display').textContent = left;
+                    }, 500); 
+                }
             }
 
             let s1=0, s2=0;
@@ -283,8 +290,11 @@ function enterGame(id) {
             });
             document.getElementById('s1').textContent = s1; document.getElementById('s2').textContent = s2;
 
-            if(d.status === 'finished' && !isFin) finish(id, s1, s2, d.winner);
-        } catch(e) { console.error("Sync Er", e); }
+            // Sunucu oyunu bitirdiyse sonuç ekranını göster
+            if(d.status === 'finished' && !isFin) {
+                finish(id, s1, s2, d.winner);
+            }
+        } catch(e) { console.error("Sync Hatası", e); }
     });
 }
 
@@ -302,7 +312,7 @@ function finish(id, s1, s2, winner) {
 async function leaveToLobby() {
     if (curRoomId) {
         if (unsubGame) unsubGame(); if (timerInt) { clearInterval(timerInt); timerInt = null; } if (lightningTimer) clearTimeout(lightningTimer);
-        try { fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }); } catch (e) {} // Bekleme yapmadan çık (Daha hızlı)
+        try { fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }); } catch (e) {} 
     }
     curRoomId = null; isFin = false; canPlay = false; myRole = null; currentScene = 'lobby'; lightningFlash = 0;
     sfx.rain.pause(); sfx.thunder.pause(); if (audioUnlocked) { sfx.lobby.currentTime = 0; sfx.lobby.play().catch(()=>{}); }
@@ -311,7 +321,7 @@ async function leaveToLobby() {
     listenLobby(); 
 }
 
-// Sekme Kapatıldığında Gizlice Sil
+// Oyundan acil çıkışlar için bağlantı kopma tespiti
 window.addEventListener("pagehide", () => {
     if (curRoomId && !isFin && auth.currentUser) {
         fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }).catch(()=>{});
