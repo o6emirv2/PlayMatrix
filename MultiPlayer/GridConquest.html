@@ -22,7 +22,7 @@
             --btn-main: #ffcc00; --btn-sec: #00f2ff;
         }
 
-        /* EKRAN KAYMASI VE ZOOM KESİN ENGELLEME */
+        /* EKRAN KAYMASI, ZOOM VE SEÇİM KESİN ENGELLEME */
         html, body { 
             background: var(--bg); color: #e0e0e0; 
             width: 100vw; height: 100vh; overflow: hidden; 
@@ -38,21 +38,23 @@
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
         #bg-canvas { position: fixed; inset: 0; z-index: -1; background: #000; pointer-events: none; }
 
-        .header { height: 70px; flex-shrink: 0; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.95); border-bottom: 2px solid var(--border); z-index: 1000; touch-action: none; }
-        .logo { font-family: 'Black Ops One'; font-size: 1.2rem; color: var(--border); letter-spacing: 2px; }
-        .user-badge { font-weight: 700; color: var(--p2); font-size: 0.8rem; border-left: 2px solid var(--p2); padding-left: 8px; }
+        /* ÜST BAR TAŞMA KORUMASI */
+        .header { height: 70px; flex-shrink: 0; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.95); border-bottom: 2px solid var(--border); z-index: 1000; touch-action: none; gap: 10px; }
+        .logo { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; flex: 1; }
+        .user-badge { font-weight: 700; color: var(--p2); font-size: 0.8rem; border-left: 2px solid var(--p2); padding-left: 8px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+        #btnExit { flex-shrink: 0; background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); cursor:pointer; touch-action: manipulation; }
 
         #lobby { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; touch-action: pan-y; overscroll-behavior: contain; }
-        .search-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,204,0,0.3); padding: 12px 15px; color: #fff; border-radius: 4px; outline: none; margin-bottom: 5px; }
+        .search-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,204,0,0.3); padding: 12px 15px; color: #fff; border-radius: 4px; outline: none; margin-bottom: 5px; flex-shrink: 0; }
         
-        .btn-neon { background: var(--btn-main); color: #000; border: none; padding: 15px; font-family: 'Black Ops One'; font-size: 0.85rem; cursor: pointer; clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%); transition: 0.3s; touch-action: manipulation; }
+        .btn-neon { background: var(--btn-main); color: #000; border: none; padding: 15px; font-family: 'Black Ops One'; font-size: 0.85rem; cursor: pointer; clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%); transition: 0.3s; touch-action: manipulation; flex-shrink: 0; }
         .btn-neon:disabled { opacity: 0.3; cursor: not-allowed; }
         .btn-sec { background: var(--btn-sec); }
 
         .room-card { background: var(--glass); border: 1px solid rgba(255, 204, 0, 0.2); border-left: 5px solid var(--border); padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
-        .room-info { display: flex; flex-direction: column; gap: 4px; text-align: left; }
-        .room-title { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; }
-        .room-players { font-size: 0.95rem; font-weight: 700; color: #fff; display:flex; align-items: center; gap: 5px;}
+        .room-info { display: flex; flex-direction: column; gap: 4px; text-align: left; overflow: hidden; }
+        .room-title { font-family: 'Black Ops One'; font-size: 1.1rem; color: var(--border); letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .room-players { font-size: 0.95rem; font-weight: 700; color: #fff; display:flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .room-time { font-size: 0.75rem; color: #888; font-weight: 700; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; display: inline-block; width: fit-content;}
         .room-action .btn-neon { padding: 12px 18px; font-size: 0.75rem; border-radius: 0; }
 
@@ -60,15 +62,22 @@
 
         .how-to-btn { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: var(--border); color: #000; border-radius: 30px; font-weight: 900; font-size: 0.8rem; cursor: pointer; z-index: 100; box-shadow: 0 0 20px rgba(255,204,0,0.3); border: none; font-family: 'Black Ops One'; touch-action: manipulation; }
 
-        #game-view { display: none; flex: 1; flex-direction: column; z-index: 10; touch-action: none; }
-        .game-hud { height: 90px; flex-shrink: 0; display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.8); touch-action: none; }
-        .score-num { font-family: 'Black Ops One'; font-size: 2.2rem; }
-        #timer-display { font-family: 'Black Ops One'; font-size: 1.5rem; color: var(--warning); border: 2px solid var(--warning); border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; }
+        #game-view { display: none; flex: 1; flex-direction: column; z-index: 10; touch-action: none; position: relative; }
+        
+        /* OYUN ÜST BAR TAŞMA KORUMASI */
+        .game-hud { height: 90px; flex-shrink: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; background: rgba(0,0,0,0.8); touch-action: none; padding: 0 10px; }
+        .player-hud { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
+        .player-name { font-weight: bold; font-size: 0.9rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: center; }
+        .score-num { font-family: 'Black Ops One'; font-size: 2.2rem; line-height: 1; }
+        #timer-display { font-family: 'Black Ops One'; font-size: 1.5rem; color: var(--warning); border: 2px solid var(--warning); border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 0 auto; }
 
-        .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 95vw; max-width: 400px; margin: auto; padding: 10px; touch-action: none; }
-        .cell { aspect-ratio: 1/1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: 0.1s; cursor: pointer; touch-action: none; pointer-events: auto; }
+        .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 95vw; max-width: 400px; margin: auto; padding: 10px; touch-action: none; position: relative; }
+        .cell { aspect-ratio: 1/1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: background 0.1s, box-shadow 0.1s; cursor: pointer; touch-action: none; pointer-events: auto; }
         .cell.p1 { background: var(--p1); box-shadow: 0 0 15px var(--p1); border-color: var(--p1); }
         .cell.p2 { background: var(--p2); box-shadow: 0 0 15px var(--p2); border-color: var(--p2); }
+
+        /* Oyun Başlamadan Önce Grid Kilidi */
+        #gameOverlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); z-index: 50; display: flex; align-items: center; justify-content: center; font-family: 'Black Ops One'; font-size: 1.5rem; color: var(--border); text-align: center; text-shadow: 0 0 20px var(--border); pointer-events: all; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px); display: none; align-items: center; justify-content: center; z-index: 9000; padding: 20px; touch-action: none; }
         .modal-box { background: #0d1117; border: 2px solid var(--border); padding: 30px; width: 100%; max-width: 360px; text-align: center; position: relative; box-shadow: 0 0 50px rgba(255,204,0,0.1); }
@@ -82,8 +91,6 @@
         .lose-text { color: var(--danger); text-shadow: 0 0 20px var(--danger); }
         .final-score { font-size: 2.5rem; margin: 20px 0; display: flex; justify-content: center; gap: 20px; align-items: center; }
         .score-box { background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
-        
-        #btnExit { background:var(--danger); border:none; color:white; padding:8px 12px; font-weight:900; font-size:0.7rem; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); cursor:pointer; touch-action: manipulation;}
     </style>
 
     <script>
@@ -117,17 +124,21 @@
 
     <div id="game-view" aria-label="Savaş Arenası">
         <div class="game-hud">
-            <div style="color:var(--p1); text-align:center;">
-                <small id="n1" style="font-weight:bold; font-size:1rem; text-transform:uppercase;">-</small>
-                <div class="score-num" id="s1" aria-label="1. Oyuncu Skoru">0</div>
+            <div class="player-hud" style="color:var(--p1);">
+                <div class="player-name" id="n1">-</div>
+                <div class="score-num" id="s1">0</div>
             </div>
             <div id="timer-display" aria-live="polite" aria-label="Kalan Süre">60</div>
-            <div style="color:var(--p2); text-align:center;">
-                <small id="n2" style="font-weight:bold; font-size:1rem; text-transform:uppercase;">-</small>
-                <div class="score-num" id="s2" aria-label="2. Oyuncu Skoru">0</div>
+            <div class="player-hud" style="color:var(--p2);">
+                <div class="player-name" id="n2">-</div>
+                <div class="score-num" id="s2">0</div>
             </div>
         </div>
-        <div class="grid" id="grid" role="grid" aria-label="Ele Geçirilecek Alanlar"></div>
+        
+        <div style="position: relative; margin: auto;">
+            <div id="gameOverlay">RAKİP BEKLENİYOR...</div>
+            <div class="grid" id="grid" role="grid" aria-label="Ele Geçirilecek Alanlar"></div>
+        </div>
     </div>
 
     <div id="roomTypeModal" class="modal" aria-hidden="true"><div class="modal-box"><h3>ARENA TİPİ</h3><button class="btn-neon" id="btnPublicArena" style="width:100%; margin-bottom:12px;">AÇIK ARENA</button><button class="btn-neon btn-sec" id="btnPrivateArena" style="width:100%">KİLİTLİ ARENA</button><p id="btnCancelType" style="margin-top:20px; cursor:pointer; color:#666;">İPTAL</p></div></div>
