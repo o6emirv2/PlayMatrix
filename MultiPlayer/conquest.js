@@ -6,8 +6,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  limit,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getAuth,
@@ -76,10 +74,12 @@ let audioUnlocked = false;
 const unlockAudio = () => {
   if (audioUnlocked) return;
   Object.values(sfx).forEach((a) => {
-    a.play().then(() => {
-      a.pause();
-      a.currentTime = 0;
-    }).catch(() => {});
+    a.play()
+      .then(() => {
+        a.pause();
+        a.currentTime = 0;
+      })
+      .catch(() => {});
   });
   audioUnlocked = true;
   if (currentScene === "lobby") sfx.lobby.play().catch(() => {});
@@ -87,7 +87,7 @@ const unlockAudio = () => {
 document.body.addEventListener("touchstart", unlockAudio, { once: true });
 document.body.addEventListener("click", unlockAudio, { once: true });
 
-// ✅ Double-tap zoom kesin engel (JS tarafı)
+// ✅ Double-tap zoom kesin engel (JS)
 document.addEventListener("dblclick", (e) => e.preventDefault(), { passive: false });
 document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
 
@@ -108,7 +108,7 @@ const showModalAlert = (title, msg, onConfirm) => {
   toggleModal("alertModal", true);
 };
 
-// ✅ Header üst bar isimleri
+// ✅ Üst bar isimleri (oyun içinde)
 function setTopNames(p1, p2, show) {
   const topNames = document.getElementById("topNames");
   const topP1 = document.getElementById("topP1");
@@ -225,7 +225,9 @@ drawBg();
 // -------------------- Auth boot --------------------
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    try { await signInAnonymously(auth); } catch {}
+    try {
+      await signInAnonymously(auth);
+    } catch {}
     return;
   }
 
@@ -234,7 +236,8 @@ onAuthStateChanged(auth, async (user) => {
   // Kullanıcı adı
   try {
     const me = await fetchAPI("/api/me");
-    document.getElementById("meName").textContent = me?.user?.username || `PILOT_${uid.slice(0, 4).toUpperCase()}`;
+    document.getElementById("meName").textContent =
+      me?.user?.username || `PILOT_${uid.slice(0, 4).toUpperCase()}`;
   } catch {
     document.getElementById("meName").textContent = `PILOT_${uid.slice(0, 4).toUpperCase()}`;
   }
@@ -242,7 +245,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("createRoomBtn").disabled = false;
   document.getElementById("quickJoinBtn").disabled = false;
 
-  // Resume
+  // ✅ Resume: aktif odası varsa oyuna geri dön
   try {
     const r = await fetchAPI("/api/conquest/myroom", "GET");
     if (r.ok && r.roomId) {
@@ -253,28 +256,22 @@ onAuthStateChanged(auth, async (user) => {
     }
   } catch {}
 
-  unsubLobby = onSnapshot(
-  q,
-  (snap) => {
-    // ... senin lobby render kodun
-  },
-  (err) => {
-    console.error("Lobby snapshot error", err);
-    const msg = err?.code ? `${err.code}: ${err.message}` : (err?.message || "Bilinmeyen hata");
-    showModalAlert("HATA", "Lobby canlı bağlantı hatası:\n" + msg);
-  }
-);
+  // ✅ Resume yoksa lobby’yi başlat
+  listenLobby();
+
+  if (audioUnlocked) sfx.lobby.play().catch(() => {});
+});
 
 // -------------------- Lobby (CANLI) --------------------
 function listenLobby() {
   if (unsubLobby) unsubLobby();
 
   // ✅ waiting + playing odaları kesin görünsün (AÇIK / DOLU)
-  // orderBy ile daha stabil liste (en yeni üstte) — tek alan, pratikte sorun çıkarmaz
+  // ❌ orderBy eklemiyoruz (index istemesin, hata çıkarmasın)
   const q = query(
-  collection(db, "conquest_rooms"),
-  where("status", "in", ["waiting", "playing"])
-);
+    collection(db, "conquest_rooms"),
+    where("status", "in", ["waiting", "playing"])
+  );
 
   unsubLobby = onSnapshot(
     q,
@@ -289,16 +286,17 @@ function listenLobby() {
         const r = d.data();
         if (!r) return;
 
-        // ✅ finished zaten query’ye gelmez, ama cache garipliği olursa yine de filtrele
+        // güvenlik: cache bug'ında biterse yine filtrele
         if (r.status === "finished") return;
 
-        // waiting TTL (client-side filtre: server da temizleyecek)
+        // ✅ waiting TTL client-side filtre (server-side cleanup ayrıca var)
         if (r.status === "waiting") {
           const age = now - (Number(r.createdAtMs) || 0);
           if (age > 70000) return;
         }
 
         const iAmInThis = (r.p1 === uid) || (r.p2 === uid);
+
         const p1n = r.p1Name || "PİLOT";
         const p2n = r.p2Name || "BEKLENİYOR...";
 
@@ -315,20 +313,22 @@ function listenLobby() {
         const title = document.createElement("div");
         title.className = "room-title";
 
-        const badge = document.createElement("div");
-        badge.className = "room-badge " + (r.status === "waiting" ? "open" : "full");
-        badge.textContent = (r.status === "waiting" ? "AÇIK" : "DOLU");
-
         if (r.status === "waiting") {
           title.textContent = `BÖLGE: ${d.id} ${r.isPrivate ? "🔒" : "🔓"} ${iAmInThis ? "• SENİN" : ""}`;
         } else {
           title.textContent = `BÖLGE: ${d.id} ⚔️ ${iAmInThis ? "• SENİN" : ""}`;
         }
 
+        // ✅ AÇIK/DOLU badge (CSS yoksa da sorun değil)
+        const badge = document.createElement("div");
+        badge.className = "room-time"; // mevcut stili kullansın diye
+        badge.style.opacity = "0.9";
+        badge.style.fontWeight = "900";
+        badge.textContent = (r.status === "waiting") ? "AÇIK" : "DOLU";
+
+        // ✅ isim + skor (Lobby listesinde)
         const players = document.createElement("div");
         players.className = "room-players";
-
-        // ✅ (4) Lobby’de isim + skor bilgisi (waiting’de de 0-0 göster)
         if (r.status === "waiting") {
           players.innerHTML =
             `<span style="color:var(--p1)">${p1n} (${s1})</span>
@@ -359,8 +359,9 @@ function listenLobby() {
         act.className = "room-action";
 
         const btn = document.createElement("button");
-        btn.className = "btn-neon " + (r.status === "waiting" ? "btn-sec" : "");
+
         if (r.status === "waiting") {
+          btn.className = "btn-neon btn-sec";
           btn.textContent = iAmInThis ? "DEVAM ET" : "GİRİŞ YAP";
           btn.addEventListener("click", () => {
             if (iAmInThis) {
@@ -371,6 +372,7 @@ function listenLobby() {
             joinHandler(d.id, !!r.isPrivate);
           });
         } else {
+          btn.className = "btn-neon";
           btn.textContent = iAmInThis ? "DEVAM ET" : "MEŞGUL";
           btn.disabled = !iAmInThis;
           if (!iAmInThis) {
@@ -387,7 +389,6 @@ function listenLobby() {
         act.appendChild(btn);
         card.append(info, act);
         list.appendChild(card);
-
         count++;
       });
 
@@ -395,7 +396,8 @@ function listenLobby() {
     },
     (err) => {
       console.error("Lobby snapshot error", err);
-      showModalAlert("HATA", "Lobby canlı bağlantı hatası. CSP/Network kontrol et.");
+      const msg = err?.code ? `${err.code}: ${err.message}` : (err?.message || "Bilinmeyen hata");
+      showModalAlert("HATA", "Lobby canlı bağlantı hatası:\n" + msg);
     }
   );
 }
@@ -410,13 +412,14 @@ document.getElementById("btnExit").addEventListener("click", () => {
 });
 
 document.getElementById("roomSearch").addEventListener("input", (e) => {
-  const s = e.target.value.toLowerCase();
+  const s = (e.target.value || "").toLowerCase();
   document.querySelectorAll(".room-card").forEach((c) => {
     c.style.display = c.textContent.toLowerCase().includes(s) ? "flex" : "none";
   });
 });
 
 document.getElementById("createRoomBtn").addEventListener("click", () => toggleModal("roomTypeModal", true));
+
 document.getElementById("quickJoinBtn").addEventListener("click", () => {
   let target = null;
   document.querySelectorAll(".room-card").forEach((c) => {
@@ -447,7 +450,7 @@ async function createArena(isPrivate) {
   let pass = "";
   if (isPrivate) {
     pass = document.getElementById("customRoomPass").value;
-    if (pass.length < 5) {
+    if (String(pass || "").length < 5) {
       document.getElementById("createError").style.display = "block";
       return;
     }
@@ -524,6 +527,8 @@ function stopTimerUi() {
 
 function enterGame(id) {
   if (unsubLobby) unsubLobby();
+  unsubLobby = null;
+
   currentScene = "game";
 
   sfx.lobby.pause();
@@ -534,7 +539,7 @@ function enterGame(id) {
   document.getElementById("lobby").style.display = "none";
   document.getElementById("game-view").style.display = "flex";
 
-  // ✅ üst bar isimleri aç
+  // ✅ üst bar isimleri aç (snap geldiğinde güncellenecek)
   setTopNames("-", "-", true);
 
   isFin = false;
@@ -548,6 +553,7 @@ function enterGame(id) {
     c.className = "cell";
     c.setAttribute("role", "button");
 
+    // zoom/scroll engelle
     c.addEventListener(
       "pointerdown",
       (e) => {
@@ -592,11 +598,11 @@ function enterGame(id) {
       document.getElementById("n1").textContent = p1Name;
       document.getElementById("n2").textContent = p2Name;
 
-      // ✅ Üst barda isimler
+      // ✅ üst barda isimler
       setTopNames(p1Name, p2Name, true);
 
-      const s1 = Number.isFinite(Number(d.score1)) ? d.score1 : 0;
-      const s2 = Number.isFinite(Number(d.score2)) ? d.score2 : 0;
+      const s1 = Number.isFinite(Number(d.score1)) ? Number(d.score1) : 0;
+      const s2 = Number.isFinite(Number(d.score2)) ? Number(d.score2) : 0;
       document.getElementById("s1").textContent = s1;
       document.getElementById("s2").textContent = s2;
 
