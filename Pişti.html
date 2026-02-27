@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix Pişti | Ücretsiz Kart Oyunu ve Casino</title>
+<meta name="description" content="PlayMatrix Pişti oyna! Akıllı krupiyere karşı şansını ve yeteneğini test et. Hemen masaya otur, kartlarını at, pişti yap ve anında MC kazan. İndirmesiz bedava casino oyunu.">
+<meta name="keywords" content="pişti oyna, botlara karşı pişti, ücretsiz kart oyunu, tek kişilik pişti, casino oyunu, PlayMatrix, mc kazan, tarayıcı oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#03050a">
+<link rel="canonical" href="https://playmatrix.com.tr/Pisti.html">
+
+<meta property="og:title" content="PlayMatrix Pişti | Krupiyere Karşı Oyna">
+<meta property="og:description" content="Taktiklerini konuştur, pişti yap ve MC bakiyeni ikiye katla! Kesintisiz kart oyunu heyecanı PlayMatrix'te.">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/pisti-single-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/Pisti.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix Pişti Oyunu">
+<meta name="twitter:description" content="Gerçekçi kart deneyimiyle bilgisayara karşı pişti oyna, kazandıkça katla!">
+
+<script>
+    if (window.history.replaceState) {
+        // Pisti.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
+        window.history.replaceState(null, null, "/");
+    }
+</script>
+
+<style>
+    * { 
+        margin:0; padding:0; box-sizing:border-box; 
+        -webkit-tap-highlight-color:transparent; 
+        user-select:none; 
+        touch-action: manipulation; 
+    }
+    
+    body {
+        height:100vh; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+        background:#03050a; color:white; display:flex; flex-direction:column; align-items:center;
+    }
+
+    /* SEO İÇİN GİZLİ H1 SINIFI (Tasarımı bozmaz, Google okur) */
+    .sr-only {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+    }
+    
+    /* --- GÜNCELLENEN MC COIN ÜST BAR TASARIMI --- */
+    .top-bar{
+        position:fixed;top:0;width:100%;height:60px;
+        display:flex;align-items:center;justify-content:space-between;
+        padding:0 12px; background: rgba(10, 15, 30, 0.9);
+        backdrop-filter: blur(10px); border-bottom: 1px solid #1e2642; z-index:1000;
+    }
+
+    .brand{
+        font-size:16px;font-weight:900; background:linear-gradient(90deg,#4fd1ff,#fff);
+        -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }
+
+    .right-menu{display:flex;gap:6px;align-items:center;}
+    
+    .user-pill-mini { 
+        display: flex; align-items: center; gap: 8px; 
+        background: rgba(255,255,255,0.05); padding: 5px 10px; 
+        border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+    }
+    .balance-info { display: flex; align-items: center; }
+    .balance-info b { font-size: 13px; color: #00ffa3; font-family: monospace; font-weight: 700; }
+    
+    .mc-chip {
+        width: 18px; height: 18px;
+        background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
+        border-radius: 50%; margin-left: 5px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 7px; font-weight: 900; color: #fff;
+        box-shadow: 0 0 8px rgba(79, 209, 255, 0.3);
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    /* ------------------------------------ */
+
+    .back-btn {
+        background: #ff3b30;
+        color: white;
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 900;
+        text-align: center;
+        border-bottom: 2px solid #b32b23;
+        transition: 0.1s;
+    }
+    .back-btn:active {
+        transform: scale(0.95);
+        border-bottom: 0;
+    }
+
+    .page-title-visible { margin-top:80px; font-size: 18px; letter-spacing: 1px; color: rgba(255,255,255,0.8); font-weight: bold; }
+    .score-board { margin: 8px 0; font-weight: bold; color: #ffcc00; font-size: 14px; background: rgba(0,0,0,0.3); padding: 4px 15px; border-radius: 20px; }
+
+    .table {
+        width:92%; max-width:500px; height:380px; border-radius:180px; position:relative;
+        background:radial-gradient(circle at center,#1a8a4d,#0a4d23 80%);
+        box-shadow:inset 0 0 100px #000, 0 10px 40px rgba(0,0,0,0.5);
+        margin-top: 40px; border: 10px solid #2d1f14;
+    }
+
+    .table-cards { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:75px; height:105px; }
+    .stack-card { width:75px; position:absolute; left:0; top:0; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.4); background:white;}
+
+    .hand, .computer { position:absolute; left:50%; transform:translateX(-50%); display:flex; gap:6px; width: max-content; padding: 10px; min-height: 100px;}
+    .hand { bottom:-55px; }
+    .computer { top:-55px; }
+
+    .card { width:65px; border-radius: 6px; cursor:pointer; transition: transform 0.2s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); background:white;}
+    .hand .card:hover { transform: translateY(-15px); }
+
+    .deal-anim-card {
+        position: fixed; width: 65px; height: 91px; border-radius: 6px;
+        background-image: url('https://deckofcardsapi.com/static/img/back.png');
+        background-size: cover; z-index: 5000;
+        transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        pointer-events: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .card-throw { position:absolute; width:65px; z-index:2000; transition:all 0.4s cubic-bezier(.25,.8,.25,1); border-radius: 6px; }
+
+    .chips { position:fixed; bottom:95px; display:flex; gap:10px; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 40px; backdrop-filter: blur(5px); }
+    .chip { 
+        width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; 
+        font-weight:900; cursor:pointer; border: 3px dashed rgba(255,255,255,0.3); font-size: 10px;
+        transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .chip.disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; pointer-events: none; }
+    
+    .c-cancel { background: #e74c3c; color: #fff; border-style: solid; }
+    .c100 { background: radial-gradient(#fff, #ccc); color:#000; } 
+    .c500 { background: radial-gradient(#2ecc71, #27ae60); color:#fff; } 
+    .c2000 { background: radial-gradient(#3498db, #2980b9); color:#fff; } 
+    .c10000 { background: radial-gradient(#f1c40f, #f39c12); color:#fff; }
+
+    .start-btn {
+        position:fixed; bottom:25px; padding:14px 50px; background:linear-gradient(to bottom, #4fd1ff, #007aff);
+        border:none; border-radius:30px; font-weight:900; color:white; cursor:pointer; font-size: 16px;
+        box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
+    }
+
+    #pistiDisplay {
+        position: fixed; top: 45%; left: 50%; transform: translate(-50%,-50%);
+        font-size: 80px; font-weight: 900; color: #fff; text-align: center;
+        background: linear-gradient(to bottom, #fff, #ffcc00, #ff6600);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 15px rgba(255, 102, 0, 0.8));
+        display: none; z-index: 9999; pointer-events: none; animation: pistiIn 1s ease-out;
+    }
+    @keyframes pistiIn { 0% { scale: 0; opacity: 0; } 40% { scale: 1.3; rotate: -5deg; } 100% { scale: 1; opacity: 1; } }
+
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(11, 16, 35, 0.9); display: none; align-items: center; justify-content: center; z-index: 10000;
+        backdrop-filter: blur(8px);
+    }
+    .modal-content {
+        background: linear-gradient(135deg, #1a2a6c, #0b1023); color: white; padding: 30px; border-radius: 25px; width: 85%; max-width: 320px;
+        text-align: center; border: 2px solid #4fd1ff; box-shadow: 0 0 30px rgba(79, 209, 255, 0.3); animation: modalIn 0.4s;
+    }
+    .modal-msg { font-size: 20px; font-weight: 800; margin-bottom: 20px; color: #ffcc00; white-space: pre-line;}
+    .modal-btn { background: #4fd1ff; color: #0b1023; border: none; padding: 12px 30px; border-radius: 15px; width: 100%; font-weight: 800; cursor: pointer;}
+</style>
+</head>
+<body>
+
+<h1 class="sr-only">PlayMatrix Pişti - Krupiyere Karşı Kart Oyunu</h1>
+
+<header class="top-bar">
+    <div class="brand">PİŞTİ</div>
+    <nav class="right-menu" aria-label="Oyuncu Paneli">
+        <div class="user-pill-mini">
+            <div class="balance-info">
+                <b id="balance">0</b>
+                <div class="mc-chip">MC</div>
+            </div>
+        </div>
+        
+        <div class="user-pill-mini" style="border-color: #ffcc00;">
+            <div class="balance-info">
+                <b id="bet" style="color:#ffcc00">0</b>
+                <div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00);">MC</div>
+            </div>
+        </div>
+        
+        <a href="index.html" class="back-btn" aria-label="Ana Sayfaya Dön">GERİ</a>
+    </nav>
+</header>
+
+<main style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+    <div class="page-title-visible"></div>
+    <div class="score-board" aria-live="polite">SİZ: <span id="ps">0</span> — KRUPIER: <span id="cs">0</span></div>
+
+    <div class="table" id="tableArea" role="region" aria-label="Pişti Masası">
+        <div class="computer" id="computerHand" aria-label="Bilgisayarın Kartları"></div>
+        <div class="table-cards" id="tableCards" aria-label="Ortadaki Kartlar"></div>
+        <div class="hand" id="playerHand" aria-label="Senin Kartların"></div>
+    </div>
+
+    <div id="pistiDisplay" aria-hidden="true">PİŞTİ!</div>
+
+    <div class="modal-overlay" id="modalOverlay" aria-hidden="true" aria-live="assertive">
+        <div class="modal-content">
+            <div class="modal-msg" id="modalMsg">-</div>
+            <button class="modal-btn" onclick="closeModal()" aria-label="Kapat">TAMAM</button>
+        </div>
+    </div>
+
+    <div class="chips" id="chipsArea" aria-label="Bahis Çipleri">
+        <div class="chip c-cancel" onclick="cancelBet()" aria-label="Bahsi İptal Et">İPTAL</div>
+        <div class="chip c100" id="chip100" onclick="addBet(100)">100</div>
+        <div class="chip c500" id="chip500" onclick="addBet(500)">500</div>
+        <div class="chip c2000" id="chip2000" onclick="addBet(2000)">2K</div>
+        <div class="chip c10000" id="chip10000" onclick="addBet(10000)">10K</div>
+    </div>
+
+    <button class="start-btn" id="startBtn" onclick="unlockAudioAndStart()" aria-label="Masaya Otur ve Başla">MASAYA OTUR</button>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain: "emirhan-site.firebaseapp.com",
+    projectId: "emirhan-site",
+    storageBucket: "emirhan-site.firebasestorage.app",
+    messagingSenderId: "668871888390",
+    appId: "1:668871888390:web:76568bda84cb1641f7bd87"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// PROFESYONEL SES MOTORU
+const sfx = {
+    chip: new Audio("https://cdn.freesound.org/previews/201/201491_3325145-lq.mp3"),
+    cardThrow: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3"),
+    cardCollect: new Audio("https://cdn.freesound.org/previews/202/202029_3325145-lq.mp3"),
+    win: new Audio("https://cdn.freesound.org/previews/391/391539_5235550-lq.mp3"),
+    lose: new Audio("https://cdn.freesound.org/previews/174/174499_1079313-lq.mp3"),
+    pisti: new Audio("https://cdn.freesound.org/previews/253/253177_4404552-lq.mp3"),
+    deal: new Audio("https://cdn.freesound.org/previews/240/240776_4107740-lq.mp3")
+};
+
+function unlockAudioAndStart() {
+    Object.values(sfx).forEach(sound => {
+        sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(() => {});
+    });
+    startGame();
+}
+window.unlockAudioAndStart = unlockAudioAndStart;
+
+function playSfx(name) {
+    if(sfx[name]) {
+        sfx[name].currentTime = 0;
+        sfx[name].volume = 0.8;
+        sfx[name].play().catch(() => {});
+    }
+}
+
+let balance = 0, bet = 0, currentBet = 0, userRef = null, gameStarted = false, dealing = false, turnLock = false;
+let deck = [], player = [], computer = [], table = [];
+let ps = 0, cs = 0, round = 0;
+
+onAuthStateChanged(auth, user => {
+    if (!user) return;
+    userRef = doc(db, "users", user.uid);
+    onSnapshot(userRef, snap => {
+        balance = snap.data().balance || 0;
+        updateUI();
+    });
+});
+
+function updateUI() {
+    document.getElementById("balance").innerText = balance.toLocaleString('tr-TR');
+    document.getElementById("bet").innerText = currentBet.toLocaleString('tr-TR');
+    
+    [100, 500, 2000, 10000].forEach(val => {
+        const el = document.getElementById("chip" + val);
+        if (balance < val || currentBet + val > 50000) el.classList.add("disabled");
+        else el.classList.remove("disabled");
+    });
+}
+
+window.addBet = function(amount) {
+    if (gameStarted) return;
+    if (balance < amount || currentBet + amount > 50000) return;
+    currentBet += amount;
+    balance -= amount;
+    playSfx("chip");
+    updateUI();
+}
+
+window.cancelBet = function() {
+    if (gameStarted) return;
+    balance += currentBet;
+    currentBet = 0;
+    playSfx("chip");
+    updateUI();
+}
+
+async function animateDeals(targetId, count) {
+    dealing = true;
+    const targetEl = document.getElementById(targetId);
+    for (let i = 0; i < count; i++) {
+        const animCard = document.createElement("div");
+        animCard.className = "deal-anim-card";
+        animCard.style.left = "50%";
+        animCard.style.top = "-100px";
+        document.body.appendChild(animCard);
+        await new Promise(r => setTimeout(r, 50)); 
+        const rect = targetEl.getBoundingClientRect();
+        playSfx("deal");
+        animCard.style.left = (rect.left + (i * 10)) + "px";
+        animCard.style.top = rect.top + "px";
+        animCard.style.transform = "rotate(360deg)";
+        await new Promise(r => setTimeout(r, 150)); 
+        setTimeout(() => animCard.remove(), 500);
+    }
+    dealing = false;
+}
+
+window.startGame = async function() {
+    if (currentBet < 100) { showModal("Minimum MC 100 olmalıdır!"); return; }
+    gameStarted = true;
+    bet = currentBet;
+    await updateDoc(userRef, { balance });
+    document.getElementById("chipsArea").style.display = "none";
+    document.getElementById("startBtn").style.display = "none";
+    ps = 0; cs = 0; round = 0;
+    createDeck();
+    await animateDeals("tableCards", 4);
+    table = ["BACK", "BACK", "BACK", deck.shift()];
+    render();
+    setTimeout(dealRound, 500);
+}
+
+function createDeck() {
+    const suits = ["H", "D", "C", "S"], vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+    deck = [];
+    suits.forEach(s => vals.forEach(v => deck.push(v + s)));
+    deck.sort(() => Math.random() - 0.5);
+}
+
+async function dealRound() {
+    if (round >= 6) { endGame(); return; }
+    await animateDeals("computerHand", 4);
+    for (let i = 0; i < 4; i++) computer.push(deck.shift());
+    await animateDeals("playerHand", 4);
+    for (let i = 0; i < 4; i++) player.push(deck.shift());
+    round++;
+    render();
+}
+
+function render() {
+    const ph = document.getElementById("playerHand");
+    const ch = document.getElementById("computerHand");
+    const tc = document.getElementById("tableCards");
+    ph.innerHTML = ""; ch.innerHTML = ""; tc.innerHTML = "";
+
+    player.forEach((c, i) => {
+        let img = document.createElement("img");
+        img.src = `https://deckofcardsapi.com/static/img/${c}.png`;
+        img.className = "card";
+        img.alt = `Sizin Kartınız ${i+1}`;
+        img.onclick = () => play(i);
+        ph.appendChild(img);
+    });
+    computer.forEach(() => {
+        let img = document.createElement("img");
+        img.src = "https://deckofcardsapi.com/static/img/back.png";
+        img.className = "card";
+        img.alt = "Bilgisayarın Kartı";
+        ch.appendChild(img);
+    });
+    table.forEach((c, i) => {
+        let img = document.createElement("img");
+        img.src = c === "BACK" ? "https://deckofcardsapi.com/static/img/back.png" : `https://deckofcardsapi.com/static/img/${c}.png`;
+        img.className = "stack-card";
+        img.alt = "Yerdeki Kart";
+        img.style.transform = `rotate(${i * 2}deg) translate(${i}px, ${i}px)`;
+        img.style.zIndex = i;
+        tc.appendChild(img);
+    });
+    document.getElementById("ps").innerText = ps;
+    document.getElementById("cs").innerText = cs;
+}
+
+function play(i) {
+    if (dealing || !gameStarted || turnLock) return;
+    turnLock = true;
+    const card = player.splice(i, 1)[0];
+    const imgEl = document.querySelectorAll("#playerHand img")[i];
+    animateThrow(imgEl, card, "player");
+}
+
+function compPlay() {
+    if (computer.length === 0) return;
+    
+    let cardIndex = 0;
+    const topCard = table.length > 0 ? table[table.length - 1] : null;
+
+    if (bet >= 15000) { 
+        let match = computer.findIndex(c => topCard && c[0] === topCard[0]);
+        let jack = computer.findIndex(c => c[0] === 'J');
+        if (match !== -1) cardIndex = match;
+        else if (jack !== -1 && table.length > 1) cardIndex = jack;
+        else cardIndex = Math.floor(Math.random() * computer.length);
+    } 
+    else {
+        cardIndex = Math.floor(Math.random() * computer.length);
+    }
+
+    const card = computer.splice(cardIndex, 1)[0];
+    const el = document.querySelectorAll("#computerHand img")[0];
+    animateThrow(el, card, "comp");
+}
+
+function animateThrow(el, card, owner) {
+    playSfx("cardThrow");
+    const rect = el.getBoundingClientRect();
+    const clone = el.cloneNode();
+    clone.className = "card-throw";
+    clone.style.left = rect.left + "px";
+    clone.style.top = rect.top + "px";
+    document.body.appendChild(clone);
+    setTimeout(() => {
+        const target = document.getElementById("tableCards").getBoundingClientRect();
+        clone.style.left = target.left + "px";
+        clone.style.top = target.top + "px";
+    }, 10);
+    setTimeout(() => {
+        clone.remove();
+        table.push(card);
+        checkRule(owner);
+        render();
+        if (owner === "player") setTimeout(compPlay, 800);
+        else {
+            turnLock = false;
+            if(player.length === 0 && computer.length === 0) {
+                if (deck.length > 0) setTimeout(dealRound, 500);
+                else setTimeout(endGame, 1000);
+            }
+        }
+    }, 400);
+}
+
+function checkRule(owner) {
+    if (table.length < 2) return;
+    const last = table[table.length - 1];
+    const prev = table[table.length - 2];
+    if (prev === "BACK") return;
+    if (last[0] === "J" || last[0] === prev[0]) {
+        playSfx("cardCollect");
+        let points = table.length;
+        if (table.length === 2 && last[0] === prev[0]) {
+            points = 10; 
+            showPistiEffect();
+        }
+        if (owner === "player") ps += points; else cs += points;
+        table = [];
+    }
+}
+
+function showPistiEffect() {
+    playSfx("pisti");
+    const el = document.getElementById("pistiDisplay");
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 1500);
+}
+
+async function endGame() {
+    gameStarted = false;
+    let msg = "";
+    if (ps > cs) {
+        let winValue = bet * 2;
+        balance += winValue;
+        playSfx("win");
+        msg = `TEBRİKLER!\n${winValue.toLocaleString('tr-TR')} MC Kazandınız.`;
+    } else if (ps < cs) {
+        playSfx("lose");
+        msg = "KAYBETTİNİZ!\nKrupiyer kazandı.";
+    } else {
+        balance += bet;
+        msg = "BERABERE!\nMC iade edildi.";
+    }
+    currentBet = 0; bet = 0;
+    await updateDoc(userRef, { balance });
+    document.getElementById("chipsArea").style.display = "flex";
+    document.getElementById("startBtn").style.display = "block";
+    showModal(msg);
+    updateUI();
+    render();
+}
+
+window.showModal = function(msg) {
+    document.getElementById("modalMsg").innerText = msg;
+    document.getElementById("modalOverlay").style.display = "flex";
+}
+window.closeModal = function() {
+    document.getElementById("modalOverlay").style.display = "none";
+}
+</script>
+</body>
+</html>
