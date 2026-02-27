@@ -1,241 +1,213 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-<meta name="description" content="PlayMatrix VIP BlackJack. %100 Güvenli, Provably Fair, Sunucu Tabanlı BlackJack oyunu. Hemen oyna ve gerçek casino heyecanını yaşa!">
-<meta name="keywords" content="blackjack, casino, playmatrix, vip casino, 21 oyunu, güvenli bahis, canlı blackjack">
-<meta name="author" content="PlayMatrix">
-<meta name="robots" content="index, follow">
-<meta property="og:title" content="PlayMatrix VIP BlackJack">
-<meta property="og:description" content="%100 Sunucu Korumalı Gerçek BlackJack Deneyimi. Şansını dene ve kazan!">
-<meta property="og:type" content="website">
-<meta name="theme-color" content="#1a1a1a">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>PlayMatrix VIP BlackJack | Profesyonel Casino Deneyimi</title>
+    <meta name="description" content="PlayMatrix VIP BlackJack ile gerçek casino ortamını yaşayın. %100 güvenli, donmasız, sunucu tabanlı profesyonel 21 oyunu. Hemen masaya oturun!">
+    <meta name="keywords" content="blackjack, blackjack oyna, 21 oyunu, casino, playmatrix, vip casino, güvenli bahis, canlı blackjack, kart oyunu">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="theme-color" content="#0b1118">
+    
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PlayMatrix VIP BlackJack">
+    <meta property="og:description" content="Gerçek kurallar, yüksek kazançlar ve kesintisiz VIP BlackJack heyecanı.">
+    <meta property="og:site_name" content="PlayMatrix">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix VIP BlackJack">
+    <meta name="twitter:description" content="Gerçek casino standartlarında 21 oyna. Şansını hemen dene!">
 
-<title>PlayMatrix VIP BlackJack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <style>
+        /* SIFIR KAYMA, %100 RESPONSIVE VE ZOOM KORUMASI RESET */
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+        html, body { 
+            background: #0b1118; color: #ffffff; height: 100vh; width: 100vw; 
+            overflow: hidden; overscroll-behavior: none; font-family: 'Inter', sans-serif;
+            touch-action: manipulation; /* ÇİFT TIK ZOOM ENGELİ (CSS) */
+        }
 
-<script>
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, "/");
-    }
-</script>
-    
-<style>
-    /* GENEL DÜZEN VE TAŞMA ENGELLEYİCİLER */
-    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
-    html, body {
-        width: 100vw; height: 100vh; overflow: hidden; 
-        overscroll-behavior: none; touch-action: none;
-        font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto, Helvetica, Arial, sans-serif;
-        background: radial-gradient(circle at 50% 50%, #0c582c 0%, #053317 60%, #021a0a 100%);
-        color: white;
-    }
-    
-    /* GERÇEKÇİ OVAL MASA ÇİZGİSİ */
-    .table-border {
-        position: absolute;
-        top: 20px; left: -10vw; right: -10vw; bottom: 80px;
-        border: 5px solid rgba(212,175,55,0.25);
-        border-radius: 50% / 100px 100px 0 0;
-        pointer-events: none;
-        z-index: 0;
-        box-shadow: inset 0 20px 50px rgba(0,0,0,0.5);
-    }
+        /* PROFESYONEL İNTRO (AÇILIŞ EKRANI) */
+        #studioIntro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070b10;
+            z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+        .intro-logo i { font-size: 65px; color: #d4af37; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(212,175,55,0.5)); }
+        .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+        .intro-logo h1 span { color: #d4af37; }
+        
+        .loader-track { width: 220px; height: 4px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        .loader-fill { height: 100%; width: 0%; background: #d4af37; transition: width 0.1s linear; box-shadow: 0 0 10px #d4af37; }
+        .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(212,175,55,0.4); transition: 0.2s; letter-spacing: 1px; }
+        .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
 
-    .top-bar { 
-        position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
-        display: flex; align-items: center; justify-content: space-between; padding: 0 10px; 
-        background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 100%); 
-        border-bottom: 2px solid #d4af37; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.9); 
-    }
-    h1.brand { font-size: clamp(0.9rem, 4vw, 1.1rem); font-weight:900; color: #d4af37; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; white-space: nowrap; flex-shrink: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-    .right-menu { display:flex; gap:5px; align-items: center; justify-content: flex-end; flex: 1; margin-left: 10px; }
-    .user-pill-mini { display: flex; align-items: center; gap: 4px; background: linear-gradient(145deg, #2a2a2a, #111); padding: 4px 8px; border-radius: 15px; border: 1px solid rgba(212,175,55,0.4); white-space: nowrap; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
-    .balance-info b { font-size: clamp(11px, 3.5vw, 13px); color: #00ffa3; font-family: monospace; font-weight: 700; }
-    .mc-chip { width: 16px; height: 16px; flex-shrink: 0; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 4px; display: flex; align-items: center; justify-content: center; font-size: 6px; font-weight: 900; color: #fff; box-shadow: 0 0 8px rgba(79, 209, 255, 0.4); border: 1px solid rgba(255,255,255,0.4); }
-    .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 5px 8px; border-radius: 6px; font-size: clamp(0.6rem, 2.5vw, 0.7rem); font-weight: 900; flex-shrink: 0; border: 1px solid #7a0000; box-shadow: 0 2px 5px rgba(0,0,0,0.5); touch-action: manipulation; }
-    
-    .game-container { 
-        position: absolute; top: 65px; bottom: 0; width: 100vw;
-        display: flex; flex-direction: column; justify-content: space-between; 
-        padding: 20px 0 20px 0; perspective: 1200px; 
-        overflow-y: auto; overflow-x: hidden; touch-action: pan-y;
-        z-index: 1;
-    }
-    
-    /* 3D KART DESTESİ (SHOE) */
-    .card-shoe-container {
-        position: absolute; top: 30px; right: 20px; z-index: 50;
-        display: flex; flex-direction: column; align-items: center;
-    }
-    .card-shoe {
-        width: 65px; height: 95px;
-        background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
-        border-radius: 5px;
-        box-shadow: 
-            -1px 1px 0 #fff, -2px 2px 0 #999, 
-            -3px 3px 0 #fff, -4px 4px 0 #999, 
-            -5px 5px 0 #fff, -6px 6px 0 #999,
-            -10px 10px 20px rgba(0,0,0,0.8);
-        transform: rotate(15deg);
-    }
-    .shoe-label { color: #d4af37; font-size: 10px; font-weight: bold; margin-top: 15px; text-shadow: 0 1px 2px #000; letter-spacing: 2px; }
+        @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-    .area { width: 100%; text-align: center; margin-top: 10px; position: relative; z-index: 2; }
-    .dealer-title { font-size: 14px; letter-spacing: 4px; font-weight: 900; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Times New Roman', Times, serif; }
-    .score-badge { background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); color: #ffd700; padding: 4px 18px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.7); }
-    
-    /* GERÇEK KART TASARIMLARI VE ANİMASYONLARI */
-    .cards-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 0; margin-left: -15px; min-height: 120px; padding: 0 10px; }
-    .card-3d { 
-        width: 75px; height: 110px; position: relative; margin-left: -35px; 
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease-out; 
-    }
-    .card-3d:first-child { margin-left: 0; }
-    .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -6px 6px 15px rgba(0,0,0,0.8); object-fit: cover; }
+        /* ÜST BAR (TAŞMA KORUMALI) */
+        .top-bar { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 65px; background: rgba(18, 26, 36, 0.95);
+            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .tb-left { display: flex; align-items: center; gap: 15px; }
+        .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .tb-logo span { color: #d4af37; }
+        
+        .tb-right { display: flex; align-items: center; gap: 10px; }
+        
+        /* BAKİYE TAŞMA ENGELİ (ELLIPSIS) */
+        .balance-box { display: flex; align-items: center; background: #0b1118; padding: 6px 12px; border-radius: 8px; border: 1px solid #1f2c3b; max-width: 140px; }
+        .balance-box b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; display: inline-block; vertical-align: middle; }
+        .mc-icon { background: linear-gradient(135deg, #00f0ff, #0055ff); color: #fff; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 8px; box-shadow: 0 0 10px rgba(0,240,255,0.4); }
+        
+        .bet-box { display: flex; align-items: center; background: linear-gradient(145deg, #332800, #1a1400); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.5); max-width: 120px;}
+        .bet-box b { font-size: 14px; color: #f1c40f; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; display: inline-block; vertical-align: middle;}
+        
+        .action-icon-btn { 
+            background: #1f2c3b; color: #94a3b8; border: none; width: 34px; height: 34px; 
+            border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .action-icon-btn:active { transform: scale(0.9); background: #2a3a4d; color: #fff; }
+        .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
-    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; z-index: 10; margin-top: 10px;}
-    
-    /* 10 SANİYE ZAMANLAYICI UI */
-    #ui-timer { display: none; color: #ff4b4b; font-size: 16px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 2px 5px #000; letter-spacing: 1px; }
-    #ui-timer.warning { color: #ff0000; animation: blink 1s infinite; }
-    @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
+        /* VIP MASA TASARIMI */
+        .game-container { 
+            position: absolute; top: 65px; bottom: 0; width: 100vw;
+            display: flex; flex-direction: column; justify-content: space-between; 
+            padding: 20px 0 20px 0; perspective: 1200px; 
+            overflow-y: auto; overflow-x: hidden; touch-action: pan-y;
+            z-index: 1; background: radial-gradient(circle at 50% 50%, #0c582c 0%, #053317 60%, #021a0a 100%);
+        }
+        
+        .table-border {
+            position: absolute; top: 30px; left: -10vw; right: -10vw; bottom: 100px;
+            border: 5px solid rgba(212,175,55,0.25); border-radius: 50% / 100px 100px 0 0;
+            pointer-events: none; z-index: 0; box-shadow: inset 0 20px 50px rgba(0,0,0,0.5);
+        }
 
-    #ui-message { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent); padding: 5px 30px; border-radius: 5px; letter-spacing: 1px; transition: 0.3s; }
-    .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
-    .btn { padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: all 0.1s; touch-action: manipulation; }
-    
-    /* YENİ: DAĞIT BUTONU */
-    #dealBtn { background: linear-gradient(to bottom, #d4af37, #997a00); color: #000; width: 100%; max-width: 200px; display: none; }
-    
-    #hitBtn { background: linear-gradient(to bottom, #2ecc71, #229954); }
-    #standBtn { background: linear-gradient(to bottom, #e74c3c, #c0392b); }
-    #doubleBtn { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; }
-    #splitBtn { background: linear-gradient(to bottom, #9b59b6, #8e44ad); }
-    .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 5px rgba(0,0,0,0.6); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
-    
-    .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; margin-top: 20px; position: relative; z-index: 2;}
-    .hand-box { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
-    .hand-box.active { border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); }
-    
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; position: relative; z-index: 10;}
-    .chip { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; cursor: pointer; border: 4px dashed #d4af37; box-shadow: 0 6px 12px rgba(0,0,0,0.6); transition: 0.2s; touch-action: manipulation; }
-    .chip:active { transform: scale(0.9); }
-    .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;}
-    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; border-color: #fff;}
-    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; border-color: #fff;}
-    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; border-color: #fff;}
-    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; border-color: #d4af37;}
-    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;}
-    .cancel-btn { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #888; touch-action: manipulation; }
-    
-    /* YENİ MODAL VE ANİMASYONLU BİLGİLENDİRME EKRANI */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); transition: opacity 0.5s; touch-action: none; }
-    
-    /* Animasyonlu Altın/Neon Çerçeve */
-    .animated-border-box {
-        position: relative;
-        width: 90%; max-width: 380px;
-        border-radius: 16px;
-        padding: 4px; /* Çerçevenin kalınlığı */
-        background: linear-gradient(45deg, #d4af37, #ff4b4b, #d4af37, #4fd1ff);
-        background-size: 300% 300%;
-        animation: gradientBorder 3s ease infinite;
-        box-shadow: 0 0 30px rgba(212,175,55,0.4);
-    }
-    
-    @keyframes gradientBorder {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+        .card-shoe-container { position: absolute; top: 30px; right: 20px; z-index: 50; display: flex; flex-direction: column; align-items: center; }
+        .card-shoe {
+            width: 55px; height: 80px; background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
+            border-radius: 5px; box-shadow: -1px 1px 0 #fff, -2px 2px 0 #999, -3px 3px 0 #fff, -4px 4px 0 #999, -5px 5px 0 #fff, -6px 6px 0 #999, -10px 10px 20px rgba(0,0,0,0.8);
+            transform: rotate(15deg);
+        }
+        
+        .area { width: 100%; text-align: center; margin-top: 10px; position: relative; z-index: 2; }
+        .dealer-title { font-size: 14px; letter-spacing: 4px; font-weight: 900; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Orbitron', sans-serif; }
+        .score-badge { background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); color: #ffd700; padding: 4px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.7); font-family: 'Inter'; }
+        
+        /* GERÇEK KART TASARIMLARI VE ANİMASYONLARI */
+        .cards-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 0; margin-left: -15px; min-height: 120px; padding: 0 10px; }
+        .card-3d { width: 75px; height: 110px; position: relative; margin-left: -35px; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease-out; }
+        .card-3d:first-child { margin-left: 0; }
+        .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -6px 6px 15px rgba(0,0,0,0.8); object-fit: cover; }
 
-    .modal-content { 
-        background: linear-gradient(to bottom, #111, #000); 
-        border-radius: 12px; 
-        padding: 25px; 
-        text-align: center; 
-        width: 100%;
-        height: 100%;
-    }
-    
-    .modal-title {
-        color: #d4af37; 
-        margin-bottom: 15px; 
-        font-family: 'Times New Roman', serif;
-        font-size: 22px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 2px 5px rgba(212,175,55,0.5);
-    }
+        .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; margin-top: 20px; position: relative; z-index: 2;}
+        .hand-box { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
+        .hand-box.active { border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); }
 
-    .info-list {
-        font-size: 13px; 
-        color: #ddd; 
-        margin-bottom: 25px; 
-        text-align: left; 
-        background: rgba(20,20,20,0.8); 
-        padding: 15px; 
-        border-radius: 10px; 
-        border: 1px solid #333;
-        line-height: 1.6;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-    }
-    
-    .info-list b { color: #d4af37; }
-    .info-list .highlight { color: #ff4b4b; font-weight: bold; }
-    .info-list .highlight-green { color: #00ffa3; font-weight: bold; }
+        /* AKSİYON ALANI (BUTONLAR) */
+        .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; z-index: 10; margin-top: 10px;}
+        
+        #ui-timer { display: none; color: #ff4b4b; font-size: 16px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 2px 5px #000; letter-spacing: 1px; font-family: 'Orbitron'; }
+        #ui-timer.warning { color: #ff0000; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
 
-    .intro-splash { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9998; pointer-events: none; }
-    .intro-text { font-family: 'Times New Roman', serif; font-size: 3rem; font-weight: 900; color: #d4af37; text-shadow: 0 0 20px rgba(212,175,55,0.8); transform: scale(0.5); opacity: 0; animation: splashAnim 2s forwards; }
-    
-    @keyframes splashAnim {
-        0% { transform: scale(0.5); opacity: 0; }
-        30% { transform: scale(1.1); opacity: 1; }
-        70% { transform: scale(1); opacity: 1; }
-        100% { transform: scale(1.5); opacity: 0; }
-    }
-</style>
+        #ui-message { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent); padding: 5px 30px; border-radius: 5px; letter-spacing: 1px; transition: 0.3s; }
+        
+        .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
+        .btn { padding: 12px 20px; border-radius: 8px; border: none; font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: transform 0.1s; touch-action: manipulation; font-family: 'Inter'; letter-spacing: 1px;}
+        
+        #dealBtn { background: linear-gradient(to bottom, #d4af37, #997a00); color: #000; width: 100%; max-width: 250px; display: none; font-size: 16px; padding: 15px;}
+        #hitBtn { background: linear-gradient(to bottom, #2ecc71, #229954); }
+        #standBtn { background: linear-gradient(to bottom, #e74c3c, #c0392b); }
+        #doubleBtn { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; }
+        #splitBtn { background: linear-gradient(to bottom, #9b59b6, #8e44ad); }
+        
+        .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 5px rgba(0,0,0,0.6); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        
+        /* PROFESYONEL ÇİPLER */
+        .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; position: relative; z-index: 10;}
+        .chip { width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; cursor: pointer; border: 4px dashed rgba(255,255,255,0.8); box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 8px 15px rgba(0,0,0,0.6); transition: transform 0.1s; touch-action: manipulation; font-family: 'Inter'; text-shadow: 1px 1px 2px #000; }
+        .chip:active { transform: scale(0.9) translateY(4px); box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.6); }
+        .c1k { background: radial-gradient(circle, #a0a0a0 30%, #555 90%); color: #fff;}
+        .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; }
+        .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; }
+        .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; }
+        .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; }
+        .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;}
+        .cancel-btn { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; cursor: pointer; border: 2px solid #888; touch-action: manipulation; }
+
+        /* ÖZEL ANİMASYONLU MODAL (POPUP) SİSTEMİ %100 TEMA UYUMLU */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.show { opacity: 1; display: flex; }
+        
+        .modal-card { 
+            background: linear-gradient(145deg, #111827, #0a0f1a); border: 1px solid #1f2937; width: 90%; max-width: 360px; 
+            border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center;
+        }
+        .modal-overlay.show .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+        
+        .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
+        .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; }
+        .modal-card p b { color: #d4af37; }
+        .modal-close { background: linear-gradient(135deg, #f1c40f, #d4ac0d); color: #000; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(212,175,55,0.3); text-transform: uppercase;}
+        .modal-close:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(212,175,55,0.5); }
+        .modal-close:active { transform: translateY(2px); box-shadow: none; }
+        
+        @media (max-width: 400px) { 
+            .chip { width: 45px; height: 45px; font-size: 11px; }
+            .cancel-btn { width: 40px; height: 40px; }
+            .card-3d { width: 65px; height: 95px; margin-left: -30px;}
+        }
+    </style>
 </head>
 <body>
 
-<div id="sys-start-overlay" class="modal-overlay">
-    <div class="animated-border-box" id="modal-box">
-        <div class="modal-content">
-            <h2 class="modal-title">Nasıl Oynanır?</h2>
-            <div class="info-list">
-                <b>1. Bahis Yap:</b> Ekrandaki çiplere tıklayarak bakiye gir.<br>
-                <b>2. Dağıt:</b> Bahsi tamamlayınca <span class="highlight">DAĞIT</span> butonuna bas.<br>
-                <b>3. Karar Ver:</b> Süren <b>10 Saniyedir</b>. <span class="highlight-green">ÇEK</span> ile kart iste, <span class="highlight">KAL</span> ile bekle.<br>
-                <b>4. Mantık:</b> Kurupierden Yüksek Ol 21'i Geçmeden Oyunu Kazan.<br>
-                <b>5. Kurupier:</b> Kurupier 17 Üstüne Kart Çekmez 17 Altına Kart Çeker Her Zaman.<br>
-                <div style="margin-top: 10px; text-align: center; color: #999; font-size: 11px;">
-                    <i>Lütfen oyun deneyimi için sesleri açınız.</i>
-                </div>
-            </div>
-            <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); font-weight: 900; color: #000; font-size: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(212,175,55,0.4); text-transform: uppercase;">MASAYA OTUR</button>
-        </div>
+<div id="studioIntro">
+    <div class="intro-logo">
+        <i class="fa-solid fa-gem"></i>
+        <h1>VIP<br><span>BLACKJACK</span></h1>
+    </div>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
+</div>
+
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj içeriği</p>
+        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
     </div>
 </div>
 
-<div class="intro-splash" id="introSplash">
-    <div class="intro-text">DEALER HAZIR</div>
-</div>
-
 <header class="top-bar">
-    <h1 class="brand">VIP BLACKJACK</h1>
-    <nav class="right-menu">
-        <div class="user-pill-mini">
-            <div class="balance-info"><b id="ui-balance">Yükleniyor...</b></div>
-            <div class="mc-chip">MC</div>
+    <div class="tb-left">
+        <h1 class="brand">VIP BLACKJACK</h1>
+    </div>
+    <div class="tb-right">
+        <div class="balance-box">
+            <b id="ui-balance">Yükleniyor</b><div class="mc-icon">MC</div>
         </div>
-        <div class="user-pill-mini" style="border-color: #ffcc00; background: linear-gradient(145deg, #332800, #1a1400);">
-            <div class="balance-info"><b id="ui-betAmount" style="color:#ffcc00">0</b></div>
-            <div class="mc-chip" style="background: orange;">MC</div>
+        <div class="bet-box">
+            <b id="ui-betAmount">0</b><div class="mc-icon" style="background:#d4af37; color:#000;">MC</div>
         </div>
-        <a href="/" class="back-btn">ÇIKIŞ</a>
-    </nav>
+        <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-info"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
 </header>
 
 <main class="game-container">
@@ -300,35 +272,115 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-// --- YENİ GERÇEKÇİ SES MOTORU ---
-let audioCtx = null;
-const sounds = {};
-async function initAudio() {
-    if (audioCtx) return;
-    try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+// --- KÖKLÜ ÇÖZÜM: ZOOM (ÇİFT TIKLAMA) ENGELLEYİCİ ---
+document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+    lastTouchEnd = now;
+}, { passive: false });
 
-        const urls = {
-            chip: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', 
-            deal: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3', // Gerçek Tok Kart Sesi
-            bust: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Kaybetme Sesi
-            win:  'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3', // Casino Kazanç Sesi
-            push: 'https://assets.mixkit.co/active_storage/sfx/2025/2025-preview.mp3', // İade/Beraberlik
-            tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'  // 10s Geri Sayım Tik Sesi
-        };
-        for (const [name, url] of Object.entries(urls)) {
-            fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf)).then(decoded => sounds[name] = decoded).catch(e=>{});
-        }
-    } catch (e) { console.error("Ses yüklenemedi:", e); }
+// --- PROFESYONEL MODAL YÖNETİCİSİ ---
+window.showMatrixModal = (title, message, type = 'info') => {
+    const icon = document.getElementById("matrixModalIcon");
+    document.getElementById("matrixModalTitle").innerText = title;
+    document.getElementById("matrixModalDesc").innerHTML = message;
+    
+    if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30"></i>'; document.getElementById("matrixModalTitle").style.color = '#ff3b30'; } 
+    else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#00ffa3"></i>'; document.getElementById("matrixModalTitle").style.color = '#00ffa3'; } 
+    else { icon.innerHTML = '<i class="fa-solid fa-gem" style="color:#d4af37"></i>'; document.getElementById("matrixModalTitle").style.color = '#d4af37'; }
+    
+    const modal = document.getElementById('matrixModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+
+window.closeMatrixModal = () => {
+    const modal = document.getElementById('matrixModal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+};
+
+window.showHowToPlay = () => {
+    showMatrixModal(
+        "Nasıl Oynanır?", 
+        "1. Ekrandaki çiplere tıklayarak bahsini belirle.\n2. <b>DAĞIT</b> butonuna basarak oyunu başlat.\n3. Karar vermek için <b>10 Saniyen</b> var. Süre biterse otomatik 'KAL'ırsın.\n4. Amacın 21'i geçmeden Kurupiyerden yüksek puan toplamaktır.\n5. Krupiyer 17'ye ulaşana kadar kart çeker.", 
+        "info"
+    );
+};
+
+// --- PROFESYONEL SES MOTORU (iOS İÇİN ÖZEL KİLİT AÇICI SİSTEM) ---
+let audioCtx = null;
+let audioUnlocked = false; 
+const sounds = {};
+const sfxUrls = {
+    chip: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', 
+    deal: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3', 
+    bust: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', 
+    win:  'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3', 
+    push: 'https://assets.mixkit.co/active_storage/sfx/2025/2025-preview.mp3', 
+    tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'  
+};
+
+function initAndUnlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audioUnlocked = true;
+    } catch (e) {}
 }
+
+async function loadSoundFiles() {
+    if (!audioCtx) return;
+    for (let [key, url] of Object.entries(sfxUrls)) {
+        try {
+            const res = await fetch(url);
+            const buf = await res.arrayBuffer();
+            sounds[key] = await audioCtx.decodeAudioData(buf);
+        } catch(e) {}
+    }
+}
+
 function playSound(name) {
-    if (!audioCtx || !sounds[name]) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const source = audioCtx.createBufferSource(); source.buffer = sounds[name]; source.connect(audioCtx.destination); source.start(0);
+    if(!audioCtx || !sounds[name] || !audioUnlocked) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = (name === 'tick' || name === 'chip') ? 0.3 : 0.8; 
+        src.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        src.start(0);
+    } catch (e) {}
 }
+
+const unlockOnTouch = () => { initAndUnlockAudio(); document.removeEventListener('touchstart', unlockOnTouch); };
+document.addEventListener('touchstart', unlockOnTouch, { once: true, passive: true });
+
+// --- INTRO LOGIC ---
+let loadProg = 0;
+const loadInt = setInterval(() => {
+    loadProg += Math.random() * 20;
+    if(loadProg >= 100) {
+        loadProg = 100; clearInterval(loadInt);
+        document.getElementById('loaderTrack').style.display = 'none';
+        document.getElementById('btnEnterGame').style.display = 'block';
+    }
+    document.getElementById('loaderFill').style.width = loadProg + '%';
+}, 100);
+
+document.getElementById('btnEnterGame').addEventListener('click', () => {
+    initAndUnlockAudio(); loadSoundFiles();     
+    document.getElementById('studioIntro').style.opacity = '0';
+    setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initGame(); }, 600);
+});
 
 // --- OYUN DEĞİŞKENLERİ ---
 let userBalance = 0; 
@@ -336,14 +388,12 @@ let pendingBet = 0;
 let oldSeq = 0; 
 let isWaitingServer = false;
 let isRevealing = false;
-
-// 10 SANİYE ZAMANLAYICI DEĞİŞKENLERİ
 let actionTimer = null;
 let timeLeft = 10;
 
 // API İSTEKLERİ
 async function fetchAPI(endpoint, method = 'GET', body = null) {
-    if (!auth.currentUser) { window.location.href = '/'; return; }
+    if (!auth.currentUser) return null;
     const token = await getIdToken(auth.currentUser);
     const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
     if (body) options.body = JSON.stringify(body);
@@ -353,6 +403,15 @@ async function fetchAPI(endpoint, method = 'GET', body = null) {
     if (!data.ok) throw new Error(data.error || "Sunucu hatası");
     return data;
 }
+
+function initGame() {
+    fetchBalance();
+    pollState();
+    document.getElementById("controls-pregame").style.display = "flex";
+    document.getElementById("dealBtn").style.display = "block";
+    updateDealButtonState();
+}
+
 async function fetchBalance() { try { const res = await fetchAPI('/api/me'); if(res) { userBalance = res.balance; document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); } } catch(e){} }
 async function pollState() { try { const res = await fetchAPI('/api/bj/state'); if(res && res.state) handleStateSync(res.state); } catch(e) {} }
 
@@ -362,21 +421,12 @@ function startDecisionTimer() {
     timeLeft = 10;
     const timerUI = document.getElementById("ui-timer");
     const timerSpan = document.getElementById("timerVal");
-    timerUI.style.display = "block";
-    timerUI.className = "";
-    timerSpan.innerText = timeLeft;
+    timerUI.style.display = "block"; timerUI.className = ""; timerSpan.innerText = timeLeft;
 
     actionTimer = setInterval(() => {
-        timeLeft--;
-        timerSpan.innerText = timeLeft;
-        if(timeLeft <= 3 && timeLeft > 0) {
-            timerUI.className = "warning";
-            playSound('tick');
-        }
-        if(timeLeft <= 0) {
-            clearDecisionTimer();
-            sendAction('stand'); // Süre bitince otomatik KAL
-        }
+        timeLeft--; timerSpan.innerText = timeLeft;
+        if(timeLeft <= 3 && timeLeft > 0) { timerUI.className = "warning"; playSound('tick'); }
+        if(timeLeft <= 0) { clearDecisionTimer(); sendAction('stand'); }
     }, 1000);
 }
 
@@ -386,32 +436,20 @@ function clearDecisionTimer() {
     document.getElementById("ui-timer").className = "";
 }
 
-// MASAYI TEMİZLEME MOTORU (Oyun Bittikten Sonra)
 function clearBoard() {
-    document.getElementById("ui-dealerCards").innerHTML = "";
-    document.getElementById("ui-playerHands").innerHTML = "";
-    document.getElementById("ui-dealerScore").innerText = "0";
-    document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)";
+    document.getElementById("ui-dealerCards").innerHTML = ""; document.getElementById("ui-playerHands").innerHTML = "";
+    document.getElementById("ui-dealerScore").innerText = "0"; document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)";
     document.getElementById("ui-chipsArea").style.display = "flex";
-    
-    // Dağıt butonunu göster ve bahis yoksa pasif yap
-    document.getElementById("controls-pregame").style.display = "flex";
-    document.getElementById("dealBtn").style.display = "block";
+    document.getElementById("controls-pregame").style.display = "flex"; document.getElementById("dealBtn").style.display = "block";
     updateDealButtonState();
 }
 
 function updateDealButtonState() {
     const dealBtn = document.getElementById("dealBtn");
-    if(pendingBet >= 1000) {
-        dealBtn.disabled = false;
-        dealBtn.style.filter = "none";
-    } else {
-        dealBtn.disabled = true;
-        dealBtn.style.filter = "grayscale(1)";
-    }
+    if(pendingBet >= 1000) { dealBtn.disabled = false; dealBtn.style.filter = "none"; } 
+    else { dealBtn.disabled = true; dealBtn.style.filter = "grayscale(1)"; }
 }
 
-// GERÇEK KART RESİMLERİ
 function getCardImage(card) {
     if(!card) return 'https://deckofcardsapi.com/static/img/back.png';
     const suits = { 'H': 'H', 'D': 'D', 'C': 'C', 'S': 'S' };
@@ -419,7 +457,6 @@ function getCardImage(card) {
     return `https://deckofcardsapi.com/static/img/${vals[card.value]}${suits[card.suit]}.png`;
 }
 
-// EKRANDA GÖRÜNEN KARTLARI HESAPLA
 function calculateVisibleDOMScore(containerId) {
     const container = document.getElementById(containerId);
     if(!container) return 0;
@@ -427,11 +464,7 @@ function calculateVisibleDOMScore(containerId) {
     Array.from(container.children).forEach(el => {
         if (el.style.opacity === "0") return;
         let v = parseInt(el.getAttribute("data-val") || 0);
-        if (v === 0) return; 
-        if (v > 10) v = 10;
-        if (v === 1) v = 11;
-        if (v === 11) a++;
-        t += v;
+        if (v === 0) return; if (v > 10) v = 10; if (v === 1) v = 11; if (v === 11) a++; t += v;
     });
     while (t > 21 && a > 0) { t -= 10; a--; }
     return t;
@@ -439,42 +472,30 @@ function calculateVisibleDOMScore(containerId) {
 
 function refreshScores() {
     document.getElementById("ui-dealerScore").innerText = calculateVisibleDOMScore("ui-dealerCards");
-    const hands = document.querySelectorAll('.hand-box');
-    hands.forEach((box) => {
+    document.querySelectorAll('.hand-box').forEach((box) => {
         const wrap = box.querySelector('.cards-wrapper');
         const scoreDisplay = box.querySelector('.score-badge span');
-        if(wrap && scoreDisplay) {
-            let score = calculateVisibleDOMScore(wrap.id);
-            scoreDisplay.innerText = score;
-        }
+        if(wrap && scoreDisplay) { scoreDisplay.innerText = calculateVisibleDOMScore(wrap.id); }
     });
 }
 
-// --- DESTEDEN ÇIKIŞLI (SHOE) ANİMASYON KUYRUĞU ---
 function handleStateSync(state) {
     if (!state) return;
     let queue = [];
     
-    // Aniden yeni oyuna geçildiyse ve kartlar temizlenmediyse temizle
     if (state.seq !== oldSeq && state.seq === 1) {
-        clearDecisionTimer();
-        clearBoard();
-        document.getElementById("controls-pregame").style.display = "none";
+        clearDecisionTimer(); clearBoard(); document.getElementById("controls-pregame").style.display = "none";
     }
     oldSeq = state.seq;
 
     const pArea = document.getElementById("ui-playerHands");
-    // 1. ÖNCE OYUNCU KARTLARI KUYRUĞA EKLENİR
     state.hands.forEach((hand, hIdx) => {
-        let boxId = `playerHandBox_${hIdx}`;
-        let box = document.getElementById(boxId);
-        let cWrap;
+        let boxId = `playerHandBox_${hIdx}`; let box = document.getElementById(boxId); let cWrap;
         if (!box) {
             box = document.createElement("div"); box.className = `hand-box ${(hIdx === state.currentHandIdx && state.gameState === 'playing') ? 'active' : ''}`; box.id = boxId;
             cWrap = document.createElement("div"); cWrap.className = "cards-wrapper"; cWrap.id = `playerHandWrap_${hIdx}`;
             const scoreDiv = document.createElement("div"); scoreDiv.className = "score-badge"; scoreDiv.innerHTML = `Toplam: <span>0</span>`;
-            box.appendChild(cWrap); box.appendChild(scoreDiv);
-            pArea.appendChild(box);
+            box.appendChild(cWrap); box.appendChild(scoreDiv); pArea.appendChild(box);
         } else {
             cWrap = document.getElementById(`playerHandWrap_${hIdx}`);
             box.className = `hand-box ${(hIdx === state.currentHandIdx && state.gameState === 'playing') ? 'active' : ''}`;
@@ -483,48 +504,30 @@ function handleStateSync(state) {
         hand.cards.forEach((card, cIdx) => {
             const cardId = `player_${hIdx}_${cIdx}`;
             if (!document.getElementById(cardId)) {
-                let div = document.createElement("div");
-                div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", card.value);
+                let div = document.createElement("div"); div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", card.value);
                 div.innerHTML = `<img src="${getCardImage(card)}" class="real-card">`;
-                
-                // KART TAM OLARAK DESTEDEN (SHOE) ÇIKAR
-                div.style.opacity = "0"; 
-                div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
-                
-                cWrap.appendChild(div);
-                queue.push({ el: div, id: cardId, isFlip: false });
+                div.style.opacity = "0"; div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
+                cWrap.appendChild(div); queue.push({ el: div, id: cardId, isFlip: false });
             }
         });
     });
 
     const dArea = document.getElementById("ui-dealerCards");
-    // 2. SONRA KURUPİYER KARTLARI KUYRUĞA EKLENİR
     state.dealer.forEach((card, i) => {
-        const cardId = `dealer_${i}`;
-        const isHidden = state.dealerHidden && i === 1;
+        const cardId = `dealer_${i}`; const isHidden = state.dealerHidden && i === 1;
         let div = document.getElementById(cardId);
         
         if (!div) {
-            div = document.createElement("div");
-            div.className = "card-3d";
-            div.id = cardId;
-            div.setAttribute("data-val", isHidden ? 0 : card.value);
+            div = document.createElement("div"); div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", isHidden ? 0 : card.value);
             div.innerHTML = `<img src="${isHidden ? 'https://deckofcardsapi.com/static/img/back.png' : getCardImage(card)}" class="real-card">`;
-            
-            // KART TAM OLARAK DESTEDEN (SHOE) ÇIKAR
-            div.style.opacity = "0"; 
-            div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
-            
-            dArea.appendChild(div);
-            queue.push({ el: div, id: cardId, isFlip: false });
+            div.style.opacity = "0"; div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
+            dArea.appendChild(div); queue.push({ el: div, id: cardId, isFlip: false });
         } else if (!isHidden && div.getAttribute("data-val") === "0") {
             div.setAttribute("data-val", card.value);
-            // Kurupiyerin kapalı kartı açılışı en sona kalmalı
             queue.push({ el: div, id: cardId, isFlip: true, img: getCardImage(card) });
         }
     });
 
-    // İlk dağıtımda gerçek sıraya sok: Oyuncu -> Kurupiyer -> Oyuncu -> Kurupiyer (Kapalı)
     if (state.seq === 1 && queue.length === 4) {
         const order = ['player_0_0', 'dealer_0', 'player_0_1', 'dealer_1'];
         queue.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -533,11 +536,9 @@ function handleStateSync(state) {
     processRevealQueue(queue, state);
 }
 
-// 2 SANİYELİK KART AÇMA MOTORU
 function processRevealQueue(queue, finalState) {
     if (queue.length === 0) {
-        isRevealing = false;
-        refreshScores();
+        isRevealing = false; refreshScores();
         
         if (finalState.gameState === 'playing' && !finalState.insuranceOffered) {
             document.getElementById("controls-pregame").style.display = "none";
@@ -545,14 +546,11 @@ function processRevealQueue(queue, finalState) {
             const curHand = finalState.hands[finalState.currentHandIdx];
             document.getElementById("doubleBtn").style.display = (curHand.cards.length === 2) ? "block" : "none";
             document.getElementById("splitBtn").style.display = (finalState.hands.length === 1 && curHand.cards.length === 2 && curHand.cards[0].value === curHand.cards[1].value) ? "block" : "none";
-            
-            // Sıra oyuncuda ise 10 saniyelik sayacı başlat
             startDecisionTimer();
-
         } else if (finalState.insuranceOffered) {
             document.getElementById("controls-pregame").style.display = "none";
             document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "flex";
-            startDecisionTimer(); // Sigorta için de sayaç
+            startDecisionTimer();
         } else {
             document.getElementById("controls-pregame").style.display = "none";
             document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
@@ -567,11 +565,7 @@ function processRevealQueue(queue, finalState) {
             else if (finalState.message.includes("BERABERE") || finalState.message.includes("İADE")) playSound('push');
             else playSound('bust');
 
-            // OYUN BİTİNCE 4.5 SANİYE SONRA MASAYI TEMİZLE VE DAĞIT BUTONUNU GERİ GETİR
-            setTimeout(() => {
-                if(oldSeq === finalState.seq) clearBoard();
-            }, 4500);
-
+            setTimeout(() => { if(oldSeq === finalState.seq) clearBoard(); }, 4500);
         } else {
             let totalTableBet = finalState.hands.reduce((sum, h) => sum + (h.bet || 0), 0);
             document.getElementById("ui-message").innerText = finalState.message || "SIRA SİZDE";
@@ -580,12 +574,8 @@ function processRevealQueue(queue, finalState) {
         return;
     }
 
-    isRevealing = true;
-    clearDecisionTimer(); // Dağıtım sırasında sayaç durur
-    document.getElementById("controls-pregame").style.display = "none";
-    document.getElementById("controls-main").style.display = "none";
-    document.getElementById("controls-ins").style.display = "none";
-    document.getElementById("ui-chipsArea").style.display = "none";
+    isRevealing = true; clearDecisionTimer(); 
+    document.getElementById("controls-pregame").style.display = "none"; document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none"; document.getElementById("ui-chipsArea").style.display = "none";
     document.getElementById("ui-message").innerText = "KARTLAR DAĞITILIYOR...";
 
     const item = queue.shift();
@@ -593,50 +583,33 @@ function processRevealQueue(queue, finalState) {
 
     if (item.isFlip) { 
         item.el.style.transform = "rotateY(90deg) scale(1.1)";
-        setTimeout(() => {
-            item.el.innerHTML = `<img src="${item.img}" class="real-card">`;
-            item.el.style.transform = "rotateY(0deg) scale(1)";
-            refreshScores();
-        }, 200);
+        setTimeout(() => { item.el.innerHTML = `<img src="${item.img}" class="real-card">`; item.el.style.transform = "rotateY(0deg) scale(1)"; refreshScores(); }, 200);
     } else { 
-        // Masa üzerindeki doğal konumuna oturma animasyonu
-        item.el.style.opacity = "1";
-        item.el.style.transform = "translate(0, 0) rotate(0deg)";
-        refreshScores();
+        item.el.style.opacity = "1"; item.el.style.transform = "translate(0, 0) rotate(0deg)"; refreshScores();
     }
-
-    // YENİ: Akıcılık için kartlar arası 1.2 saniye bekleme
-    setTimeout(() => processRevealQueue(queue, finalState), 1200); 
+    setTimeout(() => processRevealQueue(queue, finalState), 800); 
 }
 
-// --- KULLANICI ETKİLEŞİMLERİ ---
-
+// ETKİLEŞİMLER
 document.getElementById("dealBtn").addEventListener('click', async () => {
     if(pendingBet < 1000) return;
-    clearDecisionTimer();
-    isWaitingServer = true; 
-    document.getElementById("controls-pregame").style.display = "none";
-    document.getElementById("ui-chipsArea").style.display = "none"; 
-    document.getElementById("ui-message").innerText = "MASA HAZIRLANIYOR...";
+    clearDecisionTimer(); isWaitingServer = true; 
+    document.getElementById("controls-pregame").style.display = "none"; document.getElementById("ui-chipsArea").style.display = "none"; document.getElementById("ui-message").innerText = "MASA HAZIRLANIYOR...";
     try {
         const res = await fetchAPI('/api/bj/start', 'POST', { bet: pendingBet });
         fetchBalance(); if (res.state) handleStateSync(res.state); 
-    } catch(e) { 
-        alert(e.message); 
-        clearBoard();
-    }
+    } catch(e) { showMatrixModal("Hata", e.message, "error"); clearBoard(); }
     isWaitingServer = false;
 });
 
 async function sendAction(actionStr) {
     if(isWaitingServer || isRevealing) return;
-    clearDecisionTimer(); // Butona basılınca sayacı durdur
-    isWaitingServer = true; document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
+    clearDecisionTimer(); isWaitingServer = true; document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
     try {
         const res = await fetchAPI('/api/bj/action', 'POST', { action: actionStr, seq: oldSeq });
         if(['split', 'double', 'insurance_yes'].includes(actionStr)) fetchBalance();
         if (res.state) handleStateSync(res.state);
-    } catch(e) { alert(e.message); pollState(); }
+    } catch(e) { showMatrixModal("Hata", e.message, "error"); pollState(); }
     isWaitingServer = false;
 }
 
@@ -644,24 +617,17 @@ document.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
         if(isWaitingServer || isRevealing) return;
         const val = parseInt(chip.getAttribute('data-val')); if (pendingBet + val > userBalance) return;
-        playSound('chip'); 
-        pendingBet += val; 
+        playSound('chip'); pendingBet += val; 
         document.getElementById("ui-betAmount").innerText = pendingBet.toLocaleString('tr-TR'); 
         document.getElementById("ui-balance").innerText = (userBalance - pendingBet).toLocaleString('tr-TR');
-        
-        // Bahis yapıldıkça DAĞIT butonunu aktif et
-        document.getElementById("controls-pregame").style.display = "flex";
-        document.getElementById("dealBtn").style.display = "block";
-        updateDealButtonState();
+        document.getElementById("controls-pregame").style.display = "flex"; document.getElementById("dealBtn").style.display = "block"; updateDealButtonState();
     });
 });
 
 document.getElementById("cancelBetBtn").addEventListener('click', () => { 
-    pendingBet = 0; 
-    document.getElementById("ui-betAmount").innerText = "0"; 
-    document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); 
-    document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; 
-    updateDealButtonState();
+    if(isWaitingServer || isRevealing) return;
+    playSound('chip');
+    pendingBet = 0; document.getElementById("ui-betAmount").innerText = "0"; document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; updateDealButtonState();
 });
 
 document.getElementById("hitBtn").onclick = () => sendAction('hit');
@@ -670,28 +636,6 @@ document.getElementById("doubleBtn").onclick = () => sendAction('double');
 document.getElementById("splitBtn").onclick = () => sendAction('split');
 document.getElementById("insYesBtn").onclick = () => sendAction('insurance_yes');
 document.getElementById("insNoBtn").onclick = () => sendAction('insurance_no');
-
-document.getElementById('systemStartBtn').addEventListener('click', () => { 
-    initAudio(); 
-    document.getElementById('modal-box').style.opacity = '0';
-    setTimeout(() => {
-        document.getElementById('sys-start-overlay').style.display = 'none';
-        const splash = document.getElementById('introSplash');
-        splash.style.display = 'flex';
-        playSound('push'); 
-        setTimeout(() => { 
-            splash.style.display = 'none'; 
-            fetchBalance(); 
-            pollState(); 
-            
-            // Başlangıçta DAĞIT butonunu göster ama bahis yoksa pasif olsun
-            document.getElementById("controls-pregame").style.display = "flex";
-            document.getElementById("dealBtn").style.display = "block";
-            updateDealButtonState();
-
-        }, 2000);
-    }, 500);
-});
 
 onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
 </script>
