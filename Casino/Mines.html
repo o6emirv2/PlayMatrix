@@ -294,360 +294,133 @@
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-    authDomain: "emirhan-site.firebaseapp.com",
-    projectId: "emirhan-site",
-    storageBucket: "emirhan-site.firebasestorage.app",
-    messagingSenderId: "668871888390",
-    appId: "1:668871888390:web:76568bda84cb1641f7bd87"
+  apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+  authDomain:"emirhan-site.firebaseapp.com",
+  projectId:"emirhan-site",
+  storageBucket:"emirhan-site.firebasestorage.app",
+  messagingSenderId:"668871888390",
+  appId:"1:668871888390:web:76568bda84cb1641f7bd87"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+let user=null;
 
-// --- MODAL YÖNETİMİ ---
-window.showModal = (msg, isSuccess = false) => {
-    document.getElementById("modalIcon").innerText = isSuccess ? "✅" : "⚠️";
-    document.getElementById("modalIcon").style.color = isSuccess ? "#00ffa3" : "#ff2a4d";
-    document.getElementById("modalMsg").innerText = msg;
-    document.getElementById("alertModal").style.display = "flex";
+const balanceEl=document.getElementById("balance");
+const betEl=document.getElementById("betAmount");
+const msgEl=document.getElementById("message");
+
+const betInput=document.getElementById("betInput");
+const minesSelect=document.getElementById("mineCount");
+const startBtn=document.getElementById("startGame");
+const cashoutBtn=document.getElementById("cashoutBtn");
+const gridEl=document.getElementById("grid");
+const multEl=document.getElementById("multiplier");
+const profitEl=document.getElementById("profit");
+
+let st=null;
+let busy=false;
+
+function fmt(n){ return Number(n||0).toLocaleString('tr-TR'); }
+async function token(){ return await user.getIdToken(); }
+async function api(path, body){
+  const t = await token();
+  const r = await fetch(path,{method:"POST",headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(body||{})});
+  return await r.json();
 }
-window.closeModal = () => {
-    document.getElementById("alertModal").style.display = "none";
-}
-
-// --- PROFESYONEL SES SİSTEMİ (Autoplay Kırıcı) ---
-let audioCtx = null;
-const sounds = {};
-
-async function initAudio() {
-    if (audioCtx) return;
-    try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        // Sessiz frekans tetikleyici (iOS / Chrome Autoplay Policy için)
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-
-        // Uzak ses dosyaları
-        const urls = {
-            bet: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
-            open: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',
-            explode: 'https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3',
-            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'
-        };
-        for (const [name, url] of Object.entries(urls)) {
-            try {
-                const res = await fetch(url);
-                const buf = await res.arrayBuffer();
-                sounds[name] = await audioCtx.decodeAudioData(buf);
-            } catch (e) {
-                console.warn(`Ses yüklenemedi: ${name}`, e);
-            }
-        }
-    } catch (e) { console.error("Ses sistemi başlatılamadı:", e); }
+async function apiGet(path){
+  const t = await token();
+  const r = await fetch(path,{headers:{'Authorization':'Bearer '+t}});
+  return await r.json();
 }
 
-// Sistemi Başlat Butonu Tıklaması
-document.getElementById('systemStartBtn').addEventListener('click', () => {
-    initAudio();
-    document.getElementById('sys-start-overlay').style.display = 'none';
+function setBusy(b){
+  busy=b;
+  startBtn.disabled=b;
+  cashoutBtn.disabled=b;
+}
+
+function buildGrid(){
+  gridEl.innerHTML="";
+  for(let i=0;i<25;i++){
+    const d=document.createElement("div");
+    d.className="cell";
+    d.setAttribute("data-idx", String(i));
+    d.onclick=()=>onCell(i, d);
+    gridEl.appendChild(d);
+  }
+}
+
+function applyState(s){
+  if(!s) return;
+  if(s.ok===false){ msgEl.innerText = s.error || "Hata"; return; }
+  st=s;
+  balanceEl.innerText = fmt(s.balance||0);
+  betEl.innerText = fmt(s.bet||0);
+  msgEl.innerText = s.message || "";
+  multEl.innerText = (Number(s.multiplier||1)).toFixed(2)+"x";
+  profitEl.innerText = fmt(s.cashoutAmount||0);
+  cashoutBtn.style.display = s.canCashout ? "block" : "none";
+  startBtn.style.display = s.gameState==="betting" ? "block" : "none";
+  betInput.disabled = s.gameState!=="betting";
+  minesSelect.disabled = s.gameState!=="betting";
+  if(s.gameState==="betting"){
+    // reset
+    buildGrid();
+    [...gridEl.children].forEach(c=>c.className="cell");
+  }
+  if(s.revealed){
+    for(const item of s.revealed){
+      const cell = gridEl.querySelector(`[data-idx="${item.idx}"]`);
+      if(!cell) continue;
+      if(item.type==="safe"){ cell.classList.add("safe"); cell.innerText="✓"; }
+      if(item.type==="mine"){ cell.classList.add("mine"); cell.innerText="✕"; }
+    }
+  }
+}
+
+async function onCell(i, el){
+  if(busy) return;
+  if(!st || st.gameState!=="playing") return;
+  if(el.classList.contains("safe") || el.classList.contains("mine")) return;
+  setBusy(true);
+  const r = await api("/api/mines/reveal",{ index:i });
+  setBusy(false);
+  applyState(r);
+}
+
+startBtn.onclick = async ()=>{
+  if(busy) return;
+  const bet = parseInt(betInput.value,10);
+  const mines = parseInt(minesSelect.value,10);
+  setBusy(true);
+  const r = await api("/api/mines/start",{ bet, mines });
+  setBusy(false);
+  applyState(r);
+};
+
+cashoutBtn.onclick = async ()=>{
+  if(busy) return;
+  setBusy(true);
+  const r = await api("/api/mines/cashout",{});
+  setBusy(false);
+  applyState(r);
+};
+
+onAuthStateChanged(auth, async (u)=>{
+  if(!u){ await signInAnonymously(auth); return; }
+  user=u;
+  buildGrid();
+  const me = await apiGet("/api/me");
+  if(me?.ok) balanceEl.innerText = fmt(me.balance||0);
+  const s = await apiGet("/api/mines/state");
+  if(s?.ok) applyState(s);
 });
 
-function playSound(name) {
-    if (!audioCtx || !sounds[name]) return;
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const source = audioCtx.createBufferSource();
-    source.buffer = sounds[name];
-    source.connect(audioCtx.destination);
-    source.start(0);
-}
-
-// --- OYUN DEĞİŞKENLERİ ---
-let opened = 0;
-let betAmount = 0;
-let mineTotal = 1;
-let currentMultiplier = 1.00;
-let gameActive = false;
-let isProcessing = false; // Firestore işlemleri sürerken Race Condition'ı engeller
-let tileElements = [];
-
-// DOM Elementleri
-const gridEl = document.getElementById("grid");
-const balanceText = document.getElementById("userBalance");
-const currentBetText = document.getElementById("currentBet");
-const startBtn = document.getElementById("startBtn");
-const mineSelect = document.getElementById("mineCount");
-const betInput = document.getElementById("bet");
-const mineDisplay = document.getElementById("mineDisplay");
-const multiplierDisplay = document.getElementById("multiplierDisplay");
-
-// Mayın Sayısı Seçeneklerini Oluştur (1-24)
-for(let i=1; i<=24; i++){
-    let opt = document.createElement("option");
-    opt.value = i; opt.text = i + " MAYIN";
-    mineSelect.appendChild(opt);
-}
-// 3 mayın default olsun
-mineSelect.value = 3;
-mineDisplay.innerText = "3";
-
-mineSelect.addEventListener("change", () => mineDisplay.innerText = mineSelect.value);
-
-// Izgarayı Oluştur
-function createGrid() {
-    gridEl.innerHTML = "";
-    tileElements = [];
-    for(let i=0; i<25; i++){
-        let tile = document.createElement("div");
-        tile.classList.add("tile", "active-hover");
-        tile.dataset.index = i;
-        tile.setAttribute("role", "button"); // SEO ERİŞİLEBİLİRLİK EKLENTİSİ
-        tile.setAttribute("aria-label", `Taş ${i+1}`); // SEO ERİŞİLEBİLİRLİK EKLENTİSİ
-        tile.addEventListener("click", () => handleTileClick(i, tile));
-        gridEl.appendChild(tile);
-        tileElements.push(tile);
-    }
-}
-
-// Çarpan Hesaplama (Matematiksel Olasılık + Kasa Payı)
-function calculateMultiplier(nMines, nOpened) {
-    if(nOpened === 0) return 1.00;
-    
-    // Açılacak taş kalmadıysa
-    if (25 - nMines - nOpened < 0) return 0;
-
-    let probability = 1;
-    for (let i = 0; i < nOpened; i++) {
-        probability *= (25 - nMines - i) / (25 - i);
-    }
-    
-    // Kasa %3 Avantajı (House Edge)
-    let mult = (1 / probability) * 0.97;
-    return Math.floor(mult * 100) / 100; // Sonucu 2 ondalıklı hale getir (Örn: 1.15)
-}
-
-// OYUNU BAŞLAT / KAZANCI ÇEK BUTONU
-startBtn.addEventListener("click", async () => {
-    if (isProcessing) return; // İşlem bitene kadar tıklanamaz (Güvenlik)
-    if (!auth.currentUser) return;
-    const userRef = doc(db, "users", auth.currentUser.uid);
-
-    // DURUM 1: OYUN ZATEN AKTİFSE (KAZANCI ÇEKME İŞLEMİ)
-    if (gameActive) {
-        if (opened === 0) return; // Hiç taş açılmadıysa boş yere çekilemez
-        
-        isProcessing = true;
-        startBtn.disabled = true;
-        gameActive = false; // Oyunu hemen kitle ki başka taşa basamasın
-        
-        const winAmount = Math.floor(betAmount * currentMultiplier);
-        
-        try {
-            await runTransaction(db, async (t) => {
-                const snap = await t.get(userRef);
-                t.update(userRef, { balance: snap.data().balance + winAmount });
-            });
-            playSound("win");
-            revealAllMines(false); // Kazanıldı, mayınları inandırıcı şekilde sönük göster
-            showModal(`TEBRİKLER! ${winAmount.toLocaleString('tr-TR')} MC KAZANDINIZ.`, true);
-        } catch (e) {
-            console.error("Para çekme hatası:", e);
-            showModal("Kazanç işlenirken bir hata oluştu.");
-        } finally {
-            resetGame();
-        }
-        return;
-    }
-
-    // DURUM 2: YENİ OYUN BAŞLAT (BAHİS YAPMA İŞLEMİ)
-    betAmount = parseInt(betInput.value);
-    
-    if(isNaN(betAmount) || betAmount < 100) {
-        showModal("Minimum bahis 100 MC olmalıdır!");
-        return;
-    }
-    if(betAmount > 100000) {
-        showModal("Maksimum bahis 100.000 MC olabilir!");
-        return;
-    }
-
-    isProcessing = true;
-    startBtn.disabled = true;
-
-    try {
-        await runTransaction(db, async (t) => {
-            const snap = await t.get(userRef);
-            if (snap.data().balance < betAmount) throw "MC BAKİYE YETERSİZ!";
-            t.update(userRef, { balance: snap.data().balance - betAmount });
-        });
-        
-        playSound("bet");
-        
-        // Oyun Değişkenlerini Sıfırla ve Başlat
-        opened = 0; 
-        currentMultiplier = 1.00;
-        mineTotal = parseInt(mineSelect.value);
-        multiplierDisplay.innerText = "1.00x";
-        
-        createGrid(); // Tahtayı yenile
-        
-        gameActive = true;
-        betInput.disabled = true; 
-        mineSelect.disabled = true;
-        
-        currentBetText.innerText = betAmount.toLocaleString('tr-TR');
-        startBtn.innerText = "TAŞ SEÇİN";
-        startBtn.classList.add("start-active");
-        
-    } catch (e) { 
-        showModal(typeof e === "string" ? e : "Bahis alınamadı."); 
-    } finally {
-        isProcessing = false;
-        startBtn.disabled = false;
-    }
-});
-
-// TAŞA TIKLAMA VE KASA ALGORİTMASI (Schrödinger'in Mayını)
-function handleTileClick(index, tile) {
-    // Oyun aktif değilse, işlem sürüyorsa veya taş zaten açıksa yoksay
-    if (!gameActive || isProcessing || tile.classList.contains("open")) return;
-    
-    // --- KASA (HOUSE) ALGORİTMASI ---
-    // Mayınlar en baştan dizilmez! Oyuncu taşa tıkladığı AN o taşın mayın olup olmadığına karar verilir.
-    // Bu yöntem, "Öğeyi İncele (F12)" üzerinden hile yapılmasını %100 engeller.
-    
-    let isMineHit = false;
-    let crashChance = 0;
-
-    const remainingTiles = 25 - opened;
-    const baseRisk = mineTotal / remainingTiles; // Normal matematiksel ihtimal
-    
-    // Kasayı Koruma: Çarpan çok yükselirse veya mayın sayısı çoksa patlama ihtimalini "Yapay (Hileli)" olarak artır.
-    if (opened > 0) {
-        if (currentMultiplier >= 10.0) crashChance = baseRisk + 0.35; // %35 Ekstra patlama şansı (Çok Riskli)
-        else if (currentMultiplier >= 4.0) crashChance = baseRisk + 0.15; // %15 Ekstra şans
-        else if (currentMultiplier >= 2.0) crashChance = baseRisk + 0.05; // %5 Ekstra şans
-        else crashChance = baseRisk; // Başlangıç seviyelerinde normal adil ihtimal
-    } else {
-        crashChance = baseRisk; // İlk tıklama her zaman normale en yakın ihtimaldir
-    }
-
-    // Zar Atışı
-    if (Math.random() < crashChance) {
-        isMineHit = true;
-    }
-
-    // --- TIKLAMA SONUCU ---
-    if (isMineHit) {
-        // MAYINA BASTI VE KAYBETTİ
-        gameActive = false;
-        playSound("explode");
-        
-        tile.classList.add("mine");
-        tile.innerHTML = "💣";
-        tile.classList.remove("active-hover");
-        
-        startBtn.innerText = "KAYBETTİN!";
-        startBtn.classList.remove("start-active");
-        startBtn.classList.add("is-lose");
-        
-        revealAllMines(true, index); // Geri kalan mayınları ekrana rastgele inandırıcı şekilde diz
-        
-        setTimeout(resetGame, 2500); // 2.5 sn sonra oyunu sıfırla
-        
-    } else {
-        // GÜVENLİ TAŞ - ELMAS ÇIKTI
-        opened++;
-        tile.classList.add("open");
-        tile.innerHTML = "💎";
-        tile.classList.remove("active-hover");
-        playSound("open");
-        
-        currentMultiplier = calculateMultiplier(mineTotal, opened);
-        multiplierDisplay.innerText = currentMultiplier.toFixed(2) + "x";
-        
-        const currentWin = Math.floor(betAmount * currentMultiplier);
-        startBtn.innerText = `ÇEK (MC ${currentWin.toLocaleString('tr-TR')})`;
-        
-        // Eğer tüm güvenli taşlar açıldıysa (Oyunu tamamen bitirdiyse) otomatik olarak kazancı çek
-        if (opened === (25 - mineTotal)) {
-            startBtn.click(); 
-        }
-    }
-}
-
-// OYUN BİTTİĞİNDE TAHTAYI İNANDIRICI ŞEKİLDE DOLDUR (Sahte Mayın Dağıtımı)
-function revealAllMines(isLoss, hitIndex = -1) {
-    let fakeMines = [];
-    if (isLoss) fakeMines.push(hitIndex); // Patlayan ana mayın listemizde olsun
-    
-    // Kalan mayınları tahtadaki açılmamış, boş yerlere rastgele dağıtıyoruz
-    while (fakeMines.length < mineTotal) {
-        let r = Math.floor(Math.random() * 25);
-        if (!fakeMines.includes(r) && !tileElements[r].classList.contains("open")) {
-            fakeMines.push(r);
-        }
-    }
-
-    // Tüm tahtayı görsel olarak güncelle
-    tileElements.forEach((tile, i) => {
-        tile.classList.remove("active-hover");
-        if (tile.classList.contains("open")) return; // Zaten açık olan elmaslara dokunma
-        
-        if (fakeMines.includes(i)) {
-            if (i !== hitIndex) { // Patlamayan (gösterilen) mayınlar
-                tile.innerHTML = "💣";
-                tile.classList.add("dimmed-mine");
-            }
-        } else {
-            // Mayın olmayan kalan kapalı taşlar sönük elmas olur
-            tile.innerHTML = "💎";
-            tile.classList.add("dimmed-diamond");
-        }
-    });
-}
-
-// OYUNU İLK (BEKLEME) HALİNE DÖNDÜR
-function resetGame() {
-    isProcessing = false;
-    gameActive = false;
-    betInput.disabled = false;
-    mineSelect.disabled = false;
-    startBtn.innerText = "MC KULLAN";
-    startBtn.classList.remove("start-active", "is-lose");
-    currentBetText.innerText = "0";
-    multiplierDisplay.innerText = "1.00x";
-    createGrid(); 
-}
-
-// FİREBASE KULLANICI DİNLEYİCİSİ (Bakiye Güncelleme)
-onAuthStateChanged(auth, user => {
-    if (!user) {
-        signInAnonymously(auth); // Kullanıcı yoksa otomatik misafir oluştur (Test için)
-        return;
-    }
-    // Bakiyeyi anlık olarak dinle ve UI'a yansıt
-    onSnapshot(doc(db, "users", user.uid), snap => {
-        if (snap.exists()) {
-            const bal = snap.data().balance || 0;
-            balanceText.innerText = Math.floor(bal).toLocaleString('tr-TR');
-        }
-    });
-});
-
-// Sayfa yüklendiğinde ilk ızgarayı oluştur
-createGrid();
 </script>
 </body>
 </html>
