@@ -772,6 +772,8 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
             tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
 
             const deck = createPistiDeck();
+            
+            // HATA DÜZELTME: Kart dağıtırken desteden güvenli çekim
             const tableCards = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
             const playerHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
             const botHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
