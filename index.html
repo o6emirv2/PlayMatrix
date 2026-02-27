@@ -11,23 +11,9 @@
 <meta name="description" content="PlayMatrix: Türkiye'nin en iyi ücretsiz online multiplayer arena, zeka ve strateji oyunları platformu. Kayıt ol, şans çarkını çevir, anında MC kazan ve oynamaya başla!">
 <meta name="keywords" content="online oyunlar, ücretsiz oyun oyna, multiplayer oyunlar, online pişti, zeka oyunları, casino oyunları, tarayıcı oyunları, PlayMatrix">
 <meta name="author" content="PlayMatrix Global">
-<meta name="robots" content="index, follow">
-<meta name="language" content="Turkish">
-<meta name="theme-color" content="#04060b">
-<link rel="canonical" href="https://www.senindomainin.com/">
-
-<meta property="og:title" content="PlayMatrix | Ücretsiz Online Multiplayer ve Zeka Oyunları">
-<meta property="og:description" content="Kayıt ol, çarkı çevir ve anında MC kazan! Arkadaşlarınla Online Pişti, Crash ve zeka oyunları oyna.">
-<meta property="og:image" content="https://www.senindomainin.com/assets/promo-banner.jpg">
-<meta property="og:url" content="https://www.senindomainin.com/">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="PlayMatrix">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PlayMatrix | En İyi Online Oyun Platformu">
-<meta name="twitter:description" content="Tarayıcından tek tıkla ücretsiz oyunlara katıl ve rekabete başla.">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
 <style>
 :root {
@@ -126,8 +112,8 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     border-radius: 16px; display: none; flex-direction: column; overflow: hidden;
     box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 3000; padding: 8px;
 }
-.dropdown.active { display: flex; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-@keyframes slideUp { from { opacity:0; transform: translateY(15px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }
+.dropdown.active { display: flex; animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes slideDown { from { opacity:0; transform: translateY(-15px); } to { opacity:1; transform: translateY(0); } }
 .drop-item { 
     padding: 12px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; 
     color: var(--text-primary); font-weight: 600; font-size: 13px; transition: 0.2s; border-radius: 10px; cursor: pointer;
@@ -210,30 +196,36 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 }
 .social-btn:hover { background: linear-gradient(135deg, var(--primary), var(--secondary)); transform: translateY(-5px) rotate(10deg); color: #fff; border-color: transparent; box-shadow: 0 10px 20px var(--primary-glow); }
 
+/* ÖZEL ANİMASYONLU MODAL (POPUP) SİSTEMİ EKLENTİSİ */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     display: none; align-items: center; justify-content: center; z-index: 5000; opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.4s ease;
 }
 .modal-overlay.show { opacity: 1; display: flex; }
+
 .modal-card { 
     width: 90%; max-width: 420px; padding: 35px 30px; border-radius: 28px; 
     background: var(--bg-surface); border: 1px solid var(--glass-border); text-align: center; 
-    max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-    transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+    transform: scale(0.8) translateY(30px); opacity: 0;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
 }
-.modal-overlay.show .modal-card { transform: scale(1); }
+.modal-overlay.show .modal-card { 
+    transform: scale(1) translateY(0); opacity: 1; 
+}
+
 .modal-close-btn { position: absolute; top: 20px; right: 20px; font-size: 20px; color: var(--text-secondary); cursor: pointer; transition: 0.3s; }
-.modal-close-btn:hover { color: var(--danger); transform: rotate(90deg); }
-.modal-card h2 { margin-bottom: 25px; font-size: 24px; font-weight: 900; color: var(--text-primary); letter-spacing: 0.5px; }
+.modal-close-btn:hover { color: var(--danger); transform: rotate(90deg) scale(1.2); }
+.modal-card h2 { margin-bottom: 20px; font-size: 24px; font-weight: 900; color: var(--text-primary); letter-spacing: 0.5px; }
 .modal-card input { 
     width: 100%; padding: 16px; margin-bottom: 15px; border-radius: 14px; 
     background: var(--input-bg); border: 1px solid var(--glass-border); 
     color: var(--text-primary); outline: none; text-align: left; font-size: 14px; transition: 0.3s; font-weight: 500;
 }
-.modal-card input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); background: var(--bg-main); }
+.modal-card input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); background: var(--bg-main); transform: scale(1.02); }
 .modal-card input:disabled { opacity: 0.6; cursor: not-allowed; }
 .modal-btn { 
     width: 100%; padding: 16px; border-radius: 14px; border: none; 
@@ -241,7 +233,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
     color: #fff; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; 
     box-shadow: 0 8px 20px var(--primary-glow); transition: 0.3s; text-transform: uppercase; margin-top: 10px;
 }
-.modal-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 25px var(--primary-glow); }
+.modal-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px var(--primary-glow); }
 
 .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; background: var(--input-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); }
 .avatar-item { width: 100%; aspect-ratio: 1/1; border-radius: 12px; cursor: pointer; border: 3px solid transparent; transition: 0.3s; overflow: hidden; position: relative; }
@@ -249,7 +241,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 .avatar-item:hover { transform: scale(1.05); }
 .avatar-item.active { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); transform: scale(1.1); z-index: 2; }
 
-.promo-msg { font-size: 13px; margin-top: 5px; font-weight: 800; min-height: 20px; letter-spacing: 0.5px; }
+.promo-msg { font-size: 13px; margin-top: 5px; font-weight: 800; min-height: 20px; letter-spacing: 0.5px; transition: 0.3s; }
 .promo-error { color: var(--danger); text-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
 .promo-success { color: var(--success); text-shadow: 0 0 10px rgba(0, 255, 163, 0.4); }
 .auth-error-area { color: var(--danger); font-size: 13px; font-weight: 800; margin-top: 10px; min-height: 20px; display: block; text-align: center; }
@@ -419,7 +411,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
 <div class="modal-overlay" id="alertModal">
     <div class="modal-card">
-        <div id="alertIcon" style="font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));"></div>
+        <div id="alertIcon" style="font-size: 55px; margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));"></div>
         <h2 id="alertTitle">Sistem Mesajı</h2>
         <p id="alertBody" style="color: var(--text-secondary); margin-bottom: 25px; font-size: 15px; font-weight: 500;"></p>
         <button class="modal-btn" id="alertCloseBtn">TAMAM</button>
@@ -490,7 +482,7 @@ body { background: var(--bg-main); color: var(--text-primary); overflow-x: hidde
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
@@ -504,12 +496,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// KONFİGÜRE EDİLEBİLİR API URL (Render veya Localhost)
 const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
 let globalUserData = null; 
 
-// === EVENT LISTENER MİMARİSİ ===
 const toggleTheme = () => {
     document.body.classList.toggle('light-mode');
     const icon = document.querySelector('#themeToggle i');
@@ -522,12 +512,9 @@ const toggleTheme = () => {
     }
 };
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-
 if(localStorage.getItem('matrixTheme') === 'light') { document.body.classList.add('light-mode'); document.querySelector('#themeToggle i').className = 'fa-solid fa-sun'; }
-
 document.getElementById("brandLogo").addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
 
-// === GÜVENLİ VE HATA TOLERANSLI API İSTEK FONKSİYONU ===
 async function fetchAPI(endpoint, method = 'GET', body = null) {
     if (!auth.currentUser) throw new Error("Güvenlik İhlali: Oturum bulunamadı!");
     const token = await getIdToken(auth.currentUser);
@@ -554,14 +541,34 @@ async function fetchAPI(endpoint, method = 'GET', body = null) {
     }
 }
 
+// ANİMASYONLU MODAL (POPUP) YÖNETİCİSİ
 const showMatrixModal = (title, message, type = 'info') => {
     const icon = document.getElementById("alertIcon");
     document.getElementById("alertTitle").innerText = title;
     document.getElementById("alertBody").innerText = message;
+    
+    // Type'a göre özel ikon ve renk
     if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:var(--danger)"></i>'; } 
     else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>'; } 
     else { icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>'; }
+    
     openModal('alertModal');
+};
+
+const openModal = (id) => { 
+    const modal = document.getElementById(id); 
+    modal.style.display = 'flex'; 
+    // Animasyonun pürüzsüz çalışması için display:flex'ten hemen sonra show class'ını ekler
+    setTimeout(() => { modal.classList.add('show'); }, 10);
+    
+    if(id === 'wheelModal') { drawWheel(); document.getElementById("wheelCanvas").style.transform = "rotate(0deg)"; currentRotation = 0; document.getElementById("wheelResultText").innerText = ""; checkWheelCooldown(); }
+};
+
+const closeModal = (id) => { 
+    const modal = document.getElementById(id); 
+    modal.classList.remove('show'); 
+    setTimeout(() => { modal.style.display = 'none'; }, 400); // 400ms CSS transition süresi ile uyumlu
+    if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
 };
 
 const rewards = [
@@ -739,21 +746,10 @@ onAuthStateChanged(auth, async user => {
     }
 });
 
-const openModal = (id) => { 
-    const modal = document.getElementById(id); modal.style.display = 'flex'; setTimeout(() => { modal.classList.add('show'); }, 10);
-    if(id === 'wheelModal') { drawWheel(); document.getElementById("wheelCanvas").style.transform = "rotate(0deg)"; currentRotation = 0; document.getElementById("wheelResultText").innerText = ""; checkWheelCooldown(); }
-};
-
-const closeModal = (id) => { 
-    const modal = document.getElementById(id); modal.classList.remove('show'); setTimeout(() => { modal.style.display = 'none'; }, 300);
-    if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
-};
-
-// Modal ve Navigasyon Event Listener'ları
+// Modal Event Listener'ları
 document.getElementById('navProfileItem').addEventListener('click', () => openModal('profileModal'));
 document.getElementById('navWheelItem').addEventListener('click', () => openModal('wheelModal'));
 document.getElementById('navBonusItem').addEventListener('click', () => openModal('bonusModal'));
-
 document.getElementById('alertCloseBtn').addEventListener('click', () => closeModal('alertModal'));
 document.getElementById('profileCloseIcon').addEventListener('click', () => closeModal('profileModal'));
 document.getElementById('bonusCloseIcon').addEventListener('click', () => closeModal('bonusModal'));
@@ -789,56 +785,7 @@ function updateAuthUI() {
     document.getElementById("switchMode").innerHTML = isLogin ? 'Hesabın yok mu? <b style="color:var(--primary)">Hemen Kayıt Ol</b>' : 'Zaten hesabın var mı? <b style="color:var(--primary)">Giriş Yap</b>';
 }
 
-document.getElementById("authSubmit").addEventListener('click', async () => {
-    const errorMsg = document.getElementById("authErrorMsg");
-    const pass = document.getElementById("authPassword").value;
-    errorMsg.innerText = "";
-    try {
-        if(isLogin) {
-            const email = document.getElementById("authEmail").value.trim();
-            if(!email || !pass) throw new Error("Kimlik bilgileri eksik.");
-            await signInWithEmailAndPassword(auth, email, pass);
-            closeModal('authOverlay');
-        } else {
-            const email = document.getElementById("regEmail").value.trim();
-            const userN = document.getElementById("authUsername").value.trim();
-            if(!userN || !email || !pass) throw new Error("Tüm alanları doldurmalısınız.");
-            
-            await createUserWithEmailAndPassword(auth, email, pass);
-            await fetchAPI('/api/me'); 
-            await fetchAPI('/api/profile/update', 'POST', { username: userN, avatar: avatarLinks[0] });
-            closeModal('authOverlay');
-            showMatrixModal("Kayıt Başarılı!", "Sisteme hoş geldiniz.", "success");
-        }
-    } catch(e) { 
-        if(e.code === "auth/email-already-in-use") errorMsg.innerText = "E-posta kullanımda!";
-        else if(e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") errorMsg.innerText = "Hatalı şifre veya e-posta!";
-        else errorMsg.innerText = e.message;
-    }
-});
-
-document.getElementById("avatarTrigger").addEventListener('click', (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); });
-window.addEventListener('click', (e) => { if(!e.target.closest('#userPill')) { document.getElementById("userDropdown").classList.remove("active"); } });
-document.getElementById("logoutBtn").addEventListener('click', () => signOut(auth));
-
-const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
-function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; } window.addEventListener('resize', resize); resize();
-for(let i=0; i<70; i++) particles.push({x:Math.random()*canvasSnow.width, y:Math.random()*canvasSnow.height, r:Math.random()*2+0.5, d:Math.random()*1+0.5});
-function drawSnow() { ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height); ctxS.fillStyle = "rgba(0, 240, 255, 0.4)"; ctxS.beginPath(); particles.forEach(p => { ctxS.moveTo(p.x, p.y); ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); p.y += p.d; if(p.y > canvasSnow.height) p.y = -5; }); ctxS.fill(); requestAnimationFrame(drawSnow); }
-drawSnow();
-
-const checkLogin = (url) => { if(!auth.currentUser) { openModal('authOverlay'); } else { location.href = url; } };
-
-// === OYUN KARTLARI DİNAMİK YÖNLENDİRME (İnline Onclick Temizliği İçin) ===
-document.querySelectorAll('.game-card').forEach(card => {
-    card.addEventListener('click', () => {
-        const authUrl = card.getAttribute('data-auth-url');
-        const freeUrl = card.getAttribute('data-free-url');
-        if (authUrl) return checkLogin(authUrl);
-        if (freeUrl) return (location.href = freeUrl);
-    });
-});
-
+// === HATA ÇÖZÜMÜ: Çift Listener Engellendi (Tek ve Güçlü Listener) ===
 document.getElementById("authSubmit").addEventListener('click', async () => {
     const errorMsg = document.getElementById("authErrorMsg");
     const pass = document.getElementById("authPassword").value;
@@ -855,22 +802,52 @@ document.getElementById("authSubmit").addEventListener('click', async () => {
             if(!userN || !email || !pass) throw new Error("Tüm alanları doldurmalısınız.");
             
             // 1. Firebase Auth'ta Kullanıcı Yarat
-            await createUserWithEmailAndPassword(auth, email, pass);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             
-            // 2. SUNUCUDA PROFİLİ OLUŞTUR (Yeni eklendi, 403 Bug'ını çözer)
+            // YENİ: E-POSTA DOĞRULAMA (Fake Hesap Koruması)
+            await sendEmailVerification(userCredential.user);
+
+            // 2. SUNUCUDA PROFİLİ OLUŞTUR 
             await fetchAPI('/api/profile/update', 'POST', { username: userN, avatar: avatarLinks[0] });
             
             // 3. Verileri arayüze çek
             await fetchAPI('/api/me'); 
             
             closeModal('authOverlay');
-            showMatrixModal("Kayıt Başarılı!", "Sisteme hoş geldiniz.", "success");
+            // Yeni Animasyonlu Modal Sistemiyle Karşılama (E-posta vurgusu)
+            showMatrixModal("Hesap Oluşturuldu!", "Güvenlik için e-posta adresinize bir onay linki gönderdik. Çark ve Promosyonları kullanabilmek için lütfen e-postanızı doğrulayın.", "success");
         }
     } catch(e) { 
         if(e.code === "auth/email-already-in-use") errorMsg.innerText = "E-posta kullanımda!";
         else if(e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") errorMsg.innerText = "Hatalı şifre veya e-posta!";
         else errorMsg.innerText = e.message;
     }
+});
+
+document.getElementById("avatarTrigger").addEventListener('click', (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); });
+window.addEventListener('click', (e) => { if(!e.target.closest('#userPill')) { document.getElementById("userDropdown").classList.remove("active"); } });
+
+// YENİ HATA ÇÖZÜMÜ: Çıkış Yaptıktan Sonra Sayfa Yenileme (UX İyileştirmesi)
+document.getElementById("logoutBtn").addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.reload(); 
+});
+
+const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
+function resize() { canvasSnow.width = window.innerWidth; canvasSnow.height = window.innerHeight; } window.addEventListener('resize', resize); resize();
+for(let i=0; i<70; i++) particles.push({x:Math.random()*canvasSnow.width, y:Math.random()*canvasSnow.height, r:Math.random()*2+0.5, d:Math.random()*1+0.5});
+function drawSnow() { ctxS.clearRect(0,0,canvasSnow.width, canvasSnow.height); ctxS.fillStyle = "rgba(0, 240, 255, 0.4)"; ctxS.beginPath(); particles.forEach(p => { ctxS.moveTo(p.x, p.y); ctxS.arc(p.x, p.y, p.r, 0, Math.PI*2); p.y += p.d; if(p.y > canvasSnow.height) p.y = -5; }); ctxS.fill(); requestAnimationFrame(drawSnow); }
+drawSnow();
+
+const checkLogin = (url) => { if(!auth.currentUser) { openModal('authOverlay'); } else { location.href = url; } };
+
+document.querySelectorAll('.game-card').forEach(card => {
+    card.addEventListener('click', () => {
+        const authUrl = card.getAttribute('data-auth-url');
+        const freeUrl = card.getAttribute('data-free-url');
+        if (authUrl) return checkLogin(authUrl);
+        if (freeUrl) return (location.href = freeUrl);
+    });
 });
 </script>
 </body>
