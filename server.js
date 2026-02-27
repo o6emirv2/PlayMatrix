@@ -323,8 +323,13 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
           if (s.hands.length !== 1 || h.cards[0].value !== h.cards[1].value) throw new Error('Geçersiz Split.');
           if (userBal < h.bet) throw new Error('Split için bakiye yetersiz.'); 
           tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-h.bet) });
-          s.hands.push({ cards: [h.cards.pop(), s._deck.pop()], bet: h.bet, status: 'playing', done: false });
+          
+          // YENİ HARDCORE CASINO KURALI: Aslar bölündüğünde sadece 1 kart verilir ve el kapanır.
+          const isAceSplit = (h.cards[0].value === 1);
+          
+          s.hands.push({ cards: [h.cards.pop(), s._deck.pop()], bet: h.bet, status: 'playing', done: isAceSplit });
           h.cards.push(s._deck.pop());
+          if (isAceSplit) h.done = true;
         }
         
         const nextIdx = s.hands.findIndex(x => !x.done);
