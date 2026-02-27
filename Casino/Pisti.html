@@ -36,15 +36,15 @@
             z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.8s ease, visibility 0.8s ease;
         }
-
+        
         .center-logo {
-            text-align: center; margin-top: -30px; transform: scale(1.2); animation: pulseLogo 2s infinite alternate;
+            text-align: center; margin-bottom: 30px; transform: scale(1.2); animation: pulseLogo 2s infinite alternate;
         }
-        .center-logo svg { width: 70px; height: auto; margin-bottom: 10px; fill: var(--pm-orange); }
-        .center-logo h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 2px; line-height: 1.1;}
+        .center-logo svg { width: 60px; height: auto; margin-bottom: 10px; fill: var(--pm-orange); }
+        .center-logo h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 28px; letter-spacing: 2px; }
         .center-logo h1 span { color: var(--pm-orange); }
         
-        .loading-container { width: 220px; height: 4px; background: #333; margin-top: 50px; border-radius: 2px; overflow: hidden; position: relative;}
+        .loading-container { width: 220px; height: 4px; background: #333; margin-top: 30px; border-radius: 2px; overflow: hidden; position: relative;}
         .loading-fill { height: 100%; width: 0%; background: var(--pm-orange); transition: width 0.1s linear; }
         
         @keyframes pulseLogo { 0% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(255,138,0,0.2)); } 100% { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(255,138,0,0.6)); } }
@@ -56,19 +56,18 @@
         }
         .htp-box {
             background: rgba(20,20,20,0.9); border: 1px solid var(--pm-orange); padding: 25px;
-            border-radius: 15px; max-width: 380px; box-shadow: 0 10px 40px rgba(255,138,0,0.2);
+            border-radius: 15px; max-width: 380px; box-shadow: 0 10px 30px rgba(255,138,0,0.15);
         }
         .htp-box h2 { color: var(--pm-orange); margin-bottom: 20px; font-size: 24px; font-weight: 900; letter-spacing: 1px;}
-        .htp-box ul { list-style: none; text-align: left; font-size: 14px; line-height: 1.6; color: #ddd; margin-bottom: 25px;}
-        .htp-box ul li { margin-bottom: 12px; padding-left: 20px; position: relative;}
+        .htp-box ul { list-style: none; text-align: left; font-size: 14px; line-height: 1.7; color: #eee; margin-bottom: 25px;}
+        .htp-box ul li { margin-bottom: 10px; padding-left: 22px; position: relative;}
         .htp-box ul li::before { content: '♠'; position: absolute; left: 0; color: var(--pm-orange); font-size: 16px;}
-        .htp-box ul li b { color: #fff; }
-        .htp-box ul li i { color: #00ffa3; font-style: normal; font-weight: 700;}
+        .htp-box b { color: var(--pm-orange); }
         
         .play-btn-huge {
             background: linear-gradient(180deg, #ffb347 0%, #ff7b00 100%); color: #000;
             border: none; padding: 15px 40px; font-size: 18px; font-weight: 900; border-radius: 30px;
-            cursor: pointer; box-shadow: 0 5px 15px rgba(255,123,0,0.4); text-transform: uppercase; transition: 0.2s;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(255,123,0,0.4); text-transform: uppercase; letter-spacing: 1px;
         }
         .play-btn-huge:active { transform: scale(0.95); }
 
@@ -204,15 +203,16 @@
 
     <div id="howToPlayScreen">
         <div class="htp-box">
-            <h2>PİŞTİ NASIL OYNANIR?</h2>
+            <h2>PİŞTİ KURALLARI</h2>
             <ul>
-                <li><b>Amacınız:</b> Yerdeki kartlarla eşleşen kartı atarak en çok puanı toplamak.</li>
-                <li><b>Kart Toplama:</b> Yerdeki en üst kartın <i>aynısını</i> veya <b>Vale (J)</b> atarsanız yerdeki tüm kartları alırsınız.</li>
-                <li><b>Pişti Yapmak:</b> Yerde <i>sadece bir kart</i> varken aynısını atarsanız <b>PİŞTİ (10 Puan)</b> yaparsınız. Vale ile pişti <b>20 Puan</b> verir.</li>
-                <li><b>Puanlama:</b> As (1), Vale (1), Sinek 2 (2) ve Karo 10 (3) puandır.</li>
-                <li>Oyun sonu elinde daha çok kart olan <b>+3 Puan</b> kazanır.</li>
+                <li>Yerdeki en üst kart ile <b>aynı değeri</b> atarak yerdeki tüm kartları toplarsınız.</li>
+                <li><b>Vale (J)</b> her zaman yerdeki tüm kartları toplar.</li>
+                <li>Yerde sadece <b>1 kart</b> varken aynı kartı atarsanız <b>PİŞTİ</b> yaparsınız.</li>
+                <li>Normal Pişti <b>10 Puan</b>, Vale ile yapılan Pişti <b>20 Puan</b> değerindedir.</li>
+                <li>Özel Kartlar: <b>Karo 10</b> (3 Puan), <b>Sinek 2</b> (2 Puan), <b>As</b> ve <b>Vale</b> (1 Puan).</li>
+                <li>Oyun sonunda en çok kartı toplayan <b>3 Puan (Kart Fazlası)</b> alır.</li>
             </ul>
-            <button class="play-btn-huge" onclick="closeIntro()">OYUNA BAŞLA</button>
+            <button class="play-btn-huge" onclick="closeIntro()">MASAYA OTUR</button>
         </div>
     </div>
 </div>
@@ -220,7 +220,7 @@
 <header class="top-bar">
     <a href="https://playmatrix.com.tr" class="back-btn">LOBİYE DÖN</a>
     <div class="balance-container">
-        <div class="balance-val" id="uiBalance">0</div>
+        <div class="balance-val" id="uiBalance">...</div>
         <div class="currency-badge">MC</div>
     </div>
 </header>
@@ -293,7 +293,7 @@ let userToken = null;
 let balance = 0;
 let currentBet = 0;
 let gameState = null;
-let actionLock = true; // Intro bitene kadar kitli
+let actionLock = true; 
 
 // Intro Yükleme Animasyonu
 let loadProgress = 0;
@@ -337,15 +337,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
 async function fetchBalance() {
     const res = await apiCall('/api/me');
-    if(res.ok) { 
-        balance = res.balance || 0; 
-        updateUI(); 
-    }
+    if(res.ok) { balance = res.balance; updateUI(); }
 }
 
 function updateUI() {
-    // Bakiyeyi formatla, undefined gelirse 0 yazsın
-    document.getElementById("uiBalance").innerText = (balance || 0).toLocaleString('tr-TR');
+    document.getElementById("uiBalance").innerText = balance.toLocaleString('tr-TR');
     document.getElementById("uiCurrentBet").innerText = currentBet.toLocaleString('tr-TR');
     
     const startBtn = document.getElementById("startBtn");
@@ -364,21 +360,21 @@ function updateUI() {
     }
     
     if(gameState) {
-        document.getElementById("uiPlayerScore").innerText = gameState.playerScore || 0;
-        document.getElementById("uiBotScore").innerText = gameState.botScore || 0;
+        document.getElementById("uiPlayerScore").innerText = gameState.playerScore;
+        document.getElementById("uiBotScore").innerText = gameState.botScore;
     }
 }
 
 window.addBet = function(amount) {
     if (balance < amount || currentBet + amount > 50000) return;
     currentBet += amount;
-    balance -= amount; // Anında UI'da göster
+    balance -= amount; 
     playSound('deal');
     updateUI();
 }
 
 window.clearBet = function() {
-    balance += currentBet; // İptalde bakiyeyi geri ekle
+    balance += currentBet;
     currentBet = 0;
     playSound('deal');
     updateUI();
@@ -386,9 +382,6 @@ window.clearBet = function() {
 
 async function checkGameState() {
     const res = await apiCall('/api/pisti/state');
-    // Bakiye server'dan gelirse anında eşitle
-    if (res.balance !== undefined) balance = res.balance;
-
     if(res.ok && res.state && res.state.status === 'playing') {
         gameState = res.state;
         renderBoard(false);
@@ -405,14 +398,14 @@ window.startGame = async function() {
     document.getElementById("startBtn").innerText = "OYNA";
     
     if(res.ok) {
-        if (res.balance !== undefined) balance = res.balance; // Sunucudan düşülmüş bakiyeyi al
         gameState = res.state;
         updateUI();
         renderBoard(true); 
+        fetchBalance();
         setTimeout(() => { actionLock = false; }, 1500);
     } else {
         showModal("Hata", res.error, "lose");
-        balance += currentBet; currentBet = 0; updateUI(); // Hata varsa bakiyeyi geri ver
+        balance += currentBet; currentBet = 0; updateUI();
         actionLock = false;
     }
 }
@@ -435,19 +428,17 @@ function renderBoard(animateDeal = false) {
     ph.innerHTML = ""; bh.innerHTML = ""; tc.innerHTML = "";
 
     // Table Cards
-    if (gameState.tableCards) {
-        gameState.tableCards.forEach((c, i) => {
-            let img = document.createElement("div");
-            img.className = "card";
-            img.style.backgroundImage = `url(${getCardImg(c)})`;
-            img.style.transform = `rotate(${Math.random() * 20 - 10}deg) translate(${i*3}px, ${i*3}px)`;
-            img.style.zIndex = i;
-            tc.appendChild(img);
-        });
-    }
+    gameState.tableCards.forEach((c, i) => {
+        let img = document.createElement("div");
+        img.className = "card";
+        img.style.backgroundImage = `url(${getCardImg(c)})`;
+        img.style.transform = `rotate(${Math.random() * 20 - 10}deg) translate(${i*3}px, ${i*3}px)`;
+        img.style.zIndex = i;
+        tc.appendChild(img);
+    });
 
     // Bot Hand
-    for(let i=0; i< (gameState.botCardCount || 0); i++) {
+    for(let i=0; i<gameState.botCardCount; i++) {
         let img = document.createElement("div");
         img.className = "card";
         img.style.backgroundImage = `url(${getCardImg('back')})`;
@@ -456,29 +447,27 @@ function renderBoard(animateDeal = false) {
     }
 
     // Player Hand
-    if (gameState.playerHand) {
-        gameState.playerHand.forEach((c, i) => {
-            let img = document.createElement("div");
-            img.className = "card playable";
-            img.style.backgroundImage = `url(${getCardImg(c)})`;
-            img.style.left = `${i * 50}px`;
-            img.onclick = () => playCard(i, img);
-            if(animateDeal) {
-                img.style.top = "-200px"; img.style.opacity = "0";
-                setTimeout(() => {
-                    img.style.top = "0px"; img.style.opacity = "1"; playSound('deal');
-                }, i * 150);
-            }
-            ph.appendChild(img);
-        });
-    }
+    gameState.playerHand.forEach((c, i) => {
+        let img = document.createElement("div");
+        img.className = "card playable";
+        img.style.backgroundImage = `url(${getCardImg(c)})`;
+        img.style.left = `${i * 50}px`;
+        img.onclick = () => playCard(i, img);
+        if(animateDeal) {
+            img.style.top = "-200px"; img.style.opacity = "0";
+            setTimeout(() => {
+                img.style.top = "0px"; img.style.opacity = "1"; playSound('deal');
+            }, i * 150);
+        }
+        ph.appendChild(img);
+    });
 }
 
 window.playCard = async function(index, el) {
     if(actionLock || !gameState) return;
     actionLock = true;
     
-    // Görsel fırlatma
+    // Görsel olarak kartı ortaya fırlat
     el.style.top = "-180px";
     el.style.left = "100px";
     el.classList.remove("playable");
@@ -493,20 +482,19 @@ window.playCard = async function(index, el) {
     setTimeout(() => {
         if(log.playerAction.captured) {
             playSound('capture');
-            document.getElementById("tableCenter").innerHTML = ""; 
+            document.getElementById("tableCenter").innerHTML = ""; // Yeri topla
             if(log.playerAction.isPisti) { playSound('pisti'); triggerPistiAnim(); }
-        } 
+        }
 
         gameState = res.state;
-        if (res.balance !== undefined) balance = res.balance; // Güncel bakiyeyi eşitle
         updateUI();
         
-        // Botun hamlesini göster (Gecikmeli)
+        // Botun hamlesini göster
         setTimeout(() => {
             if(log.botAction) {
                 playSound('throw');
                 const bh = document.getElementById("botHand");
-                if(bh && bh.lastChild) {
+                if(bh.lastChild) {
                     bh.lastChild.style.backgroundImage = `url(${getCardImg(log.botAction.card)})`;
                     bh.lastChild.style.top = "180px";
                     bh.lastChild.style.zIndex = "100";
@@ -518,7 +506,6 @@ window.playCard = async function(index, el) {
                         if(log.botAction.isPisti) { playSound('pisti'); triggerPistiAnim(); }
                     }
                     gameState = res.state;
-                    if (res.balance !== undefined) balance = res.balance; // Tekrar bakiye güvenliği
                     renderBoard();
                     updateUI();
                     
@@ -537,13 +524,13 @@ window.playCard = async function(index, el) {
             }
         }, 1000);
 
-    }, 500); 
+    }, 500); // Oyuncu atış animasyonu bekleme
 }
 
 function triggerPistiAnim() {
     const el = document.getElementById("pistiAnim");
     el.style.animation = 'none';
-    el.offsetHeight; // Reflow
+    el.offsetHeight; 
     el.style.animation = 'showPisti 1.5s ease-out forwards';
 }
 
@@ -564,6 +551,7 @@ function handleGameOver(log) {
     }
 
     currentBet = 0;
+    fetchBalance(); 
     
     setTimeout(() => {
         renderBoard();
