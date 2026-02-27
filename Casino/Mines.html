@@ -3,79 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>PlayMatrix Mines | %100 Güvenli Sunucu Tabanlı</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<meta name="description" content="PlayMatrix Mines | Güvenli, adil ve heyecanlı mayın tarlası oyunu. Elmasları bul, çarpanı katla, mayınlardan kaç!">
+<meta name="keywords" content="mines oyunu, casino, playmatrix, mayın tarlası, kripto oyun, güvenli bahis, elmas bulma">
+<meta name="author" content="PlayMatrix">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#020408">
+
+<meta property="og:title" content="PlayMatrix Mines | Gerçek Casino Heyecanı">
+<meta property="og:description" content="Elmasları bularak kazancını katla. %100 Provably Fair ve güvenli!">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+
+<title>PlayMatrix - Mines</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
-    html,body{ height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto; background: #020408; color:white; }
+    /* GENEL DÜZEN VE SIFIR KAYMA KORUMASI */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; touch-action:manipulation; user-select:none; }
+    html, body { height:100vh; width: 100vw; overflow:hidden; overscroll-behavior: none; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto; background: #020408; color:white; }
 
-    .top-bar{
-        position:fixed;top:0;width:100%;height:70px; display:flex;align-items:center;justify-content:space-between;
-        padding:0 15px; background: rgba(0,0,0,0.95); border-bottom: 2px solid #4fd1ff; z-index:1000;
-    }
-    .brand{ font-family: 'Orbitron', sans-serif; font-size:1.1rem; font-weight:900; color:#4fd1ff; letter-spacing: 1px; }
-    .right-menu{display:flex;gap:8px;align-items: center;}
+    /* ÜST BAR (SADECE BAKİYE, TAŞMA KORUMALI) */
+    .top-bar { position:fixed; top:0; left:0; right:0; height:70px; display:flex; align-items:center; justify-content:space-between; padding:0 15px; background: rgba(0,0,0,0.95); border-bottom: 2px solid #4fd1ff; z-index:1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
+    .brand { font-family: 'Orbitron', sans-serif; font-size:1.2rem; font-weight:900; background: linear-gradient(90deg, #4fd1ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; flex-shrink: 0; }
+    .right-menu { display:flex; gap:8px; align-items: center; justify-content: flex-end; flex: 1; margin-left: 10px; overflow: hidden; }
     
-    .user-pill-mini { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); height: 38px; }
-    .balance-info { display: flex; align-items: center; }
-    .balance-info b { font-size: 14px; color: #00ffa3; font-weight: 700; font-family: 'Inter', monospace; }
-    .mc-chip { width: 22px; height: 22px; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #fff; box-shadow: 0 0 10px rgba(79, 209, 255, 0.3); border: 1.2px solid rgba(255,255,255,0.2); }
+    .user-pill-mini { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); height: 38px; white-space: nowrap; overflow: hidden; }
+    .balance-info { display: flex; align-items: center; overflow: hidden; }
+    .balance-info b { font-size: 14px; color: #00ffa3; font-weight: 700; font-family: 'Inter', monospace; text-overflow: ellipsis; overflow: hidden; }
+    .mc-chip { width: 22px; height: 22px; flex-shrink: 0; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #fff; box-shadow: 0 0 10px rgba(79, 209, 255, 0.3); border: 1.2px solid rgba(255,255,255,0.2); }
 
-    .back-btn { background: #d63031; color: white; text-decoration: none; padding: 8px 15px; border-radius: 10px; font-weight: 800; font-size: 11px; border: none; cursor: pointer; transition: 0.3s; margin-left: 5px; }
+    .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 8px 15px; border-radius: 10px; font-weight: 800; font-size: 11px; border: 1px solid #7a0000; cursor: pointer; transition: 0.3s; margin-left: 5px; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
-    .container{
-        position:absolute;top:70px;bottom:0;width:100%; display:flex;flex-direction:column;padding:15px;overflow-y:auto;
-        background-image: radial-gradient(at 0% 0%, hsla(225,39%,10%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,15%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(225,39%,10%,1) 0, transparent 50%), radial-gradient(at 50% 50%, hsla(225,39%,5%,1) 0, transparent 100%), linear-gradient(180deg, #020408 0%, #0a0f1e 100%);
-    }
+    /* OYUN ALANI */
+    .container { position:absolute; top:70px; bottom:0; width:100%; display:flex; flex-direction:column; padding:15px; overflow-y:auto; background-image: radial-gradient(at 0% 0%, hsla(225,39%,10%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,15%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(225,39%,10%,1) 0, transparent 50%), radial-gradient(at 50% 50%, hsla(225,39%,5%,1) 0, transparent 100%), linear-gradient(180deg, #020408 0%, #0a0f1e 100%); }
 
-    .mines-header{
-        display:flex;justify-content:space-between;align-items:center; background:rgba(26, 34, 72, 0.4); padding:12px 15px; border-radius:14px; margin-bottom:15px; border: 1px solid rgba(79, 209, 255, 0.1); backdrop-filter: blur(5px); z-index: 2; font-family: 'Orbitron';
-    }
+    .mines-header { display:flex; justify-content:space-between; align-items:center; background:rgba(26, 34, 72, 0.4); padding:12px 15px; border-radius:14px; margin-bottom:15px; border: 1px solid rgba(79, 209, 255, 0.1); backdrop-filter: blur(5px); z-index: 2; font-family: 'Orbitron'; font-weight: bold; }
     
-    #grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px; z-index: 2; flex:1; align-content: center;}
+    #grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px; z-index: 2; flex:1; align-content: center; max-width: 500px; margin-left: auto; margin-right: auto; width: 100%; }
     
-    .tile{
-        background: rgba(22, 29, 54, 0.7); aspect-ratio: 1/1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(39, 60, 143, 0.5); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-    }
+    .tile { background: rgba(22, 29, 54, 0.7); aspect-ratio: 1/1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: pointer; transition: transform 0.1s, background 0.3s, box-shadow 0.3s; border: 1px solid rgba(39, 60, 143, 0.5); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
     .tile.active-hover:active { transform: scale(0.9); }
-    .tile.open{ background: linear-gradient(145deg, #00b894, #00d2ad); border-color: #55efc4; box-shadow: 0 0 15px rgba(0, 184, 148, 0.4); animation: flip 0.4s; cursor: default; }
-    .tile.mine{ background: linear-gradient(145deg, #d63031, #ff7675); border-color: #ff7675; box-shadow: 0 0 20px rgba(214, 48, 49, 0.5); animation: shake 0.4s; cursor: default; }
-    .tile.dimmed-diamond { background: rgba(22, 29, 54, 0.3); border-color: rgba(39, 60, 143, 0.2); opacity: 0.5; cursor: default; filter: grayscale(0.5); }
-    .tile.dimmed-mine { background: rgba(214, 48, 49, 0.2); border-color: rgba(214, 48, 49, 0.3); opacity: 0.7; cursor: default; }
+    .tile.open { background: linear-gradient(145deg, #00b894, #00d2ad); border-color: #55efc4; box-shadow: 0 0 20px rgba(0, 184, 148, 0.6); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: default; }
+    .tile.mine { background: linear-gradient(145deg, #d63031, #ff7675); border-color: #ff7675; box-shadow: 0 0 25px rgba(214, 48, 49, 0.7); animation: shake 0.4s; cursor: default; }
+    .tile.dimmed-diamond { background: rgba(22, 29, 54, 0.3); border-color: rgba(39, 60, 143, 0.2); opacity: 0.5; cursor: default; filter: grayscale(0.8); }
+    .tile.dimmed-mine { background: rgba(214, 48, 49, 0.2); border-color: rgba(214, 48, 49, 0.3); opacity: 0.7; cursor: default; filter: grayscale(0.5); }
 
-    @keyframes flip { 0% {transform: rotateY(90deg);} 100% {transform: rotateY(0deg);} }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    @keyframes popIn { 0% {transform: scale(0.5); opacity: 0;} 100% {transform: scale(1); opacity: 1;} }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
 
-    .bet-panel{
-        background: rgba(10, 15, 30, 0.85); border-top: 1px solid rgba(79, 209, 255, 0.1); padding: 20px 15px; margin: auto -15px 0 -15px; display: flex; flex-direction: column; gap: 10px; z-index: 10;
-    }
+    .bet-panel { background: rgba(10, 15, 30, 0.85); border-top: 1px solid rgba(79, 209, 255, 0.1); padding: 20px 15px; margin: auto -15px 0 -15px; display: flex; flex-direction: column; gap: 12px; z-index: 10; max-width: 600px; margin-left: auto; margin-right: auto; width: 100%; border-radius: 20px 20px 0 0; }
 
-    input, select{
-        width:100%; background: rgba(5, 8, 17, 0.8); border: 1px solid #273c8f; border-radius:12px; padding:12px; color:white; font-weight: bold; font-size:16px; outline:none; text-align: center; transition: 0.3s; font-family: 'Orbitron';
-    }
-    input:focus { border-color: #4fd1ff; }
+    .input-row { display: flex; gap: 10px; }
+    input, select { width:100%; background: rgba(5, 8, 17, 0.8); border: 2px solid #273c8f; border-radius:12px; padding:15px; color:white; font-weight: bold; font-size:16px; outline:none; text-align: center; transition: 0.3s; font-family: 'Orbitron'; }
+    input:focus, select:focus { border-color: #4fd1ff; }
     input:disabled, select:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    button.main-btn {
-        width:100%; padding:15px; border-radius:12px; border:none; font-weight:900; cursor:pointer; font-size:16px; background: linear-gradient(180deg, #6366f1, #4338ca); color:white; transition: 0.2s; font-family: 'Orbitron'; text-transform: uppercase; box-shadow: 0 4px 0 #312e81;
-    }
-    button.main-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
-    button.main-btn:disabled { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; }
+    button.main-btn { width:100%; padding:18px; border-radius:12px; border:none; font-weight:900; cursor:pointer; font-size:16px; background: linear-gradient(180deg, #6366f1, #4338ca); color:white; transition: 0.1s; font-family: 'Orbitron'; text-transform: uppercase; box-shadow: 0 5px 0 #312e81; letter-spacing: 1px; }
+    button.main-btn:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 0 0 transparent; }
+    button.main-btn:disabled { opacity: 0.6; filter: grayscale(0.8); cursor: not-allowed; transform: none; box-shadow: 0 5px 0 rgba(0,0,0,0.5); }
     
-    .btn-cashout { background: linear-gradient(180deg, #f59e0b, #d97706) !important; box-shadow: 0 4px 0 #b45309 !important; }
-    .btn-loss { background: linear-gradient(180deg, #ef4444, #b91c1c) !important; box-shadow: 0 4px 0 #7f1d1d !important; }
+    .btn-cashout { background: linear-gradient(180deg, #f59e0b, #d97706) !important; box-shadow: 0 5px 0 #b45309 !important; }
+    .btn-loss { background: linear-gradient(180deg, #ef4444, #b91c1c) !important; box-shadow: 0 5px 0 #7f1d1d !important; }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(2,4,10,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px); flex-direction: column; }
-    .modal-content { background: rgba(10,15,25,0.95); padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #4fd1ff; box-shadow: 0 0 30px rgba(79,209,255,0.2); width: 85%; max-width: 350px; }
+    /* YENİ: AÇILIŞ VE BİLGİLENDİRME MODALI (NASIL OYNANIR) */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(2,4,10,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.3s; }
+    
+    .animated-border-box {
+        position: relative; width: 90%; max-width: 380px; border-radius: 16px; padding: 4px;
+        background: linear-gradient(45deg, #4fd1ff, #00ffa3, #4fd1ff, #6366f1);
+        background-size: 300% 300%; animation: gradientBorder 3s ease infinite;
+        box-shadow: 0 0 40px rgba(79, 209, 255, 0.4);
+        transform: scale(0.9); animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, gradientBorder 3s ease infinite;
+    }
+
+    @keyframes modalPop { to { transform: scale(1); } }
+    @keyframes gradientBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+    .modal-content { background: linear-gradient(to bottom, #0a0f1a, #000); border-radius: 12px; padding: 25px; text-align: center; width: 100%; height: 100%; }
+    .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); }
+    
+    .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #1f2937; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; }
+    .info-list .highlight { color: #00ffa3; font-weight: bold; }
+    .info-list .highlight-red { color: #ff4b4b; font-weight: bold; }
+    
+    .info-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .info-item span { font-size: 16px; line-height: 1.2; }
+
+    .btn-start-game { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(to bottom, #00ffa3, #00b894); font-weight: 900; color: #000; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,255,163,0.3); text-transform: uppercase; font-family: 'Orbitron'; transition: 0.2s; }
+    .btn-start-game:active { transform: translateY(3px); box-shadow: none; }
 </style>
 </head>
 <body>
 
-<div id="sys-start-overlay" class="modal-overlay">
-    <div class="modal-content">
-        <h2 style="font-family:'Orbitron'; color:#4fd1ff; font-size: 24px; margin-bottom: 10px;">MİNES PROTOKOLÜ</h2>
-        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px; font-family: 'Inter';">%100 Sunucu Korumalı Mod: Sesleri ve oyun motorunu aktifleştirmek için sistemi başlatın.</p>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-family: 'Orbitron'; font-size: 16px; cursor: pointer;">SİSTEMİ BAŞLAT</button>
+<div id="start-overlay" class="modal-overlay">
+    <div class="animated-border-box">
+        <div class="modal-content">
+            <h2 class="modal-title">Mines Nedir?</h2>
+            <div class="info-list">
+                <div class="info-item"><span>💎</span><div><b>Elmasları Bul:</b> Kapalı kutuların ardındaki elmasları bularak çarpanını katla.</div></div>
+                <div class="info-item"><span>💣</span><div><b>Mayınlardan Kaç:</b> Mayına basarsan tüm kazancını ve bahsini kaybedersin.</div></div>
+                <div class="info-item"><span>💰</span><div><b>İstediğin An Çek:</b> Güvende hissettiğin an <span class="highlight">ÇEK</span> butonuna basarak kârını al.</div></div>
+                <div style="margin-top: 15px; text-align: center; color: #94a3b8; font-size: 11px; border-top: 1px solid #1f2937; padding-top: 10px;">
+                    <i>En iyi oyun deneyimi için cihazınızın sesini açınız.</i>
+                </div>
+            </div>
+            <button id="systemStartBtn" class="btn-start-game">BAŞKA</button>
+        </div>
+    </div>
+</div>
+
+<div id="custom-alert-overlay" class="modal-overlay" style="display: none; opacity: 0; z-index: 10001;">
+    <div class="animated-border-box" id="custom-alert-box">
+        <div class="modal-content">
+            <h2 class="modal-title" id="custom-alert-title">UYARI</h2>
+            <div class="info-list" style="text-align: center; font-size: 15px; font-weight: bold; margin-bottom: 25px; border:none; background: transparent; box-shadow: none;">
+                <span id="custom-alert-message"></span>
+            </div>
+            <button id="custom-alert-btn" class="btn-start-game">KAPAT</button>
+        </div>
     </div>
 </div>
 
@@ -83,10 +127,8 @@
     <div class="brand">MİNES</div>
     <nav class="right-menu">
         <div class="user-pill-mini">
-            <div class="balance-info"><b id="userBalance">Yükleniyor...</b><div class="mc-chip">MC</div></div>
-        </div>
-        <div class="user-pill-mini" style="border-color: #ffcc00;">
-            <div class="balance-info"><b id="currentBet" style="color:#ffcc00">0</b><div class="mc-chip" style="background: radial-gradient(circle at 30% 30%, #ffcc00, #ff8a00);">MC</div></div>
+            <div class="balance-info"><b id="userBalance">Yükleniyor...</b></div>
+            <div class="mc-chip">MC</div>
         </div>
         <a href="/" class="back-btn">ÇIKIŞ</a>
     </nav>
@@ -94,15 +136,17 @@
 
 <main class="container">
     <div class="mines-header">
-        <div>MULTİ: <span id="multiplierDisplay" style="color:white;">1.00x</span></div>
-        <div>MAYIN: <span id="mineDisplay" style="color:#ff2a4d;">3</span></div>
+        <div>ÇARPAN: <span id="multiplierDisplay" style="color:#00ffa3; font-size: 1.2rem;">1.00x</span></div>
+        <div>MAYIN: <span id="mineDisplay" style="color:#ff4b4b; font-size: 1.2rem;">3</span></div>
     </div>
     
     <div id="grid"></div>
     
     <div class="bet-panel">
-        <input type="number" id="bet" placeholder="Bahis Miktarı" value="10" min="10">
-        <select id="mineCount"></select>
+        <div class="input-row">
+            <input type="number" id="bet" placeholder="Bahis Miktarı" value="10" min="10">
+            <select id="mineCount"></select>
+        </div>
         <button id="startBtn" class="main-btn">MC KULLAN</button>
     </div>
 </main>
@@ -124,32 +168,75 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-// --- SES SİSTEMİ ---
+// --- CUSTOM MODAL UYARI SİSTEMİ ---
+function showCustomAlert(msg, title = "BİLDİRİM", type = "error") {
+    const overlay = document.getElementById('custom-alert-overlay');
+    const titleEl = document.getElementById('custom-alert-title');
+    const messageEl = document.getElementById('custom-alert-message');
+    const boxEl = document.getElementById('custom-alert-box');
+    const btnEl = document.getElementById('custom-alert-btn');
+
+    titleEl.innerText = title;
+    messageEl.innerHTML = `<b>${msg}</b>`;
+
+    if (type === 'error') {
+        titleEl.style.color = '#ff4b4b';
+        titleEl.style.textShadow = '0 2px 5px rgba(255,75,75,0.6)';
+        boxEl.style.background = 'linear-gradient(45deg, #ff4b4b, #b91c1c, #ff4b4b, #991b1b)';
+        btnEl.style.background = 'linear-gradient(to bottom, #ff4b4b, #cc0000)';
+        btnEl.style.boxShadow = '0 5px 15px rgba(255,75,75,0.3)';
+    } else {
+        titleEl.style.color = '#00ffa3';
+        titleEl.style.textShadow = '0 2px 5px rgba(0,255,163,0.6)';
+        boxEl.style.background = 'linear-gradient(45deg, #00ffa3, #00b894, #00ffa3, #047857)';
+        btnEl.style.background = 'linear-gradient(to bottom, #00ffa3, #00b894)';
+        btnEl.style.boxShadow = '0 5px 15px rgba(0,255,163,0.3)';
+    }
+
+    overlay.style.display = 'flex';
+    setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+}
+
+document.getElementById('custom-alert-btn').addEventListener('click', () => {
+    const overlay = document.getElementById('custom-alert-overlay');
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+});
+
+// --- YENİ GERÇEKÇİ SES MOTORU ---
 let audioCtx = null;
 const sounds = {};
-async function initAudio() {
+const urls = {
+    bet: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Çip/Bahis sesi
+    open: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', // Elmas açılma (Soft Çınlama)
+    explode: 'https://assets.mixkit.co/active_storage/sfx/170/170-preview.mp3', // Mayın Patlama (Gerçek Boom)
+    win: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3'  // Casino Kazanç (Şıkırtı)
+};
+
+function initAudio() {
     if (audioCtx) return;
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
-
-        const urls = {
-            bet: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
-            open: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',
-            explode: 'https://assets.mixkit.co/active_storage/sfx/2802/2802-preview.mp3',
-            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'
-        };
         for (const [name, url] of Object.entries(urls)) {
             fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf)).then(decoded => sounds[name] = decoded).catch(e=>{});
         }
-    } catch (e) { console.error(e); }
+    } catch (e) {}
 }
+
+let lastSoundTime = { bet: 0, open: 0, explode: 0, win: 0 };
 function playSound(name) {
     if (!audioCtx || !sounds[name]) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const source = audioCtx.createBufferSource(); source.buffer = sounds[name]; source.connect(audioCtx.destination); source.start(0);
+    
+    const now = Date.now();
+    if (now - lastSoundTime[name] < 100) return; // Ses çakışmasını/yankıyı önle
+    lastSoundTime[name] = now;
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = sounds[name];
+    source.connect(audioCtx.destination);
+    source.start(0);
 }
 
 // --- API YÖNETİMİ ---
@@ -158,13 +245,13 @@ let isProcessing = false;
 let gameState = null;
 
 async function fetchAPI(endpoint, method = 'GET', body = null) {
-    if (!auth.currentUser) { window.location.href = '/'; return; }
+    if (!auth.currentUser) return null;
     const token = await getIdToken(auth.currentUser);
     const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
     if (body) options.body = JSON.stringify(body);
     const res = await fetch(`${API_URL}${endpoint}`, options);
     const data = await res.json();
-    if (data.redirect) window.location.href = '/';
+    if (data.redirect || res.status === 401 || res.status === 403) { window.location.href = '/'; throw new Error("Yönlendiriliyorsunuz."); }
     if (!data.ok) throw new Error(data.error || "Sunucu hatası");
     return data;
 }
@@ -199,44 +286,49 @@ function updateUI() {
     const startBtn = document.getElementById("startBtn");
     const betInput = document.getElementById("bet");
     const multDisplay = document.getElementById("multiplierDisplay");
-    const betDisp = document.getElementById("currentBet");
 
     if (!gameState || gameState.status !== 'playing') {
         startBtn.innerText = "MC KULLAN";
         startBtn.className = "main-btn";
+        startBtn.disabled = false;
         betInput.disabled = false;
         mineSelect.disabled = false;
         multDisplay.innerText = "1.00x";
-        betDisp.innerText = "0";
+        multDisplay.style.color = "#00ffa3";
     } else {
         betInput.disabled = true;
         mineSelect.disabled = true;
         multDisplay.innerText = gameState.multiplier.toFixed(2) + "x";
-        betDisp.innerText = gameState.bet.toLocaleString('tr-TR');
+        multDisplay.style.color = "#4fd1ff";
         
         if (gameState.opened.length > 0) {
             const winAmount = Math.floor(gameState.bet * gameState.multiplier);
-            startBtn.innerText = `ÇEK (MC ${winAmount.toLocaleString('tr-TR')})`;
+            startBtn.innerText = `ÇEK MC ${winAmount.toLocaleString('tr-TR')}`;
             startBtn.className = "main-btn btn-cashout";
+            startBtn.disabled = false;
         } else {
             startBtn.innerText = "TAŞ SEÇİN";
             startBtn.className = "main-btn";
-            startBtn.style.background = "linear-gradient(180deg, #00d2ad 0%, #00b894 100%)";
+            startBtn.disabled = true;
         }
 
-        // Tahtayı Güncelle
+        // Tahtayı Güncelle (Elmasları Göster)
         gameState.opened.forEach(idx => {
             const t = document.getElementById(`tile-${idx}`);
-            if(t) { t.className = "tile open"; t.innerHTML = "💎"; }
+            if(t && !t.classList.contains('open')) { 
+                t.className = "tile open"; 
+                t.innerHTML = "💎"; 
+            }
         });
     }
 }
 
 async function handleAction(actionType, tileIndex = null) {
     if(isProcessing) return;
-    isProcessing = true;
+    
     const startBtn = document.getElementById("startBtn");
-    startBtn.disabled = true;
+    isProcessing = true;
+    startBtn.disabled = true; // Spam koruması
 
     try {
         if (actionType === 'start') {
@@ -250,6 +342,10 @@ async function handleAction(actionType, tileIndex = null) {
             renderGrid();
         } 
         else if (actionType === 'click') {
+            // Optimistik UI (Tıklanan kutuyu anında parlat, sunucu cevabını bekle)
+            const targetTile = document.getElementById(`tile-${tileIndex}`);
+            if(targetTile) targetTile.style.transform = "scale(0.9)";
+            
             const res = await fetchAPI('/api/mines/action', 'POST', { action: 'click', index: tileIndex });
             gameState = res.state;
             
@@ -262,8 +358,8 @@ async function handleAction(actionType, tileIndex = null) {
             } else if (gameState.status === 'cashed_out') {
                 playSound("win");
                 revealBoard(res.board, -1, true);
-                alert(`OTOMATİK ÇEKİM: ${res.winAmount} MC Kazandınız!`);
-                setTimeout(() => { gameState = null; renderGrid(); updateUI(); }, 2500);
+                showCustomAlert(`${res.winAmount} MC Kazandınız!`, "TEBRİKLER!", "success");
+                setTimeout(() => { gameState = null; renderGrid(); updateUI(); }, 3000);
             } else {
                 playSound("open");
             }
@@ -280,12 +376,11 @@ async function handleAction(actionType, tileIndex = null) {
         }
         fetchBalance();
     } catch(e) {
-        alert(e.message);
+        showCustomAlert(e.message, "HATA", "error");
     }
     
     updateUI();
     isProcessing = false;
-    startBtn.disabled = false;
 }
 
 function revealBoard(boardArray, hitIndex, isWin) {
@@ -314,13 +409,17 @@ function handleTileClick(index) {
 }
 
 document.getElementById('systemStartBtn').addEventListener('click', async () => {
-    initAudio(); document.getElementById('sys-start-overlay').style.display = 'none';
-    renderGrid();
-    await fetchBalance();
-    try {
-        const res = await fetchAPI('/api/mines/state');
-        if(res.state && res.state.status === 'playing') { gameState = res.state; updateUI(); }
-    } catch(e){}
+    initAudio(); 
+    document.getElementById('start-overlay').style.opacity = '0';
+    setTimeout(async () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        renderGrid();
+        await fetchBalance();
+        try {
+            const res = await fetchAPI('/api/mines/state');
+            if(res && res.state && res.state.status === 'playing') { gameState = res.state; updateUI(); }
+        } catch(e){}
+    }, 300);
 });
 
 onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
