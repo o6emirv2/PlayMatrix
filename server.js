@@ -690,178 +690,188 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
 
 
 // ======================================================
-// 6. PİŞTİ MOTORU (YENİ SUNUCU TABANLI MOTOR)
+// 6. PİŞTİ MOTORU (%100 SUNUCU TABANLI)
 // ======================================================
 
+const colPisti = () => db.collection('pisti_sessions');
+
+// Standart 52'lik deste oluşturucu
 function createPistiDeck() {
-    const suits = ["H", "D", "C", "S"], vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+    const suits = ["H", "D", "C", "S"];
+    const vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
     let deck = [];
     suits.forEach(s => vals.forEach(v => deck.push(v + s)));
-    for (let i = deck.length - 1; i > 0; i--) { 
-        const j = crypto.randomInt(0, i + 1); 
-        [deck[i], deck[j]] = [deck[j], deck[i]]; 
+    // Karıştırma algoritması (Fisher-Yates)
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = crypto.randomInt(0, i + 1);
+        [deck[i], deck[j]] = [deck[j], deck[i]];
     }
     return deck;
 }
 
-function checkPistiCapture(table) {
-    if (table.length < 2) return { captured: false, pisti: false, points: 0 };
-    const last = table[table.length - 1];
-    const prev = table[table.length - 2];
+// Pişti kurallarına göre kart alma kontrolü
+function checkPistiCapture(tableCards, playedCard) {
+    if (tableCards.length === 0) return { captured: false, isPisti: false, points: 0 };
     
-    if (last[0] === 'J' || last[0] === prev[0]) {
-        let points = table.length;
-        let pisti = false;
-        if (table.length === 2 && last[0] === prev[0]) {
-            pisti = true;
-            points = 10; 
-        }
-        return { captured: true, pisti, points };
+    const topCard = tableCards[tableCards.length - 1];
+    const isJack = playedCard[0] === 'J';
+    const isMatch = playedCard[0] === topCard[0];
+
+    if (isJack || isMatch) {
+        // Puanlama: (Basit model) Masadaki kart sayısı + 1 (Atılan kart). Pişti ise ekstra puan.
+        const isPisti = tableCards.length === 1 && isMatch && !isJack;
+        const basePoints = tableCards.length + 1;
+        return { captured: true, isPisti: isPisti, points: isPisti ? 10 : basePoints };
     }
-    return { captured: false, pisti: false, points: 0 };
-}
-
-function getCompPistiMove(hand, table) {
-    if (hand.length === 1) return 0;
-    if (table.length === 0) return crypto.randomInt(0, hand.length);
-    const topCard = table[table.length - 1];
-
-    let matchIdx = hand.findIndex(c => c[0] === topCard[0]);
-    if (matchIdx !== -1) return matchIdx;
-
-    if (table.length >= 2) {
-        let jIdx = hand.findIndex(c => c[0] === 'J');
-        if (jIdx !== -1) return jIdx;
-    }
-    
-    let nonJ = hand.map((c, i) => ({c, i})).filter(x => x.c[0] !== 'J');
-    if (nonJ.length > 0) return nonJ[crypto.randomInt(0, nonJ.length)].i;
-    
-    return crypto.randomInt(0, hand.length);
+    return { captured: false, isPisti: false, points: 0 };
 }
 
 app.get('/api/pisti/state', verifyAuth, async (req, res) => {
     try {
         const snap = await colPisti().doc(req.user.uid).get();
         if (!snap.exists) return res.json({ ok: true, state: null });
-        res.json({ ok: true, state: snap.data() });
+        
+        const data = snap.data();
+        // İstemciye botun kartlarını gizleyerek gönderiyoruz
+        const publicState = {
+            status: data.status,
+            bet: data.bet,
+            playerHand: data.playerHand,
+            botCardCount: data.botHand.length,
+            tableCards: data.tableCards,
+            playerScore: data.playerScore,
+            botScore: data.botScore,
+            round: data.round
+        };
+        res.json({ ok: true, state: publicState });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/pisti/start', verifyAuth, async (req, res) => {
     try {
-        const bet = safeNum(req.body.bet, 0);
-        if (bet < 10) throw new Error('Min bahis 10 MC.');
         const uid = req.user.uid;
+        const bet = safeNum(req.body.bet, 0);
+        
+        if (bet < 100 || bet > 50000) throw new Error('Geçersiz bahis miktarı. Min: 100 MC, Max: 50.000 MC');
 
         const session = await db.runTransaction(async (tx) => {
             const existing = await tx.get(colPisti().doc(uid));
-            if (existing.exists && existing.data().status === 'playing') {
-                tx.delete(colPisti().doc(uid)); // Sıkışan eli temizle
-            }
-
+            if (existing.exists && existing.data().status === 'playing') throw new Error('Zaten devam eden bir eliniz var.');
+            
             const uSnap = await tx.get(colUsers().doc(uid));
             if (safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
-            
+
             tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
 
             const deck = createPistiDeck();
+            // Yere 4 kart (Sadece en üstteki görünür, ama veri yapısında hepsi var)
             const tableCards = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
-            
-            const s = {
-                uid, status: 'playing', bet, deck,
-                table: tableCards,
-                playerHand: [deck.pop(), deck.pop(), deck.pop(), deck.pop()],
-                compHand: [deck.pop(), deck.pop(), deck.pop(), deck.pop()],
-                playerScore: 0, compScore: 0,
-                lastCapture: null, updatedAt: nowMs()
+            const playerHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+            const botHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+
+            const newSession = {
+                uid, status: 'playing', bet, deck, tableCards, playerHand, botHand,
+                playerScore: 0, botScore: 0, round: 1, updatedAt: nowMs()
             };
 
-            tx.set(colPisti().doc(uid), s);
-            return s;
+            tx.set(colPisti().doc(uid), newSession);
+            return newSession;
         });
-        
-        // İstemciye destenin tümünü göndermeyiz
-        delete session.deck;
-        res.json({ ok: true, state: session });
+
+        res.json({ ok: true, state: {
+            status: session.status, bet: session.bet, playerHand: session.playerHand,
+            botCardCount: session.botHand.length, tableCards: session.tableCards,
+            playerScore: session.playerScore, botScore: session.botScore, round: session.round
+        }});
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
-        const pIndex = safeNum(req.body.cardIndex, -1);
+        const cardIndex = safeNum(req.body.cardIndex, -1);
 
         const result = await db.runTransaction(async (tx) => {
             const sSnap = await tx.get(colPisti().doc(uid));
             if (!sSnap.exists || sSnap.data().status !== 'playing') throw new Error('Aktif oyun bulunamadı.');
-            let s = sSnap.data();
+            
+            const s = sSnap.data();
+            if (cardIndex < 0 || cardIndex >= s.playerHand.length) throw new Error('Geçersiz kart seçimi.');
 
-            if (pIndex < 0 || pIndex >= s.playerHand.length) throw new Error('Geçersiz kart.');
+            let actionLog = { playerAction: null, botAction: null, roundOver: false, gameOver: false, winAmount: 0 };
 
-            // OYUNCU HAMLESİ
-            const pCard = s.playerHand.splice(pIndex, 1)[0];
-            s.table.push(pCard);
-            let pCap = checkPistiCapture(s.table);
-            if (pCap.captured) {
-                s.playerScore += pCap.points;
-                s.table = [];
-                s.lastCapture = 'player';
+            // 1. OYUNCU HAMLESİ
+            const playedCard = s.playerHand.splice(cardIndex, 1)[0];
+            const pCapture = checkPistiCapture(s.tableCards, playedCard);
+            actionLog.playerAction = { card: playedCard, isPisti: pCapture.isPisti, captured: pCapture.captured };
+
+            if (pCapture.captured) {
+                s.playerScore += pCapture.points;
+                s.tableCards = []; // Masayı topla
+            } else {
+                s.tableCards.push(playedCard);
             }
 
-            // BİLGİSAYAR HAMLESİ
-            let cIndex = -1, cCard = null, cCap = { captured: false };
-            if (s.compHand.length > 0) {
-                cIndex = getCompPistiMove(s.compHand, s.table);
-                cCard = s.compHand.splice(cIndex, 1)[0];
-                s.table.push(cCard);
-                cCap = checkPistiCapture(s.table);
-                if (cCap.captured) {
-                    s.compScore += cCap.points;
-                    s.table = [];
-                    s.lastCapture = 'computer';
+            // 2. BOT HAMLESİ
+            if (s.botHand.length > 0) {
+                // Basit Bot Zekası: Masadaki karta uyan varsa onu at, yoksa rastgele at.
+                let botCardIdx = 0;
+                if (s.tableCards.length > 0) {
+                    const topCard = s.tableCards[s.tableCards.length - 1];
+                    const matchIdx = s.botHand.findIndex(c => c[0] === topCard[0] || c[0] === 'J');
+                    if (matchIdx !== -1) botCardIdx = matchIdx;
+                }
+                
+                const botCard = s.botHand.splice(botCardIdx, 1)[0];
+                const bCapture = checkPistiCapture(s.tableCards, botCard);
+                actionLog.botAction = { card: botCard, isPisti: bCapture.isPisti, captured: bCapture.captured };
+
+                if (bCapture.captured) {
+                    s.botScore += bCapture.points;
+                    s.tableCards = [];
+                } else {
+                    s.tableCards.push(botCard);
                 }
             }
 
-            let gameOver = false;
-            let winAmount = 0;
-
-            // TUR KONTROLÜ
-            if (s.playerHand.length === 0 && s.compHand.length === 0) {
-                if (s.deck.length > 0) {
-                    s.playerHand = s.deck.splice(s.deck.length - 4, 4);
-                    s.compHand = s.deck.splice(s.deck.length - 4, 4);
+            // 3. TUR/OYUN SONU KONTROLÜ
+            if (s.playerHand.length === 0 && s.botHand.length === 0) {
+                if (s.deck.length >= 8) {
+                    // Yeni kart dağıt
+                    s.playerHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
+                    s.botHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
+                    s.round += 1;
+                    actionLog.roundOver = true;
                 } else {
-                    gameOver = true;
+                    // Oyun Bitti
                     s.status = 'finished';
-                    // Sonda kalan kartları son alana ver
-                    if (s.table.length > 0 && s.lastCapture) {
-                        if (s.lastCapture === 'player') s.playerScore += s.table.length;
-                        else s.compScore += s.table.length;
-                        s.table = [];
-                    }
-
-                    if (s.playerScore > s.compScore) winAmount = s.bet * 2;
-                    else if (s.playerScore === s.compScore) winAmount = s.bet; 
-
-                    if (winAmount > 0) {
-                        tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(winAmount) });
+                    actionLog.gameOver = true;
+                    
+                    if (s.playerScore > s.botScore) {
+                        actionLog.winAmount = s.bet * 2;
+                        tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
+                    } else if (s.playerScore === s.botScore) {
+                        actionLog.winAmount = s.bet; // Beraberlik, iade
+                        tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                     }
                 }
             }
 
             s.updatedAt = nowMs();
             tx.set(colPisti().doc(uid), s);
-            
-            const clientState = { ...s };
-            delete clientState.deck;
 
-            return { pCard, pCap, cIndex, cCard, cCap, state: clientState, gameOver, winAmount };
+            return {
+                state: {
+                    status: s.status, bet: s.bet, playerHand: s.playerHand,
+                    botCardCount: s.botHand.length, tableCards: s.tableCards,
+                    playerScore: s.playerScore, botScore: s.botScore, round: s.round
+                },
+                log: actionLog
+            };
         });
 
         res.json({ ok: true, ...result });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
-
 
 app.listen(PORT, () => console.log(`🚀 PlayMatrix Core Backend Started. Port: ${PORT}`));
