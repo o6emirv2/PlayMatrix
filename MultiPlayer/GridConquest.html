@@ -22,7 +22,7 @@
             --btn-main: #ffcc00; --btn-sec: #00f2ff;
         }
 
-        /* EKRAN KAYMASI, ZOOM VE SEÇİM KESİN ENGELLEME */
+        /* EKRAN KAYMASI VE ZOOM KESİN KİLİDİ */
         html, body { 
             background: var(--bg); color: #e0e0e0; 
             width: 100vw; height: 100vh; overflow: hidden; 
@@ -66,8 +66,8 @@
         
         /* OYUN ÜST BAR TAŞMA KORUMASI */
         .game-hud { height: 90px; flex-shrink: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; background: rgba(0,0,0,0.8); touch-action: none; padding: 0 10px; }
-        .player-hud { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
-        .player-name { font-weight: bold; font-size: 0.9rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; text-align: center; }
+        .player-hud { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; overflow: hidden; }
+        .player-name { font-weight: bold; font-size: 0.9rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center; }
         .score-num { font-family: 'Black Ops One'; font-size: 2.2rem; line-height: 1; }
         #timer-display { font-family: 'Black Ops One'; font-size: 1.5rem; color: var(--warning); border: 2px solid var(--warning); border-radius: 50%; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 0 auto; }
 
@@ -94,7 +94,7 @@
     </style>
 
     <script>
-        // Çift tıklama ile yakınlaştırmayı (Zoom) ve kaydırmayı kökten bloke eden script
+        // Çift tıklama (Zoom) ve kaydırma engeli (Tam Koruma)
         document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
         document.addEventListener('gesturestart', function(event) { event.preventDefault(); }, { passive: false });
     </script>
