@@ -81,18 +81,39 @@ const colBJ = () => db.collection('bj_sessions');
 const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 
 // ======================================================
-// 1. PROFİL & GENEL SİSTEMLER
+// 1. PROFİL & GENEL SİSTEMLER (ÖDÜLLER EKLENDİ)
 // ======================================================
 
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
-    const snap = await colUsers().doc(req.user.uid).get();
-    if (!snap.exists) {
-        const newUser = { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
-        await colUsers().doc(req.user.uid).set(newUser);
-        return res.json({ ok: true, balance: 0, user: newUser });
-    }
-    res.json({ ok: true, balance: safeNum(snap.data().balance, 0), user: snap.data() });
+    let uData = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(colUsers().doc(req.user.uid));
+      let u = snap.exists ? snap.data() : { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
+      let updates = {};
+      let isUpdated = false;
+
+      if (!snap.exists) { isUpdated = true; }
+
+      // YENİ: E-POSTA ONAY KONTROLÜ VE 50.000 MC ÖDÜL TANIMLAMASI
+      if (req.user.email_verified && !u.emailRewardClaimed) {
+          if (snap.exists) {
+              updates.balance = admin.firestore.FieldValue.increment(50000);
+          } else {
+              updates.balance = 50000;
+          }
+          updates.emailRewardClaimed = true;
+          u.balance = safeNum(u.balance, 0) + 50000; // Local güncel tutma
+          u.emailRewardClaimed = true;
+          isUpdated = true;
+      }
+
+      if (isUpdated) {
+          tx.set(colUsers().doc(req.user.uid), snap.exists ? updates : { ...u, ...updates }, { merge: true });
+      }
+      return u;
+    });
+    
+    res.json({ ok: true, balance: safeNum(uData.balance, 0), user: uData });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -100,6 +121,7 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
   try {
     const { fullName, phone, username, avatar } = req.body || {};
     const uid = req.user.uid;
+    let phoneRewarded = false; // Arayüze ödül mesajı göndermek için
     
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(colUsers().doc(uid));
@@ -115,29 +137,35 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
 
       const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
-      if (cleanStr(phone) && !cleanStr(u.phone)) updates.phone = cleanStr(phone);
       
-      // HATA ÇÖZÜMÜ: Avatar uzunluk kontrolü (Bypass engeli)
+      // YENİ: TELEFON NUMARASI KONTROLÜ VE 100.000 MC ÖDÜL TANIMLAMASI
+      if (cleanStr(phone) && !cleanStr(u.phone)) {
+          updates.phone = cleanStr(phone);
+          if (!u.phoneRewardClaimed) {
+              updates.balance = admin.firestore.FieldValue.increment(100000);
+              updates.phoneRewardClaimed = true;
+              phoneRewarded = true;
+          }
+      }
+      
+      // Avatar bypass koruması
       if (typeof avatar === 'string' && avatar.startsWith(ALLOWED_AVATAR_DOMAIN) && avatar.length < 250) updates.avatar = avatar;
 
       const wanted = cleanStr(username);
       if (wanted && wanted !== cleanStr(u.username)) {
         if (!isNewUser && safeNum(u.userChangeCount, 0) >= 3) throw new Error("İsim hakkı doldu!");
         
-        // HATA ÇÖZÜMÜ: Usernames ayrı koleksiyondan kontrol (Yüksek Performans)
         const wantedLower = wanted.toLowerCase();
         const usernameRef = db.collection('usernames').doc(wantedLower);
         const uDoc = await tx.get(usernameRef);
         
         if (uDoc.exists && uDoc.data().uid !== uid) throw new Error("Bu isim kullanımda!");
         
-        // Eski ismi sil (Eğer varsa ve değiştiriliyorsa)
         if (cleanStr(u.username)) {
             const oldLower = cleanStr(u.username).toLowerCase();
             if (oldLower !== wantedLower) tx.delete(db.collection('usernames').doc(oldLower));
         }
 
-        // Yeni ismi kaydet
         tx.set(usernameRef, { uid: uid, createdAt: nowMs() });
         updates.username = wanted; 
         
@@ -146,13 +174,12 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
       
       tx.set(colUsers().doc(uid), { ...u, ...updates }, { merge: true });
     });
-    res.json({ ok: true });
+    res.json({ ok: true, phoneRewarded });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   try {
-    // FAKE HESAP KORUMASI: E-Posta onayı zorunluluğu
     if (!req.user.email_verified) throw new Error("Güvenlik: Çark çevirmek için e-postanızı onaylamalısınız! (Onayladıktan sonra çıkış yapıp tekrar girin)");
 
     const out = await db.runTransaction(async (tx) => {
@@ -171,7 +198,6 @@ app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
 
 app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   try {
-    // FAKE HESAP KORUMASI: E-Posta onayı zorunluluğu
     if (!req.user.email_verified) throw new Error("Güvenlik: Promosyon kodu kullanmak için e-postanızı onaylamalısınız!");
 
     const code = cleanStr((req.body || {}).code).toUpperCase();
