@@ -3,37 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta http-equiv="X-UA-Compatible" content="ie=edge">
-
-<title>PlayMatrix VIP Lüks BlackJack | Ücretsiz Online Casino 21 Oyna</title>
-<meta name="description" content="PlayMatrix VIP Lüks Blackjack oyna! Şansını dene, 21'i bul, krupiyeyi yen ve anında MC kazan. Kesintisiz ve indirmesiz online casino deneyimi seni bekliyor.">
-<meta name="keywords" content="blackjack oyna, online blackjack, ücretsiz casino, 21 oyna, PlayMatrix, VIP casino, tarayıcı oyunları, mc kazan">
-<meta name="author" content="PlayMatrix Global">
-<meta name="robots" content="index, follow">
-<meta name="language" content="Turkish">
-<meta name="theme-color" content="#0d5c2e">
-<link rel="canonical" href="https://playmatrix.com.tr/BlackJack.html">
-
-<meta property="og:title" content="PlayMatrix VIP Lüks Blackjack Oyna">
-<meta property="og:description" content="21'e ulaş, krupiyeyi alt et ve binlerce MC kazan! PlayMatrix'te kesintisiz casino heyecanına hemen katıl.">
-<meta property="og:image" content="https://playmatrix.com.tr/assets/blackjack-promo.jpg">
-<meta property="og:url" content="https://playmatrix.com.tr/BlackJack.html">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="PlayMatrix">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="PlayMatrix VIP Blackjack Oyna">
-<meta name="twitter:description" content="Masaya otur, kartlarını çek ve 21'i bularak MC kazanmaya başla!">
-
-<script>
-    if (window.history.replaceState) {
-        // BlackJack.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
-        window.history.replaceState(null, null, "/");
-    }
-</script>
-
+<title>PlayMatrix VIP BlackJack | Sunucu Tabanlı</title>
 <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;}
-    
     body {
         height:100vh; width: 100vw; overflow:hidden;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto, Helvetica, Arial, sans-serif;
@@ -41,505 +13,251 @@
                     radial-gradient(circle at 50% 50%, #0d5c2e 0%, #073b1c 60%, #031c0c 100%);
         color:white; touch-action:manipulation; display: flex; flex-direction: column;
     }
-
-    /* ÜST BAR */
-    .top-bar {
-        position:fixed; top:0; left:0; right:0; height:65px; 
-        display:flex; align-items:center; justify-content:space-between;
-        padding:0 10px; 
-        background: linear-gradient(to bottom, #1a1a1a 0%, #000000 100%);
-        border-bottom: 2px solid #d4af37; z-index:1000;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-    }
-
-    /* SEO H1 İÇİN STİL GÜNCELLEMESİ */
-    h1.brand {
-        margin: 0; padding: 0;
-        font-size: clamp(0.9rem, 4vw, 1.1rem); 
-        font-weight:900; color: #d4af37;
-        letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; 
-        white-space: nowrap; flex-shrink: 0;
-        text-shadow: 0 2px 4px rgba(0,0,0,1);
-    }
-
-    .right-menu { 
-        display:flex; gap:5px; align-items: center; 
-        flex-wrap: nowrap; overflow: hidden; 
-        justify-content: flex-end; flex: 1; margin-left: 10px;
-    }
-    
-    .user-pill-mini { 
-        display: flex; align-items: center; gap: 4px; 
-        background: linear-gradient(145deg, #222, #111); padding: 4px 8px; 
-        border-radius: 15px; border: 1px solid rgba(212,175,55,0.4); 
-        white-space: nowrap; flex-shrink: 1; 
-        min-width: 0; 
-    }
-    
-    .balance-info { display: flex; align-items: center; overflow: hidden; }
-    .balance-info b { font-size: clamp(11px, 3.5vw, 13px); color: #00ffa3; font-family: monospace; font-weight: 700; text-overflow: ellipsis; overflow: hidden; }
-    
-    .mc-chip {
-        width: 16px; height: 16px; flex-shrink: 0;
-        background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff);
-        border-radius: 50%; margin-left: 4px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 6px; font-weight: 900; color: #fff;
-        box-shadow: 0 0 8px rgba(79, 209, 255, 0.4); border: 1px solid rgba(255,255,255,0.4);
-    }
-
-    .back-btn {
-        background: linear-gradient(to bottom, #ff4b4b, #cc0000); 
-        color: white; text-decoration: none; padding: 5px 8px;
-        border-radius: 6px; font-size: clamp(0.6rem, 2.5vw, 0.7rem); 
-        font-weight: 900; flex-shrink: 0;
-        border: 1px solid #7a0000; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    }
-
-    /* OYUN ALANI */
-    .game-container { 
-        flex: 1; display: flex; flex-direction: column; justify-content: space-between; 
-        padding: 80px 0 20px 0; perspective: 1200px; position: relative; 
-        overflow-y: auto; /* Kartlar çok çoğalırsa dikey kaydırma sağlar */
-    }
-    
+    .top-bar { position:fixed; top:0; left:0; right:0; height:65px; display:flex; align-items:center; justify-content:space-between; padding:0 10px; background: linear-gradient(to bottom, #1a1a1a 0%, #000000 100%); border-bottom: 2px solid #d4af37; z-index:1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+    h1.brand { margin: 0; padding: 0; font-size: clamp(0.9rem, 4vw, 1.1rem); font-weight:900; color: #d4af37; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif; white-space: nowrap; flex-shrink: 0; }
+    .right-menu { display:flex; gap:5px; align-items: center; justify-content: flex-end; flex: 1; margin-left: 10px; }
+    .user-pill-mini { display: flex; align-items: center; gap: 4px; background: linear-gradient(145deg, #222, #111); padding: 4px 8px; border-radius: 15px; border: 1px solid rgba(212,175,55,0.4); white-space: nowrap; }
+    .balance-info b { font-size: clamp(11px, 3.5vw, 13px); color: #00ffa3; font-family: monospace; font-weight: 700; }
+    .mc-chip { width: 16px; height: 16px; flex-shrink: 0; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 4px; display: flex; align-items: center; justify-content: center; font-size: 6px; font-weight: 900; color: #fff; box-shadow: 0 0 8px rgba(79, 209, 255, 0.4); border: 1px solid rgba(255,255,255,0.4); }
+    .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 5px 8px; border-radius: 6px; font-size: clamp(0.6rem, 2.5vw, 0.7rem); font-weight: 900; flex-shrink: 0; border: 1px solid #7a0000; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+    .game-container { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 80px 0 20px 0; perspective: 1200px; position: relative; overflow-y: auto; }
     .area { width: 100%; text-align: center; }
-    
-    .dealer-title { 
-        font-size: 14px; letter-spacing: 4px; font-weight: 900; 
-        color: #d4af37; margin-bottom: 5px; 
-        text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Times New Roman', Times, serif;
-    }
-    
-    .score-badge { 
-        background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); 
-        color: #ffd700; padding: 4px 18px; 
-        border-radius: 20px; font-size: 12px; font-weight: bold;
-        border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; 
-        box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.1);
-    }
-
-    /* KART GÖRÜNÜM VE ANİMASYONLARI (Taşma Düzeltmesi) */
-    .cards-wrapper { 
-        display: flex; justify-content: center; flex-wrap: wrap; /* Kartlar sığmazsa alt satıra geçer */
-        gap: 5px; /* Üst üste binmeyi azaltarak netliği artırdık */
-        margin-left: -15px; /* Hafif içe geçme efekti için negatif marj */
-        min-height: 105px; padding: 0 10px; 
-    }
-    
-    .card-3d {
-        width: 65px; height: 95px; /* Kartları bir tık küçülttük ki ekrana sığsınlar */
-        position: relative;
-        transform-style: preserve-3d;
-        transform: translate(350px, -250px) rotateZ(35deg) scale(0.4);
-        opacity: 0;
-        margin-left: -20px; /* Kartların üst üste binme efekti */
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
-    }
-    .card-3d:first-child { margin-left: 0; } /* İlk kart normal dursun */
-
-    .card-3d.show { transform: translate(0, 0) rotateZ(0deg) scale(1); opacity: 1; }
-    .card-3d.flipped { transform: translate(0, 0) rotateY(180deg); transition: transform 0.5s ease-in-out; }
-
-    .card-face {
-        position: absolute; width: 100%; height: 100%;
-        backface-visibility: hidden; border-radius: 6px; box-shadow: -4px 4px 12px rgba(0,0,0,0.7); 
-    }
-
-    .card-front { background: white; transform: rotateY(180deg); }
-    .card-back { background: url('https://deckofcardsapi.com/static/img/back.png') no-repeat center/cover; }
-
+    .dealer-title { font-size: 14px; letter-spacing: 4px; font-weight: 900; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Times New Roman', Times, serif; }
+    .score-badge { background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); color: #ffd700; padding: 4px 18px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; }
+    .cards-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin-left: -15px; min-height: 105px; padding: 0 10px; }
+    .card-3d { width: 65px; height: 95px; position: relative; transform-style: preserve-3d; margin-left: -20px; transition: transform 0.3s; }
+    .card-3d:first-child { margin-left: 0; }
+    .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 6px; box-shadow: -4px 4px 12px rgba(0,0,0,0.7); background: white; }
+    .card-back { background: repeating-linear-gradient(45deg, #b30000, #b30000 5px, #fff 5px, #fff 10px); border: 2px solid #fff; }
+    .card-front { display: flex; flex-direction: column; justify-content: space-between; padding: 4px; font-weight: bold; }
+    .card-front .top-val { text-align: left; font-size: 14px; line-height: 1; }
+    .card-front .center-suit { text-align: center; font-size: 32px; line-height: 1; margin-top: 10px; }
+    .card-front .bottom-val { text-align: right; font-size: 14px; line-height: 1; transform: rotate(180deg); }
+    .suit-red { color: #d32f2f; }
+    .suit-black { color: #212121; }
     .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; z-index: 10; margin-top: 10px;}
-    
-    #message { 
-        font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); 
-        margin-bottom: 10px; text-transform: uppercase; 
-        background: linear-gradient(90deg, transparent, rgba(0,0,0,0.7), transparent); 
-        padding: 5px 30px; border-radius: 5px; letter-spacing: 1px;
-    }
-    
+    #message { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.7), transparent); padding: 5px 30px; border-radius: 5px; letter-spacing: 1px; }
     .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
-    
-    .btn { 
-        padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); 
-        font-weight: 900; font-size: 13px; color: white; cursor: pointer; 
-        text-transform: uppercase; letter-spacing: 1px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 2px 2px rgba(255,255,255,0.2);
-        transition: all 0.1s;
-    }
-    #hit { background: linear-gradient(to bottom, #2ecc71, #229954); border-color: #1e8449;}
-    #stand { background: linear-gradient(to bottom, #e74c3c, #c0392b); border-color: #922b21;}
-    #double { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; border-color: #b7950b;}
-    #split { background: linear-gradient(to bottom, #9b59b6, #8e44ad); border-color: #76448a;}
-    .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.8), inset 0 2px 2px rgba(0,0,0,0.4); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-
-    /* BÖLÜNMÜŞ ELLER DÜZENİ */
-    .hands-container { 
-        display: flex; justify-content: center; flex-wrap: wrap; /* İki el oluştuğunda dar ekranda alt alta inmesini sağlar */
-        gap: 15px; width: 100%; transition: 0.3s; 
-    }
-    .hand-box { display: flex; flex-direction: column; align-items: center; transition: 0.3s; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
-    .hand-box.active { 
-        border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); 
-        box-shadow: 0 0 20px rgba(212,175,55,0.2), inset 0 0 15px rgba(212,175,55,0.1); 
-    }
-
-    /* ÇİPLER LÜKS VE BENZERSİZ TASARIM */
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; transition: opacity 0.3s;}
-    .chip { 
-        width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-        font-weight: 900; font-size: 13px; cursor: pointer; transition: transform 0.1s; 
-        border: 4px dashed #d4af37; box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8); 
-    }
+    .btn { padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: all 0.1s; }
+    #hitBtn { background: linear-gradient(to bottom, #2ecc71, #229954); }
+    #standBtn { background: linear-gradient(to bottom, #e74c3c, #c0392b); }
+    #doubleBtn { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; }
+    #splitBtn { background: linear-gradient(to bottom, #9b59b6, #8e44ad); }
+    .btn:active:not(:disabled) { transform: translateY(4px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; }
+    .hand-box { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
+    .hand-box.active { border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); }
+    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap;}
+    .chip { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; cursor: pointer; border: 4px dashed #d4af37; box-shadow: 0 6px 12px rgba(0,0,0,0.6); }
     .chip:active { transform: scale(0.9); }
-    /* Renkler Birbirinden Tamamen Ayrıldı */
-    .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;} /* Gri/Beyaz */
-    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; border-color: #fff;} /* Yeşil */
-    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; border-color: #fff;} /* Kırmızı */
-    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; border-color: #fff;} /* Mavi */
-    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; border-color: #d4af37;} /* Mor */
-    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;} /* Siyah/Altın */
-    
-    .cancel-btn { 
-        width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; 
-        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; 
-        border: 2px solid #888; box-shadow: 0 4px 8px rgba(0,0,0,0.6); 
-    }
-
+    .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;}
+    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; border-color: #fff;}
+    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; border-color: #fff;}
+    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; border-color: #fff;}
+    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; border-color: #d4af37;}
+    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;}
+    .cancel-btn { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10px; cursor: pointer; border: 2px solid #888; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
-    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 380px; padding: 25px; text-align: center; box-shadow: 0 0 40px rgba(212, 175, 55, 0.3); }
-    .rules-text { font-size: 13px; color: #ccc; margin-bottom: 20px; text-align: left; line-height: 1.6; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333; }
+    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #0a0a0a); border: 2px solid #d4af37; border-radius: 15px; width: 90%; max-width: 380px; padding: 25px; text-align: center; }
 </style>
 </head>
 <body>
 
 <div id="sys-start-overlay" class="modal-overlay">
     <div class="modal-content">
-        <h2 style="color:#d4af37; margin-bottom: 15px; letter-spacing: 2px; font-family: 'Times New Roman', Times, serif;">VIP LÜKS CASINO</h2>
-        <div class="rules-text">
-            <b>VIP Blackjack (21) Kuralları:</b><br>
-            • Amacınız, kartlarınızın toplam değerini 21'e ulaştırmak veya 21'i geçmeden krupiyeden daha yüksek bir skor elde etmektir.<br>
-            • 21'i geçerseniz anında kaybedersiniz (PATLADI).<br>
-            • <b>Kart Değerleri:</b> Vale (J), Kız (Q), Papaz (K) 10 değerindedir. As (A) durumuna göre 1 veya 11 sayılır.<br><br>
-            <span style="color: #ff4b4b; font-weight: bold;">ÖNEMLİ UYARI:</span> Lütfen stabil bir internet kullanın. Bağlantı kopukluğu, sayfayı yenileme veya oyundan düşme durumunda yatırdığınız MC <b>kesinlikle iade edilmeyecektir.</b>
+        <h2 style="color:#d4af37; margin-bottom: 15px;">VIP LÜKS CASINO</h2>
+        <div style="font-size: 13px; color: #ccc; margin-bottom: 20px; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333;">
+            <b>%100 Sunucu Korumalı Sistem:</b><br>
+            • Tüm işlemler sunucuda şifreli olarak işlenir.<br>
+            • Kullanıcı kaydınız yoksa ana sayfaya yönlendirilirsiniz.
         </div>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.4); text-transform: uppercase;" aria-label="Oyuna Başla">Masaya Otur</button>
+        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); font-weight: 900; cursor: pointer;">MASAYA OTUR</button>
     </div>
 </div>
 
 <header class="top-bar">
     <h1 class="brand">VIP BLACKJACK</h1>
-    <nav class="right-menu" aria-label="Kullanıcı Menüsü">
+    <nav class="right-menu">
         <div class="user-pill-mini">
-            <div class="balance-info"><b id="balance">0</b></div>
+            <div class="balance-info"><b id="ui-balance">Yükleniyor...</b></div>
             <div class="mc-chip">MC</div>
         </div>
         <div class="user-pill-mini" style="border-color: #ffcc00; background: linear-gradient(145deg, #332800, #1a1400);">
-            <div class="balance-info"><b id="betAmount" style="color:#ffcc00">0</b></div>
-            <div class="mc-chip" style="background: orange; box-shadow: 0 0 8px rgba(255, 165, 0, 0.4);">MC</div>
+            <div class="balance-info"><b id="ui-betAmount" style="color:#ffcc00">0</b></div>
+            <div class="mc-chip" style="background: orange;">MC</div>
         </div>
-        <a href="https://playmatrix.com.tr" class="back-btn" aria-label="Ana Sayfaya Dön">ÇIKIŞ</a>
+        <a href="/" class="back-btn">ÇIKIŞ</a>
     </nav>
 </header>
 
 <main class="game-container">
     <div class="area">
         <div class="dealer-title">KURUPİYER</div>
-        <div class="score-badge">Toplam: <span id="dealerScore">0</span></div>
-        <div id="dealerCards" class="cards-wrapper"></div>
+        <div class="score-badge">Toplam: <span id="ui-dealerScore">?</span></div>
+        <div id="ui-dealerCards" class="cards-wrapper"></div>
     </div>
-
     <div class="action-area">
-        <div id="message" aria-live="polite">MC KULLAN (MİN: 1K)</div>
-        <div class="controls" id="controls">
-            <button id="hit" class="btn" aria-label="Kart Çek">ÇEK</button>
-            <button id="stand" class="btn" aria-label="Dur">KAL</button>
-            <button id="double" class="btn" aria-label="Bahsi İkiye Katla">2X</button>
-            <button id="split" class="btn" aria-label="Kartları Böl">BÖL</button>
+        <div id="ui-message">MC KULLAN (MİN: 1K)</div>
+        <div class="controls" id="controls-main">
+            <button id="hitBtn" class="btn">ÇEK</button>
+            <button id="standBtn" class="btn">KAL</button>
+            <button id="doubleBtn" class="btn">2X</button>
+            <button id="splitBtn" class="btn">BÖL</button>
         </div>
-        <div class="controls" id="insurance-controls">
-            <button id="ins-yes" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);" aria-label="Sigorta Al">EVET</button>
-            <button id="ins-no" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);" aria-label="Sigorta Alma">HAYIR</button>
-        </div>
-    </div>
-
-    <div class="hands-container" id="playerArea">
-        <div class="hand-box active" id="hand0-box">
-            <div id="hand0" class="cards-wrapper"></div>
-            <div class="score-badge">Toplam: <span id="score0">0</span></div>
-        </div>
-        <div class="hand-box" id="hand1-box" style="display:none;">
-            <div id="hand1" class="cards-wrapper"></div>
-            <div class="score-badge">Toplam: <span id="score1">0</span></div>
+        <div class="controls" id="controls-ins">
+            <button id="insYesBtn" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);">SİGORTA AL</button>
+            <button id="insNoBtn" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);">GEÇ</button>
         </div>
     </div>
-
-    <div class="chips-area" id="chipsArea" aria-label="Bahis Çipleri">
-        <div class="cancel-btn" onclick="cancelBet()" aria-label="Bahsi Temizle">SİL</div>
-        <div class="chip c1k" onclick="addBet(1000)">1K</div>
-        <div class="chip c3k" onclick="addBet(3000)">3K</div>
-        <div class="chip c5k" onclick="addBet(5000)">5K</div>
-        <div class="chip c15k" onclick="addBet(15000)">15K</div>
-        <div class="chip c20k" onclick="addBet(20000)">20K</div>
-        <div class="chip c50k" onclick="addBet(50000)">50K</div>
+    <div class="hands-container" id="ui-playerHands"></div>
+    <div class="chips-area" id="ui-chipsArea">
+        <div class="cancel-btn" id="cancelBetBtn">SİL</div>
+        <div class="chip c1k" data-val="1000">1K</div>
+        <div class="chip c3k" data-val="3000">3K</div>
+        <div class="chip c5k" data-val="5000">5K</div>
+        <div class="chip c15k" data-val="15000">15K</div>
+        <div class="chip c20k" data-val="20000">20K</div>
+        <div class="chip c50k" data-val="50000">50K</div>
     </div>
 </main>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-  authDomain:"emirhan-site.firebaseapp.com",
-  projectId:"emirhan-site",
-  storageBucket:"emirhan-site.firebasestorage.app",
-  messagingSenderId:"668871888390",
-  appId:"1:668871888390:web:76568bda84cb1641f7bd87"
+    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain:"emirhan-site.firebaseapp.com",
+    projectId:"emirhan-site",
+    storageBucket:"emirhan-site.firebasestorage.app",
+    messagingSenderId:"668871888390",
+    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-const balanceEl = document.getElementById("balance");
-const betAmountEl = document.getElementById("betAmount");
-const dealerCardsEl = document.getElementById("dealerCards");
-const dealerScoreEl = document.getElementById("dealerScore");
-const messageEl = document.getElementById("message");
+let userBalance = 0; let pendingBet = 0; let betTimer = null; let currentSeq = 0; let isWaitingServer = false;
 
-const hand0El = document.getElementById("hand0");
-const hand1El = document.getElementById("hand1");
-const hand0Box = document.getElementById("hand0-box");
-const hand1Box = document.getElementById("hand1-box");
-const score0El = document.getElementById("score0");
-const score1El = document.getElementById("score1");
-
-const controlsEl = document.getElementById("controls");
-const insControlsEl = document.getElementById("insurance-controls");
-const chipsArea = document.getElementById("chipsArea");
-
-const btnHit = document.getElementById("hit");
-const btnStand = document.getElementById("stand");
-const btnDouble = document.getElementById("double");
-const btnSplit = document.getElementById("split");
-const btnInsYes = document.getElementById("ins-yes");
-const btnInsNo = document.getElementById("ins-no");
-
-let user = null;
-let balance = 0;
-let pendingBet = 0;
-let betCountdown = null;
-let isBusy = false;
-
-function fmt(n){ return Number(n||0).toLocaleString('tr-TR'); }
-
-async function getToken(){
-  if(!user) throw new Error("Oturum yok");
-  return await user.getIdToken();
-}
-async function apiPost(path, body){
-  const token = await getToken();
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type":"application/json", "Authorization": "Bearer " + token },
-    body: JSON.stringify(body || {})
-  });
-  return await res.json();
-}
-async function apiGet(path){
-  const token = await getToken();
-  const res = await fetch(path, { headers: { "Authorization": "Bearer " + token } });
-  return await res.json();
-}
-
-function setDisabled(dis){
-  [btnHit,btnStand,btnDouble,btnSplit,btnInsYes,btnInsNo].forEach(b=>{ if(b) b.disabled = dis; });
-}
-
-function cardVal(v){ return {1:"A", 10:"0", 11:"J", 12:"Q", 13:"K"}[v] || v; }
-function makeCardEl(card, faceUp){
-  const c = document.createElement("div");
-  c.className = "card-3d show";
-  c.innerHTML = `
-    <div class="card-face card-front" style="background: url('https://deckofcardsapi.com/static/img/${cardVal(card.value)}${card.suit}.png') center/cover"></div>
-    <div class="card-face card-back"></div>
-  `;
-  if(faceUp) c.classList.add("flipped");
-  return c;
-}
-
-function computeScore(cards){
-  let t=0,a=0;
-  for(const c of cards||[]){
-    let v = c.value>10?10:(c.value===1?11:c.value);
-    if(v===11) a++;
-    t += v;
-  }
-  while(t>21 && a>0){ t-=10; a--; }
-  return t;
-}
-
-function renderPayload(payload){
-  if(!payload) return;
-  if(payload.ok === false){
-    messageEl.innerText = payload.error || "Hata";
-    return;
-  }
-  const st = payload.state || payload; // server: {ok, state:{...}}
-  const gameState = st.gameState || "betting";
-
-  // balance (server state doesn't include; we refresh separately)
-  balanceEl.innerText = fmt(balance);
-
-  // bets total
-  const hands = st.hands || [];
-  const totalBet = (st.insuranceBet||0) + hands.reduce((s,h)=>s+(h.bet||0),0);
-  betAmountEl.innerText = fmt(totalBet);
-
-  const inGame = (gameState !== "betting");
-  chipsArea.style.display = inGame ? "none" : "flex";
-  messageEl.innerText = st.message || (inGame ? "" : "MC KULLAN (MİN: 1K)");
-
-  // insurance controls
-  insControlsEl.style.display = (st.insuranceOffered && st.insurancePending) ? "flex" : "none";
-  controlsEl.style.display = (gameState === "playing" && !st.insurancePending) ? "flex" : "none";
-
-  // highlights
-  hand0Box.classList.toggle("active", (st.currentHandIdx||0) === 0);
-  hand1Box.classList.toggle("active", (st.currentHandIdx||0) === 1);
-
-  // canDouble/canSplit from server booleans
-  btnDouble.style.display = st.canDouble ? "block" : "none";
-  btnSplit.style.display = st.canSplit ? "block" : "none";
-
-  // dealer
-  dealerCardsEl.innerHTML = "";
-  (st.dealer || []).forEach((c,i)=>{
-    const faceUp = st.dealerHidden ? (i===0) : true;
-    dealerCardsEl.appendChild(makeCardEl(c, faceUp));
-  });
-  dealerScoreEl.innerText = String(st.dealerHidden ? computeScore([st.dealer?.[0]].filter(Boolean)) : computeScore(st.dealer));
-
-  // hands
-  hand0El.innerHTML = "";
-  hand1El.innerHTML = "";
-  hand1Box.style.display = hands[1] ? "flex" : "none";
-
-  if(hands[0]){
-    hands[0].cards.forEach(c=>hand0El.appendChild(makeCardEl(c,true)));
-    score0El.innerText = String(computeScore(hands[0].cards));
-  } else score0El.innerText = "0";
-
-  if(hands[1]){
-    hands[1].cards.forEach(c=>hand1El.appendChild(makeCardEl(c,true)));
-    score1El.innerText = String(computeScore(hands[1].cards));
-  } else score1El.innerText = "0";
-
-  if(gameState === "betting"){
-    pendingBet = 0;
-    betAmountEl.innerText = "0";
-  }
-}
-
-async function refreshMe(){
-  try{
-    const me = await apiGet("/api/me");
-    if(me?.ok){
-      balance = Number(me.balance||0);
-      balanceEl.innerText = fmt(balance);
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) { window.location.href = '/'; return; }
+    const token = await getIdToken(auth.currentUser);
+    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+    const data = await res.json();
+    
+    if (data.redirect || res.status === 401 || res.status === 403) {
+        window.location.href = '/'; 
+        throw new Error("Ana sayfaya yönlendiriliyorsunuz.");
     }
-  }catch{}
+    
+    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
 }
 
-async function refreshState(){
-  const r = await apiGet("/api/bj/state");
-  if(r?.ok) renderPayload(r);
+function createCardHTML(card) {
+    if(!card) return '';
+    const suitsMap = { 'H': { sym: '♥', cls: 'suit-red' }, 'D': { sym: '♦', cls: 'suit-red' }, 'C': { sym: '♣', cls: 'suit-black' }, 'S': { sym: '♠', cls: 'suit-black' } };
+    const valsMap = { 1: "A", 11: "J", 12: "Q", 13: "K" };
+    return `<div class="card-face card-front ${suitsMap[card.suit].cls}"><div class="top-val">${valsMap[card.value] || card.value}</div><div class="center-suit">${suitsMap[card.suit].sym}</div><div class="bottom-val">${valsMap[card.value] || card.value}</div></div>`;
 }
 
-window.addBet = (a) => {
-  if(isBusy) return;
-  if(pendingBet + a > balance) return;
-  pendingBet += a;
-  balanceEl.innerText = fmt(balance - pendingBet);
-  betAmountEl.innerText = fmt(pendingBet);
-  if(!betCountdown && pendingBet >= 1000) startBetCountdown();
-};
-
-window.cancelBet = () => {
-  if(isBusy) return;
-  pendingBet = 0;
-  balanceEl.innerText = fmt(balance);
-  betAmountEl.innerText = "0";
-  if(betCountdown){ clearInterval(betCountdown); betCountdown=null; }
-  messageEl.innerText = "MC KULLAN (MİN: 1K)";
-};
-
-function startBetCountdown(){
-  let s = 3;
-  messageEl.innerText = `BAŞLIYOR (${s})`;
-  betCountdown = setInterval(async ()=>{
-    s--;
-    if(s>0){ messageEl.innerText = `BAŞLIYOR (${s})`; }
-    else{
-      clearInterval(betCountdown); betCountdown=null;
-      await startBJ();
-    }
-  }, 1000);
+function calculateVisibleScore(cards) {
+    if(!cards || cards.length === 0) return 0;
+    let t = 0, a = 0;
+    cards.forEach(c => { if(!c) return; let v = c.value > 10 ? 10 : (c.value === 1 ? 11 : c.value); if(v === 11) a++; t += v; });
+    while(t > 21 && a > 0) { t -= 10; a--; } return t;
 }
 
-async function startBJ(){
-  if(isBusy) return;
-  if(pendingBet < 1000) return;
-  isBusy = true; setDisabled(true);
-  const r = await apiPost("/api/bj/start", { bet: pendingBet });
-  await refreshMe();
-  isBusy = false; setDisabled(false);
-  renderPayload(r);
+function renderState(state) {
+    currentSeq = state.seq;
+    const dArea = document.getElementById("ui-dealerCards"); dArea.innerHTML = "";
+    state.dealer.forEach((card, i) => {
+        const isHidden = state.dealerHidden && i === 1;
+        const div = document.createElement("div"); div.className = `card-3d`;
+        
+        // GÖRSEL BUG DÜZELTİLDİ: Kapalı kart için sahte içerik yerine sadece saf CSS arka yüz
+        if (isHidden) {
+            div.innerHTML = `<div class="card-face card-back" style="transform: rotateY(0deg);"></div>`;
+        } else {
+            div.innerHTML = createCardHTML(card);
+        }
+        dArea.appendChild(div);
+    });
+    document.getElementById("ui-dealerScore").innerText = state.dealerHidden && state.dealer[0] ? calculateVisibleScore([state.dealer[0]]) : calculateVisibleScore(state.dealer);
+
+    const pArea = document.getElementById("ui-playerHands"); pArea.innerHTML = ""; let totalTableBet = 0;
+    state.hands.forEach((hand, i) => {
+        totalTableBet += hand.bet || 0;
+        const box = document.createElement("div"); box.className = `hand-box ${(i === state.currentHandIdx && state.gameState === 'playing') ? 'active' : ''}`;
+        const cWrap = document.createElement("div"); cWrap.className = "cards-wrapper";
+        hand.cards.forEach(card => { const div = document.createElement("div"); div.className = "card-3d"; div.innerHTML = createCardHTML(card); cWrap.appendChild(div); });
+        const scoreDiv = document.createElement("div"); scoreDiv.className = "score-badge"; scoreDiv.innerText = `Toplam: ${calculateVisibleScore(hand.cards)} ${hand.status === 'bust' ? '(PATLADI)' : ''}`;
+        box.appendChild(cWrap); box.appendChild(scoreDiv); pArea.appendChild(box);
+    });
+
+    document.getElementById("ui-chipsArea").style.display = (state.gameState === 'finished' || !state.gameState) ? "flex" : "none";
+    if(state.gameState === 'playing' && !state.insuranceOffered) {
+        document.getElementById("controls-main").style.display = "flex"; document.getElementById("controls-ins").style.display = "none";
+        const curHand = state.hands[state.currentHandIdx];
+        document.getElementById("doubleBtn").style.display = (curHand.cards.length === 2) ? "block" : "none";
+        document.getElementById("splitBtn").style.display = (state.hands.length === 1 && curHand.cards.length === 2 && curHand.cards[0].value === curHand.cards[1].value) ? "block" : "none";
+    } else if (state.insuranceOffered) {
+        document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "flex";
+    } else { document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none"; }
+
+    if (state.gameState === 'resolving') { document.getElementById("ui-message").innerText = "SONUÇ BEKLENİYOR..."; setTimeout(pollState, 1500); } 
+    else if (state.gameState === 'finished') { document.getElementById("ui-message").innerText = state.message; document.getElementById("ui-betAmount").innerText = "0"; pendingBet = 0; fetchBalance(); } 
+    else { document.getElementById("ui-message").innerText = state.message || "OYUN DEVAM EDİYOR"; document.getElementById("ui-betAmount").innerText = totalTableBet.toLocaleString('tr-TR'); }
 }
 
-async function act(action, value){
-  if(isBusy) return;
-  isBusy=true; setDisabled(true);
-  const r = await apiPost("/api/bj/action", { action, value });
-  await refreshMe();
-  isBusy=false; setDisabled(false);
-  renderPayload(r);
+async function pollState() { try { const res = await fetchAPI('/api/bj/state'); if(res && res.state) renderState(res.state); } catch(e) { console.error(e); } }
+async function fetchBalance() { try { const res = await fetchAPI('/api/me'); if(res) { userBalance = res.balance; document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); } } catch(e) { console.error(e); } }
+
+async function startNewGame() {
+    if(pendingBet < 1000) return;
+    isWaitingServer = true; document.getElementById("ui-chipsArea").style.display = "none"; document.getElementById("ui-message").innerText = "MASA HAZIRLANIYOR...";
+    try {
+        const res = await fetchAPI('/api/bj/start', 'POST', { bet: pendingBet });
+        fetchBalance(); 
+        if (res.state) renderState(res.state); // Gecikmesiz render
+    } catch(e) { alert(e.message); document.getElementById("ui-chipsArea").style.display = "flex"; pendingBet = 0; document.getElementById("ui-betAmount").innerText = "0"; document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; }
+    isWaitingServer = false;
 }
 
-btnInsYes.onclick = ()=>act("insurance", true);
-btnInsNo.onclick = ()=>act("insurance", false);
-btnHit.onclick = ()=>act("hit");
-btnStand.onclick = ()=>act("stand");
-btnDouble.onclick = ()=>act("double");
-btnSplit.onclick = ()=>act("split");
-
-// --- iOS uyumlu basit ses başlatma (opsiyonel) ---
-let audioCtx = null;
-async function ensureAudio(){
-  try{
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    if(!audioCtx) audioCtx = new AudioContext();
-    if(audioCtx.state === 'suspended') await audioCtx.resume();
-    const b = audioCtx.createBuffer(1, 1, 22050);
-    const s = audioCtx.createBufferSource();
-    s.buffer = b; s.connect(audioCtx.destination); s.start(0);
-  }catch{}
+async function sendAction(actionStr) {
+    if(isWaitingServer) return;
+    isWaitingServer = true; document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
+    try {
+        const res = await fetchAPI('/api/bj/action', 'POST', { action: actionStr, seq: currentSeq });
+        if(['split', 'double', 'insurance_yes'].includes(actionStr)) fetchBalance();
+        if (res.state) renderState(res.state); // Gecikmesiz render
+    } catch(e) { alert(e.message); pollState(); }
+    isWaitingServer = false;
 }
-document.getElementById('systemStartBtn')?.addEventListener('click', async ()=>{
-  await ensureAudio();
-  const ov = document.getElementById('sys-start-overlay');
-  if(ov) ov.style.display = 'none';
+
+document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        if(isWaitingServer) return;
+        const val = parseInt(chip.getAttribute('data-val')); if (pendingBet + val > userBalance) return;
+        pendingBet += val; document.getElementById("ui-betAmount").innerText = pendingBet.toLocaleString('tr-TR'); document.getElementById("ui-balance").innerText = (userBalance - pendingBet).toLocaleString('tr-TR');
+        if(betTimer) clearTimeout(betTimer); document.getElementById("ui-message").innerText = "BAHİS ONAYI BEKLENİYOR..."; betTimer = setTimeout(startNewGame, 1500);
+    });
 });
+document.getElementById("cancelBetBtn").addEventListener('click', () => { if(betTimer) clearTimeout(betTimer); pendingBet = 0; document.getElementById("ui-betAmount").innerText = "0"; document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; });
+document.getElementById("hitBtn").onclick = () => sendAction('hit');
+document.getElementById("standBtn").onclick = () => sendAction('stand');
+document.getElementById("doubleBtn").onclick = () => sendAction('double');
+document.getElementById("splitBtn").onclick = () => sendAction('split');
+document.getElementById("insYesBtn").onclick = () => sendAction('insurance_yes');
+document.getElementById("insNoBtn").onclick = () => sendAction('insurance_no');
 
-onAuthStateChanged(auth, async (u)=>{
-  if(!u){ await signInAnonymously(auth); return; }
-  user = u;
-  await refreshMe();
-  await refreshState();
-});
+document.getElementById('systemStartBtn').addEventListener('click', () => { document.getElementById('sys-start-overlay').style.display='none'; fetchBalance(); pollState(); });
 
+onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
 </script>
 </body>
 </html>
