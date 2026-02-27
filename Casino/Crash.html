@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>PlayMatrix Crash | Profesyonel VIP Casino ve Çarpan Oyunu</title>
+    <title>PlayMatrix Crash - Çarpan Oyunu</title>
     <meta name="description" content="PlayMatrix Crash ile heyecanı zirvede yaşa! %100 Provably Fair adil sistem, gerçek zamanlı yüksek çarpanlar ve anında kazanç. Hemen oyna!">
     <meta name="keywords" content="crash oyunu, casino, playmatrix, çarpan oyunu, kripto bahis, roket oyunu, online casino, canlı bahis">
     <meta name="author" content="PlayMatrix Global">
@@ -24,16 +24,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-<script>
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, "/");
-    }
-</script>
-
     <style>
-        /* SIFIR KAYMA, %100 RESPONSIVE RESET */
+        /* SIFIR KAYMA, %100 RESPONSIVE VE ZOOM KORUMASI RESET */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        html, body { background: #0b1118; color: #ffffff; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; font-family: 'Inter', sans-serif; }
+        html, body { 
+            background: #0b1118; color: #ffffff; height: 100vh; width: 100vw; 
+            overflow: hidden; overscroll-behavior: none; font-family: 'Inter', sans-serif;
+            touch-action: manipulation; /* ÇİFT TIK ZOOM ENGELİ (CSS) */
+        }
 
         /* PROFESYONEL İNTRO (AÇILIŞ EKRANI) */
         #studioIntro {
@@ -200,7 +198,7 @@
         <h1>PLAYMATRIX<br><span>CRASH</span></h1>
     </div>
     <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
-    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
+    <button id="btnEnterGame" class="btn-intro-start">CRASH OYNA</button>
 </div>
 
 <div id="matrixModal" class="modal-overlay">
@@ -276,6 +274,21 @@
     const auth = getAuth(app);
     const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
+    // --- ZOOM (ÇİFT TIKLAMA) ENGELLEYİCİ (JS YÖNTEMİ) ---
+    document.addEventListener('dblclick', function(event) {
+        event.preventDefault();
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        let now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+    // ----------------------------------------------------
+
     // DOM ELEMENTS
     const elBal = document.getElementById("uiBalance");
     const elMult = document.getElementById("uiMultiplier");
@@ -315,15 +328,16 @@
         );
     };
 
-    // PROFESYONEL SES MOTORU (Web Audio API - Sıfır Gecikme)
+    // PROFESYONEL SES MOTORU (Web Audio API - iOS & Safari Uyumu Çözüldü)
     let audioCtx = null;
+    let audioUnlocked = false; // iOS kilidi durumu
     const sounds = {};
     const sfxUrls = {
-        tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3',       // Geri sayım tiktak
-        launch: 'https://freesound.org/data/previews/146/146725_2437358-lq.mp3',     // Uçuş başladı (Wooosh)
-        win: 'https://freesound.org/data/previews/270/270319_5123851-lq.mp3',        // Para Çekme (Şıngırtı - Kazanç)
-        crash: 'https://freesound.org/data/previews/170/170144_2437358-lq.mp3',      // Patlama (Güm)
-        bet: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3'         // Bahis yapma (Çip sesi)
+        tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3',       
+        launch: 'https://freesound.org/data/previews/146/146725_2437358-lq.mp3',     
+        win: 'https://freesound.org/data/previews/270/270319_5123851-lq.mp3',        
+        crash: 'https://freesound.org/data/previews/170/170144_2437358-lq.mp3',      
+        bet: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3'         
     };
 
     async function loadAudio() {
@@ -335,6 +349,19 @@
                 sounds[key] = await audioCtx.decodeAudioData(buf);
             }
         } catch(e) { console.warn("Sesler yüklenemedi."); }
+    }
+
+    // iOS İÇİN GÜVENLİK KİLİDİ AÇMA (Sessiz buffer çalarak cihazı kandırma)
+    function unlockAudioForIOS() {
+        if(audioUnlocked || !audioCtx) return;
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
+        audioCtx.resume().then(() => {
+            audioUnlocked = true;
+        });
     }
 
     function playSfx(name) {
@@ -363,8 +390,10 @@
         document.getElementById('loaderFill').style.width = loadProg + '%';
     }, 100);
 
-    document.getElementById('btnEnterGame').addEventListener('click', () => {
-        loadAudio(); // Ses motoru kullanıcı etkileşimi ile başlar (Kural)
+    // KULLANICI İLK BUTONA BASTIĞINDA SES MOTORUNU KİLİTTEN ÇIKARIR
+    document.getElementById('btnEnterGame').addEventListener('click', async () => {
+        await loadAudio();
+        unlockAudioForIOS(); // iOS SES KİLİDİ AÇILIYOR
         document.getElementById('studioIntro').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('studioIntro').style.display = 'none';
