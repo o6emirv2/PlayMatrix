@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, onSnapshot, collection, query, where, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const API_URL = "https://emirhan-siye.onrender.com";
 
@@ -72,7 +72,7 @@ function initParticles() {
 function triggerLightning() {
     if (currentScene !== 'game') return; 
     lightningFlash = 3; 
-    if (audioUnlocked) { sfx.thunder.currentTime = 0; sfx.thunder.play().catch(()=>{}); }
+    if (audioUnlocked) sfx.thunder.currentTime = 0; sfx.thunder.play().catch(()=>{});
     lightningTimer = setTimeout(triggerLightning, Math.random() * 10000 + 8000);
 }
 function drawBg() {
@@ -95,16 +95,22 @@ function drawBg() {
 initParticles(); drawBg();
 
 onAuthStateChanged(auth, async user => {
-    if(!user) { window.location.href = '/'; return; }
+    if(!user) { try { await signInAnonymously(auth); } catch(e){} return; }
     uid = user.uid;
-    const res = await fetchAPI('/api/me');
-    document.getElementById('meName').textContent = res?.user?.username || "PİLOT";
+    
+    try {
+        const me = await fetchAPI('/api/me');
+        document.getElementById('meName').textContent = me?.user?.username || "PİLOT_" + uid.slice(0,4).toUpperCase();
+    } catch(e) {
+        document.getElementById('meName').textContent = "PİLOT_" + uid.slice(0,4).toUpperCase();
+    }
+
     document.getElementById('createRoomBtn').disabled = false;
     document.getElementById('quickJoinBtn').disabled = false;
     listenLobby();
 });
 
-// ZERO-TRUST CANLI LOBİ (Skorlar, İsimler ve Otomatik Temizlik)
+// ZERO-TRUST CANLI LOBİ (Skorlar, İsimler Kusursuz Listelenir)
 function listenLobby() {
     if(unsubLobby) unsubLobby();
     const q = query(collection(db, "conquest_rooms"), where("status", "in", ["waiting", "playing"]));
@@ -116,20 +122,15 @@ function listenLobby() {
             
             snap.forEach(d => {
                 const r = d.data();
+                if(!r) return;
                 
-                // Kurucu Odayı Lobi Listesinde "SENİN ODA" olarak görür.
                 const isMyRoom = (r.p1 === uid || r.p2 === uid);
-                
                 const p1n = r.p1Name || "PİLOT";
                 const p2n = r.p2Name || "BEKLENİYOR...";
 
                 if(r.status === 'waiting') {
-                    // 70 Saniye AFK Temizliği (API Call)
-                    const age = now - (r.createdAtMs || now);
-                    if (age > 70000) {
-                        fetchAPI('/api/conquest/cleanup', 'POST', { roomId: d.id }).catch(()=>{});
-                        return; // Ekrana basma
-                    }
+                    // Sunucu temizleyene kadar client'ta gösterme (Görsel Temizlik)
+                    if(now - (r.createdAtMs || now) > 70000) return;
 
                     count++;
                     const card = document.createElement('div'); card.className = "room-card";
@@ -154,14 +155,9 @@ function listenLobby() {
                 } else if(r.status === 'playing') {
                     count++;
                     
-                    // Lobide Canlı Skor Hesaplama
-                    let s1 = 0, s2 = 0;
-                    if(r.cells) {
-                        Object.values(r.cells).forEach(val => {
-                            if(val === 'p1') s1++;
-                            else if(val === 'p2') s2++;
-                        });
-                    }
+                    // Sunucunun yazdığı net skorlar
+                    const s1 = r.score1 || 0;
+                    const s2 = r.score2 || 0;
 
                     const card = document.createElement('div'); card.className = "room-card";
                     const info = document.createElement('div'); info.className = "room-info";
@@ -172,9 +168,7 @@ function listenLobby() {
                     players.innerHTML = `<span style="color:var(--p1)">${p1n} (${s1})</span> <span style="color:#555">vs</span> <span style="color:var(--p2)">${p2n} (${s2})</span>`;
                     
                     let timeLeft = 60;
-                    if(r.endTimeMs) {
-                        timeLeft = Math.max(0, Math.ceil((r.endTimeMs - now) / 1000));
-                    }
+                    if(r.endTimeMs) timeLeft = Math.max(0, Math.ceil((r.endTimeMs - now) / 1000));
                     
                     const timeDiv = document.createElement('div'); timeDiv.className = "room-time"; timeDiv.style.color = "var(--warning)";
                     timeDiv.textContent = `🔴 SAVAŞTA (${timeLeft}s)`;
@@ -197,7 +191,7 @@ function listenLobby() {
 }
 
 document.getElementById('btnExit').addEventListener('click', () => {
-    if (currentScene === 'game') showModalAlert('ONAY', 'Savaş alanından ayrılıp lobiye dönmek istediğine emin misin?', leaveToLobby);
+    if (currentScene === 'game') showModalAlert('ONAY', 'Savaş alanından ayrılıp lobiye dönmek istediğine emin misin?', () => leaveToLobby(true));
     else window.location.href = "index.html";
 });
 document.getElementById('roomSearch').addEventListener('input', (e) => {
@@ -218,7 +212,7 @@ document.getElementById('btnCancelPrivate').addEventListener('click', () => togg
 document.getElementById('btnCreatePrivate').addEventListener('click', () => createArena(true));
 document.getElementById('btnCancelJoinPass').addEventListener('click', () => toggleModal('passwordEntryModal', false));
 document.getElementById('alertCancelBtn').addEventListener('click', () => toggleModal('alertModal', false));
-document.getElementById('btnReturnLobby').addEventListener('click', () => leaveToLobby());
+document.getElementById('btnReturnLobby').addEventListener('click', () => leaveToLobby(false));
 
 async function createArena(isPrivate) {
     let pass = "";
@@ -236,8 +230,12 @@ async function createArena(isPrivate) {
 
 let pendingJoinId = null;
 function joinHandler(id, isPrivate) {
-    if(isPrivate) { pendingJoinId = id; toggleModal('passwordEntryModal', true); } 
-    else completeJoin(id);
+    if(isPrivate) { 
+        pendingJoinId = id; 
+        document.getElementById('passError').style.display = 'none';
+        document.getElementById('joinRoomPassInput').value = "";
+        toggleModal('passwordEntryModal', true); 
+    } else completeJoin(id);
 }
 document.getElementById('confirmJoinPass').addEventListener('click', () => { completeJoin(pendingJoinId, document.getElementById('joinRoomPassInput').value); });
 
@@ -247,7 +245,10 @@ async function completeJoin(id, pass = "") {
         curRoomId = id; myRole = 'p2';
         toggleModal('passwordEntryModal', false);
         enterGame(id);
-    } catch(e) { document.getElementById('passError').style.display = 'block'; document.getElementById('passError').textContent = e.message; }
+    } catch(e) { 
+        document.getElementById('passError').style.display = 'block'; 
+        document.getElementById('passError').textContent = e.message; 
+    }
 }
 
 function enterGame(id) {
@@ -260,15 +261,17 @@ function enterGame(id) {
 
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('game-view').style.display = 'flex';
+    document.getElementById('gameOverlay').style.display = 'flex'; // Kilit Ekranı Açık
     
     const g = document.getElementById('grid'); g.innerHTML = "";
     for(let i=0; i<36; i++) {
         const c = document.createElement('div'); c.className = 'cell'; c.setAttribute('role', 'button');
         
-        // AKICI VE HIZLI TIKLAMA MİMARİSİ
         c.addEventListener('pointerdown', (e) => {
             e.preventDefault(); 
-            if(canPlay && !isFin && c.className !== `cell ${myRole}`) {
+            if(!canPlay || isFin) return; // Savaş başlamadıysa tıklanamaz!
+            
+            if(c.className !== `cell ${myRole}`) {
                 c.className = `cell ${myRole}`; 
                 sfx.tap.currentTime = 0; if(audioUnlocked) sfx.tap.play().catch(()=>{});
                 fetchAPI('/api/conquest/click', 'POST', { roomId: id, cellIndex: i }).catch(()=>{});
@@ -279,21 +282,23 @@ function enterGame(id) {
 
     unsubGame = onSnapshot(doc(db, "conquest_rooms", id), snap => {
         try {
-            if(!snap.exists()) { if(!isFin) leaveToLobby(); return; }
+            if(!snap.exists()) { if(!isFin) leaveToLobby(false); return; }
             const d = snap.data();
             
-            if(d.status === 'terminated' && !isFin) { isFin = true; showModalAlert("BAĞLANTI KOPTU", "Oyun sonlandırıldı!", leaveToLobby); return; }
+            if(d.status === 'terminated' && !isFin) { isFin = true; showModalAlert("BAĞLANTI KOPTU", "Rakip kaçtı!", () => leaveToLobby(false)); return; }
 
-            // Oyuncu Adları Ekranın Üst Barına Yazılıyor
             document.getElementById('n1').textContent = d.p1Name || "PİLOT";
             document.getElementById('n2').textContent = d.p2Name || "BEKLENİYOR...";
 
             if (d.p1 === uid) myRole = "p1";
             else if (d.p2 === uid) myRole = "p2";
 
-            if(d.status === 'playing') canPlay = true;
+            // Oyun başladığında kilidi kaldır
+            if(d.status === 'playing') {
+                canPlay = true;
+                document.getElementById('gameOverlay').style.display = 'none';
+            }
 
-            // Timer Senkronizasyonu
             if(d.status === 'playing' && d.endTimeMs) {
                 if(!timerInt) {
                     timerInt = setInterval(() => {
@@ -301,19 +306,23 @@ function enterGame(id) {
                         document.getElementById('timer-display').textContent = left;
                         if(left === 0 && !isFin) {
                             clearInterval(timerInt); timerInt = null;
-                            if(myRole === 'p1') fetchAPI('/api/conquest/settle', 'POST', { roomId: id }).catch(()=>{});
+                            // Sunucu kendisi bitirecek, client sadece bekler
                         }
                     }, 500);
                 }
             }
 
-            let s1=0, s2=0;
-            document.querySelectorAll('.cell').forEach((c, i) => {
-                if(d.cells && d.cells[i]) { 
-                    c.className = 'cell ' + d.cells[i]; d.cells[i] === 'p1' ? s1++ : s2++; 
-                } else c.className = 'cell'; 
-            });
-            document.getElementById('s1').textContent = s1; document.getElementById('s2').textContent = s2;
+            const s1 = d.score1 || 0;
+            const s2 = d.score2 || 0;
+            document.getElementById('s1').textContent = s1; 
+            document.getElementById('s2').textContent = s2;
+
+            if(d.cells) {
+                document.querySelectorAll('.cell').forEach((c, i) => {
+                    const val = d.cells[i];
+                    c.className = val ? `cell ${val}` : 'cell'; 
+                });
+            }
 
             if(d.status === 'finished' && !isFin) finish(id, s1, s2, d.winner);
         } catch(e) { console.error("Sync Er", e); }
@@ -331,9 +340,9 @@ function finish(id, s1, s2, winner) {
     toggleModal('resultModal', true);
 }
 
-async function leaveToLobby() {
-    // Savaş bitmeden çıkıyorsa veritabanını temizle
-    if (curRoomId && !isFin) {
+// Güvenli Lobiye Dönüş (Yanlışlıkla atılmaları engeller)
+async function leaveToLobby(callServer) {
+    if (callServer && curRoomId && !isFin) {
         try { fetchAPI('/api/conquest/leave', 'POST', { roomId: curRoomId }); } catch (e) {} 
     }
     
@@ -344,6 +353,7 @@ async function leaveToLobby() {
     sfx.rain.pause(); sfx.thunder.pause(); if (audioUnlocked) { sfx.lobby.currentTime = 0; sfx.lobby.play().catch(()=>{}); }
     
     document.getElementById('game-view').style.display = 'none'; document.getElementById('lobby').style.display = 'flex';
+    document.getElementById('gameOverlay').style.display = 'flex'; // Kilidi tekrar hazırla
     toggleModal('resultModal', false); toggleModal('alertModal', false);
     listenLobby(); 
 }
