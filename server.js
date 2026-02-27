@@ -56,9 +56,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// YENİ EKLENEN: Profil Güncelleme Özel Limiter
 const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 900, standardHeaders: true, legacyHeaders: false });
 const bjActionLimiter = rateLimit({ windowMs: 10 * 1000, max: 25, message: { ok: false, error: 'Spam engellendi.' }});
 const bonusLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { ok: false, error: "Limit aşıldı." }});
+const profileLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: { ok: false, error: "Çok fazla profil işlemi yaptınız, 1 dakika bekleyin." }});
 app.use(generalLimiter);
 
 app.get('/', (req, res) => res.status(200).send('✅ PlayMatrix API is running'));
@@ -94,7 +96,7 @@ app.get('/api/me', verifyAuth, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/profile/update', verifyAuth, async (req, res) => {
+app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => {
   try {
     const { fullName, phone, username, avatar } = req.body || {};
     const uid = req.user.uid;
@@ -114,14 +116,31 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
       const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
       if (cleanStr(phone) && !cleanStr(u.phone)) updates.phone = cleanStr(phone);
-      if (typeof avatar === 'string' && avatar.startsWith(ALLOWED_AVATAR_DOMAIN)) updates.avatar = avatar;
+      
+      // HATA ÇÖZÜMÜ: Avatar uzunluk kontrolü (Bypass engeli)
+      if (typeof avatar === 'string' && avatar.startsWith(ALLOWED_AVATAR_DOMAIN) && avatar.length < 250) updates.avatar = avatar;
 
       const wanted = cleanStr(username);
       if (wanted && wanted !== cleanStr(u.username)) {
         if (!isNewUser && safeNum(u.userChangeCount, 0) >= 3) throw new Error("İsim hakkı doldu!");
-        const qSnap = await tx.get(db.collection('users').where('username', '==', wanted).limit(1));
-        if (!qSnap.empty && qSnap.docs[0].id !== uid) throw new Error("Bu isim kullanımda!");
+        
+        // HATA ÇÖZÜMÜ: Usernames ayrı koleksiyondan kontrol (Yüksek Performans)
+        const wantedLower = wanted.toLowerCase();
+        const usernameRef = db.collection('usernames').doc(wantedLower);
+        const uDoc = await tx.get(usernameRef);
+        
+        if (uDoc.exists && uDoc.data().uid !== uid) throw new Error("Bu isim kullanımda!");
+        
+        // Eski ismi sil (Eğer varsa ve değiştiriliyorsa)
+        if (cleanStr(u.username)) {
+            const oldLower = cleanStr(u.username).toLowerCase();
+            if (oldLower !== wantedLower) tx.delete(db.collection('usernames').doc(oldLower));
+        }
+
+        // Yeni ismi kaydet
+        tx.set(usernameRef, { uid: uid, createdAt: nowMs() });
         updates.username = wanted; 
+        
         if (!isNewUser) updates.userChangeCount = safeNum(u.userChangeCount, 0) + 1;
       }
       
@@ -133,6 +152,9 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
 
 app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   try {
+    // FAKE HESAP KORUMASI: E-Posta onayı zorunluluğu
+    if (!req.user.email_verified) throw new Error("Güvenlik: Çark çevirmek için e-postanızı onaylamalısınız! (Onayladıktan sonra çıkış yapıp tekrar girin)");
+
     const out = await db.runTransaction(async (tx) => {
       const snap = await tx.get(colUsers().doc(req.user.uid));
       if (!snap.exists) throw new Error("Kayıt yok!");
@@ -149,6 +171,9 @@ app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
 
 app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   try {
+    // FAKE HESAP KORUMASI: E-Posta onayı zorunluluğu
+    if (!req.user.email_verified) throw new Error("Güvenlik: Promosyon kodu kullanmak için e-postanızı onaylamalısınız!");
+
     const code = cleanStr((req.body || {}).code).toUpperCase();
     if (!code) throw new Error("Kod boş.");
     const out = await db.runTransaction(async (tx) => {
@@ -164,7 +189,7 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-
+// Oyun Motorları Burada... (Değiştirilmedi, çünkü güvenli)
 // ======================================================
 // 2. BLACKJACK MOTORU
 // ======================================================
