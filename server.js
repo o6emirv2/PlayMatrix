@@ -19,7 +19,6 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => 
 (function initFirebase() {
   if (admin.apps.length) return;
   
-  // FAIL-FAST: FIREBASE_KEY yoksa sunucu anında durdurulur (Ara ara patlama riskini yok eder)
   if (!process.env.FIREBASE_KEY) {
       console.error('⚠️ CRITICAL: FIREBASE_KEY bulunamadı. Sunucu durduruluyor.');
       process.exit(1); 
@@ -31,7 +30,7 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => 
       console.log('✅ Firebase Admin başarıyla bağlandı.');
   } catch (e) { 
       console.error('⚠️ CRITICAL: FIREBASE_KEY parse edilemedi:', e.message); 
-      process.exit(1); // Parse hatasında da anında durdur
+      process.exit(1);
   }
 })();
 
@@ -48,7 +47,6 @@ app.use(express.json({ limit: '1mb' }));
 // ======================================================
 app.use(cors({
   origin: function (origin, cb) {
-    // ALLOWED_ORIGINS boşsa, * içeriyorsa veya origin listedeyse izin ver
     if (!origin || ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
         return cb(null, true);
     }
@@ -84,7 +82,6 @@ const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 // 1. PROFİL & GENEL SİSTEMLER
 // ======================================================
 
-// Otomatik Kayıt: Kullanıcı ilk kez girdiğinde kaydı otomatik oluşturulur
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
     const snap = await colUsers().doc(req.user.uid).get();
@@ -211,7 +208,7 @@ app.get('/api/bj/state', verifyAuth, async (req, res) => {
 app.post('/api/bj/start', verifyAuth, async (req, res) => {
   try {
     const bet = safeNum(req.body?.bet, 0);
-    if (bet < 10) throw new Error('Min bahis 10 MC.'); // Tutarlılık için güncellendi
+    if (bet < 10) throw new Error('Min bahis 10 MC.');
     const uid = req.user.uid;
 
     const session = await db.runTransaction(async (tx) => {
@@ -600,7 +597,6 @@ app.post('/api/mines/start', verifyAuth, async (req, res) => {
         const bet = safeNum(req.body.bet, 0);
         const minesCount = safeNum(req.body.minesCount, 3);
         
-        // LIMIT UYUMU: Minimum bahis 10 MC olarak kesinleştirildi
         if(bet < 10 || bet > 100000) throw new Error('Geçersiz bahis miktarı. Min: 10 MC');
         if(minesCount < 1 || minesCount > 24) throw new Error('Geçersiz mayın sayısı.');
 
@@ -635,7 +631,7 @@ app.post('/api/mines/start', verifyAuth, async (req, res) => {
 app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
-        const action = req.body.action; // 'click' veya 'cashout'
+        const action = req.body.action;
 
         const result = await db.runTransaction(async (tx) => {
             const sSnap = await tx.get(colMines().doc(uid));
@@ -692,12 +688,11 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 6. PİŞTİ MOTORU (%100 SUNUCU TABANLI)
+// 6. PİŞTİ MOTORU (%100 SUNUCU TABANLI KUSURSUZ YAPI)
 // ======================================================
 
 const colPisti = () => db.collection('pisti_sessions');
 
-// Standart 52'lik deste oluşturucu
 function createPistiDeck() {
     const suits = ["H", "D", "C", "S"];
     const vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
@@ -734,7 +729,6 @@ app.get('/api/pisti/state', verifyAuth, async (req, res) => {
         if (!snap.exists) return res.json({ ok: true, state: null });
         
         const data = snap.data();
-        // İstemciye botun kartlarını gizleyerek gönderiyoruz
         const publicState = {
             status: data.status,
             bet: data.bet,
@@ -766,7 +760,6 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
             tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
 
             const deck = createPistiDeck();
-            // Yere 4 kart (Sadece en üstteki görünür, ama veri yapısında hepsi var)
             const tableCards = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
             const playerHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
             const botHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
@@ -809,14 +802,13 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 
             if (pCapture.captured) {
                 s.playerScore += pCapture.points;
-                s.tableCards = []; // Masayı topla
+                s.tableCards = []; 
             } else {
                 s.tableCards.push(playedCard);
             }
 
             // 2. BOT HAMLESİ
             if (s.botHand.length > 0) {
-                // Basit Bot Zekası: Masadaki karta uyan varsa onu at, yoksa rastgele at.
                 let botCardIdx = 0;
                 if (s.tableCards.length > 0) {
                     const topCard = s.tableCards[s.tableCards.length - 1];
@@ -839,13 +831,11 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
             // 3. TUR/OYUN SONU KONTROLÜ
             if (s.playerHand.length === 0 && s.botHand.length === 0) {
                 if (s.deck.length >= 8) {
-                    // Yeni kart dağıt
                     s.playerHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
                     s.botHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
                     s.round += 1;
                     actionLog.roundOver = true;
                 } else {
-                    // Oyun Bitti
                     s.status = 'finished';
                     actionLog.gameOver = true;
                     
@@ -853,7 +843,7 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                         actionLog.winAmount = s.bet * 2;
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                     } else if (s.playerScore === s.botScore) {
-                        actionLog.winAmount = s.bet; // Beraberlik, iade
+                        actionLog.winAmount = s.bet; // İade
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                     }
                 }
