@@ -7,108 +7,93 @@ const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-process.on('uncaughtException', (err) => console.error('Kritik Hata (Çökme Engellendi):', err));
-process.on('unhandledRejection', (reason) => console.error('İşlenmeyen Promise Hatası:', reason));
+process.on('uncaughtException', (err) => console.error('Kritik Hata:', err));
+process.on('unhandledRejection', (reason) => console.error('Promise Hatası:', reason));
 
 const PORT = process.env.PORT || 3000;
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 
-// ---------- Firebase Admin Init ----------
+// ======================================================
+// FIREBASE BAŞLATMA & FAIL-FAST MANTIĞI
+// ======================================================
 (function initFirebase() {
   if (admin.apps.length) return;
-  if (!process.env.FIREBASE_KEY) throw new Error('FIREBASE_KEY missing');
-  let serviceAccount;
-  try {
-    serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
-  } catch {
-    throw new Error('FIREBASE_KEY JSON parse hatası.');
+  
+  // FAIL-FAST: FIREBASE_KEY yoksa sunucu anında durdurulur (Ara ara patlama riskini yok eder)
+  if (!process.env.FIREBASE_KEY) {
+      console.error('⚠️ CRITICAL: FIREBASE_KEY bulunamadı. Sunucu durduruluyor.');
+      process.exit(1); 
   }
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-  console.log('✅ Firebase Admin bağlandı.');
+  
+  try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+      console.log('✅ Firebase Admin başarıyla bağlandı.');
+  } catch (e) { 
+      console.error('⚠️ CRITICAL: FIREBASE_KEY parse edilemedi:', e.message); 
+      process.exit(1); // Parse hatasında da anında durdur
+  }
 })();
 
 const db = admin.firestore();
 const auth = admin.auth();
-
 const app = express();
+
 app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '1mb' }));
 
+// ======================================================
+// CORS GÜVENLİK VE ALLOWLIST AYARLARI
+// ======================================================
 app.use(cors({
   origin: function (origin, cb) {
-    if (!origin || ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    return cb(new Error('CORS blocked'));
+    // ALLOWED_ORIGINS boşsa, * içeriyorsa veya origin listedeyse izin ver
+    if (!origin || ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
+        return cb(null, true);
+    }
+    return cb(new Error('CORS BLOCKED: Yetkisiz Domain Erişimi!'));
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Genel limit
-const generalLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 900,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 900, standardHeaders: true, legacyHeaders: false });
+const bjActionLimiter = rateLimit({ windowMs: 10 * 1000, max: 25, message: { ok: false, error: 'Spam engellendi.' }});
+const bonusLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { ok: false, error: "Limit aşıldı." }});
 app.use(generalLimiter);
 
-// Blackjack action endpoint’i için ekstra limit (hile/spam)
-const bjActionLimiter = rateLimit({
-  windowMs: 10 * 1000,
-  max: 25,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { ok: false, error: 'Çok hızlı işlem (spam) tespit edildi.' }
-});
-
-// Bonus için limit (istersen kaldırabilirsin)
-const bonusLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: { ok: false, error: "Çok fazla deneme yaptınız." }
-});
-
 app.get('/', (req, res) => res.status(200).send('✅ PlayMatrix API is running'));
-app.get('/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
-// ---------- Auth Verify ----------
 const verifyAuth = async (req, res, next) => {
   const h = req.headers.authorization || '';
-  if (!h.startsWith('Bearer ')) return res.status(401).json({ ok: false, error: 'Oturum yok.' });
-  try {
-    req.user = await auth.verifyIdToken(h.split(' ')[1]);
-    return next();
-  } catch {
-    return res.status(401).json({ ok: false, error: 'Geçersiz token.' });
-  }
+  if (!h.startsWith('Bearer ')) return res.status(401).json({ ok: false, redirect: true, error: 'Oturum yok.' });
+  try { req.user = await auth.verifyIdToken(h.split(' ')[1]); return next(); } 
+  catch { return res.status(401).json({ ok: false, redirect: true, error: 'Geçersiz token.' }); }
 };
 
 const safeNum = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const cleanStr = (v) => (typeof v === 'string' ? v.trim().replace(/[<>]/g, "") : '');
 const nowMs = () => Date.now();
-
 const colUsers = () => db.collection('users');
 const colPromos = () => db.collection('promo_codes');
 const colBJ = () => db.collection('bj_sessions');
-
 const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 
 // ======================================================
-// KULLANICI PROFİL / ÇARK / BONUS
+// 1. PROFİL & GENEL SİSTEMLER
 // ======================================================
+
+// Otomatik Kayıt: Kullanıcı ilk kez girdiğinde kaydı otomatik oluşturulur
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
-    const uRef = colUsers().doc(req.user.uid);
-    const snap = await uRef.get();
-    res.json({
-      ok: true,
-      balance: safeNum(snap.exists ? snap.data().balance : 0, 0),
-      user: snap.exists ? snap.data() : {}
-    });
+    const snap = await colUsers().doc(req.user.uid).get();
+    if (!snap.exists) {
+        const newUser = { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
+        await colUsers().doc(req.user.uid).set(newUser);
+        return res.json({ ok: true, balance: 0, user: newUser });
+    }
+    res.json({ ok: true, balance: safeNum(snap.data().balance, 0), user: snap.data() });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -116,57 +101,51 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
   try {
     const { fullName, phone, username, avatar } = req.body || {};
     const uid = req.user.uid;
-    const userRef = colUsers().doc(uid);
-
+    
     await db.runTransaction(async (tx) => {
-      const snap = await tx.get(userRef);
-      if (!snap.exists) throw new Error("Kayıt yok!");
-      const u = snap.data() || {};
-      const updates = {};
+      const snap = await tx.get(colUsers().doc(uid));
+      let u = {};
+      let isNewUser = false;
+      
+      if (!snap.exists) {
+          isNewUser = true;
+          u = { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
+      } else {
+          u = snap.data();
+      }
 
-      if (!u.email && req.user.email) updates.email = req.user.email;
+      const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
       if (cleanStr(phone) && !cleanStr(u.phone)) updates.phone = cleanStr(phone);
-
       if (typeof avatar === 'string' && avatar.startsWith(ALLOWED_AVATAR_DOMAIN)) updates.avatar = avatar;
 
       const wanted = cleanStr(username);
       if (wanted && wanted !== cleanStr(u.username)) {
-        const used = safeNum(u.userChangeCount, 0);
-        if (used >= 3) throw new Error("İsim hakkı doldu!");
+        if (!isNewUser && safeNum(u.userChangeCount, 0) >= 3) throw new Error("İsim hakkı doldu!");
         const qSnap = await tx.get(db.collection('users').where('username', '==', wanted).limit(1));
         if (!qSnap.empty && qSnap.docs[0].id !== uid) throw new Error("Bu isim kullanımda!");
-        updates.username = wanted;
-        updates.userChangeCount = used + 1;
+        updates.username = wanted; 
+        if (!isNewUser) updates.userChangeCount = safeNum(u.userChangeCount, 0) + 1;
       }
-
-      if (Object.keys(updates).length > 0) tx.update(userRef, updates);
+      
+      tx.set(colUsers().doc(uid), { ...u, ...updates }, { merge: true });
     });
-
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   try {
-    const uid = req.user.uid;
-    const userRef = colUsers().doc(uid);
-    const rewards = [2500, 5000, 7500, 12500, 20000, 25000, 30000, 50000];
-
     const out = await db.runTransaction(async (tx) => {
-      const snap = await tx.get(userRef);
+      const snap = await tx.get(colUsers().doc(req.user.uid));
       if (!snap.exists) throw new Error("Kayıt yok!");
       const u = snap.data() || {};
-      const lastSpin = safeNum(u.lastSpin, 0);
-      if ((nowMs() - lastSpin) < 86400000) throw new Error("Süre dolmadı.");
-
+      if ((nowMs() - safeNum(u.lastSpin, 0)) < 86400000) throw new Error("Henüz süre dolmadı.");
+      const rewards = [2500, 5000, 7500, 12500, 20000, 25000, 30000, 50000];
       const rnd = crypto.randomInt(0, rewards.length);
-      const prize = rewards[rnd];
-
-      tx.update(userRef, { balance: admin.firestore.FieldValue.increment(prize), lastSpin: nowMs() });
-      return { index: rnd, prize, balance: safeNum(u.balance, 0) + prize };
+      tx.update(colUsers().doc(req.user.uid), { balance: admin.firestore.FieldValue.increment(rewards[rnd]), lastSpin: nowMs() });
+      return { index: rnd, prize: rewards[rnd] };
     });
-
     res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
@@ -175,835 +154,541 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   try {
     const code = cleanStr((req.body || {}).code).toUpperCase();
     if (!code) throw new Error("Kod boş.");
-
-    const uid = req.user.uid;
-    const userRef = colUsers().doc(uid);
-    const promoRef = colPromos().doc(code);
-
     const out = await db.runTransaction(async (tx) => {
-      const [uSnap, pSnap] = await Promise.all([tx.get(userRef), tx.get(promoRef)]);
-      if (!uSnap.exists || !pSnap.exists) throw new Error("Hata.");
-
-      const u = uSnap.data() || {};
-      const p = pSnap.data() || {};
-
-      const amount = safeNum(p.amount, 0);
-      if (amount <= 0) throw new Error("Kod pasif.");
-
-      const used = Array.isArray(u.usedPromos) ? u.usedPromos : [];
-      if (used.includes(code)) throw new Error("Kullanılmış.");
-
-      const limitLeft = safeNum(p.limitLeft, -1);
-      if (limitLeft === 0) throw new Error("Tükendi.");
-
-      tx.update(userRef, {
-        balance: admin.firestore.FieldValue.increment(amount),
-        usedPromos: admin.firestore.FieldValue.arrayUnion(code)
-      });
-      if (limitLeft > 0) tx.update(promoRef, { limitLeft: admin.firestore.FieldValue.increment(-1) });
-
-      return { amount, balance: safeNum(u.balance, 0) + amount };
+      const [uSnap, pSnap] = await Promise.all([tx.get(colUsers().doc(req.user.uid)), tx.get(colPromos().doc(code))]);
+      if (!uSnap.exists || !pSnap.exists) throw new Error("Geçersiz işlem.");
+      const u = uSnap.data() || {}, p = pSnap.data() || {};
+      if (safeNum(p.amount, 0) <= 0 || (u.usedPromos || []).includes(code) || safeNum(p.limitLeft, -1) === 0) throw new Error("Kod geçersiz veya kullanılmış.");
+      tx.update(colUsers().doc(req.user.uid), { balance: admin.firestore.FieldValue.increment(p.amount), usedPromos: admin.firestore.FieldValue.arrayUnion(code) });
+      if (safeNum(p.limitLeft, -1) > 0) tx.update(colPromos().doc(code), { limitLeft: admin.firestore.FieldValue.increment(-1) });
+      return { amount: p.amount };
     });
-
     res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+
 // ======================================================
-// ✅ BLACKJACK (TÜM MANTIK SUNUCUDA) - ANTI-HİLE
+// 2. BLACKJACK MOTORU
 // ======================================================
 
-// ---- Blackjack Engine ----
 function createDeck(shoeCount = 8) {
-  const suits = ['H', 'D', 'C', 'S'];
-  const vals = [1,2,3,4,5,6,7,8,9,10,11,12,13];
-  const deck = [];
-  for (let i=0;i<shoeCount;i++) for (const s of suits) for (const v of vals) deck.push({ suit: s, value: v });
-
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(0, i + 1);
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
+  const d = [];
+  for(let i=0;i<shoeCount;i++) for(const s of ['H','D','C','S']) for(const v of [1,2,3,4,5,6,7,8,9,10,11,12,13]) d.push({suit:s,value:v});
+  for(let i=d.length-1;i>0;i--){ const j=crypto.randomInt(0,i+1); [d[i],d[j]]=[d[j],d[i]]; } return d;
 }
 
-function cardPoints(v){
-  if (v === 1) return 11; // A
-  if (v >= 11) return 10; // J Q K
-  return v;
+function scoreHand(cards){ 
+  let t=0,a=0; 
+  for(const c of (cards||[])){ const p=(c.value===1)?11:(c.value>=11?10:c.value); if(p===11)a++; t+=p; } 
+  while(t>21&&a>0){t-=10;a--;} 
+  return {total:t, softAces:a}; 
 }
-
-function scoreHand(cards){
-  let total = 0;
-  let aces = 0;
-  for (const c of (cards || [])) {
-    const p = cardPoints(c.value);
-    if (p === 11) aces++;
-    total += p;
-  }
-  while (total > 21 && aces > 0) { total -= 10; aces--; }
-  return { total, softAces: aces };
-}
-
-function isSoft17(cards){
-  const s = scoreHand(cards);
-  return s.total === 17 && s.softAces > 0;
-}
-
-function isBJ(cards){
-  return Array.isArray(cards) && cards.length === 2 && scoreHand(cards).total === 21;
-}
-
-function canSplit(hand){
-  if (!hand || !Array.isArray(hand.cards) || hand.cards.length !== 2) return false;
-  const v1 = hand.cards[0].value >= 11 ? 10 : hand.cards[0].value;
-  const v2 = hand.cards[1].value >= 11 ? 10 : hand.cards[1].value;
-  return v1 === v2;
-}
+function isBJ(cards){ return Array.isArray(cards)&&cards.length===2&&scoreHand(cards).total===21; }
 
 function publicState(session){
-  const dealer = session.dealer || [];
+  if(!session) return null;
   const dealerHidden = !!session.dealerHidden;
   return {
-    ok: true,
-    state: {
-      gameState: session.gameState,
-      dealerHidden,
-      dealer: dealerHidden ? [dealer[0] || null, null] : dealer,
-      hands: (session.hands || []).map(h => ({
-        cards: h.cards || [],
-        bet: safeNum(h.bet, 0),
-        status: h.status || 'playing',
-        done: !!h.done,
-      })),
-      currentHandIdx: safeNum(session.currentHandIdx, 0),
-      insuranceOffered: !!session.insuranceOffered,
-      insuranceBet: safeNum(session.insuranceBet, 0),
-      message: session.message || '',
-      lastResult: session.lastResult || null,
-      seq: safeNum(session.seq, 0),
-    }
+    gameState: session.gameState,
+    dealerHidden,
+    dealer: dealerHidden ? [session.dealer[0] || null, null] : session.dealer,
+    hands: (session.hands || []).map(h=>({cards:h.cards||[], bet:safeNum(h.bet,0), status:h.status||'playing'})),
+    currentHandIdx: safeNum(session.currentHandIdx,0),
+    insuranceOffered: !!session.insuranceOffered,
+    message: session.message || '',
+    seq: safeNum(session.seq,0)
   };
 }
 
-// ---- Session TTL Cleanup (Sadece çok eski session’ları siler) ----
-setInterval(async () => {
-  try {
-    const q = await colBJ().limit(300).get();
-    const now = nowMs();
-    const batch = db.batch();
-    let n = 0;
-    q.forEach(doc => {
-      const d = doc.data() || {};
-      const age = now - safeNum(d.updatedAtMs, safeNum(d.createdAtMs, 0));
-      // sadece çok eskileri sil (aktif oyunu "hızlı silme" yok)
-      if (age > 20 * 60 * 1000) { // 20 dk
-        batch.delete(doc.ref);
-        n++;
-      }
-    });
-    if (n) await batch.commit();
-  } catch {}
-}, 60 * 1000);
-
-// ---- Resume ----
 app.get('/api/bj/state', verifyAuth, async (req, res) => {
   try {
-    const sRef = colBJ().doc(req.user.uid);
-    const snap = await sRef.get();
-    if (!snap.exists) return res.json({ ok: true, state: null });
-
-    const session = snap.data() || {};
-    const age = nowMs() - safeNum(session.updatedAtMs, safeNum(session.createdAtMs, 0));
-    if (age > 20 * 60 * 1000) {
-      await sRef.delete().catch(() => {});
-      return res.json({ ok: true, state: null });
-    }
-
-    return res.json(publicState(session));
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
+    const snap = await colBJ().doc(req.user.uid).get();
+    res.json({ ok: true, state: snap.exists ? publicState(snap.data()) : null });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ---- Start (GÜNCELLENMİŞ: Escape Exploit kapalı) ----
 app.post('/api/bj/start', verifyAuth, async (req, res) => {
   try {
     const bet = safeNum(req.body?.bet, 0);
-    if (!Number.isInteger(bet) || bet < 1000) throw new Error('Min bahis 1000 MC.');
-
+    if (bet < 10) throw new Error('Min bahis 10 MC.'); // Tutarlılık için güncellendi
     const uid = req.user.uid;
-    const uRef = colUsers().doc(uid);
-    const sRef = colBJ().doc(uid);
 
     const session = await db.runTransaction(async (tx) => {
-      // 1) Aktif oyun var mı? (playing/resolving ise YENİ OYUN YOK)
-      const existingSessionSnap = await tx.get(sRef);
-      if (existingSessionSnap.exists) {
-        const existing = existingSessionSnap.data() || {};
-        if (existing.gameState === 'playing' || existing.gameState === 'resolving') {
-          // İstersen burada "state'i döndür" şeklinde de yapabiliriz,
-          // ama senin istediğin gibi start engelliyoruz.
-          throw new Error('Hala devam eden aktif bir oyununuz var. Lütfen önce o eli bitirin.');
-        }
+      const existing = await tx.get(colBJ().doc(uid));
+      if (existing.exists && ['playing', 'resolving'].includes(existing.data().gameState)) {
+          if (nowMs() - safeNum(existing.data().lastActionAtMs, 0) > 300000) tx.delete(colBJ().doc(uid)); 
+          else throw new Error('Devam eden eliniz var.');
       }
-
-      // 2) Kullanıcı bakiye kontrol
-      const uSnap = await tx.get(uRef);
-      if (!uSnap.exists) throw new Error('Kullanıcı yok.');
-
-      const bal = safeNum(uSnap.data()?.balance, 0);
-      if (bal < bet) throw new Error('Bakiye yetersiz.');
-
-      // 3) Bakiye düş
-      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
-
-      // 4) Yeni oyun state’i
+      const uSnap = await tx.get(colUsers().doc(uid));
+      if (!uSnap.exists) throw new Error('Kayıt yok.');
+      if (safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
+      
+      tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
       const deck = createDeck(8);
-      const hands = [{ cards: [], bet, status: 'playing', done: false }];
-      const dealer = [];
-
-      hands[0].cards.push(deck.pop(), deck.pop());
-      dealer.push(deck.pop(), deck.pop());
-
-      const insuranceOffered = dealer[0]?.value === 1; // A
-
-      const newSession = {
-        uid,
-        createdAtMs: nowMs(),
-        updatedAtMs: nowMs(),
-        gameState: 'playing',
-        dealer,
-        dealerHidden: true,
-        hands,
-        currentHandIdx: 0,
-        insuranceOffered,
-        insuranceBet: 0,
-        message: insuranceOffered ? 'SİGORTA İSTER MİSİNİZ?' : '',
-        lastResult: null,
-        _deck: deck,
-        seq: 1,
-        lastActionAtMs: nowMs(),
-      };
-
-      // 5) Sigorta yoksa BJ kontrol
-      if (!insuranceOffered) {
-        const pBJ = isBJ(hands[0].cards);
-        const dBJ = isBJ(dealer);
-        if (pBJ || dBJ) {
-          newSession.dealerHidden = false;
-          newSession.gameState = 'resolving';
-        }
+      const newSession = { uid, gameState: 'playing', dealer: [deck.pop(), deck.pop()], dealerHidden: true, hands: [{ cards: [deck.pop(), deck.pop()], bet, status: 'playing', done: false }], currentHandIdx: 0, _deck: deck, seq: 1, lastActionAtMs: nowMs() };
+      newSession.insuranceOffered = newSession.dealer[0].value === 1;
+      
+      if (!newSession.insuranceOffered && (isBJ(newSession.hands[0].cards) || isBJ(newSession.dealer))) { 
+          newSession.dealerHidden = false; newSession.gameState = 'resolving'; 
       }
-
-      tx.set(sRef, newSession, { merge: true });
-      return newSession;
+      tx.set(colBJ().doc(uid), newSession); return newSession;
     });
 
-    if (session.gameState === 'resolving') {
-      await resolveAndPayout(uid);
-      const snap = await colBJ().doc(uid).get();
-      return res.json(publicState(snap.data() || {}));
-    }
-
-    res.json(publicState(session));
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
+    if (session.gameState === 'resolving') await resolveAndPayout(uid);
+    const finalSnap = await colBJ().doc(uid).get();
+    res.json({ ok: true, state: publicState(finalSnap.data()) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ---- Action ----
 app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
   try {
-    const uid = req.user.uid;
-    const action = cleanStr(req.body?.action).toLowerCase();
-    const clientSeq = safeNum(req.body?.seq, 0);
-
-    const sRef = colBJ().doc(uid);
-    const uRef = colUsers().doc(uid);
-
+    const uid = req.user.uid, action = (req.body?.action || ''), clientSeq = safeNum(req.body?.seq, 0);
+    
     const updated = await db.runTransaction(async (tx) => {
-      const sSnap = await tx.get(sRef);
-      if (!sSnap.exists) throw new Error('Aktif oyun yok.');
+      const sSnap = await tx.get(colBJ().doc(uid));
+      if (!sSnap.exists) throw new Error('Oyun yok.');
       const s = sSnap.data() || {};
-      if (s.gameState !== 'playing' && s.gameState !== 'resolving') throw new Error('Oyun aktif değil.');
+      if (s.gameState !== 'playing' || clientSeq !== safeNum(s.seq, 0)) throw new Error('Senkronizasyon hatası.');
 
-      // Anti-replay
-      const seq = safeNum(s.seq, 0);
-      if (clientSeq !== seq) throw new Error('Şüpheli istek (senkron bozuk / replay).');
+      const uSnap = await tx.get(colUsers().doc(uid));
+      const userBal = safeNum(uSnap.data()?.balance, 0);
 
-      // Çok hızlı aksiyon engeli
-      const lastAt = safeNum(s.lastActionAtMs, 0);
-      const now = nowMs();
-      if (now - lastAt < 120) throw new Error('Çok hızlı işlem tespit edildi.');
+      if (s._deck.length < 20) s._deck = [...s._deck, ...createDeck(8)];
 
-      // resolving ise sadece state
-      if (s.gameState === 'resolving') {
-        tx.update(sRef, { seq: seq + 1, lastActionAtMs: nowMs(), updatedAtMs: nowMs() });
-        return s;
-      }
-
-      // insurance aşaması
       if (s.insuranceOffered) {
-        if (action !== 'insurance_yes' && action !== 'insurance_no') throw new Error('Sigorta seçimi gerekli.');
-        const bet = safeNum(s.hands?.[0]?.bet, 0);
-        const insCost = Math.floor(bet / 2);
-
         if (action === 'insurance_yes') {
-          const uSnap = await tx.get(uRef);
-          const bal = safeNum(uSnap.data()?.balance, 0);
-          if (bal < insCost) throw new Error('Sigorta için bakiye yetersiz.');
-          tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-insCost) });
-          s.insuranceBet = insCost;
+          const insCost = Math.floor(safeNum(s.hands[0].bet, 0) / 2);
+          if (userBal < insCost) throw new Error('Sigorta için bakiye yetersiz.'); 
+          tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-insCost) }); s.insuranceBet = insCost;
         }
-
         s.insuranceOffered = false;
-        s.message = '';
-
-        const pBJ = isBJ(s.hands?.[0]?.cards || []);
-        const dBJ = isBJ(s.dealer || []);
-        if (pBJ || dBJ) { s.dealerHidden = false; s.gameState = 'resolving'; }
-
-        s.seq = seq + 1;
-        s.lastActionAtMs = now;
-        s.updatedAtMs = now;
-        tx.set(sRef, s, { merge: true });
-        return s;
-      }
-
-      // normal aksiyonlar
-      if (!Array.isArray(s._deck) || s._deck.length < 20) s._deck = createDeck(8);
-      const deck = s._deck;
-
-      const hands = Array.isArray(s.hands) ? s.hands : [];
-      const dealer = Array.isArray(s.dealer) ? s.dealer : [];
-      let cur = safeNum(s.currentHandIdx, 0);
-      if (!hands[cur]) throw new Error('El bulunamadı.');
-
-      const openIdx = hands.findIndex(h => !h.done);
-      if (openIdx >= 0) { cur = openIdx; s.currentHandIdx = openIdx; }
-
-      const hand = hands[cur];
-      hand.cards = Array.isArray(hand.cards) ? hand.cards : [];
-      if (hand.done) throw new Error('Bu el bitti.');
-
-      if (action === 'hit') {
-        hand.cards.push(deck.pop());
-        const sc = scoreHand(hand.cards).total;
-        if (sc >= 21) { hand.done = true; hand.status = sc > 21 ? 'bust' : 'stand'; }
-      } else if (action === 'stand') {
-        hand.done = true;
-        hand.status = 'stand';
-      } else if (action === 'double') {
-        if (hand.cards.length !== 2) throw new Error('Double sadece ilk 2 kartta.');
-        const uSnap = await tx.get(uRef);
-        const bal = safeNum(uSnap.data()?.balance, 0);
-        if (bal < safeNum(hand.bet, 0)) throw new Error('Double için bakiye yetersiz.');
-        tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-safeNum(hand.bet, 0)) });
-        hand.bet = safeNum(hand.bet, 0) * 2;
-        hand.cards.push(deck.pop());
-        const sc = scoreHand(hand.cards).total;
-        hand.done = true;
-        hand.status = sc > 21 ? 'bust' : 'stand';
-      } else if (action === 'split') {
-        if (hands.length !== 1) throw new Error('Split sadece tek elde.');
-        if (!canSplit(hand)) throw new Error('Split şartı yok.');
-        const uSnap = await tx.get(uRef);
-        const bal = safeNum(uSnap.data()?.balance, 0);
-        if (bal < safeNum(hand.bet, 0)) throw new Error('Split için bakiye yetersiz.');
-        tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-safeNum(hand.bet, 0)) });
-
-        const c2 = hand.cards.pop();
-        const newHand = { cards: [c2], bet: safeNum(hand.bet, 0), status: 'playing', done: false };
-        hands.push(newHand);
-
-        hand.cards.push(deck.pop());
-        newHand.cards.push(deck.pop());
+        if (isBJ(s.hands[0].cards) || isBJ(s.dealer)) { s.dealerHidden = false; s.gameState = 'resolving'; }
       } else {
-        throw new Error('Geçersiz action.');
-      }
-
-      // sıradaki el / dealer
-      let nextIdx = -1;
-      for (let i = 0; i < hands.length; i++) {
-        if (!hands[i].done) { nextIdx = i; break; }
-      }
-
-      if (nextIdx >= 0) {
-        s.currentHandIdx = nextIdx;
-      } else {
-        // dealer turn
-        s.dealerHidden = false;
-        const allBust = hands.every(h => scoreHand(h.cards).total > 21);
-        if (!allBust) {
-          while (scoreHand(dealer).total < 17 || isSoft17(dealer)) dealer.push(deck.pop());
+        const h = s.hands[s.currentHandIdx];
+        if (action === 'hit') { 
+            h.cards.push(s._deck.pop()); 
+            if (scoreHand(h.cards).total >= 21) h.done = true; 
+        } 
+        else if (action === 'stand') { h.done = true; } 
+        else if (action === 'double') {
+          if (h.cards.length !== 2) throw new Error('Sadece ilk 2 kartta geçerlidir.');
+          if (userBal < h.bet) throw new Error('Double için bakiye yetersiz.'); 
+          tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-h.bet) });
+          h.bet *= 2; h.cards.push(s._deck.pop()); h.done = true;
+        } else if (action === 'split') {
+          if (s.hands.length !== 1 || h.cards[0].value !== h.cards[1].value) throw new Error('Geçersiz Split.');
+          if (userBal < h.bet) throw new Error('Split için bakiye yetersiz.'); 
+          tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-h.bet) });
+          s.hands.push({ cards: [h.cards.pop(), s._deck.pop()], bet: h.bet, status: 'playing', done: false });
+          h.cards.push(s._deck.pop());
         }
-        s.gameState = 'resolving';
+        
+        const nextIdx = s.hands.findIndex(x => !x.done);
+        if (nextIdx >= 0) s.currentHandIdx = nextIdx;
+        else {
+          s.dealerHidden = false;
+          let dScore = scoreHand(s.dealer);
+          while (dScore.total < 17 || (dScore.total === 17 && dScore.softAces > 0)) {
+              s.dealer.push(s._deck.pop());
+              dScore = scoreHand(s.dealer);
+          }
+          s.gameState = 'resolving';
+        }
       }
-
-      s.hands = hands;
-      s.dealer = dealer;
-      s._deck = deck;
-
-      s.seq = seq + 1;
-      s.lastActionAtMs = now;
-      s.updatedAtMs = now;
-
-      tx.set(sRef, s, { merge: true });
-      return s;
+      s.seq = safeNum(s.seq, 0) + 1; s.lastActionAtMs = nowMs();
+      tx.set(colBJ().doc(uid), s, { merge: true }); return s;
     });
 
-    if (updated.gameState === 'resolving') {
-      await resolveAndPayout(uid);
-      const snap = await colBJ().doc(uid).get();
-      return res.json(publicState(snap.data() || {}));
-    }
-
-    const snap = await colBJ().doc(uid).get();
-    res.json(publicState(snap.data() || {}));
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
+    if (updated.gameState === 'resolving') await resolveAndPayout(uid);
+    const finalSnap = await colBJ().doc(uid).get();
+    res.json({ ok: true, state: publicState(finalSnap.data()) });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ---- Resolve & Payout ----
 async function resolveAndPayout(uid) {
-  const sRef = colBJ().doc(uid);
-  const uRef = colUsers().doc(uid);
-
   await db.runTransaction(async (tx) => {
-    const sSnap = await tx.get(sRef);
-    if (!sSnap.exists) return;
-    const s = sSnap.data() || {};
-    if (s.gameState !== 'resolving') return;
-
-    const dealer = Array.isArray(s.dealer) ? s.dealer : [];
-    const hands = Array.isArray(s.hands) ? s.hands : [];
-    const dTotal = scoreHand(dealer).total;
-    const dBJ = isBJ(dealer);
-
-    let totalWin = 0;
-    let didWin = false;
-
-    const insuranceBet = safeNum(s.insuranceBet, 0);
-    if (insuranceBet > 0 && dBJ) {
-      totalWin += insuranceBet * 3; // stake dahil 3x
-      didWin = true;
+    const sSnap = await tx.get(colBJ().doc(uid)); if (!sSnap.exists) return;
+    const s = sSnap.data(); if (s.gameState !== 'resolving') return;
+    const dTotal = scoreHand(s.dealer).total, dBJ = isBJ(s.dealer); let totalWin = 0;
+    
+    if (safeNum(s.insuranceBet, 0) > 0 && dBJ) totalWin += s.insuranceBet * 3;
+    
+    for (const h of s.hands) {
+      const pTotal = scoreHand(h.cards).total, pBJ = isBJ(h.cards) && s.hands.length === 1;
+      if (pTotal > 21 || (dBJ && !pBJ)) continue;
+      if (pBJ && !dBJ) totalWin += Math.floor(h.bet * 2.5);
+      else if (dTotal > 21 || pTotal > dTotal) totalWin += h.bet * 2;
+      else if (pTotal === dTotal) totalWin += h.bet;
     }
-
-    for (const h of hands) {
-      const bet = safeNum(h.bet, 0);
-      const pTotal = scoreHand(h.cards || []).total;
-      const pBJ = isBJ(h.cards || []) && hands.length === 1;
-
-      if (pTotal > 21) continue;
-      if (dBJ && !pBJ) continue;
-
-      if (pBJ && !dBJ) {
-        totalWin += Math.floor(bet * 2.5); // 3:2
-        didWin = true;
-        continue;
-      }
-
-      if (dTotal > 21) {
-        totalWin += bet * 2;
-        didWin = true;
-        continue;
-      }
-
-      if (pTotal > dTotal) {
-        totalWin += bet * 2;
-        didWin = true;
-      } else if (pTotal === dTotal) {
-        totalWin += bet; // push
-      }
-    }
-
-    if (totalWin > 0) tx.update(uRef, { balance: admin.firestore.FieldValue.increment(totalWin) });
-
-    tx.update(sRef, {
-      gameState: 'finished',
-      dealerHidden: false,
-      lastResult: { totalWin, didWin, dealerTotal: dTotal, ts: nowMs() },
-      message: totalWin > 0 ? `KAZANCINIZ: ${totalWin}` : 'KAYBETTİNİZ!',
-      updatedAtMs: nowMs(),
-      seq: safeNum(s.seq, 0) + 1,
-    });
+    
+    if (totalWin > 0) tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(totalWin) });
+    tx.update(colBJ().doc(uid), { gameState: 'finished', dealerHidden: false, seq: safeNum(s.seq, 0) + 1, message: totalWin > 0 ? `KAZANDINIZ: ${totalWin} MC` : 'KAYBETTİNİZ!', lastActionAtMs: nowMs() });
   });
-
-  // finished state 8 sn sonra sil
-  setTimeout(async () => {
-    try {
-      const snap = await colBJ().doc(uid).get();
-      if (!snap.exists) return;
-      const s = snap.data() || {};
-      if (s.gameState === 'finished') await colBJ().doc(uid).delete();
-    } catch {}
-  }, 8000);
+  setTimeout(() => colBJ().doc(uid).delete().catch(()=>null), 5000); 
 }
 
+// ======================================================
+// 3. CRASH MOTORU
+// ======================================================
 
-// ==========================================
-// MINES (Sunucu Otoriteli)
-// ==========================================
+function generateRoundProvablyFair() {
+    const serverSeed = crypto.randomBytes(32).toString('hex');
+    const hash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+    const n = parseInt(hash.substring(0, 8), 16);
+    const r = n / 0xffffffff; 
+
+    let cp = 1.00;
+    if (r < 0.45) cp = 1.00 + ((n % 15) / 100); 
+    else if (r < 0.85) cp = 1.15 + ((n % 35) / 100); 
+    else {
+        const h = (n % 10000) / 100;
+        cp = Math.max(1.50, Math.floor(100 * 100 / (100 - h)) / 100);
+    }
+    return { serverSeed, hash, crashPoint: Number(cp.toFixed(2)) };
+}
+
+const crashState = { phase: 'COUNTDOWN', startTime: nowMs() + 6000, crashPoint: 1.00, serverSeed: '', hash: '', endTime: 0, history: [], players: {}, roundId: 0 };
+
+async function initCrashDb() {
+    try {
+        const snap = await db.collection('server_data').doc('crash_global').get();
+        if(snap.exists) {
+            const d = snap.data();
+            crashState.phase = d.phase || 'COUNTDOWN'; crashState.startTime = d.startTime || (nowMs() + 6000);
+            crashState.crashPoint = d.crashPoint || 1.00; crashState.serverSeed = d.serverSeed || '';
+            crashState.hash = d.hash || ''; crashState.roundId = d.roundId || Date.now(); crashState.history = d.history || [];
+        } else {
+            crashState.roundId = Date.now();
+            const pf = generateRoundProvablyFair();
+            crashState.crashPoint = pf.crashPoint; crashState.serverSeed = pf.serverSeed; crashState.hash = pf.hash;
+            await syncCrashDb();
+        }
+        const activeBets = await db.collection('crash_bets').where('roundId', '==', crashState.roundId).get();
+        activeBets.forEach(doc => {
+            const b = doc.data();
+            if (!crashState.players[b.uid]) crashState.players[b.uid] = {};
+            crashState.players[b.uid][`box${b.box}`] = { bet: b.amount, cashed: b.cashed, win: b.win, inProgress: false };
+        });
+    } catch(e) { console.error("Crash DB Init Error:", e); }
+}
+initCrashDb();
+
+async function syncCrashDb() {
+    try {
+        await db.collection('server_data').doc('crash_global').set({
+            phase: crashState.phase, startTime: crashState.startTime, crashPoint: crashState.crashPoint,
+            serverSeed: crashState.serverSeed, hash: crashState.hash, roundId: crashState.roundId, history: crashState.history
+        }, { merge: true });
+    } catch(e) {}
+}
+
+setInterval(() => {
+    const now = nowMs();
+    if (crashState.phase === 'COUNTDOWN') {
+        if (now >= crashState.startTime) { crashState.phase = 'FLYING'; crashState.startTime = now; syncCrashDb(); }
+    } else if (crashState.phase === 'FLYING') {
+        const elapsed = (now - crashState.startTime) / 1000;
+        const currentMult = 1 + Math.pow(elapsed * 0.18, 1.35);
+        if (currentMult >= crashState.crashPoint) {
+            crashState.phase = 'CRASHED'; crashState.endTime = now;
+            crashState.history.unshift(Number(crashState.crashPoint.toFixed(2)));
+            if (crashState.history.length > 15) crashState.history.pop();
+            syncCrashDb(); 
+        }
+    } else if (crashState.phase === 'CRASHED') {
+        if (now >= crashState.endTime + 4000) {
+            crashState.phase = 'COUNTDOWN'; crashState.startTime = now + 6000;
+            const pf = generateRoundProvablyFair();
+            crashState.crashPoint = pf.crashPoint; crashState.serverSeed = pf.serverSeed; crashState.hash = pf.hash;
+            crashState.roundId = nowMs(); crashState.players = {}; 
+            syncCrashDb(); 
+        }
+    }
+}, 100);
+
+app.get('/api/crash/state', verifyAuth, (req, res) => {
+    const uid = req.user.uid;
+    res.json({
+        ok: true, state: { phase: crashState.phase, startTime: crashState.startTime, serverNow: nowMs(), history: crashState.history, hash: crashState.hash, seed: crashState.phase === 'CRASHED' ? crashState.serverSeed : null, crashPoint: crashState.phase === 'CRASHED' ? crashState.crashPoint : null, myBets: crashState.players[uid] || {} }
+    });
+});
+
+app.post('/api/crash/bet', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid; const box = safeNum(req.body.box, 0); const amount = safeNum(req.body.amount, 0);
+        if (box !== 1 && box !== 2) throw new Error('Geçersiz kutu.');
+        if (amount < 10) throw new Error('Min bahis 10 MC.');
+        
+        const currentRoundId = crashState.roundId; const betId = `${currentRoundId}_${uid}_${box}`;
+
+        await db.runTransaction(async (tx) => {
+            const gSnap = await tx.get(db.collection('server_data').doc('crash_global'));
+            if (!gSnap.exists || gSnap.data().phase !== 'COUNTDOWN') throw new Error('Bahisler kapandı.');
+            if (gSnap.data().roundId !== currentRoundId) throw new Error('Tur değişti, tekrar deneyin.');
+            const betSnap = await tx.get(db.collection('crash_bets').doc(betId));
+            if (betSnap.exists) throw new Error('Bu kutuya zaten bahis yapıldı.');
+            const uSnap = await tx.get(colUsers().doc(uid));
+            if (!uSnap.exists || safeNum(uSnap.data().balance, 0) < amount) throw new Error('Bakiye yetersiz.');
+
+            tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-amount) });
+            tx.set(db.collection('crash_bets').doc(betId), { uid, box, amount, cashed: false, win: 0, roundId: currentRoundId });
+        });
+
+        if (!crashState.players[uid]) crashState.players[uid] = {};
+        crashState.players[uid][`box${box}`] = { bet: amount, cashed: false, win: 0, inProgress: false };
+        res.json({ ok: true, myBets: crashState.players[uid] });
+    } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/crash/cashout', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid; const box = safeNum(req.body.box, 0); const reqTime = nowMs();
+        const currentRoundId = crashState.roundId; const betId = `${currentRoundId}_${uid}_${box}`;
+
+        if (crashState.phase !== 'FLYING') throw new Error(crashState.phase === 'CRASHED' ? 'Çok geç, patladı!' : 'Şu an bozdurulamaz.');
+        const elapsed = (reqTime - crashState.startTime) / 1000;
+        let currentMult = 1 + Math.pow(elapsed * 0.18, 1.35);
+        if (currentMult >= crashState.crashPoint) throw new Error('Çok geç, patladı!');
+
+        const winAmount = await db.runTransaction(async (tx) => {
+            const betRef = db.collection('crash_bets').doc(betId);
+            const betSnap = await tx.get(betRef);
+            if (!betSnap.exists) throw new Error('Aktif bahis yok.');
+            if (betSnap.data().cashed) throw new Error('Zaten çekildi.');
+            const finalWin = Math.floor(betSnap.data().amount * currentMult);
+
+            tx.update(betRef, { cashed: true, win: finalWin, cashoutMult: currentMult });
+            tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(finalWin) });
+            return finalWin;
+        });
+
+        if (crashState.players[uid] && crashState.players[uid][`box${box}`]) {
+            crashState.players[uid][`box${box}`].cashed = true;
+            crashState.players[uid][`box${box}`].win = winAmount;
+        }
+        res.json({ ok: true, myBets: crashState.players[uid], winAmount });
+    } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ======================================================
+// 4. CYBER MOTORU (SUNUCU KONTROLLÜ ZEKA OYUNU)
+// ======================================================
+
+const colCyber = () => db.collection('cyber_sessions');
+
+function generateCyberGrid(level) {
+    let gridSize = 3 + Math.floor((level - 1) / 5);
+    if (gridSize > 10) gridSize = 10;
+    
+    let tiles = [];
+    for (let i = 0; i < gridSize * gridSize; i++) {
+        const type = crypto.randomInt(0, 2); 
+        const scrambleTurns = crypto.randomInt(1, 4); 
+        tiles.push({ type, rotation: scrambleTurns * 90 });
+    }
+    return { gridSize, tiles };
+}
+
+app.get('/api/cyber/state', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        let snap = await colCyber().doc(uid).get();
+        let sessionData;
+
+        if (!snap.exists) {
+            const initialGrid = generateCyberGrid(1);
+            sessionData = { level: 1, bestLevel: 1, grid: initialGrid.tiles, gridSize: initialGrid.gridSize, updatedAt: nowMs() };
+            await colCyber().doc(uid).set(sessionData);
+        } else {
+            sessionData = snap.data();
+        }
+
+        res.json({ ok: true, state: sessionData });
+    } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/cyber/verify', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const clientRotations = req.body.rotations; 
+
+        if (!Array.isArray(clientRotations)) throw new Error('Geçersiz veri.');
+
+        const result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(colCyber().doc(uid));
+            if (!snap.exists) throw new Error('Oyun oturumu bulunamadı.');
+            const s = snap.data();
+            
+            if (clientRotations.length !== s.grid.length) throw new Error('Harita boyutu uyuşmuyor.');
+
+            let isWin = true;
+            for (let i = 0; i < s.grid.length; i++) {
+                const rot = ((clientRotations[i] % 360) + 360) % 360; 
+                if (s.grid[i].type === 0) {
+                    if (rot !== 0 && rot !== 180) isWin = false;
+                } else {
+                    if (rot !== 0) isWin = false;
+                }
+            }
+
+            if (!isWin) throw new Error('Bulmaca henüz tamamlanmamış.');
+
+            const newLevel = s.level + 1;
+            const newBest = Math.max(s.bestLevel, newLevel);
+            const newGrid = generateCyberGrid(newLevel);
+
+            const updatedData = {
+                level: newLevel,
+                bestLevel: newBest,
+                gridSize: newGrid.gridSize,
+                grid: newGrid.tiles,
+                updatedAt: nowMs()
+            };
+
+            tx.update(colCyber().doc(uid), updatedData);
+            return updatedData;
+        });
+
+        res.json({ ok: true, state: result });
+    } catch (e) { res.json({ ok: false, error: e.message }); }
+});
+
+// ======================================================
+// 5. MINES MOTORU (%100 SUNUCU TABANLI)
+// ======================================================
+
 const colMines = () => db.collection('mines_sessions');
 
-function minesMultiplier(opened, mines){
-  const total = 25;
-  const edge = 0.03; // %3 house edge
-  const pick = opened;
-  const safe = total - mines;
-  if(pick <= 0) return 1.0;
-  // C(safe, pick) / C(total, pick)
-  const comb = (n,k)=>{
-    if(k<0||k>n) return 0;
-    k = Math.min(k, n-k);
-    let num=1, den=1;
-    for(let i=1;i<=k;i++){ num *= (n - (k - i)); den *= i; }
-    return num/den;
-  };
-  const prob = comb(safe, pick) / comb(total, pick);
-  if(prob <= 0) return 0;
-  return Math.max(1, (1/prob) * (1-edge));
+function calculateMinesMult(mines, opened) {
+    if(opened === 0) return 1.00;
+    if(25 - mines - opened < 0) return 0;
+    let prob = 1;
+    for(let i=0; i<opened; i++) prob *= (25 - mines - i) / (25 - i);
+    return Math.floor((1 / prob) * 0.97 * 100) / 100;
 }
 
-function minesPublicState(s, balance){
-  if(!s) return { ok:true, gameState:"betting", balance };
-  const opened = safeNum(s.opened,0);
-  const mines = safeNum(s.mines,3);
-  const mult = minesMultiplier(opened, mines);
-  const bet = safeNum(s.bet,0);
-  const cashoutAmount = Math.floor(bet * mult);
-  const revealed = Array.isArray(s.revealed) ? s.revealed : [];
-  return {
-    ok:true,
-    gameState: s.gameState || "betting",
-    balance,
-    bet,
-    mines,
-    opened,
-    multiplier: Number(mult.toFixed(4)),
-    canCashout: (s.gameState==="playing" && opened>0),
-    cashoutAmount,
-    message: s.message || (s.gameState==="betting" ? "" : ""),
-    revealed
-  };
-}
-
-app.get('/api/mines/state', verifyAuth, async (req,res)=>{
-  try{
-    const uid=req.user.uid;
-    const [uSnap, sSnap] = await Promise.all([colUsers().doc(uid).get(), colMines().doc(uid).get()]);
-    const balance = safeNum(uSnap.exists ? uSnap.data().balance : 0, 0);
-    return res.json(minesPublicState(sSnap.exists ? sSnap.data() : null, balance));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
-});
-
-app.post('/api/mines/start', verifyAuth, async (req,res)=>{
-  try{
-    const bet = safeNum(req.body?.bet,0);
-    const mines = safeNum(req.body?.mines,0);
-    if(!Number.isInteger(bet) || bet < 1000) throw new Error("Min bahis 1000 MC.");
-    if(!Number.isInteger(mines) || mines < 1 || mines > 24) throw new Error("Mayın 1-24 arası olmalı.");
-    const uid=req.user.uid;
-    const uRef=colUsers().doc(uid);
-    const sRef=colMines().doc(uid);
-
-    const out = await db.runTransaction(async (tx)=>{
-      const [uSnap, sSnap] = await Promise.all([tx.get(uRef), tx.get(sRef)]);
-      if(!uSnap.exists) throw new Error("Kullanıcı yok.");
-      const bal = safeNum(uSnap.data()?.balance,0);
-      if(bal < bet) throw new Error("Bakiye yetersiz.");
-      if(sSnap.exists){
-        const s = sSnap.data()||{};
-        if(s.gameState === "playing") throw new Error("Devam eden Mines oyununuz var.");
-      }
-
-      // mines positions
-      const positions = new Set();
-      while(positions.size < mines){
-        positions.add(crypto.randomInt(0,25));
-      }
-
-      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
-      const session = {
-        uid,
-        createdAtMs: nowMs(),
-        updatedAtMs: nowMs(),
-        gameState: "playing",
-        bet,
-        mines,
-        minePositions: Array.from(positions),
-        opened: 0,
-        openedSet: [],
-        revealed: [],
-        message: ""
-      };
-      tx.set(sRef, session, { merge: true });
-      return { session, balance: bal - bet };
-    });
-
-    return res.json(minesPublicState(out.session, out.balance));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
-});
-
-app.post('/api/mines/reveal', verifyAuth, async (req,res)=>{
-  try{
-    const idx = safeNum(req.body?.index, -1);
-    if(!Number.isInteger(idx) || idx<0 || idx>24) throw new Error("Geçersiz hücre.");
-    const uid=req.user.uid;
-    const uRef=colUsers().doc(uid);
-    const sRef=colMines().doc(uid);
-
-    const out = await db.runTransaction(async (tx)=>{
-      const [uSnap, sSnap] = await Promise.all([tx.get(uRef), tx.get(sRef)]);
-      if(!uSnap.exists) throw new Error("Kullanıcı yok.");
-      const bal = safeNum(uSnap.data()?.balance,0);
-      if(!sSnap.exists) throw new Error("Aktif oyun yok.");
-      const s = sSnap.data()||{};
-      if(s.gameState !== "playing") throw new Error("Oyun aktif değil.");
-      const openedSet = new Set(Array.isArray(s.openedSet)?s.openedSet:[]);
-      if(openedSet.has(idx)) return { session:s, balance:bal };
-
-      const mines = safeNum(s.mines,3);
-      const minePositions = new Set(Array.isArray(s.minePositions)?s.minePositions:[]);
-      const revealed = Array.isArray(s.revealed)? [...s.revealed] : [];
-
-      if(minePositions.has(idx)){
-        // lose: reveal all mines
-        const allM = Array.from(minePositions).map(m=>({idx:m,type:"mine"}));
-        // keep prior safes
-        const safes = revealed.filter(x=>x.type==="safe");
-        const uniq = new Map();
-        [...safes, ...allM].forEach(x=>uniq.set(x.idx,x));
-        const finalRevealed = Array.from(uniq.values());
-        const up = { gameState:"betting", updatedAtMs: nowMs(), message:"PATLADI!", revealed: finalRevealed, opened: safeNum(s.opened,0), openedSet: Array.from(openedSet) };
-        tx.set(sRef, up, { merge:true });
-        return { session:{...s, ...up}, balance: bal };
-      } else {
-        openedSet.add(idx);
-        const opened = safeNum(s.opened,0) + 1;
-        revealed.push({idx, type:"safe"});
-        const up = { opened, openedSet: Array.from(openedSet), revealed, updatedAtMs: nowMs(), message:"" };
-        tx.set(sRef, up, { merge:true });
-        return { session:{...s, ...up}, balance: bal };
-      }
-    });
-
-    return res.json(minesPublicState(out.session, out.balance));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
-});
-
-app.post('/api/mines/cashout', verifyAuth, async (req,res)=>{
-  try{
-    const uid=req.user.uid;
-    const uRef=colUsers().doc(uid);
-    const sRef=colMines().doc(uid);
-
-    const out = await db.runTransaction(async (tx)=>{
-      const [uSnap, sSnap] = await Promise.all([tx.get(uRef), tx.get(sRef)]);
-      if(!uSnap.exists) throw new Error("Kullanıcı yok.");
-      if(!sSnap.exists) throw new Error("Aktif oyun yok.");
-      const s = sSnap.data()||{};
-      const bal = safeNum(uSnap.data()?.balance,0);
-      if(s.gameState !== "playing") throw new Error("Oyun aktif değil.");
-      const opened = safeNum(s.opened,0);
-      if(opened <= 0) throw new Error("Önce en az 1 güvenli hücre açmalısınız.");
-
-      const mines = safeNum(s.mines,3);
-      const mult = minesMultiplier(opened, mines);
-      const win = Math.floor(safeNum(s.bet,0) * mult);
-
-      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(win) });
-      tx.set(sRef, { gameState:"betting", updatedAtMs: nowMs(), message:`KAZANCINIZ: ${win}`, revealed: Array.isArray(s.revealed)?s.revealed:[] }, { merge:true });
-      return { session:{...s, gameState:"betting", message:`KAZANCINIZ: ${win}`}, balance: bal + win };
-    });
-
-    return res.json(minesPublicState(out.session, out.balance));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
-});
-
-// ==========================================
-// CRASH (Sunucu Otoriteli, 2 Slot)
-// ==========================================
-const colCrash = () => db.collection('crash_sessions');
-
-function crashCurveMultiplier(elapsedMs){
-  // basit ama pürüzsüz büyüme: m(t)=1+ t/1000 * 0.08 + (t/1000)^2 * 0.002
-  const t = Math.max(0, elapsedMs) / 1000;
-  return 1 + (t * 0.08) + (t*t*0.002);
-}
-function crashPoint(){
-  // provably fair değil; güvenli RNG. Dağılım: çoğu düşük, nadiren yüksek.
-  // 1/(1-r) tarzı ile heavy-tail
-  const r = (crypto.randomInt(0, 1_000_000) + 1) / 1_000_001;
-  const m = Math.max(1.01, (1 / r) * 0.96); // %4 edge
-  return Math.min(50, Number(m.toFixed(4)));
-}
-function crashPublicState(s, balance){
-  if(!s) return { ok:true, roundState:"idle", multiplier:1, balance, bets:[{state:"idle"},{state:"idle"}], statusText:"" };
-  const now = nowMs();
-  const roundState = s.roundState || "idle";
-  let mult = 1;
-  let crashed = false;
-  let crashMult = safeNum(s.crashMult, 0);
-  let startAt = safeNum(s.startAtMs, 0);
-
-  if(roundState === "running"){
-    mult = crashCurveMultiplier(now - startAt);
-    if(mult >= crashMult){
-      mult = crashMult;
-      crashed = true;
+function createMinesBoard(minesCount) {
+    let board = Array(25).fill(0);
+    let placed = 0;
+    while(placed < minesCount) {
+        let r = crypto.randomInt(0, 25);
+        if(board[r] === 0) { board[r] = 1; placed++; }
     }
-  } else if(roundState === "crashed"){
-    mult = crashMult || 1;
-    crashed = true;
-  }
-
-  const bets = Array.isArray(s.bets) ? s.bets : [{state:"idle"},{state:"idle"}];
-  const statusText = s.statusText || (roundState==="running" ? "UÇUYOR..." : (roundState==="crashed" ? "PATLADI!" : ""));
-  return { ok:true, balance, roundState: crashed ? "crashed" : roundState, multiplier: Number(mult.toFixed(2)), bets, statusText };
+    return board;
 }
 
-async function crashEnsureResolve(uid){
-  const sRef = colCrash().doc(uid);
-  const uRef = colUsers().doc(uid);
-  await db.runTransaction(async (tx)=>{
-    const [sSnap, uSnap] = await Promise.all([tx.get(sRef), tx.get(uRef)]);
-    if(!sSnap.exists || !uSnap.exists) return;
-    const s = sSnap.data()||{};
-    if(s.roundState !== "running") return;
-
-    const now = nowMs();
-    const crashMult = safeNum(s.crashMult,0);
-    const startAt = safeNum(s.startAtMs,0);
-    const multNow = crashCurveMultiplier(now - startAt);
-    if(multNow < crashMult) return;
-
-    // crash happened -> settle remaining active bets as lost
-    const bets = Array.isArray(s.bets)? [...s.bets] : [{state:"idle"},{state:"idle"}];
-    for(const b of bets){
-      if(b && b.state === "active"){
-        b.state = "lost";
-        b.payout = 0;
-        b.cashedAt = crashMult;
-      }
-    }
-    tx.set(sRef, { roundState:"crashed", updatedAtMs: nowMs(), bets, statusText:`PATLADI! (${crashMult.toFixed(2)}x)` }, { merge:true });
-  });
-}
-
-app.get('/api/crash/state', verifyAuth, async (req,res)=>{
-  try{
-    const uid=req.user.uid;
-    await crashEnsureResolve(uid);
-    const [uSnap, sSnap] = await Promise.all([colUsers().doc(uid).get(), colCrash().doc(uid).get()]);
-    const balance = safeNum(uSnap.exists ? uSnap.data().balance : 0, 0);
-    return res.json(crashPublicState(sSnap.exists ? sSnap.data() : null, balance));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
+app.get('/api/mines/state', verifyAuth, async (req, res) => {
+    try {
+        const snap = await colMines().doc(req.user.uid).get();
+        if (!snap.exists) return res.json({ ok: true, state: null });
+        
+        const data = snap.data();
+        res.json({ ok: true, state: {
+            status: data.status,
+            bet: data.bet,
+            minesCount: data.minesCount,
+            opened: data.opened,
+            multiplier: data.multiplier
+        }});
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/crash/bet', verifyAuth, async (req,res)=>{
-  try{
-    const slot = safeNum(req.body?.slot, 0);
-    const bet = safeNum(req.body?.bet, 0);
-    if(slot !== 1 && slot !== 2) throw new Error("Slot 1/2 olmalı.");
-    if(!Number.isInteger(bet) || bet < 1000) throw new Error("Min bahis 1000 MC.");
-    const idx = slot - 1;
-    const uid=req.user.uid;
-    const uRef=colUsers().doc(uid);
-    const sRef=colCrash().doc(uid);
+app.post('/api/mines/start', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const bet = safeNum(req.body.bet, 0);
+        const minesCount = safeNum(req.body.minesCount, 3);
+        
+        // LIMIT UYUMU: Minimum bahis 10 MC olarak kesinleştirildi
+        if(bet < 10 || bet > 100000) throw new Error('Geçersiz bahis miktarı. Min: 10 MC');
+        if(minesCount < 1 || minesCount > 24) throw new Error('Geçersiz mayın sayısı.');
 
-    const out = await db.runTransaction(async (tx)=>{
-      const [uSnap, sSnap] = await Promise.all([tx.get(uRef), tx.get(sRef)]);
-      if(!uSnap.exists) throw new Error("Kullanıcı yok.");
-      const bal = safeNum(uSnap.data()?.balance,0);
-      if(bal < bet) throw new Error("Bakiye yetersiz.");
+        const session = await db.runTransaction(async (tx) => {
+            const existing = await tx.get(colMines().doc(uid));
+            if (existing.exists && existing.data().status === 'playing') throw new Error('Zaten devam eden bir oyununuz var.');
+            
+            const uSnap = await tx.get(colUsers().doc(uid));
+            if(safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
 
-      const s = sSnap.exists ? (sSnap.data()||{}) : {};
-      let roundState = s.roundState || "idle";
-      let bets = Array.isArray(s.bets) ? [...s.bets] : [{state:"idle"},{state:"idle"}];
-      while(bets.length<2) bets.push({state:"idle"});
+            tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
 
-      if(roundState === "crashed"){
-        // yeni round aç
-        roundState = "idle";
-        bets = [{state:"idle"},{state:"idle"}];
-      }
+            const newSession = {
+                uid,
+                status: 'playing',
+                bet,
+                minesCount,
+                board: createMinesBoard(minesCount),
+                opened: [],
+                multiplier: 1.00,
+                updatedAt: nowMs()
+            };
 
-      if(bets[idx]?.state && bets[idx].state !== "idle") throw new Error("Bu slot zaten aktif.");
+            tx.set(colMines().doc(uid), newSession);
+            return newSession;
+        });
 
-      // round start if idle
-      let crashMult = safeNum(s.crashMult,0);
-      let startAtMs = safeNum(s.startAtMs,0);
-
-      if(roundState === "idle"){
-        crashMult = crashPoint();
-        startAtMs = nowMs();
-        roundState = "running";
-      }
-
-      // place bet
-      bets[idx] = { state:"active", bet, placedAtMs: nowMs(), payout: 0, cashedAt: null };
-
-      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
-      tx.set(sRef, { uid, roundState, crashMult, startAtMs, bets, updatedAtMs: nowMs(), statusText:"UÇUYOR..." }, { merge:true });
-      return { session:{ uid, roundState, crashMult, startAtMs, bets, statusText:"UÇUYOR..." }, balance: bal - bet };
-    });
-
-    return res.json(crashPublicState(out.session, out.balance));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
+        res.json({ ok: true, state: { status: session.status, bet: session.bet, minesCount: session.minesCount, opened: session.opened, multiplier: session.multiplier } });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/crash/cashout', verifyAuth, async (req,res)=>{
-  try{
-    const slot = safeNum(req.body?.slot, 0);
-    if(slot !== 1 && slot !== 2) throw new Error("Slot 1/2 olmalı.");
-    const idx = slot - 1;
-    const uid=req.user.uid;
-    const uRef=colUsers().doc(uid);
-    const sRef=colCrash().doc(uid);
+app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const action = req.body.action; // 'click' veya 'cashout'
 
-    const out = await db.runTransaction(async (tx)=>{
-      const [uSnap, sSnap] = await Promise.all([tx.get(uRef), tx.get(sRef)]);
-      if(!uSnap.exists) throw new Error("Kullanıcı yok.");
-      if(!sSnap.exists) throw new Error("Aktif round yok.");
-      const s = sSnap.data()||{};
-      const bal = safeNum(uSnap.data()?.balance,0);
+        const result = await db.runTransaction(async (tx) => {
+            const sSnap = await tx.get(colMines().doc(uid));
+            if (!sSnap.exists || sSnap.data().status !== 'playing') throw new Error('Aktif bir oyun bulunamadı.');
+            
+            const s = sSnap.data();
 
-      if(s.roundState !== "running") throw new Error("Round aktif değil.");
-      let bets = Array.isArray(s.bets) ? [...s.bets] : [{state:"idle"},{state:"idle"}];
-      while(bets.length<2) bets.push({state:"idle"});
-      const b = bets[idx] || {state:"idle"};
-      if(b.state !== "active") throw new Error("Bu slot aktif değil.");
+            if (action === 'cashout') {
+                if (s.opened.length === 0) throw new Error('Henüz taş açmadınız.');
+                
+                const winAmount = Math.floor(s.bet * s.multiplier);
+                tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(winAmount) });
+                
+                s.status = 'cashed_out';
+                s.updatedAt = nowMs();
+                tx.set(colMines().doc(uid), s);
+                
+                return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier }, winAmount, board: s.board };
+            } 
+            else if (action === 'click') {
+                const index = safeNum(req.body.index, -1);
+                if (index < 0 || index > 24) throw new Error('Geçersiz kutu.');
+                if (s.opened.includes(index)) throw new Error('Bu taş zaten açık.');
 
-      const now = nowMs();
-      const multNow = crashCurveMultiplier(now - safeNum(s.startAtMs, now));
-      const crashMult = safeNum(s.crashMult, 1);
-      if(multNow >= crashMult) throw new Error("Geç kaldınız, patladı.");
+                if (s.board[index] === 1) {
+                    s.status = 'busted';
+                    s.updatedAt = nowMs();
+                    tx.set(colMines().doc(uid), s);
+                    return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier }, board: s.board };
+                } else {
+                    s.opened.push(index);
+                    s.multiplier = calculateMinesMult(s.minesCount, s.opened.length);
+                    
+                    if (s.opened.length === (25 - s.minesCount)) {
+                        const winAmount = Math.floor(s.bet * s.multiplier);
+                        tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(winAmount) });
+                        s.status = 'cashed_out';
+                        s.updatedAt = nowMs();
+                        tx.set(colMines().doc(uid), s);
+                        return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier }, winAmount, board: s.board };
+                    }
 
-      const payout = Math.floor(safeNum(b.bet,0) * multNow);
-      bets[idx] = { ...b, state:"cashed", payout, cashedAt: Number(multNow.toFixed(4)), cashedAtMs: now };
+                    s.updatedAt = nowMs();
+                    tx.set(colMines().doc(uid), s);
+                    return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier } };
+                }
+            } else {
+                throw new Error('Geçersiz işlem.');
+            }
+        });
 
-      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(payout) });
-
-      // if no active bets left -> end round (idle)
-      const stillActive = bets.some(x=>x && x.state==="active");
-      const roundState = stillActive ? "running" : "idle";
-      const statusText = stillActive ? "UÇUYOR..." : "BİTTİ";
-      tx.set(sRef, { bets, roundState, updatedAtMs: nowMs(), statusText }, { merge:true });
-
-      return { session:{...s, bets, roundState, statusText}, balance: bal + payout };
-    });
-
-    // ensure crash resolution if needed
-    await crashEnsureResolve(uid);
-
-    const [uSnap2, sSnap2] = await Promise.all([colUsers().doc(uid).get(), colCrash().doc(uid).get()]);
-    const balance2 = safeNum(uSnap2.exists ? uSnap2.data().balance : 0, 0);
-    return res.json(crashPublicState(sSnap2.exists ? sSnap2.data() : null, balance2));
-  }catch(e){ return res.json({ok:false,error:e.message}); }
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-
-app.listen(PORT, () => console.log(`🚀 PlayMatrix Backend Started. Port: ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 PlayMatrix Core Backend Started. Port: ${PORT}`));
