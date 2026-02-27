@@ -372,7 +372,7 @@ async function resolveAndPayout(uid) {
 }
 
 // ======================================================
-// 3. CRASH MOTORU (GÜNCELLENMİŞ CASINO ALGORİTMASI)
+// 3. CRASH MOTORU
 // ======================================================
 
 function generateRoundProvablyFair() {
@@ -515,7 +515,7 @@ app.post('/api/crash/cashout', verifyAuth, async (req, res) => {
 });
 
 // ======================================================
-// 4. CYBER MOTORU (SUNUCU KONTROLLÜ ZEKA OYUNU)
+// 4. CYBER MOTORU
 // ======================================================
 
 const colCyber = () => db.collection('cyber_sessions');
@@ -598,7 +598,7 @@ app.post('/api/cyber/verify', verifyAuth, async (req, res) => {
 });
 
 // ======================================================
-// 5. MINES MOTORU (%100 SUNUCU TABANLI)
+// 5. MINES MOTORU (%100 SUNUCU TABANLI & PROVABLY FAIR)
 // ======================================================
 
 const colMines = () => db.collection('mines_sessions');
@@ -611,6 +611,7 @@ function calculateMinesMult(mines, opened) {
     return Math.floor((1 / prob) * 0.97 * 100) / 100;
 }
 
+// PROVABLY FAIR: Tahta oluşturulurken şifrelenir
 function createMinesBoard(minesCount) {
     let board = Array(25).fill(0);
     let placed = 0;
@@ -618,7 +619,9 @@ function createMinesBoard(minesCount) {
         let r = crypto.randomInt(0, 25);
         if(board[r] === 0) { board[r] = 1; placed++; }
     }
-    return board;
+    const serverSeed = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.createHash('sha256').update(serverSeed + ":" + board.join(',')).digest('hex');
+    return { board, serverSeed, hash };
 }
 
 app.get('/api/mines/state', verifyAuth, async (req, res) => {
@@ -632,7 +635,9 @@ app.get('/api/mines/state', verifyAuth, async (req, res) => {
             bet: data.bet,
             minesCount: data.minesCount,
             opened: data.opened,
-            multiplier: data.multiplier
+            multiplier: data.multiplier,
+            hash: data.hash, 
+            serverSeed: (data.status === 'busted' || data.status === 'cashed_out') ? data.serverSeed : undefined
         }});
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
@@ -648,19 +653,27 @@ app.post('/api/mines/start', verifyAuth, async (req, res) => {
 
         const session = await db.runTransaction(async (tx) => {
             const existing = await tx.get(colMines().doc(uid));
-            if (existing.exists && existing.data().status === 'playing') throw new Error('Zaten devam eden bir oyununuz var.');
+            if (existing.exists && existing.data().status === 'playing') {
+                // Garbage Collection Failsafe: Eğer oyuncu oyunu yarım bıraktıysa ve 5 dakika geçtiyse sil
+                if (nowMs() - safeNum(existing.data().updatedAt, 0) > 300000) tx.delete(colMines().doc(uid)); 
+                else throw new Error('Zaten devam eden bir oyununuz var.');
+            }
             
             const uSnap = await tx.get(colUsers().doc(uid));
             if(safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
 
             tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
 
+            const boardData = createMinesBoard(minesCount);
+
             const newSession = {
                 uid,
                 status: 'playing',
                 bet,
                 minesCount,
-                board: createMinesBoard(minesCount),
+                board: boardData.board,
+                serverSeed: boardData.serverSeed,
+                hash: boardData.hash,
                 opened: [],
                 multiplier: 1.00,
                 updatedAt: nowMs()
@@ -670,7 +683,7 @@ app.post('/api/mines/start', verifyAuth, async (req, res) => {
             return newSession;
         });
 
-        res.json({ ok: true, state: { status: session.status, bet: session.bet, minesCount: session.minesCount, opened: session.opened, multiplier: session.multiplier } });
+        res.json({ ok: true, state: { status: session.status, bet: session.bet, minesCount: session.minesCount, opened: session.opened, multiplier: session.multiplier, hash: session.hash } });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -695,7 +708,7 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
                 s.updatedAt = nowMs();
                 tx.set(colMines().doc(uid), s);
                 
-                return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier }, winAmount, board: s.board };
+                return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier, hash: s.hash, serverSeed: s.serverSeed }, winAmount, board: s.board };
             } 
             else if (action === 'click') {
                 const index = safeNum(req.body.index, -1);
@@ -706,7 +719,7 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
                     s.status = 'busted';
                     s.updatedAt = nowMs();
                     tx.set(colMines().doc(uid), s);
-                    return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier }, board: s.board };
+                    return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier, hash: s.hash, serverSeed: s.serverSeed }, board: s.board };
                 } else {
                     s.opened.push(index);
                     s.multiplier = calculateMinesMult(s.minesCount, s.opened.length);
@@ -717,25 +730,30 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
                         s.status = 'cashed_out';
                         s.updatedAt = nowMs();
                         tx.set(colMines().doc(uid), s);
-                        return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier }, winAmount, board: s.board };
+                        return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier, hash: s.hash, serverSeed: s.serverSeed }, winAmount, board: s.board };
                     }
 
                     s.updatedAt = nowMs();
                     tx.set(colMines().doc(uid), s);
-                    return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier } };
+                    return { state: { status: s.status, bet: s.bet, minesCount: s.minesCount, opened: s.opened, multiplier: s.multiplier, hash: s.hash } };
                 }
             } else {
                 throw new Error('Geçersiz işlem.');
             }
         });
 
+        // HATA 1 ÇÖZÜMÜ: GARBAGE COLLECTION (Oyun bittiğinde Firestore'dan sil)
+        if (result.state.status === 'busted' || result.state.status === 'cashed_out') {
+            setTimeout(() => colMines().doc(uid).delete().catch(()=>null), 5000);
+        }
+
         res.json({ ok: true, ...result });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-/* ======================================================
-   6. PİŞTİ MOTORU (%100 SUNUCU TABANLI KUSURSUZ YAPI)
-   ====================================================== */
+// ======================================================
+// 6. PİŞTİ MOTORU
+// ======================================================
 
 const colPisti = () => db.collection('pisti_sessions');
 
