@@ -4,72 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>PlayMatrix Crash | Profesyonel VIP Casino</title>
-    <meta name="description" content="PlayMatrix Crash | Güvenli, adil ve hızlı çarpan oyunu. Roket yükseldikçe kazan, patlamadan önce çekil!">
+    <title>PlayMatrix Crash | Profesyonel VIP Casino ve Çarpan Oyunu</title>
+    <meta name="description" content="PlayMatrix Crash ile heyecanı zirvede yaşa! %100 Provably Fair adil sistem, gerçek zamanlı yüksek çarpanlar ve anında kazanç. Hemen oyna!">
+    <meta name="keywords" content="crash oyunu, casino, playmatrix, çarpan oyunu, kripto bahis, roket oyunu, online casino, canlı bahis">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="theme-color" content="#0b1118">
     
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PlayMatrix Crash | VIP Casino Deneyimi">
+    <meta property="og:description" content="Roket yükseldikçe kazan, patlamadan önce çekil! Kesintisiz donmasız altyapı ile gerçek Crash heyecanı.">
+    <meta property="og:site_name" content="PlayMatrix">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Crash | Uçuşa Geç ve Kazan!">
+    <meta name="twitter:description" content="Güvenli, adil ve anlık çarpan oyunu. Şansını hemen dene.">
+
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
-        /* GENEL VIP CASINO RESET VE TEMA */
+        /* SIFIR KAYMA, %100 RESPONSIVE RESET */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         html, body { background: #0b1118; color: #ffffff; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; font-family: 'Inter', sans-serif; }
 
-        /* PROFESYONEL İNTRO */
+        /* PROFESYONEL İNTRO (AÇILIŞ EKRANI) */
         #studioIntro {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070b10;
             z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.6s ease, visibility 0.6s ease;
         }
         .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
-        .intro-logo i { font-size: 65px; color: #00e701; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,231,1,0.5)); }
+        .intro-logo i { font-size: 65px; color: #00ffa3; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,255,163,0.5)); }
         .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
-        .intro-logo h1 span { color: #00e701; }
+        .intro-logo h1 span { color: #00ffa3; }
         
-        .loader-track { width: 200px; height: 3px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
-        .loader-fill { height: 100%; width: 0%; background: #00e701; transition: width 0.1s linear; box-shadow: 0 0 10px #00e701; }
-        .btn-intro-start { display: none; margin-top: 30px; padding: 12px 35px; background: #00e701; color: #000; border: none; border-radius: 8px; font-weight: 900; font-size: 14px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 4px 15px rgba(0,231,1,0.3); transition: 0.2s; }
+        .loader-track { width: 220px; height: 4px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        .loader-fill { height: 100%; width: 0%; background: #00ffa3; transition: width 0.1s linear; box-shadow: 0 0 10px #00ffa3; }
+        .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #00ffa3, #00b894); color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(0,255,163,0.4); transition: 0.2s; letter-spacing: 1px; }
         .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
 
         @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-        /* ÜST BAR (TOP BAR) */
+        /* ÜST BAR (TAŞMA KORUMALI) */
         .top-bar { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 65px; background: #121a24;
-            border-bottom: 1px solid #1f2c3b; display: flex; align-items: center; justify-content: space-between;
+            position: fixed; top: 0; left: 0; width: 100%; height: 65px; background: rgba(18, 26, 36, 0.95);
+            backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;
             padding: 0 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         .tb-left { display: flex; align-items: center; gap: 15px; }
         .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; }
-        .tb-logo span { color: #00e701; }
+        .tb-logo span { color: #00f0ff; }
         
         .tb-right { display: flex; align-items: center; gap: 10px; }
-        .balance-box { display: flex; align-items: center; background: #0b1118; padding: 6px 12px; border-radius: 8px; border: 1px solid #1f2c3b; }
-        .balance-box b { font-size: 14px; color: #00e701; font-family: 'Inter', monospace; font-weight: 800; }
-        .mc-icon { background: #00e701; color: #000; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 8px; }
+        
+        /* BAKİYE TAŞMA ENGELİ (ELLIPSIS) */
+        .balance-box { display: flex; align-items: center; background: #0b1118; padding: 6px 12px; border-radius: 8px; border: 1px solid #1f2c3b; max-width: 140px; }
+        .balance-box b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; display: inline-block; vertical-align: middle; }
+        .mc-icon { background: linear-gradient(135deg, #00f0ff, #0055ff); color: #fff; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 8px; box-shadow: 0 0 10px rgba(0,240,255,0.4); }
         
         .action-icon-btn { 
             background: #1f2c3b; color: #94a3b8; border: none; width: 34px; height: 34px; 
             border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; text-decoration: none;
+            display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
         }
         .action-icon-btn:active { transform: scale(0.9); background: #2a3a4d; color: #fff; }
         .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
         /* CRASH GEÇMİŞİ (GERÇEK RENKLER) */
         .history-bar { 
-            position: fixed; top: 65px; left: 0; width: 100%; height: 45px; background: #0e151d;
+            position: fixed; top: 65px; left: 0; width: 100%; height: 45px; background: rgba(14, 21, 29, 0.9);
             display: flex; align-items: center; padding: 0 10px; overflow-x: auto; gap: 8px;
-            scrollbar-width: none; border-bottom: 1px solid #1f2c3b; z-index: 900;
+            scrollbar-width: none; border-bottom: 1px solid rgba(255,255,255,0.03); z-index: 900; backdrop-filter: blur(5px);
         }
         .history-bar::-webkit-scrollbar { display: none; }
         .hist-pill { 
             padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 800; 
-            font-family: 'Inter', sans-serif; background: #1a2430; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-family: 'Inter', sans-serif; background: #1a2430; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        .hist-red { color: #ff3b30; background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.2); }
-        .hist-green { color: #00e701; background: rgba(0,231,1,0.1); border: 1px solid rgba(0,231,1,0.2); }
-        .hist-gold { color: #f59e0b; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+        .hist-red { color: #ff3b30; background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.3); }
+        .hist-green { color: #00ffa3; background: rgba(0,255,163,0.1); border: 1px solid rgba(0,255,163,0.3); }
+        .hist-gold { color: #f59e0b; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); text-shadow: 0 0 5px rgba(245,158,11,0.5); }
 
         /* OYUN ALANI (CANVAS) */
         .game-area { 
@@ -81,66 +97,92 @@
 
         /* MERKEZİ ÇARPAN EKRANI */
         .multiplier-core { position: relative; z-index: 10; text-align: center; pointer-events: none; }
-        .phase-text { font-family: 'Orbitron', sans-serif; font-size: 13px; color: #94a3b8; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; }
-        .multiplier-val { font-family: 'Inter', sans-serif; font-size: 85px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.2); transition: color 0.2s; }
-        .val-flying { color: #00e701; text-shadow: 0 0 40px rgba(0,231,1,0.5); }
-        .val-crashed { color: #ff3b30; text-shadow: 0 0 40px rgba(255,59,48,0.5); animation: shake 0.3s ease-in-out; }
+        .phase-text { font-family: 'Orbitron', sans-serif; font-size: 14px; color: #94a3b8; letter-spacing: 3px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .multiplier-val { font-family: 'Inter', sans-serif; font-size: 90px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.1); transition: color 0.2s; }
+        .val-flying { color: #00ffa3; text-shadow: 0 0 40px rgba(0,255,163,0.6); }
+        .val-crashed { color: #ff3b30; text-shadow: 0 0 40px rgba(255,59,48,0.6); animation: shake 0.3s ease-in-out; }
 
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px) translateY(-2px); } 75% { transform: translateX(5px) translateY(2px); } }
 
-        /* ALT PANEL (BAHİS KONTROLLERİ) */
+        /* ALT PANEL (BAHİS KONTROLLERİ VE OTOMATİK BAHİS) */
         .bottom-controls { 
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 240px; background: #121a24;
-            border-top: 1px solid #1f2c3b; padding: 15px; display: flex; gap: 10px; justify-content: center; z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 240px; background: #0b1118;
+            border-top: 2px solid #1f2c3b; padding: 15px; display: flex; gap: 10px; justify-content: center; z-index: 1000;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
         }
         .bet-box { 
-            background: #1a2430; flex: 1; max-width: 300px; border-radius: 12px; padding: 12px;
-            display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #2a3a4d;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(145deg, #111827, #0a0f1a); flex: 1; max-width: 320px; border-radius: 16px; padding: 15px;
+            display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #1f2937;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3); gap: 10px;
         }
-        .bet-input-wrap { position: relative; width: 100%; background: #0b1118; border-radius: 8px; border: 1px solid #2a3a4d; overflow: hidden;}
+        
+        /* OTO BAHİS KONTROLÜ */
+        .auto-bet-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .auto-bet-row span { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; font-family: 'Inter'; }
+        
+        .switch { position: relative; width: 36px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        input:checked + .slider { background-color: #00f0ff; box-shadow: 0 0 10px rgba(0,240,255,0.5); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        .bet-input-wrap { position: relative; width: 100%; background: #030712; border-radius: 12px; border: 2px solid #1f2937; overflow: hidden; transition: border 0.3s;}
+        .bet-input-wrap:focus-within { border-color: #00f0ff; box-shadow: 0 0 15px rgba(0,240,255,0.2); }
         .bet-input-wrap input { 
-            width: 100%; background: transparent; border: none; color: #fff; padding: 15px; 
-            text-align: center; font-size: 18px; font-weight: 800; font-family: 'Inter'; outline: none;
+            width: 100%; background: transparent; border: none; color: #00f0ff; padding: 12px; 
+            text-align: center; font-size: 20px; font-weight: 900; font-family: 'Orbitron'; outline: none;
         }
         
         /* PROFESYONEL BUTONLAR (MC KULLAN - İPTAL - ÇEK) */
         .action-btn { 
-            width: 100%; min-height: 55px; border: none; border-radius: 8px; font-weight: 900; 
-            font-size: 16px; cursor: pointer; transition: 0.1s; text-transform: uppercase; font-family: 'Inter'; letter-spacing: 1px;
-            display: flex; align-items: center; justify-content: center; gap: 8px; flex-direction: column; line-height: 1.2;
+            width: 100%; min-height: 55px; border: none; border-radius: 12px; font-weight: 900; 
+            font-size: 16px; cursor: pointer; transition: transform 0.1s, filter 0.1s, box-shadow 0.1s; text-transform: uppercase; font-family: 'Inter'; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; gap: 4px; flex-direction: column; line-height: 1.1; touch-action: manipulation;
         }
-        .action-btn span { font-size: 11px; font-weight: 600; opacity: 0.8; text-transform: none; font-family: 'Inter';}
+        .action-btn span { font-size: 11px; font-weight: 700; opacity: 0.9; text-transform: none; font-family: 'Inter'; }
         
-        .btn-bet { background: #00e701; color: #000; box-shadow: 0 4px 0 #009900; }
-        .btn-bet:active { transform: translateY(4px); box-shadow: none; }
+        .btn-bet { background: linear-gradient(180deg, #6366f1, #4338ca); color: #fff; box-shadow: 0 5px 0 #312e81; }
+        .btn-bet:active:not(.btn-disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #312e81; }
         
-        .btn-cancel { background: #ff3b30; color: #fff; box-shadow: 0 4px 0 #990000; }
-        .btn-cancel:active { transform: translateY(4px); box-shadow: none; }
+        .btn-cancel { background: linear-gradient(180deg, #ef4444, #b91c1c); color: #fff; box-shadow: 0 5px 0 #7f1d1d; }
+        .btn-cancel:active:not(.btn-disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #7f1d1d; }
         
-        .btn-cashout { background: #f59e0b; color: #000; box-shadow: 0 4px 0 #b45309; animation: pulseCashout 1.5s infinite; }
-        .btn-cashout:active { transform: translateY(4px); box-shadow: none; }
+        .btn-cashout { background: linear-gradient(180deg, #f59e0b, #d97706); color: #000; box-shadow: 0 5px 0 #b45309; animation: pulseCashout 1.5s infinite; }
+        .btn-cashout:active:not(.btn-disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #b45309; }
 
-        .btn-disabled { background: #2a3a4d !important; color: #64748b !important; box-shadow: 0 4px 0 #1f2c3b !important; cursor: not-allowed; animation: none;}
-        
-        @keyframes pulseCashout { 0% { filter: brightness(1); } 50% { filter: brightness(1.2); } 100% { filter: brightness(1); } }
+        .btn-success { background: linear-gradient(180deg, #10b981, #047857); color: #fff; box-shadow: 0 5px 0 #064e3b; }
 
-        /* BİLGİ MODALI */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 10000; opacity: 0; transition: opacity 0.3s; }
-        .modal-card { background: #121a24; border: 1px solid #2a3a4d; width: 90%; max-width: 360px; border-radius: 16px; padding: 25px; transform: scale(0.9); transition: 0.3s; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .modal-card h3 { color: #fff; font-family: 'Orbitron'; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #2a3a4d; padding-bottom: 10px; }
-        .modal-card p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 10px; }
-        .modal-card p b { color: #00e701; }
-        .modal-close { background: #1a2430; color: #fff; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.2s;}
-        .modal-close:active { background: #2a3a4d; }
+        .btn-disabled { opacity: 0.7; filter: grayscale(0.6); cursor: not-allowed; animation: none; transform: translateY(4px) !important; box-shadow: 0 1px 0 rgba(0,0,0,0.5) !important; }
+        
+        @keyframes pulseCashout { 0% { filter: brightness(1); } 50% { filter: brightness(1.3); } 100% { filter: brightness(1); } }
+
+        /* ÖZEL ANİMASYONLU MODAL (POPUP) SİSTEMİ %100 TEMA UYUMLU */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.show { opacity: 1; display: flex; }
+        
+        .modal-card { 
+            background: linear-gradient(145deg, #111827, #0a0f1a); border: 1px solid #1f2937; width: 90%; max-width: 360px; 
+            border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center;
+        }
+        .modal-overlay.show .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+        
+        .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
+        .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; }
+        .modal-card p b { color: #00f0ff; }
+        .modal-close { background: linear-gradient(135deg, #00f0ff, #0055ff); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(0,240,255,0.3); text-transform: uppercase;}
+        .modal-close:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,240,255,0.5); }
+        .modal-close:active { transform: translateY(2px); box-shadow: none; }
 
         @media (max-width: 400px) { 
-            .multiplier-val { font-size: 65px; } 
-            .bottom-controls { height: 210px; padding: 10px; } 
-            .game-area { height: calc(100vh - 320px); } 
-            .bet-box { padding: 8px; } 
-            .bet-input-wrap input { padding: 10px; font-size: 15px; } 
-            .action-btn { min-height: 48px; font-size: 14px; }
+            .multiplier-val { font-size: 70px; } 
+            .bottom-controls { height: 230px; padding: 10px; } 
+            .game-area { height: calc(100vh - 340px); } 
+            .bet-box { padding: 10px; gap: 8px;} 
+            .bet-input-wrap input { padding: 10px; font-size: 16px; } 
+            .action-btn { min-height: 50px; font-size: 14px; }
         }
     </style>
 </head>
@@ -148,30 +190,19 @@
 
 <div id="studioIntro">
     <div class="intro-logo">
-        <i class="fa-solid fa-rocket"></i>
+        <i class="fa-solid fa-plane-up" style="transform: rotate(45deg);"></i>
         <h1>PLAYMATRIX<br><span>CRASH</span></h1>
     </div>
     <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
     <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
 </div>
 
-<div id="infoModal" class="modal-overlay">
-    <div class="modal-card" id="infoCard">
-        <h3>NASIL OYNANIR?</h3>
-        <p><i class="fa-solid fa-check" style="color:#00e701; margin-right:5px;"></i> Bahis süresi içinde bakiyenizi girip <b>MC KULLAN</b> butonuna basın.</p>
-        <p><i class="fa-solid fa-rocket" style="color:#4fd1ff; margin-right:5px;"></i> Oyun başladığındaçarpan sürekli artar. Gidebildiği yere kadar yükselir.</p>
-        <p><i class="fa-solid fa-hand-pointer" style="color:#f59e0b; margin-right:5px;"></i> Roket patlamadan (CRASH) önce <b>ÇEK</b> butonuna basarsanız kazanırsınız!</p>
-        <p style="color:#ff3b30; font-size:11px; margin-top:15px;"><i class="fa-solid fa-triangle-exclamation"></i> Dikkat: Bahisler sunucuya iletildikten sonra iptal edilemez.</p>
-        <button class="modal-close" onclick="closeInfoModal()">ANLADIM</button>
-    </div>
-</div>
-
-<div id="alertModal" class="modal-overlay">
-    <div class="modal-card" id="alertCard" style="text-align:center;">
-        <i class="fa-solid fa-circle-exclamation" style="font-size:40px; color:#ff3b30; margin-bottom:15px;"></i>
-        <h3 id="alertTitle" style="color:#ff3b30; border:none; padding:0;">HATA</h3>
-        <p id="alertMsg" style="font-weight:bold; color:#fff; font-size:14px;"></p>
-        <button class="modal-close" onclick="closeAlertModal()">KAPAT</button>
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj içeriği</p>
+        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
     </div>
 </div>
 
@@ -181,9 +212,9 @@
     </div>
     <div class="tb-right">
         <div class="balance-box">
-            <b id="uiBalance">...</b><div class="mc-icon">MC</div>
+            <b id="uiBalance">Yükleniyor</b><div class="mc-icon">MC</div>
         </div>
-        <button class="action-icon-btn" onclick="openInfoModal()"><i class="fa-solid fa-circle-info"></i></button>
+        <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-info"></i></button>
         <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
     </div>
 </header>
@@ -193,24 +224,32 @@
 <main class="game-area">
     <canvas id="crashCanvas"></canvas>
     <div class="multiplier-core">
-        <div class="phase-text" id="uiPhase">YÜKLENİYOR...</div>
+        <div class="phase-text" id="uiPhase">SUNUCU BEKLENİYOR...</div>
         <div class="multiplier-val" id="uiMultiplier">1.00x</div>
     </div>
 </main>
 
 <div class="bottom-controls">
     <div class="bet-box">
+        <div class="auto-bet-row">
+            <span>OTO BAHİS</span>
+            <label class="switch"><input type="checkbox" id="autoSwitch1"><span class="slider"></span></label>
+        </div>
         <div class="bet-input-wrap">
             <input type="number" id="inpBet1" value="100" min="10" step="10">
         </div>
-        <button id="btnAction1" class="action-btn btn-bet">MC KULLAN</button>
+        <button id="btnAction1" class="action-btn btn-bet">MC KULLAN<br><span>BAHİS YAP</span></button>
     </div>
 
     <div class="bet-box">
+        <div class="auto-bet-row">
+            <span>OTO BAHİS</span>
+            <label class="switch"><input type="checkbox" id="autoSwitch2"><span class="slider"></span></label>
+        </div>
         <div class="bet-input-wrap">
             <input type="number" id="inpBet2" value="200" min="10" step="10">
         </div>
-        <button id="btnAction2" class="action-btn btn-bet">MC KULLAN</button>
+        <button id="btnAction2" class="action-btn btn-bet">MC KULLAN<br><span>BAHİS YAP</span></button>
     </div>
 </div>
 
@@ -241,20 +280,44 @@
     const inp1 = document.getElementById("inpBet1");
     const inp2 = document.getElementById("inpBet2");
 
-    // MODAL YÖNETİMİ
-    window.openInfoModal = () => { document.getElementById('infoModal').style.display='flex'; setTimeout(()=>document.getElementById('infoModal').style.opacity='1',10); }
-    window.closeInfoModal = () => { document.getElementById('infoModal').style.opacity='0'; setTimeout(()=>document.getElementById('infoModal').style.display='none',300); }
-    window.openAlertModal = (msg) => { document.getElementById('alertMsg').innerText=msg; document.getElementById('alertModal').style.display='flex'; setTimeout(()=>document.getElementById('alertModal').style.opacity='1',10); }
-    window.closeAlertModal = () => { document.getElementById('alertModal').style.opacity='0'; setTimeout(()=>document.getElementById('alertModal').style.display='none',300); }
+    // PROFESYONEL MODAL YÖNETİCİSİ
+    window.showMatrixModal = (title, message, type = 'info') => {
+        const icon = document.getElementById("matrixModalIcon");
+        document.getElementById("matrixModalTitle").innerText = title;
+        document.getElementById("matrixModalDesc").innerHTML = message;
+        
+        if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30"></i>'; document.getElementById("matrixModalTitle").style.color = '#ff3b30'; } 
+        else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#00ffa3"></i>'; document.getElementById("matrixModalTitle").style.color = '#00ffa3'; } 
+        else { icon.innerHTML = '<i class="fa-solid fa-rocket" style="color:#00f0ff"></i>'; document.getElementById("matrixModalTitle").style.color = '#00f0ff'; }
+        
+        const modal = document.getElementById('matrixModal');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('show'), 10);
+    };
 
-    // PROFESYONEL SES MOTORU (WEB AUDIO API - SIFIR GECİKME)
+    window.closeMatrixModal = () => {
+        const modal = document.getElementById('matrixModal');
+        modal.classList.remove('show');
+        setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    window.showHowToPlay = () => {
+        showMatrixModal(
+            "Nasıl Oynanır?", 
+            "1. Süre dolmadan bakiyenizi girip <b>MC KULLAN</b> butonuna basın.\n2. Oyun başladığında roket yükselir ve çarpan artar.\n3. Roket patlamadan (Crash) önce <b>ÇEK</b> butonuna basarak kazancınızı alın.\n\n<span style='color:#ff3b30; font-size:11px;'>Dikkat: Bahisler onaylandıktan sonra iptal edilemez.</span>", 
+            "info"
+        );
+    };
+
+    // PROFESYONEL SES MOTORU (Web Audio API - Sıfır Gecikme)
     let audioCtx = null;
     const sounds = {};
     const sfxUrls = {
-        tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3', // Geri sayım
-        launch: 'https://freesound.org/data/previews/146/146725_2437358-lq.mp3', // Uçuş başlangıcı
-        win: 'https://freesound.org/data/previews/270/270319_5123851-lq.mp3', // Para Çekme
-        crash: 'https://freesound.org/data/previews/170/170144_2437358-lq.mp3' // Patlama
+        tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3',       // Geri sayım tiktak
+        launch: 'https://freesound.org/data/previews/146/146725_2437358-lq.mp3',     // Uçuş başladı (Wooosh)
+        win: 'https://freesound.org/data/previews/270/270319_5123851-lq.mp3',        // Para Çekme (Şıngırtı - Kazanç)
+        crash: 'https://freesound.org/data/previews/170/170144_2437358-lq.mp3',      // Patlama (Güm)
+        bet: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3'         // Bahis yapma (Çip sesi)
     };
 
     async function loadAudio() {
@@ -265,7 +328,7 @@
                 const buf = await res.arrayBuffer();
                 sounds[key] = await audioCtx.decodeAudioData(buf);
             }
-        } catch(e) {}
+        } catch(e) { console.warn("Sesler yüklenemedi."); }
     }
 
     function playSfx(name) {
@@ -275,7 +338,7 @@
         src.buffer = sounds[name];
         
         const gainNode = audioCtx.createGain();
-        gainNode.gain.value = name === 'tick' ? 0.3 : 0.6; // Tick sesini kıs
+        gainNode.gain.value = (name === 'tick' || name === 'bet') ? 0.4 : 0.8; 
         
         src.connect(gainNode);
         gainNode.connect(audioCtx.destination);
@@ -295,7 +358,7 @@
     }, 100);
 
     document.getElementById('btnEnterGame').addEventListener('click', () => {
-        loadAudio(); // Ses motorunu kullanıcı etkileşimi ile başlat (Tarayıcı politikası)
+        loadAudio(); // Ses motoru kullanıcı etkileşimi ile başlar (Kural)
         document.getElementById('studioIntro').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('studioIntro').style.display = 'none';
@@ -314,6 +377,7 @@
     let currentMult = 1.00;
     let isProc1 = false; let isProc2 = false;
     let lastTick = -1;
+    let autoFiredStartTime = 0; // OTO BAHİS KONTROLÜ
 
     async function api(endpoint, method='GET', body=null) {
         if(!auth.currentUser) return null;
@@ -322,15 +386,15 @@
         if(body) opt.body = JSON.stringify(body);
         const res = await fetch(API_URL+endpoint, opt);
         const data = await res.json();
-        if(!data.ok) throw new Error(data.error || "Hata");
+        if(!data.ok) throw new Error(data.error || "Sunucuyla bağlantı kurulamadı.");
         return data;
     }
 
     function initGame() {
         gameStarted = true;
-        api('/api/me').then(d => { if(d) elBal.innerText = d.balance.toLocaleString('tr-TR'); }).catch(()=>{});
+        api('/api/me').then(d => { if(d) elBal.innerText = Math.floor(d.balance).toLocaleString('tr-TR'); }).catch(()=>{});
         sync();
-        setInterval(sync, 500); // Polling (Güvenli Sunucu Mimarisi gereği korunmuştur)
+        setInterval(sync, 500); 
     }
 
     async function sync() {
@@ -344,14 +408,24 @@
             myBets = d.state.myBets || {};
             sCrashPoint = d.state.crashPoint || 1.00;
 
-            // GEÇMİŞİ ÇİZ (Profesyonel Renkler)
+            // GEÇMİŞİ ÇİZ (Gerçek Crash Renkleri)
             elHist.innerHTML = "";
             d.state.history.forEach(v => {
                 let c = v < 2 ? 'hist-red' : (v < 10 ? 'hist-green' : 'hist-gold');
                 elHist.innerHTML += `<div class="hist-pill ${c}">${v.toFixed(2)}x</div>`;
             });
 
-            // FAZ GEÇİŞ TETİKLEYİCİLERİ
+            // OTOMATİK BAHİS TETİKLEYİCİ
+            if (sPhase === 'COUNTDOWN' && sStartTime !== autoFiredStartTime) {
+                autoFiredStartTime = sStartTime; // Yeni tur başladı
+                const auto1 = document.getElementById('autoSwitch1').checked;
+                const auto2 = document.getElementById('autoSwitch2').checked;
+                
+                if(auto1 && !myBets.box1 && !isProc1) action(1, true);
+                if(auto2 && !myBets.box2 && !isProc2) action(2, true);
+            }
+
+            // FAZ GEÇİŞ TETİKLEYİCİLERİ VE SESLER
             if (sPhase !== lastPhase) {
                 updateBtns();
                 if(sPhase === 'FLYING') playSfx('launch');
@@ -361,7 +435,7 @@
         } catch(e) {}
     }
 
-    // PROFESYONEL CANVAS ÇİZİM MOTORU
+    // PROFESYONEL CANVAS ÇİZİM MOTORU (Gelişmiş Roket ve Grid)
     const cvs = document.getElementById('crashCanvas');
     const ctx = cvs.getContext('2d');
     let W, H;
@@ -372,30 +446,30 @@
     window.addEventListener('resize', resize); resize();
 
     function createExplosion() {
-        for(let i=0; i<30; i++) {
+        for(let i=0; i<40; i++) {
             particles.push({
                 x: endX, y: endY,
-                vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
-                life: 1, size: Math.random()*4 + 2, 
-                c: Math.random() > 0.5 ? '#ff3b30' : '#ffaa00'
+                vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
+                life: 1, size: Math.random()*5 + 2, 
+                c: Math.random() > 0.5 ? '#ff3b30' : '#f59e0b'
             });
         }
     }
 
-    // Roket/İmleç Çizimi
+    // Profesyonel Roket (Uzay Mekiği) ve Lazer İmleci
     function drawRocket(x, y, angle) {
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(angle);
         
-        // Ateş
+        // Roket Ateşi Animasyonu
         ctx.fillStyle = '#f59e0b';
-        ctx.beginPath(); ctx.moveTo(-10, -5); ctx.lineTo(-25 - Math.random()*10, 0); ctx.lineTo(-10, 5); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-12, -6); ctx.lineTo(-25 - Math.random()*15, 0); ctx.lineTo(-12, 6); ctx.fill();
 
-        // Gövde (Ok / Uzay Mekiği)
+        // Roket Gövdesi
         ctx.fillStyle = '#ffffff';
-        ctx.shadowBlur = 15; ctx.shadowColor = '#00e701';
-        ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-5, 0); ctx.lineTo(-10, -10); ctx.closePath(); ctx.fill();
+        ctx.shadowBlur = 15; ctx.shadowColor = '#00ffa3';
+        ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-10, 12); ctx.lineTo(-5, 0); ctx.lineTo(-10, -12); ctx.closePath(); ctx.fill();
         
         ctx.restore();
     }
@@ -404,12 +478,16 @@
         ctx.clearRect(0,0,W,H);
         const now = Date.now() - serverOffset;
 
-        // Kayan Grid Arka Plan (Hız hissi)
+        // Profesyonel Kayan Grid Arka Plan (Hız hissi)
         ctx.strokeStyle = 'rgba(255,255,255,0.03)';
         ctx.lineWidth = 1;
-        let speed = sPhase === 'FLYING' ? (now*0.05) % 50 : 0;
-        for(let x = -speed; x < W; x+=50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-        for(let y = (now*0.02)%50; y < H; y+=50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+        let speedX = sPhase === 'FLYING' ? (now*0.06) % 50 : 0;
+        let speedY = sPhase === 'FLYING' ? (now*0.03) % 50 : 0;
+        
+        ctx.beginPath();
+        for(let x = -speedX; x < W; x+=60) { ctx.moveTo(x,0); ctx.lineTo(x,H); }
+        for(let y = speedY; y < H; y+=60) { ctx.moveTo(0,y); ctx.lineTo(W,y); }
+        ctx.stroke();
 
         if (sPhase === 'COUNTDOWN') {
             let left = Math.max(0, (sStartTime - now) / 1000);
@@ -421,8 +499,7 @@
             elMult.className = "multiplier-val"; 
             particles = [];
             
-            // Başlangıç noktasında bekle
-            endX = W*0.1; endY = H*0.9;
+            endX = W*0.1; endY = H*0.85;
             drawRocket(endX, endY, -Math.PI/4);
 
         } else if (sPhase === 'FLYING') {
@@ -433,30 +510,30 @@
             elMult.innerText = currentMult.toFixed(2) + "x";
             elMult.className = "multiplier-val val-flying";
             
-            // Profesyonel Eğri Hesaplama (Logaritmik Görünüm)
+            // Profesyonel Eğri Hesaplama
             let visualProg = Math.min(1, elapsed / 8); 
             endX = W*0.1 + (W*0.8) * visualProg;
             let yProg = currentMult / (currentMult + 3); 
-            endY = H*0.9 - (H*0.7) * yProg;
+            endY = H*0.85 - (H*0.7) * yProg;
 
-            let prevX = W*0.1 + (W*0.8) * Math.min(1, (elapsed-0.1)/8);
+            let prevX = W*0.1 + (W*0.8) * Math.min(1, (Math.max(0, elapsed-0.1))/8);
             let prevMult = 1 + Math.pow(Math.max(0, elapsed-0.1)*0.18, 1.35);
-            let prevY = H*0.9 - (H*0.7) * (prevMult/(prevMult+3));
+            let prevY = H*0.85 - (H*0.7) * (prevMult/(prevMult+3));
             let angle = Math.atan2(endY - prevY, endX - prevX);
 
-            // Çizgi Çizimi
+            // Göz Alıcı Neon Çizgi
             ctx.beginPath();
-            ctx.moveTo(W*0.1, H*0.9);
+            ctx.moveTo(W*0.1, H*0.85);
             ctx.quadraticCurveTo(W*0.5, endY+50, endX, endY);
-            ctx.strokeStyle = '#00e701';
-            ctx.lineWidth = 4;
-            ctx.shadowBlur = 10; ctx.shadowColor = '#00e701';
+            ctx.strokeStyle = '#00ffa3';
+            ctx.lineWidth = 5;
+            ctx.shadowBlur = 15; ctx.shadowColor = '#00ffa3';
             ctx.stroke();
-            ctx.shadowBlur = 0; // reset
+            ctx.shadowBlur = 0; 
 
             drawRocket(endX, endY, angle);
 
-            // Dinamik Çekim Butonu Güncellemesi
+            // Dinamik Çekim Butonu Güncellemesi (Kasma Yapmaz)
             if(myBets.box1 && !myBets.box1.cashed && !isProc1) { btn1.innerHTML = `ÇEK<br><span>${Math.floor(myBets.box1.bet * currentMult)} MC</span>`; }
             if(myBets.box2 && !myBets.box2.cashed && !isProc2) { btn2.innerHTML = `ÇEK<br><span>${Math.floor(myBets.box2.bet * currentMult)} MC</span>`; }
 
@@ -467,11 +544,11 @@
 
             // Çizgiyi Kırmızı Yap
             ctx.beginPath();
-            ctx.moveTo(W*0.1, H*0.9);
+            ctx.moveTo(W*0.1, H*0.85);
             ctx.quadraticCurveTo(W*0.5, endY+50, endX, endY);
-            ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 4; ctx.stroke();
+            ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 5; ctx.stroke();
 
-            // Parçacık Animasyonu (Patlama)
+            // Parçacık Animasyonu (Patlama Dağılımı)
             particles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy; p.life -= 0.02;
                 if(p.life <= 0) { particles.splice(i, 1); return; }
@@ -497,8 +574,7 @@
 
             if(sPhase === 'COUNTDOWN') {
                 if(bData) {
-                    // Bahis yapıldıysa İPTAL (Fakat backend desteklemediği için görsel olarak kilitli)
-                    btn.className = "action-btn btn-cancel btn-disabled";
+                    btn.className = "action-btn btn-cancel btn-disabled"; // Backend iptal desteklemiyor, güvenlik için kilitli.
                     btn.innerHTML = `İPTAL<br><span>(ONAYLANDI)</span>`;
                 } else {
                     btn.className = "action-btn btn-bet";
@@ -508,10 +584,8 @@
             else if(sPhase === 'FLYING') {
                 if(bData && !bData.cashed) {
                     btn.className = "action-btn btn-cashout"; 
-                    // InnerHTML render döngüsünde anlık güncelleniyor.
                 } else if(bData && bData.cashed) {
-                    btn.className = "action-btn btn-disabled";
-                    btn.style.background = "#00e701"; btn.style.color = "#000";
+                    btn.className = "action-btn btn-success btn-disabled";
                     btn.innerHTML = `KAZANILDI<br><span>${bData.win} MC</span>`;
                 } else {
                     btn.className = "action-btn btn-disabled";
@@ -520,8 +594,7 @@
             } 
             else if(sPhase === 'CRASHED') {
                 if(bData && bData.cashed) {
-                    btn.className = "action-btn btn-disabled";
-                    btn.style.background = "#00e701"; btn.style.color = "#000";
+                    btn.className = "action-btn btn-success btn-disabled";
                     btn.innerHTML = `KAZANILDI<br><span>${bData.win} MC</span>`;
                 } else if(bData && !bData.cashed) {
                     btn.className = "action-btn btn-cancel btn-disabled";
@@ -535,34 +608,34 @@
         u(1); u(2);
     }
 
-    async function action(box) {
+    // İŞLEM FONKSİYONU (Sıfır Gecikme, Tam Senkronizasyon)
+    async function action(box, isAuto = false) {
         if(box===1 && isProc1) return;
         if(box===2 && isProc2) return;
 
         if (sPhase === 'COUNTDOWN') {
-            // Bahis Yapma
             const amt = Math.floor((box===1 ? inp1 : inp2).value);
-            if(amt < 10) return openAlertModal("Minimum bahis 10 MC olmalıdır.");
-            if(myBets[`box${box}`]) return openAlertModal("Bahisler sunucuya iletildikten sonra iptal edilemez.");
+            if(amt < 10) { if(!isAuto) showMatrixModal("Reddedildi", "Minimum bahis 10 MC olmalıdır.", "error"); return; }
+            if(myBets[`box${box}`]) { if(!isAuto) showMatrixModal("Bilgi", "Bahisler sunucuya iletildikten sonra iptal edilemez.", "info"); return; }
             
             box===1 ? isProc1=true : isProc2=true; updateBtns();
             try {
                 const res = await api('/api/crash/bet', 'POST', { box, amount: amt });
                 myBets = res.myBets;
-                api('/api/me').then(d=>{if(d) elBal.innerText=d.balance.toLocaleString('tr-TR');});
-            } catch(e) { openAlertModal(e.message); }
+                playSfx('bet'); // Bahis Sesi
+                api('/api/me').then(d=>{if(d) elBal.innerText=Math.floor(d.balance).toLocaleString('tr-TR');});
+            } catch(e) { if(!isAuto) showMatrixModal("Bahis Hatası", e.message, "error"); }
             box===1 ? isProc1=false : isProc2=false; updateBtns();
         } 
         else if (sPhase === 'FLYING') {
-            // Çekim Yapma
             if(!myBets[`box${box}`] || myBets[`box${box}`].cashed) return;
             box===1 ? isProc1=true : isProc2=true; updateBtns();
             try {
                 const res = await api('/api/crash/cashout', 'POST', { box });
                 myBets = res.myBets;
-                playSfx('win');
-                api('/api/me').then(d=>{if(d) elBal.innerText=d.balance.toLocaleString('tr-TR');});
-            } catch(e) { openAlertModal(e.message); }
+                playSfx('win'); // Kazanç Sesi
+                api('/api/me').then(d=>{if(d) elBal.innerText=Math.floor(d.balance).toLocaleString('tr-TR');});
+            } catch(e) { showMatrixModal("Çekim Hatası", e.message, "error"); }
             box===1 ? isProc1=false : isProc2=false; updateBtns();
         }
     }
@@ -570,6 +643,7 @@
     btn1.onclick = () => action(1);
     btn2.onclick = () => action(2);
 
+    onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
 </script>
 </body>
 </html>
