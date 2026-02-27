@@ -19,13 +19,11 @@
     <meta name="twitter:title" content="PlayMatrix Crash Oyunu">
     <meta name="twitter:description" content="Güvenli, adil ve anlık çarpan oyunu. Hemen oyna!">
 
-    <title>PlayMatrix - Crash</title>
+    <title>PlayMatrix Crash | %100 Güvenli Sunucu Tabanlı</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <script>
-        if (window.history.replaceState) {
-            window.history.replaceState(null, null, "/");
-        }
+        if (window.history.replaceState) { window.history.replaceState(null, null, "/"); }
     </script>
 
     <style>
@@ -56,6 +54,10 @@
         .x-value { font-family: 'Orbitron', sans-serif; font-size: 85px; font-weight: 900; color: #fff; text-shadow: 0 0 25px rgba(79, 209, 255, 0.7); transition: transform 0.1s; }
         .status-text { font-family: 'Orbitron'; font-size: 14px; color: #4fd1ff; letter-spacing: 4px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px #000; }
         .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 20px #ff2a4d; animation: shake 0.4s infinite; }
+
+        /* YENİ: İBRE / HIZ GÖSTERGESİ */
+        .speedometer { position: absolute; right: 20px; top: 130px; width: 20px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.2); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; }
+        .speed-fill { width: 100%; height: 0%; background: linear-gradient(to top, #00ffa3, #4fd1ff, #ff4b4b); transition: height 0.1s ease-out; box-shadow: 0 0 10px rgba(79, 209, 255, 0.5); }
         
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
 
@@ -84,40 +86,29 @@
         .main-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
         .main-btn:disabled { opacity: 0.6; filter: grayscale(0.8); cursor: not-allowed; transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.3) !important; }
 
-        @media (max-width: 400px) { .x-value { font-size: 60px; } .bottom-panel { height: 220px; padding: 10px; } .bet-card { padding: 10px; gap: 8px;} .bet-card input { padding: 10px; font-size: 16px; } }
+        @media (max-width: 400px) { .x-value { font-size: 60px; } .bottom-panel { height: 220px; padding: 10px; } .bet-card { padding: 10px; gap: 8px;} .bet-card input { padding: 10px; font-size: 16px; } .speedometer { display: none; } }
 
-        /* ANİMASYONLU AÇILIŞ BİLGİLENDİRME MODALI */
+        /* AÇIKLAYICI NASIL OYNANIR EKRANI */
         .start-overlay { position: fixed; inset: 0; background: rgba(2,4,10,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.5s; }
         
         .animated-border-box {
-            position: relative;
-            width: 90%; max-width: 380px;
-            border-radius: 16px;
-            padding: 4px;
+            position: relative; width: 90%; max-width: 380px; border-radius: 16px; padding: 4px;
             background: linear-gradient(45deg, #4fd1ff, #00ffa3, #4fd1ff, #6366f1);
-            background-size: 300% 300%;
-            animation: gradientBorder 3s ease infinite;
-            box-shadow: 0 0 40px rgba(79, 209, 255, 0.5);
-            transform: scale(0.9);
+            background-size: 300% 300%; animation: gradientBorder 3s ease infinite;
+            box-shadow: 0 0 40px rgba(79, 209, 255, 0.5); transform: scale(0.9);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, gradientBorder 3s ease infinite;
         }
 
         @keyframes popIn { to { transform: scale(1); } }
         @keyframes gradientBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        .start-modal { 
-            background: linear-gradient(to bottom, #0a0f1a, #000); 
-            border-radius: 12px; 
-            padding: 25px; 
-            text-align: center; 
-            width: 100%; height: 100%;
-        }
-
+        .start-modal { background: linear-gradient(to bottom, #0a0f1a, #000); border-radius: 12px; padding: 25px; text-align: center; width: 100%; height: 100%; }
         .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); }
         
         .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #1f2937; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; }
         .info-list b { color: #4fd1ff; }
         .info-list .highlight { color: #00ffa3; font-weight: bold; }
+        .info-list .highlight-red { color: #ff4b4b; font-weight: bold; }
 
         .btn-start-game { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(to bottom, #00ffa3, #00b894); font-weight: 900; color: #000; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,255,163,0.3); text-transform: uppercase; font-family: 'Orbitron'; transition: 0.2s; }
         .btn-start-game:active { transform: translateY(3px); box-shadow: none; }
@@ -131,10 +122,10 @@
             <h2 class="modal-title">Nasıl Oynanır?</h2>
             <div class="info-list">
                 <b>1. Bahis Yap:</b> Süre dolmadan bahis miktarını gir ve <span class="highlight">MC KULLAN</span> butonuna bas.<br>
-                <b>2. Yükselişi İzle:</b> Grafik havalandıkça çarpanınız hızla artar.<br>
-                <b>3. Zamanında Çek:</b> Sistem patlamadan (Crash) önce <span class="highlight">ÇEK</span> butonuna basarak kazancını al!<br>
+                <b>2. Yükselişi İzle:</b> Çarpan uçuşa geçtiğinde (1.00x'ten itibaren) saniyeler içinde katlanır.<br>
+                <b>3. Zamanında Çek:</b> Sistem aniden patlamadan (<span class="highlight-red">CRASH</span>) önce <span class="highlight">ÇEK</span> butonuna basarak kazancını al!<br>
                 <div style="margin-top: 15px; text-align: center; color: #94a3b8; font-size: 11px;">
-                    <i>Oyun deneyimi ve ses efektleri için sesinizi açınız.</i>
+                    <i>Oyun deneyimi ve ses efektleri için cihazınızın sesini açınız.</i>
                 </div>
             </div>
             <button id="systemStartBtn" class="btn-start-game">SİSTEMİ BAŞLAT</button>
@@ -155,6 +146,8 @@
 <main>
     <div class="history" id="history"></div>
     <div class="game-container">
+        <div class="speedometer"><div class="speed-fill" id="speedFill"></div></div>
+        
         <canvas id="gameCanvas"></canvas>
         <div class="multiplier-display">
             <div class="status-text" id="statusText">SUNUCU BEKLENİYOR</div>
@@ -200,14 +193,15 @@
     const elBtn2 = document.getElementById('btn2');
     const elInput1 = document.getElementById('betInput1');
     const elInput2 = document.getElementById('betInput2');
+    const elSpeed = document.getElementById('speedFill');
 
-    // GERÇEKÇİ SES MOTORU YÜKLEMESİ
+    // GERÇEKÇİ SES MOTORU YÜKLEMESİ (SES KARIŞIKLIĞI ÇÖZÜLDÜ)
     let audioCtx = null;
     const sounds = {};
     const urls = {
-        bet: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Çip sesi
+        bet: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Çip Sesi
         tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', // Geri sayım
-        fly: 'https://assets.mixkit.co/active_storage/sfx/1444/1444-preview.mp3', // Uçuş (Liftoff)
+        fly: 'https://assets.mixkit.co/active_storage/sfx/1444/1444-preview.mp3', // Uçuş Motor
         crash: 'https://assets.mixkit.co/active_storage/sfx/170/170-preview.mp3', // Gerçek Patlama
         win: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3'  // Casino Kazanç
     };
@@ -219,11 +213,7 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
             
             for (const [name, url] of Object.entries(urls)) {
-                fetch(url)
-                    .then(res => res.arrayBuffer())
-                    .then(buf => audioCtx.decodeAudioData(buf))
-                    .then(decoded => sounds[name] = decoded)
-                    .catch(e => console.error("Ses yüklenemedi:", name));
+                fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf)).then(decoded => sounds[name] = decoded).catch(e=>{});
             }
         } catch (e) {}
     }
@@ -293,10 +283,10 @@
 
             renderHistory(st.history);
             
-            // Faz değişimi (Sıfır Gecikme Algılayıcı)
+            // Faz değişimi (Sıfır Gecikme ve Ses Tetikleyicisi)
             if (sPhase !== lastPhase) {
                 updateControls();
-                if(sPhase === 'FLYING') playSfx('fly'); // Uçuş sesi
+                if(sPhase === 'FLYING') playSfx('fly'); 
                 lastPhase = sPhase;
             }
 
@@ -332,11 +322,11 @@
     window.addEventListener('resize', resize); resize();
 
     function createExplosion(x, y) {
-        for(let i=0; i<40; i++) {
+        for(let i=0; i<50; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
-                life: 1, size: Math.random()*5 + 2, 
+                vx: (Math.random()-0.5)*18, vy: (Math.random()-0.5)*18,
+                life: 1, size: Math.random()*4 + 2, 
                 color: Math.random() > 0.5 ? '#ff2a4d' : '#ff9800'
             });
         }
@@ -347,8 +337,8 @@
         // Arka Plan Temizle
         ctx.fillStyle = "#02040a"; ctx.fillRect(0,0,width,height);
         
-        // Hareketli Grid (Profesyonel Derinlik)
-        ctx.strokeStyle = "rgba(79, 209, 255, 0.05)";
+        // Hareketli Grid (Matrix Tarzı Profesyonel Derinlik)
+        ctx.strokeStyle = "rgba(79, 209, 255, 0.04)";
         ctx.lineWidth = 1;
         gridOffset += (sPhase === 'FLYING' ? currentMultiplierDisplay * 1.5 : 0.5);
         if(gridOffset > 50) gridOffset = 0;
@@ -371,6 +361,7 @@
             
             lineProgress = 0; currentMultiplierDisplay = 1.00; particles = [];
             lastPointX = 0; lastPointY = height;
+            elSpeed.style.height = "0%"; // İbre Sıfırla
         } 
         else if (sPhase === 'FLYING') {
             const elapsed = Math.max(0, now - sStartTime) / 1000;
@@ -379,6 +370,11 @@
             if (elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.remove('crashed-text');
             if (elStatusText.innerText !== "YÜKSELİYOR") elStatusText.innerText = "YÜKSELİYOR";
             
+            // İbre Güncellemesi (Maksimum 10x'te dolar)
+            let speedPercent = (currentMultiplierDisplay / 10) * 100;
+            if(speedPercent > 100) speedPercent = 100;
+            elSpeed.style.height = `${speedPercent}%`;
+
             // Profesyonel Çizgi Animasyonu
             if(lineProgress < 1) lineProgress += 0.005;
             
@@ -388,10 +384,10 @@
             
             lastPointX = endX; lastPointY = endY;
 
-            // Degrade Dolgu (Gölge Etkisi)
+            // Degrade Dolgu (Neon Gölge Etkisi)
             const grad = ctx.createLinearGradient(0, height, 0, endY);
             grad.addColorStop(0, "rgba(79, 209, 255, 0)");
-            grad.addColorStop(1, "rgba(79, 209, 255, 0.3)");
+            grad.addColorStop(1, "rgba(79, 209, 255, 0.4)");
             
             ctx.beginPath();
             ctx.moveTo(0, height);
@@ -413,12 +409,8 @@
             ctx.restore();
             
             // DOM GÜNCELLEMESİ (Performanslı)
-            if (myBets.box1 && !myBets.box1.cashed && !processing1) {
-                elBtn1.innerText = `ÇEK MC ${Math.floor(myBets.box1.bet * currentMultiplierDisplay)}`;
-            }
-            if (myBets.box2 && !myBets.box2.cashed && !processing2) {
-                elBtn2.innerText = `ÇEK MC ${Math.floor(myBets.box2.bet * currentMultiplierDisplay)}`;
-            }
+            if (myBets.box1 && !myBets.box1.cashed && !processing1) { elBtn1.innerText = `ÇEK MC ${Math.floor(myBets.box1.bet * currentMultiplierDisplay)}`; }
+            if (myBets.box2 && !myBets.box2.cashed && !processing2) { elBtn2.innerText = `ÇEK MC ${Math.floor(myBets.box2.bet * currentMultiplierDisplay)}`; }
         } 
         else if (sPhase === 'CRASHED') {
             if(lastSec !== -2) { 
@@ -430,7 +422,7 @@
             if (!elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.add('crashed-text');
             if (elStatusText.innerText !== "PATLADI") elStatusText.innerText = "PATLADI";
 
-            // Partikül Çizimi
+            // Partikül Çizimi (Kıvılcımlar)
             particles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy; p.life -= 0.02;
                 if(p.life <= 0) { particles.splice(i, 1); return; }
