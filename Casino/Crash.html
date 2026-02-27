@@ -217,400 +217,129 @@
 </main>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-        authDomain:"emirhan-site.firebaseapp.com",
-        projectId:"emirhan-site",
-        storageBucket:"emirhan-site.firebasestorage.app",
-        messagingSenderId:"668871888390",
-        appId:"1:668871888390:web:76568bda84cb1641f7bd87"
-    };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+  authDomain:"emirhan-site.firebaseapp.com",
+  projectId:"emirhan-site",
+  storageBucket:"emirhan-site.firebasestorage.app",
+  messagingSenderId:"668871888390",
+  appId:"1:668871888390:web:76568bda84cb1641f7bd87"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let user=null;
 
-    // --- PROFESYONEL SES SİSTEMİ (Autoplay Policy Kırıcı) ---
-    let audioCtx = null;
-    let authReady = false;
-    let gameStarted = false;
+const balanceEl=document.getElementById("balance");
+const multEl=document.getElementById("multiplier");
+const statusEl=document.getElementById("statusText");
 
-    function initAudio() {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if(!audioCtx) {
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            
-            // Tarayıcıyı (Özellikle iOS) ses çalmaya zorlamak için sessiz frekans
-            const buffer = audioCtx.createBuffer(1, 1, 22050);
-            const source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioCtx.destination);
-            source.start(0);
-        } catch (e) {
-            console.error("Ses sistemi başlatılamadı:", e);
-        }
-    }
+const bet1Input=document.getElementById("betInput1");
+const bet2Input=document.getElementById("betInput2");
+const bet1Btn=document.getElementById("betBtn1");
+const bet2Btn=document.getElementById("betBtn2");
+const cash1Btn=document.getElementById("cashoutBtn1");
+const cash2Btn=document.getElementById("cashoutBtn2");
 
-    // OYUNU BAŞLAT BUTONU
-    document.getElementById('systemStartBtn').addEventListener('click', () => {
-        initAudio(); // Ses kilidini kır
-        document.getElementById('start-overlay').style.display = 'none'; 
-        gameStarted = true; // Oyun motoruna izin ver
-        
-        if(authReady && phase === "WAITING") {
-            startNewRound();
-        }
-    });
+const profit1=document.getElementById("profit1");
+const profit2=document.getElementById("profit2");
 
-    function playSfx(type) {
-        if(!audioCtx) return;
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        if(audioCtx.state !== 'running') return; 
+let st=null;
+let poll=null;
+let busy=false;
 
-        const now = audioCtx.currentTime;
-        
-        if(type==='countdown') {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.type = 'triangle';
-            o.frequency.setValueAtTime(500, now); 
-            g.gain.setValueAtTime(0.3, now); 
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.1); 
-            o.start(now); o.stop(now + 0.1);
-        }
-        if(type==='crash') { 
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.type = 'sawtooth'; 
-            o.frequency.setValueAtTime(300, now); 
-            o.frequency.exponentialRampToValueAtTime(50, now + 0.5);
-            g.gain.setValueAtTime(0.5, now); 
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-            o.start(now); o.stop(now + 0.5);
-        }
-        if(type==='cash') {
-            [0, 0.1].forEach((d, i) => {
-                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-                o.connect(g); g.connect(audioCtx.destination);
-                o.type = 'square'; 
-                o.frequency.setValueAtTime(800 + (i * 400), now + d);
-                g.gain.setValueAtTime(0.2, now + d); 
-                g.gain.exponentialRampToValueAtTime(0.01, now + d + 0.2);
-                o.start(now + d); o.stop(now + d + 0.2);
-            });
-        }
-        if(type==='bet') { 
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.connect(g); g.connect(audioCtx.destination);
-            o.type = 'sine'; 
-            o.frequency.setValueAtTime(600, now);
-            o.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-            g.gain.setValueAtTime(0.3, now); 
-            g.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-            o.start(now); o.stop(now + 0.15);
-        }
-    }
+function fmt(n){ return Number(n||0).toLocaleString('tr-TR'); }
+async function token(){ return await user.getIdToken(); }
+async function api(path, body){
+  const t = await token();
+  const r = await fetch(path,{method:"POST",headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify(body||{})});
+  return await r.json();
+}
+async function apiGet(path){
+  const t = await token();
+  const r = await fetch(path,{headers:{'Authorization':'Bearer '+t}});
+  return await r.json();
+}
 
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let width, height, stars = [];
-    
-    // OYUN DURUM DEĞİŞKENLERİ
-    let multiplier = 1.00;
-    let phase = "WAITING"; 
-    let balance = 0;
-    let userRef = null;
-    let activeBet1 = 0, activeBet2 = 0;
-    let auto1 = false, auto2 = false;
-    let lineProgress = 0; 
-    let countdownTimer = null;
-    let flightFrameId = null; 
-    
-    // GÜVENLİK KİLİTLERİ (Race Condition Önlemi)
-    let isProcessing1 = false;
-    let isProcessing2 = false;
+function setBusy(b){
+  busy=b;
+  [bet1Btn,bet2Btn,cash1Btn,cash2Btn].forEach(x=>x && (x.disabled=b));
+}
 
-    function initStars() {
-        stars = []; for(let i=0; i<100; i++) stars.push({x: Math.random()*width, y: Math.random()*height, s: Math.random()*2});
-    }
-    function resize() { width=canvas.width=canvas.offsetWidth; height=canvas.height=canvas.offsetHeight; initStars(); }
-    window.addEventListener('resize', resize); resize();
+function applyState(s){
+  if(!s) return;
+  if(s.ok===false){ statusEl.innerText=s.error||"Hata"; return; }
+  st=s;
+  balanceEl.innerText = fmt(s.balance||0);
+  multEl.innerText = (Number(s.multiplier||1)).toFixed(2)+"x";
+  statusEl.innerText = s.statusText || "";
 
-    function draw() {
-        ctx.fillStyle = "#02050e"; ctx.fillRect(0,0,width,height);
-        ctx.fillStyle = "white";
-        
-        stars.forEach(s => {
-            s.y += (phase === "FLYING" ? multiplier * 0.4 : 0.2);
-            if(s.y > height) s.y = 0;
-            ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
-        });
+  // slot 1
+  const b1 = s.bets?.[0] || { state:"idle" };
+  profit1.innerText = fmt(b1.payout||0);
+  bet1Btn.style.display = (b1.state==="idle" && s.roundState!=="crashed") ? "block" : "none";
+  cash1Btn.style.display = (b1.state==="active" && s.roundState==="running") ? "block" : "none";
+  bet1Input.disabled = b1.state!=="idle" || s.roundState==="running";
 
-        // DİNAMİK ÇİZGİ ÇİZİMİ
-        if(phase === "FLYING") {
-            ctx.save();
-            ctx.shadowBlur = 15; ctx.shadowColor = "#4fd1ff";
-            ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 4; ctx.lineCap = "round";
-            
-            const startX = 0, startY = height;
-            const cpX = width * 0.5;
-            const cpY = height * (1 - (multiplier / 10)); 
-            const endX = width * (0.85 + (lineProgress * 0.15));
-            const endY = height * (0.8 - (lineProgress * 0.6));
-            
-            ctx.setLineDash([width * 2]); 
-            ctx.lineDashOffset = (width * 2) * (1 - lineProgress);
-            
-            ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.quadraticCurveTo(cpX, Math.max(0, cpY), endX, Math.max(0, endY));
-            ctx.stroke();
-            ctx.restore();
-        }
-        requestAnimationFrame(draw);
-    }
-    draw();
+  // slot 2
+  const b2 = s.bets?.[1] || { state:"idle" };
+  profit2.innerText = fmt(b2.payout||0);
+  bet2Btn.style.display = (b2.state==="idle" && s.roundState!=="crashed") ? "block" : "none";
+  cash2Btn.style.display = (b2.state==="active" && s.roundState==="running") ? "block" : "none";
+  bet2Input.disabled = b2.state!=="idle" || s.roundState==="running";
+}
 
-    // --- KASA HER ZAMAN KAZANIR ALGORİTMASI ---
-    function generateCrashPoint() {
-        const totalActiveBet = activeBet1 + activeBet2;
+bet1Btn.onclick = async ()=>{
+  if(busy) return;
+  const bet = parseInt(bet1Input.value,10);
+  setBusy(true);
+  const r = await api("/api/crash/bet",{ slot:1, bet });
+  setBusy(false);
+  applyState(r);
+};
+bet2Btn.onclick = async ()=>{
+  if(busy) return;
+  const bet = parseInt(bet2Input.value,10);
+  setBusy(true);
+  const r = await api("/api/crash/bet",{ slot:2, bet });
+  setBusy(false);
+  applyState(r);
+};
+cash1Btn.onclick = async ()=>{
+  if(busy) return;
+  setBusy(true);
+  const r = await api("/api/crash/cashout",{ slot:1 });
+  setBusy(false);
+  applyState(r);
+};
+cash2Btn.onclick = async ()=>{
+  if(busy) return;
+  setBusy(true);
+  const r = await api("/api/crash/cashout",{ slot:2 });
+  setBusy(false);
+  applyState(r);
+};
 
-        if (totalActiveBet > 0) {
-            let chance = Math.random();
-            if (chance < 0.45) {
-                return 1.00 + (Math.random() * 0.15); // %45 Çok Erken Patlama
-            } else if (chance < 0.85) {
-                return 1.15 + (Math.random() * 0.35); // %40 Ortalama Patlama
-            } else {
-                const e = 100;
-                const h = Math.random() * e;
-                return Math.max(1.50, Math.floor(100 * e / (e - h)) / 100); // %15 Şanslı
-            }
-        } else {
-            const e = 100;
-            const h = Math.random() * e;
-            let point = Math.max(1.00, Math.floor(100 * e / (e - h)) / 100);
-            if (Math.random() < 0.60) {
-                point += (Math.random() * 12 + 3); // %60 Yemleme Çarpanı
-            }
-            return point;
-        }
-    }
+async function tick(){
+  try{
+    const s = await apiGet("/api/crash/state");
+    if(s?.ok) applyState(s);
+  }catch{}
+}
 
-    onAuthStateChanged(auth, user => {
-        authReady = true; 
-        if(user) {
-            userRef = doc(db, "users", user.uid);
-            onSnapshot(userRef, snap => {
-                if(snap.exists()) {
-                    balance = snap.data().balance || 0;
-                    document.getElementById('balance').innerText = balance.toLocaleString('tr-TR');
-                    // Kullanıcı başlata tıkladıysa ve oyun bekliyorsa
-                    if(gameStarted && phase === "WAITING") startNewRound();
-                }
-            });
-        } else {
-            signInAnonymously(auth);
-            setTimeout(() => { if(gameStarted && phase === "WAITING") startNewRound(); }, 3000);
-        }
-    });
+onAuthStateChanged(auth, async (u)=>{
+  if(!u){ await signInAnonymously(auth); return; }
+  user=u;
+  const me = await apiGet("/api/me");
+  if(me?.ok) balanceEl.innerText = fmt(me.balance||0);
+  await tick();
+  if(poll) clearInterval(poll);
+  poll = setInterval(tick, 350);
+});
 
-    function startNewRound() {
-        if(phase === "COUNTDOWN" || phase === "FLYING") return;
-        
-        phase = "COUNTDOWN"; 
-        multiplier = 1.00; 
-        lineProgress = 0;
-        
-        document.getElementById('multiplier').classList.remove('crashed-text');
-        document.getElementById('statusText').innerText = "BEKLENİYOR";
-        document.getElementById('betInput1').disabled = false;
-        document.getElementById('betInput2').disabled = false;
-        
-        if (countdownTimer) clearInterval(countdownTimer);
-        
-        updateUI();
-
-        if(auto1 && activeBet1 === 0) handleBet(1, true); 
-        if(auto2 && activeBet2 === 0) handleBet(2, true);
-
-        let count = 5;
-        countdownTimer = setInterval(() => {
-            document.getElementById('multiplier').innerText = count + "s";
-            playSfx('countdown');
-            if(count <= 0) { 
-                clearInterval(countdownTimer); 
-                launch(); 
-            }
-            count--;
-        }, 1000);
-    }
-
-    function launch() {
-        phase = "FLYING"; 
-        document.getElementById('statusText').innerText = "UÇUŞTA";
-        
-        document.getElementById('betInput1').disabled = true;
-        document.getElementById('betInput2').disabled = true;
-
-        let startTime = Date.now();
-        let crashPoint = generateCrashPoint();
-        
-        if (flightFrameId) cancelAnimationFrame(flightFrameId);
-
-        const tick = () => {
-            if(phase !== "FLYING") return; 
-            
-            const elapsed = (Date.now() - startTime) / 1000;
-            multiplier = 1 + (Math.pow(elapsed * 0.18, 1.35));
-            if(lineProgress < 1) lineProgress += 0.002; 
-            
-            if(multiplier >= crashPoint) {
-                phase = "CRASHED";
-                playSfx('crash');
-                document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
-                document.getElementById('multiplier').classList.add('crashed-text');
-                document.getElementById('statusText').innerText = "PATLADI";
-                
-                addHistory(multiplier);
-                
-                activeBet1 = 0; 
-                activeBet2 = 0;
-                
-                updateUI();
-                setTimeout(startNewRound, 4000);
-            } else {
-                document.getElementById('multiplier').innerText = multiplier.toFixed(2) + "x";
-                updateUI();
-                flightFrameId = requestAnimationFrame(tick);
-            }
-        };
-        tick();
-    }
-
-    async function handleBet(box, isAuto = false) {
-        if (box === 1 && isProcessing1) return;
-        if (box === 2 && isProcessing2) return;
-
-        const input = document.getElementById('betInput'+box);
-        const amount = Math.floor(parseInt(input.value)) || 0;
-        
-        if (amount <= 0) return;
-
-        let currentActive = (box === 1) ? activeBet1 : activeBet2;
-
-        if(box === 1) isProcessing1 = true;
-        if(box === 2) isProcessing2 = true;
-        updateUI(); 
-
-        try {
-            if(phase === "COUNTDOWN" && currentActive === 0 && balance >= amount) {
-                if(userRef) {
-                    await updateDoc(userRef, { balance: increment(-amount) });
-                } else {
-                    balance -= amount; 
-                }
-                
-                if(box === 1) activeBet1 = amount; 
-                if(box === 2) activeBet2 = amount;
-                
-                if(!isAuto) playSfx('bet');
-            } 
-            else if (phase === "COUNTDOWN" && currentActive > 0) {
-                 if(userRef) {
-                    await updateDoc(userRef, { balance: increment(currentActive) });
-                } else {
-                    balance += currentActive; 
-                }
-                
-                if(box === 1) activeBet1 = 0; 
-                if(box === 2) activeBet2 = 0;
-            }
-            else if(phase === "FLYING" && currentActive > 0) {
-                const win = Math.floor(currentActive * multiplier);
-                
-                if(userRef) {
-                    await updateDoc(userRef, { balance: increment(win) });
-                } else {
-                    balance += win;
-                }
-                
-                if(box === 1) activeBet1 = 0; 
-                if(box === 2) activeBet2 = 0;
-                
-                playSfx('cash');
-            }
-        } catch (error) {
-            console.error("Bahis işleminde hata:", error);
-        } finally {
-            if(box === 1) isProcessing1 = false;
-            if(box === 2) isProcessing2 = false;
-            updateUI();
-        }
-    }
-
-    function updateUI() {
-        const u = (boxNum) => {
-            const b = document.getElementById('btn' + boxNum);
-            const active = (boxNum === 1) ? activeBet1 : activeBet2;
-            const isProcessing = (boxNum === 1) ? isProcessing1 : isProcessing2;
-
-            if (isProcessing) {
-                b.disabled = true;
-                b.innerText = "İşleniyor...";
-                return;
-            }
-
-            if(phase === "COUNTDOWN") {
-                b.disabled = false; 
-                b.innerText = active > 0 ? "İPTAL" : "MC KULLAN";
-                b.className = active > 0 ? "main-btn btn-cancel" : "main-btn btn-bet";
-            } 
-            else if(phase === "FLYING") {
-                if (active > 0) {
-                    b.disabled = false; 
-                    b.innerText = `ÇEK MC ${Math.floor(active * multiplier)}`;
-                    b.className = "main-btn btn-cashout";
-                } else {
-                    b.disabled = true; 
-                    b.innerText = "UÇUYOR"; 
-                    b.className = "main-btn";
-                }
-            } 
-            else { 
-                b.disabled = true; 
-                b.innerText = "BEKLE"; 
-                b.className = "main-btn"; 
-            }
-        };
-        
-        u(1); 
-        u(2);
-        document.getElementById('betTotal').innerText = (activeBet1 + activeBet2).toLocaleString('tr-TR');
-    }
-
-    function addHistory(val) {
-        const span = document.createElement('span');
-        span.innerText = val.toFixed(2) + "x";
-        span.style.color = val < 2 ? "#ff4757" : "#00b894";
-        const h = document.getElementById('history'); 
-        h.prepend(span);
-        if(h.children.length > 15) h.lastChild.remove();
-    }
-
-    document.getElementById('btn1').onclick = () => handleBet(1);
-    document.getElementById('btn2').onclick = () => handleBet(2);
-    document.getElementById('autoSwitch1').onchange = (e) => auto1 = e.target.checked;
-    document.getElementById('autoSwitch2').onchange = (e) => auto2 = e.target.checked;
 </script>
 </body>
 </html>
