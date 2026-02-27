@@ -16,25 +16,32 @@
 
 <script>
     if (window.history.replaceState) {
-        // BlackJack.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
         window.history.replaceState(null, null, "/");
     }
 </script>
     
 <style>
-    /* GENEL DÜZEN, ZOOM VE TAŞMA ENGELLEYİCİLER */
+    /* GENEL DÜZEN VE TAŞMA ENGELLEYİCİLER */
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
     html, body {
         width: 100vw; height: 100vh; overflow: hidden; 
-        overscroll-behavior: none; /* Pull-to-refresh engeller */
-        touch-action: none; /* Çift tık zoom engeller */
+        overscroll-behavior: none; touch-action: none;
         font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto, Helvetica, Arial, sans-serif;
-        /* ULTRA PROFESYONEL CASINO MASASI ARKA PLANI */
-        background: radial-gradient(ellipse at 50% -20%, rgba(212,175,55,0.15) 0%, transparent 50%),
-                    radial-gradient(circle at 50% 50%, #0c582c 0%, #053317 60%, #021a0a 100%);
+        background: radial-gradient(circle at 50% 50%, #0c582c 0%, #053317 60%, #021a0a 100%);
         color: white;
     }
     
+    /* GERÇEKÇİ OVAL MASA ÇİZGİSİ */
+    .table-border {
+        position: absolute;
+        top: 20px; left: -10vw; right: -10vw; bottom: 80px;
+        border: 5px solid rgba(212,175,55,0.25);
+        border-radius: 50% / 100px 100px 0 0;
+        pointer-events: none;
+        z-index: 0;
+        box-shadow: inset 0 20px 50px rgba(0,0,0,0.5);
+    }
+
     .top-bar { 
         position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
         display: flex; align-items: center; justify-content: space-between; padding: 0 10px; 
@@ -52,10 +59,29 @@
         position: absolute; top: 65px; bottom: 0; width: 100vw;
         display: flex; flex-direction: column; justify-content: space-between; 
         padding: 20px 0 20px 0; perspective: 1200px; 
-        overflow-y: auto; overflow-x: hidden; touch-action: pan-y; /* Sadece dikey kaydırma aktif */
+        overflow-y: auto; overflow-x: hidden; touch-action: pan-y;
+        z-index: 1;
     }
     
-    .area { width: 100%; text-align: center; margin-top: 10px; }
+    /* 3D KART DESTESİ (SHOE) */
+    .card-shoe-container {
+        position: absolute; top: 30px; right: 20px; z-index: 50;
+        display: flex; flex-direction: column; align-items: center;
+    }
+    .card-shoe {
+        width: 65px; height: 95px;
+        background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
+        border-radius: 5px;
+        box-shadow: 
+            -1px 1px 0 #fff, -2px 2px 0 #999, 
+            -3px 3px 0 #fff, -4px 4px 0 #999, 
+            -5px 5px 0 #fff, -6px 6px 0 #999,
+            -10px 10px 20px rgba(0,0,0,0.8);
+        transform: rotate(15deg);
+    }
+    .shoe-label { color: #d4af37; font-size: 10px; font-weight: bold; margin-top: 15px; text-shadow: 0 1px 2px #000; letter-spacing: 2px; }
+
+    .area { width: 100%; text-align: center; margin-top: 10px; position: relative; z-index: 2; }
     .dealer-title { font-size: 14px; letter-spacing: 4px; font-weight: 900; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Times New Roman', Times, serif; }
     .score-badge { background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); color: #ffd700; padding: 4px 18px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.7); }
     
@@ -63,13 +89,18 @@
     .cards-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 0; margin-left: -15px; min-height: 120px; padding: 0 10px; }
     .card-3d { 
         width: 75px; height: 110px; position: relative; margin-left: -35px; 
-        /* Kartın desteden gelme kavis ve yaylanma animasyonu ayarları */
-        transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.2, 1.1), opacity 0.5s ease-out; 
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease-out; 
     }
     .card-3d:first-child { margin-left: 0; }
     .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -6px 6px 15px rgba(0,0,0,0.8); object-fit: cover; }
 
     .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; z-index: 10; margin-top: 10px;}
+    
+    /* 10 SANİYE ZAMANLAYICI UI */
+    #ui-timer { display: none; color: #ff4b4b; font-size: 16px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 2px 5px #000; letter-spacing: 1px; }
+    #ui-timer.warning { color: #ff0000; animation: blink 1s infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
+
     #ui-message { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent); padding: 5px 30px; border-radius: 5px; letter-spacing: 1px; transition: 0.3s; }
     .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
     .btn { padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: all 0.1s; touch-action: manipulation; }
@@ -80,11 +111,11 @@
     .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 5px rgba(0,0,0,0.6); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
     
-    .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; margin-top: 20px;}
+    .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; margin-top: 20px; position: relative; z-index: 2;}
     .hand-box { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
     .hand-box.active { border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); }
     
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap;}
+    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; position: relative; z-index: 10;}
     .chip { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; cursor: pointer; border: 4px dashed #d4af37; box-shadow: 0 6px 12px rgba(0,0,0,0.6); transition: 0.2s; touch-action: manipulation; }
     .chip:active { transform: scale(0.9); }
     .c1k { background: radial-gradient(circle, #f0f0f0 30%, #a0a0a0 90%); color: #000; border-color: #666;}
@@ -118,7 +149,7 @@
         <div style="font-size: 13px; color: #ccc; margin-bottom: 20px; text-align: left; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 10px; border: 1px solid #333;">
             <b>%100 Sunucu Korumalı Sistem:</b><br><br>
             • Gerçek casino kuralları geçerlidir.<br>
-            • Animasyonlar ve ses motoru aktiftir.<br>
+            • Karar süreniz <b>10 saniyedir</b>.<br>
             • Lütfen sesi açınız.
         </div>
         <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(to bottom, #f1c40f, #d4ac0d); font-weight: 900; cursor: pointer; box-shadow: 0 5px 15px rgba(212,175,55,0.4);">MASAYA OTUR</button>
@@ -145,6 +176,13 @@
 </header>
 
 <main class="game-container">
+    <div class="table-border"></div>
+    
+    <div class="card-shoe-container">
+        <div class="card-shoe"></div>
+        <div class="shoe-label">DESTE</div>
+    </div>
+
     <div class="area">
         <div class="dealer-title">KURUPİYER</div>
         <div class="score-badge">Toplam: <span id="ui-dealerScore">0</span></div>
@@ -152,6 +190,7 @@
     </div>
     
     <div class="action-area">
+        <div id="ui-timer">SÜRE: <span id="timerVal">10</span>s</div>
         <div id="ui-message">MC KULLAN (MİN: 1K)</div>
         <div class="controls" id="controls-main">
             <button id="hitBtn" class="btn">ÇEK</button>
@@ -206,13 +245,13 @@ async function initAudio() {
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource(); source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
 
-        // Çip sesi orijinal bırakıldı, diğerleri gerçek Casino/Blackjack sesleri ile değiştirildi
         const urls = {
-            chip: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', // Mevcut Çip Sesi
-            deal: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', // Gerçekçi Kart Dağıtma / Kaydırma sesi
-            bust: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Kalın tok kaybetme sesi
-            win:  'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3', // Casino şıkırtılı kazanç sesi
-            push: 'https://assets.mixkit.co/active_storage/sfx/2025/2025-preview.mp3'  // Yumuşak iade (beraberlik) çanı
+            chip: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', 
+            deal: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3', // Gerçek Tok Kart Sesi
+            bust: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Kaybetme Sesi
+            win:  'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3', // Casino Kazanç Sesi
+            push: 'https://assets.mixkit.co/active_storage/sfx/2025/2025-preview.mp3', // İade/Beraberlik
+            tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'  // 10s Geri Sayım Tik Sesi
         };
         for (const [name, url] of Object.entries(urls)) {
             fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf)).then(decoded => sounds[name] = decoded).catch(e=>{});
@@ -233,6 +272,10 @@ let oldSeq = 0;
 let isWaitingServer = false;
 let isRevealing = false;
 
+// 10 SANİYE ZAMANLAYICI DEĞİŞKENLERİ
+let actionTimer = null;
+let timeLeft = 10;
+
 // API İSTEKLERİ
 async function fetchAPI(endpoint, method = 'GET', body = null) {
     if (!auth.currentUser) { window.location.href = '/'; return; }
@@ -247,6 +290,45 @@ async function fetchAPI(endpoint, method = 'GET', body = null) {
 }
 async function fetchBalance() { try { const res = await fetchAPI('/api/me'); if(res) { userBalance = res.balance; document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); } } catch(e){} }
 async function pollState() { try { const res = await fetchAPI('/api/bj/state'); if(res && res.state) handleStateSync(res.state); } catch(e) {} }
+
+// ZAMANLAYICI FONKSİYONLARI
+function startDecisionTimer() {
+    clearDecisionTimer();
+    timeLeft = 10;
+    const timerUI = document.getElementById("ui-timer");
+    const timerSpan = document.getElementById("timerVal");
+    timerUI.style.display = "block";
+    timerUI.className = "";
+    timerSpan.innerText = timeLeft;
+
+    actionTimer = setInterval(() => {
+        timeLeft--;
+        timerSpan.innerText = timeLeft;
+        if(timeLeft <= 3 && timeLeft > 0) {
+            timerUI.className = "warning";
+            playSound('tick');
+        }
+        if(timeLeft <= 0) {
+            clearDecisionTimer();
+            sendAction('stand'); // Süre bitince otomatik KAL
+        }
+    }, 1000);
+}
+
+function clearDecisionTimer() {
+    if(actionTimer) clearInterval(actionTimer);
+    document.getElementById("ui-timer").style.display = "none";
+    document.getElementById("ui-timer").className = "";
+}
+
+// MASAYI TEMİZLEME MOTORU (Oyun Bittikten 4.5 Saniye Sonra)
+function clearBoard() {
+    document.getElementById("ui-dealerCards").innerHTML = "";
+    document.getElementById("ui-playerHands").innerHTML = "";
+    document.getElementById("ui-dealerScore").innerText = "0";
+    document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)";
+    document.getElementById("ui-chipsArea").style.display = "flex";
+}
 
 // GERÇEK KART RESİMLERİ
 function getCardImage(card) {
@@ -277,7 +359,7 @@ function calculateVisibleDOMScore(containerId) {
 function refreshScores() {
     document.getElementById("ui-dealerScore").innerText = calculateVisibleDOMScore("ui-dealerCards");
     const hands = document.querySelectorAll('.hand-box');
-    hands.forEach((box, i) => {
+    hands.forEach((box) => {
         const wrap = box.querySelector('.cards-wrapper');
         const scoreDisplay = box.querySelector('.score-badge span');
         if(wrap && scoreDisplay) {
@@ -292,10 +374,10 @@ function handleStateSync(state) {
     if (!state) return;
     let queue = [];
     
-    // Yeni bir el başlıyorsa masayı temizle
+    // Aniden yeni oyuna geçildiyse ve kartlar temizlenmediyse temizle
     if (state.seq !== oldSeq && state.seq === 1) {
-        document.getElementById("ui-dealerCards").innerHTML = "";
-        document.getElementById("ui-playerHands").innerHTML = "";
+        clearDecisionTimer();
+        clearBoard();
     }
     oldSeq = state.seq;
 
@@ -312,14 +394,13 @@ function handleStateSync(state) {
             div.setAttribute("data-val", isHidden ? 0 : card.value);
             div.innerHTML = `<img src="${isHidden ? 'https://deckofcardsapi.com/static/img/back.png' : getCardImage(card)}" class="real-card">`;
             
-            // YENİ ANİMASYON: Kart sağ üst köşeden (Desteden) geliyormuş hissi
+            // KART SAĞ ÜST KÖŞEDEN (DESTEDEN) GELİYOR
             div.style.opacity = "0"; 
-            div.style.transform = "translate(150vw, -100vh) rotate(60deg)";
+            div.style.transform = "translate(50vw, -40vh) rotate(75deg)";
             
             dArea.appendChild(div);
             queue.push({ el: div, id: cardId, isFlip: false });
         } else if (!isHidden && div.getAttribute("data-val") === "0") {
-            // Kurupiyerin kapalı kartı açıldığında
             div.setAttribute("data-val", card.value);
             queue.push({ el: div, id: cardId, isFlip: true, img: getCardImage(card) });
         }
@@ -348,9 +429,9 @@ function handleStateSync(state) {
                 div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", card.value);
                 div.innerHTML = `<img src="${getCardImage(card)}" class="real-card">`;
                 
-                // YENİ ANİMASYON: Kart sağ üst köşeden (Desteden) geliyormuş hissi
+                // KART SAĞ ÜST KÖŞEDEN (DESTEDEN) GELİYOR
                 div.style.opacity = "0"; 
-                div.style.transform = "translate(150vw, -100vh) rotate(60deg)";
+                div.style.transform = "translate(50vw, -40vh) rotate(75deg)";
                 
                 cWrap.appendChild(div);
                 queue.push({ el: div, id: cardId, isFlip: false });
@@ -377,20 +458,31 @@ function processRevealQueue(queue, finalState) {
             const curHand = finalState.hands[finalState.currentHandIdx];
             document.getElementById("doubleBtn").style.display = (curHand.cards.length === 2) ? "block" : "none";
             document.getElementById("splitBtn").style.display = (finalState.hands.length === 1 && curHand.cards.length === 2 && curHand.cards[0].value === curHand.cards[1].value) ? "block" : "none";
+            
+            // Sıra oyuncuda ise 10 saniyelik sayacı başlat
+            startDecisionTimer();
+
         } else if (finalState.insuranceOffered) {
             document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "flex";
+            startDecisionTimer(); // Sigorta için de sayaç
         } else {
             document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
+            clearDecisionTimer();
         }
 
         if (finalState.gameState === 'finished') {
             document.getElementById("ui-message").innerText = finalState.message;
             document.getElementById("ui-betAmount").innerText = "0"; pendingBet = 0; fetchBalance();
-            document.getElementById("ui-chipsArea").style.display = "flex";
             
             if (finalState.message.includes("KAZANDINIZ")) playSound('win');
             else if (finalState.message.includes("BERABERE") || finalState.message.includes("İADE")) playSound('push');
             else playSound('bust');
+
+            // OYUN BİTİNCE 4.5 SANİYE SONRA MASAYI TEMİZLE
+            setTimeout(() => {
+                if(oldSeq === finalState.seq) clearBoard();
+            }, 4500);
+
         } else {
             let totalTableBet = finalState.hands.reduce((sum, h) => sum + (h.bet || 0), 0);
             document.getElementById("ui-message").innerText = finalState.message || "SIRA SİZDE";
@@ -400,6 +492,7 @@ function processRevealQueue(queue, finalState) {
     }
 
     isRevealing = true;
+    clearDecisionTimer(); // Dağıtım sırasında sayaç durur
     document.getElementById("controls-main").style.display = "none";
     document.getElementById("controls-ins").style.display = "none";
     document.getElementById("ui-chipsArea").style.display = "none";
@@ -429,6 +522,7 @@ function processRevealQueue(queue, finalState) {
 // --- KULLANICI ETKİLEŞİMLERİ ---
 async function startNewGame() {
     if(pendingBet < 1000) return;
+    clearDecisionTimer();
     isWaitingServer = true; document.getElementById("ui-chipsArea").style.display = "none"; document.getElementById("ui-message").innerText = "MASA HAZIRLANIYOR...";
     try {
         const res = await fetchAPI('/api/bj/start', 'POST', { bet: pendingBet });
@@ -439,6 +533,7 @@ async function startNewGame() {
 
 async function sendAction(actionStr) {
     if(isWaitingServer || isRevealing) return;
+    clearDecisionTimer(); // Butona basılınca sayacı durdur
     isWaitingServer = true; document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
     try {
         const res = await fetchAPI('/api/bj/action', 'POST', { action: actionStr, seq: oldSeq });
