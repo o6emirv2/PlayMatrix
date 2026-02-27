@@ -46,15 +46,15 @@
         .history::-webkit-scrollbar { display: none; }
         .history span { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; font-family: 'Orbitron'; background: rgba(255,255,255,0.05); }
 
-        /* MERKEZİ OYUN ALANI */
-        /* TopBar(70) + History(40) = 110px. Panel=240px. Kalan = 100vh - 350px. */
+        /* OYUN ALANI (Ortalamanın hesaplandığı ana container) */
         .game-container { position: absolute; top: 110px; left: 0; width: 100%; height: calc(100vh - 350px); z-index: 1; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
 
-        /* KUSURSUZ MERKEZLEME (ABSOLUTE DEAD CENTER) */
+        /* YENİ: 3 TIK YUKARI TAŞINMIŞ ÇARPAN GÖSTERGESİ (Visual Center) */
         .multiplier-display { 
             position: absolute; 
-            top: 50%; left: 50%; 
+            /* Önceden top: 50% idi. Görsel merkez için %35'e çekildi (3 tık yukarı) */
+            top: 35%; left: 50%; 
             transform: translate(-50%, -50%); 
             text-align: center; 
             pointer-events: none; 
@@ -68,8 +68,8 @@
         
         .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 30px rgba(255, 42, 77, 0.8); animation: shake 0.4s infinite; }
 
-        /* İBRE / HIZ GÖSTERGESİ */
-        .speedometer { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); width: 15px; height: 60%; max-height: 200px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.15); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        /* İBRE / HIZ GÖSTERGESİ - Onun da konumu hizalandı */
+        .speedometer { position: absolute; right: 15px; top: 35%; transform: translateY(-50%); width: 15px; height: 60%; max-height: 200px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.15); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .speed-fill { width: 100%; height: 0%; background: linear-gradient(to top, #00ffa3, #4fd1ff, #ff4b4b); transition: height 0.1s ease-out; box-shadow: 0 0 10px rgba(79, 209, 255, 0.5); }
         
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
@@ -102,13 +102,13 @@
         @media (max-width: 400px) { 
             .x-value { font-size: 70px; } 
             .bottom-panel { height: 220px; padding: 10px; } 
-            .game-container { height: calc(100vh - 330px); } /* Telefonlar İçin Kusursuz Ortalama Ayarı */
+            .game-container { height: calc(100vh - 330px); } 
             .bet-card { padding: 10px; gap: 8px;} 
             .bet-card input { padding: 10px; font-size: 16px; } 
             .speedometer { display: none; } 
         }
 
-        /* AÇIKLAYICI NASIL OYNANIR EKRANI */
+        /* YENİ: DAHA AÇIKLAYICI NASIL OYNANIR EKRANI */
         .start-overlay { position: fixed; inset: 0; background: rgba(2,5,14,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.5s; }
         
         .animated-border-box {
@@ -123,12 +123,16 @@
         @keyframes gradientBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         .start-modal { background: linear-gradient(to bottom, #0a0f1a, #000); border-radius: 12px; padding: 25px; text-align: center; width: 100%; height: 100%; }
-        .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); }
+        .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); }
         
         .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #1f2937; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; }
         .info-list b { color: #4fd1ff; }
         .info-list .highlight { color: #00ffa3; font-weight: bold; }
         .info-list .highlight-red { color: #ff4b4b; font-weight: bold; }
+        
+        /* Liste İkonları için ekstra css */
+        .info-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+        .info-item span { font-size: 16px; line-height: 1.2; }
 
         .btn-start-game { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(to bottom, #00ffa3, #00b894); font-weight: 900; color: #000; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,255,163,0.3); text-transform: uppercase; font-family: 'Orbitron'; transition: 0.2s; }
         .btn-start-game:active { transform: translateY(3px); box-shadow: none; }
@@ -139,16 +143,16 @@
 <div id="start-overlay" class="start-overlay">
     <div class="animated-border-box">
         <div class="start-modal">
-            <h2 class="modal-title">Nasıl Oynanır?</h2>
+            <h2 class="modal-title">Crash Nedir?</h2>
             <div class="info-list">
-                <b>1. Bahis Yap:</b> Süre dolmadan bahis miktarını gir ve <span class="highlight">MC KULLAN</span> butonuna bas.<br>
-                <b>2. Yükselişi İzle:</b> Çarpan uçuşa geçtiğinde (1.00x'ten itibaren) saniyeler içinde katlanır.<br>
-                <b>3. Zamanında Çek:</b> Sistem aniden patlamadan (<span class="highlight-red">CRASH</span>) olmadan önce <span class="highlight">ÇEK</span> butonuna basarak kazancını al!<br>
-                <div style="margin-top: 15px; text-align: center; color: #94a3b8; font-size: 11px;">
-                    <i>Oyun deneyimi ve ses efektleri için cihazınızın sesini açınız.</i>
+                <div class="info-item"><span>🚀</span><div><b>Yükselişi İzle:</b> Oyun başladığında çarpan (1.00x) sürekli artar. Gidebildiği yere kadar yükselir!</div></div>
+                <div class="info-item"><span>💰</span><div><b>Bahis Yap:</b> Süre dolmadan bakiyeni gir ve <span class="highlight">MC KULLAN</span> butonuna bas.</div></div>
+                <div class="info-item"><span>⚡</span><div><b>Zamanında Çek:</b> Çarpan aniden patlamadan (<span class="highlight-red">CRASH</span>) önce <span class="highlight">ÇEK</span> butonuna basarak kazancını cebine at!</div></div>
+                <div style="margin-top: 15px; text-align: center; color: #94a3b8; font-size: 11px; border-top: 1px solid #1f2937; padding-top: 10px;">
+                    <i>En iyi oyun deneyimi için cihazınızın sesini açınız.</i>
                 </div>
             </div>
-            <button id="systemStartBtn" class="btn-start-game">BAŞLA</button>
+            <button id="systemStartBtn" class="btn-start-game">Hemen Başla</button>
         </div>
     </div>
 </div>
