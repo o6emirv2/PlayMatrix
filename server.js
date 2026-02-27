@@ -56,7 +56,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// YENİ EKLENEN: Profil Güncelleme Özel Limiter
 const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 900, standardHeaders: true, legacyHeaders: false });
 const bjActionLimiter = rateLimit({ windowMs: 10 * 1000, max: 25, message: { ok: false, error: 'Spam engellendi.' }});
 const bonusLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { ok: false, error: "Limit aşıldı." }});
@@ -81,7 +80,7 @@ const colBJ = () => db.collection('bj_sessions');
 const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 
 // ======================================================
-// 1. PROFİL & GENEL SİSTEMLER (ÖDÜLLER EKLENDİ)
+// 1. PROFİL & GENEL SİSTEMLER
 // ======================================================
 
 app.get('/api/me', verifyAuth, async (req, res) => {
@@ -94,7 +93,6 @@ app.get('/api/me', verifyAuth, async (req, res) => {
 
       if (!snap.exists) { isUpdated = true; }
 
-      // YENİ: E-POSTA ONAY KONTROLÜ VE 50.000 MC ÖDÜL TANIMLAMASI
       if (req.user.email_verified && !u.emailRewardClaimed) {
           if (snap.exists) {
               updates.balance = admin.firestore.FieldValue.increment(50000);
@@ -102,7 +100,7 @@ app.get('/api/me', verifyAuth, async (req, res) => {
               updates.balance = 50000;
           }
           updates.emailRewardClaimed = true;
-          u.balance = safeNum(u.balance, 0) + 50000; // Local güncel tutma
+          u.balance = safeNum(u.balance, 0) + 50000;
           u.emailRewardClaimed = true;
           isUpdated = true;
       }
@@ -121,7 +119,7 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
   try {
     const { fullName, phone, username, avatar } = req.body || {};
     const uid = req.user.uid;
-    let phoneRewarded = false; // Arayüze ödül mesajı göndermek için
+    let phoneRewarded = false; 
     
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(colUsers().doc(uid));
@@ -138,7 +136,6 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
       const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
       
-      // YENİ: TELEFON NUMARASI KONTROLÜ VE 100.000 MC ÖDÜL TANIMLAMASI
       if (cleanStr(phone) && !cleanStr(u.phone)) {
           updates.phone = cleanStr(phone);
           if (!u.phoneRewardClaimed) {
@@ -148,7 +145,6 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
           }
       }
       
-      // Avatar bypass koruması
       if (typeof avatar === 'string' && avatar.startsWith(ALLOWED_AVATAR_DOMAIN) && avatar.length < 250) updates.avatar = avatar;
 
       const wanted = cleanStr(username);
@@ -215,7 +211,6 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// Oyun Motorları Burada... (Değiştirilmedi, çünkü güvenli)
 // ======================================================
 // 2. BLACKJACK MOTORU
 // ======================================================
@@ -377,22 +372,22 @@ async function resolveAndPayout(uid) {
 }
 
 // ======================================================
-// 3. CRASH MOTORU
+// 3. CRASH MOTORU (GÜNCELLENMİŞ CASINO ALGORİTMASI)
 // ======================================================
 
 function generateRoundProvablyFair() {
     const serverSeed = crypto.randomBytes(32).toString('hex');
     const hash = crypto.createHash('sha256').update(serverSeed).digest('hex');
-    const n = parseInt(hash.substring(0, 8), 16);
-    const r = n / 0xffffffff; 
+    
+    // Hash'i sayıya çevir
+    const h = parseInt(hash.slice(0, 13), 16);
+    const e = Math.pow(2, 52);
 
-    let cp = 1.00;
-    if (r < 0.45) cp = 1.00 + ((n % 15) / 100); 
-    else if (r < 0.85) cp = 1.15 + ((n % 35) / 100); 
-    else {
-        const h = (n % 10000) / 100;
-        cp = Math.max(1.50, Math.floor(100 * 100 / (100 - h)) / 100);
-    }
+    // %1 Instant Crash (1.00x'da direkt patlama şansı - Gerçek Casino Standartı)
+    if (h % 100 === 0) return { serverSeed, hash, crashPoint: 1.00 };
+
+    // %99 RTP Sağlayan Standart Casino Crash Formülü
+    const cp = Math.max(1.00, Math.floor((100 * e - h) / (e - h)) / 100);
     return { serverSeed, hash, crashPoint: Number(cp.toFixed(2)) };
 }
 
@@ -745,11 +740,10 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
 const colPisti = () => db.collection('pisti_sessions');
 
 function createPistiDeck() {
-    const suits = ["H", "D", "C", "S"]; // Kupa, Karo, Sinek, Maça
-    const vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"]; // '0' = 10
+    const suits = ["H", "D", "C", "S"]; 
+    const vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"]; 
     let deck = [];
     suits.forEach(s => vals.forEach(v => deck.push(v + s)));
-    // Fisher-Yates Karıştırma Algoritması
     for (let i = deck.length - 1; i > 0; i--) {
         const j = crypto.randomInt(0, i + 1);
         [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -757,19 +751,17 @@ function createPistiDeck() {
     return deck;
 }
 
-// Gerçek Pişti Kart Değerleri (Karo 10 = 3, Sinek 2 = 2, As/Vale = 1)
 function calculateCardPoints(cards) {
     let pts = 0;
     for (let c of cards) {
-        if (c === '0D') pts += 3; // Karo 10
-        else if (c === '2C') pts += 2; // Sinek 2
-        else if (c[0] === 'A') pts += 1; // As
-        else if (c[0] === 'J') pts += 1; // Vale
+        if (c === '0D') pts += 3; 
+        else if (c === '2C') pts += 2; 
+        else if (c[0] === 'A') pts += 1; 
+        else if (c[0] === 'J') pts += 1; 
     }
     return pts;
 }
 
-// Hile Korumalı Pişti ve Puan Kontrol Sistemi
 function checkPistiCapture(tableCards, playedCard) {
     if (tableCards.length === 0) return { captured: false, isPisti: false, points: 0, collected: [] };
     
@@ -783,7 +775,7 @@ function checkPistiCapture(tableCards, playedCard) {
         let pistiPoints = 0;
         
         if (isPisti) {
-            pistiPoints = isJack ? 20 : 10; // Vale piştisi 20, normal pişti 10 puan
+            pistiPoints = isJack ? 20 : 10; 
         }
         
         const cardPoints = calculateCardPoints(collected);
@@ -831,7 +823,6 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
 
             const deck = createPistiDeck();
             
-            // HATA DÜZELTME: Kart dağıtırken desteden güvenli çekim
             const tableCards = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
             const playerHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
             const botHand = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
@@ -873,7 +864,6 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 
             let actionLog = { playerAction: null, botAction: null, roundOver: false, gameOver: false, winAmount: 0 };
 
-            // 1. OYUNCU HAMLESİ
             const playedCard = s.playerHand.splice(cardIndex, 1)[0];
             const pCapture = checkPistiCapture(s.tableCards, playedCard);
             actionLog.playerAction = { card: playedCard, isPisti: pCapture.isPisti, captured: pCapture.captured };
@@ -887,21 +877,19 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 s.tableCards.push(playedCard);
             }
 
-            // 2. BOT HAMLESİ (Zekalı ve Hilesiz)
             if (s.botHand.length > 0) {
                 let botCardIdx = -1;
                 if (s.tableCards.length > 0) {
                     const topCard = s.tableCards[s.tableCards.length - 1];
-                    botCardIdx = s.botHand.findIndex(c => c[0] === topCard[0]); // Eşleştirme var mı?
+                    botCardIdx = s.botHand.findIndex(c => c[0] === topCard[0]); 
                     
                     if (botCardIdx === -1 && s.tableCards.length >= 2) { 
-                        botCardIdx = s.botHand.findIndex(c => c[0] === 'J'); // Eşleşme yoksa ve yerde kart çoksa Vale dene
+                        botCardIdx = s.botHand.findIndex(c => c[0] === 'J'); 
                     }
                 }
                 if (botCardIdx === -1) {
-                    // Mantıklı rastgele atış: Vale atmamaya çalış
                     botCardIdx = s.botHand.findIndex(c => c[0] !== 'J');
-                    if(botCardIdx === -1) botCardIdx = 0; // Sadece Vale kaldıysa at
+                    if(botCardIdx === -1) botCardIdx = 0; 
                 }
 
                 const botCard = s.botHand.splice(botCardIdx, 1)[0];
@@ -918,37 +906,31 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 }
             }
 
-            // 3. TUR VE OYUN SONU
             if (s.playerHand.length === 0 && s.botHand.length === 0) {
                 if (s.deck.length >= 8) {
-                    // Yeni Tur Dağıtımı
                     s.playerHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
                     s.botHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
                     s.round += 1;
                     actionLog.roundOver = true;
                 } else {
-                    // Oyun Sonu Hesaplamaları
                     s.status = 'finished';
                     actionLog.gameOver = true;
                     
-                    // Yerde kalan kartları son alana ver
                     if (s.tableCards.length > 0 && s.lastCapturer) {
                         const finalPts = calculateCardPoints(s.tableCards);
                         if(s.lastCapturer === 'player') { s.playerCardCount += s.tableCards.length; s.playerScore += finalPts; }
                         else { s.botCardCount += s.tableCards.length; s.botScore += finalPts; }
                     }
 
-                    // Kart Fazlası Kuralı (Kim daha çok kart topladıysa 3 Puan alır)
                     if (s.playerCardCount > s.botCardCount) s.playerScore += 3;
                     else if (s.botCardCount > s.playerCardCount) s.botScore += 3;
 
-                    // Kazanç Belirleme
                     if (s.playerScore > s.botScore) {
                         actionLog.winAmount = s.bet * 2;
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                         balanceAfter += actionLog.winAmount;
                     } else if (s.playerScore === s.botScore) {
-                        actionLog.winAmount = s.bet; // Berabere İade
+                        actionLog.winAmount = s.bet; 
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                         balanceAfter += actionLog.winAmount;
                     }
