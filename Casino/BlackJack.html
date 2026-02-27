@@ -13,6 +13,14 @@
 <meta name="theme-color" content="#1a1a1a">
 
 <title>PlayMatrix VIP BlackJack</title>
+
+<script>
+    if (window.history.replaceState) {
+        // BlackJack.html yazısını silip sadece playmatrix.com.tr görünmesini sağlar
+        window.history.replaceState(null, null, "/");
+    }
+</script>
+    
 <style>
     /* GENEL DÜZEN, ZOOM VE TAŞMA ENGELLEYİCİLER */
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
