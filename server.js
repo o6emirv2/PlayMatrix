@@ -687,9 +687,9 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ======================================================
-// 6. PİŞTİ MOTORU (%100 SUNUCU TABANLI KUSURSUZ YAPI)
-// ======================================================
+/* ======================================================
+   6. PİŞTİ MOTORU (%100 SUNUCU TABANLI KUSURSUZ YAPI)
+   ====================================================== */
 
 const colPisti = () => db.collection('pisti_sessions');
 
@@ -743,15 +743,20 @@ function checkPistiCapture(tableCards, playedCard) {
 
 app.get('/api/pisti/state', verifyAuth, async (req, res) => {
     try {
-        const snap = await colPisti().doc(req.user.uid).get();
-        if (!snap.exists) return res.json({ ok: true, state: null });
+        const uid = req.user.uid;
+        const [snap, uSnap] = await Promise.all([
+            colPisti().doc(uid).get(),
+            colUsers().doc(uid).get()
+        ]);
+        const balance = uSnap.exists ? safeNum(uSnap.data()?.balance, 0) : 0;
+        if (!snap.exists) return res.json({ ok: true, state: null, balance });
         
         const data = snap.data();
         res.json({ ok: true, state: {
             status: data.status, bet: data.bet, playerHand: data.playerHand,
             botCardCount: data.botHand.length, tableCards: data.tableCards,
             playerScore: data.playerScore, botScore: data.botScore, round: data.round
-        }});
+        }, balance });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -762,14 +767,16 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
         
         if (bet < 100 || bet > 50000) throw new Error('Geçersiz bahis. Min: 100 MC, Max: 50.000 MC');
 
-        const session = await db.runTransaction(async (tx) => {
+        const { session, balanceAfter } = await db.runTransaction(async (tx) => {
             const existing = await tx.get(colPisti().doc(uid));
             if (existing.exists && existing.data().status === 'playing') throw new Error('Devam eden oyununuz var.');
             
             const uSnap = await tx.get(colUsers().doc(uid));
-            if (safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
+            const userBal = safeNum(uSnap.data()?.balance, 0);
+            if (userBal < bet) throw new Error('Bakiye yetersiz.');
 
             tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
+            const balanceAfter = userBal - bet;
 
             const deck = createPistiDeck();
             
@@ -785,14 +792,14 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
             };
 
             tx.set(colPisti().doc(uid), newSession);
-            return newSession;
+            return { session: newSession, balanceAfter };
         });
 
         res.json({ ok: true, state: {
             status: session.status, bet: session.bet, playerHand: session.playerHand,
             botCardCount: session.botHand.length, tableCards: session.tableCards,
             playerScore: session.playerScore, botScore: session.botScore, round: session.round
-        }});
+        }, balance: balanceAfter });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
@@ -802,10 +809,15 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
         const cardIndex = safeNum(req.body.cardIndex, -1);
 
         const result = await db.runTransaction(async (tx) => {
-            const sSnap = await tx.get(colPisti().doc(uid));
+            const [sSnap, uSnap] = await Promise.all([
+                tx.get(colPisti().doc(uid)),
+                tx.get(colUsers().doc(uid))
+            ]);
             if (!sSnap.exists || sSnap.data().status !== 'playing') throw new Error('Aktif oyun yok.');
             
             const s = sSnap.data();
+            let balanceAfter = uSnap.exists ? safeNum(uSnap.data()?.balance, 0) : 0;
+
             if (cardIndex < 0 || cardIndex >= s.playerHand.length) throw new Error('Geçersiz kart.');
 
             let actionLog = { playerAction: null, botAction: null, roundOver: false, gameOver: false, winAmount: 0 };
@@ -883,9 +895,11 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                     if (s.playerScore > s.botScore) {
                         actionLog.winAmount = s.bet * 2;
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
+                        balanceAfter += actionLog.winAmount;
                     } else if (s.playerScore === s.botScore) {
                         actionLog.winAmount = s.bet; // Berabere İade
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
+                        balanceAfter += actionLog.winAmount;
                     }
                 }
             }
@@ -899,7 +913,8 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                     botCardCount: s.botHand.length, tableCards: s.tableCards,
                     playerScore: s.playerScore, botScore: s.botScore, round: s.round
                 },
-                log: actionLog
+                log: actionLog,
+                balance: balanceAfter
             };
         });
 
