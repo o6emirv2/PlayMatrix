@@ -7,8 +7,8 @@ const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-process.on('uncaughtException', (err) => console.error('Kritik Hata (Çökme Engellendi):', err));
-process.on('unhandledRejection', (reason) => console.error('İşlenmeyen Promise Hatası:', reason));
+process.on('uncaughtException', (err) => console.error('Kritik Hata:', err));
+process.on('unhandledRejection', (reason) => console.error('Promise Hatası:', reason));
 
 const PORT = process.env.PORT || 3000;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -40,10 +40,6 @@ app.use(cors({
 
 const generalLimiter = rateLimit({ windowMs: 60 * 1000, max: 800, standardHeaders: true, legacyHeaders: false });
 app.use(generalLimiter);
-const bonusLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { ok: false, error: "Çok fazla deneme yaptınız. Lütfen 15 dakika bekleyin." } });
-
-app.get('/', (req, res) => res.status(200).send('✅ PlayMatrix API is running'));
-app.get('/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 const verifyAuth = async (req, res, next) => {
   const h = req.headers.authorization || '';
@@ -57,28 +53,22 @@ const cleanStr = (v) => (typeof v === 'string' ? v.trim().replace(/</g,"") : '')
 const nowMs = () => Date.now();
 const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 
-const colUsers = () => db.collection('users');
-const colPromos = () => db.collection('promo_codes');
-const colPublic = () => db.collection('rooms_public');
-const colState  = () => db.collection('rooms_state');
-const colPass   = () => db.collection('rooms_passwords');
-const playersSub = (roomId) => colPublic().doc(roomId).collection('players');
+app.get('/', (req, res) => res.status(200).send('✅ PlayMatrix API is running'));
 
 // ==========================================
-// KULLANICI PROFİL & ÇARK
+// KULLANICI PROFİL & ÇARK & BONUS
 // ==========================================
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
-    const uRef = db.collection('users').doc(req.user.uid);
-    const snap = await uRef.get();
+    const snap = await db.collection('users').doc(req.user.uid).get();
     res.json({ ok: true, balance: safeNum(snap.exists ? snap.data().balance : 0, 0), user: snap.exists ? snap.data() : {} });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+  } catch (e) { res.json({ ok: false }); }
 });
 
 app.post('/api/profile/update', verifyAuth, async (req, res) => {
   try {
     const { fullName, phone, username, avatar } = req.body || {};
-    const uid = req.user.uid; const userRef = colUsers().doc(uid);
+    const uid = req.user.uid; const userRef = db.collection('users').doc(uid);
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(userRef); if (!snap.exists) throw new Error("Kayıt yok!");
       const u = snap.data() || {}; const updates = {};
@@ -99,44 +89,54 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid; const userRef = colUsers().doc(uid);
-    const rewards = [2500, 5000, 7500, 12500, 20000, 25000, 30000, 50000];
-    const out = await db.runTransaction(async (tx) => {
-      const snap = await tx.get(userRef); if (!snap.exists) throw new Error("Kayıt yok!");
-      const u = snap.data() || {}; const lastSpin = safeNum(u.lastSpin, 0);
-      if ((nowMs() - lastSpin) < 86400000) throw new Error("Süre dolmadı.");
-      const rnd = crypto.randomInt(0, rewards.length); const prize = rewards[rnd];
-      tx.update(userRef, { balance: admin.firestore.FieldValue.increment(prize), lastSpin: nowMs() });
-      return { index: rnd, prize, balance: safeNum(u.balance, 0) + prize };
-    });
-    res.json({ ok: true, ...out });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
-  try {
-    const code = cleanStr((req.body || {}).code).toUpperCase(); if (!code) throw new Error("Kod boş.");
-    const uid = req.user.uid; const userRef = colUsers().doc(uid); const promoRef = colPromos().doc(code);
-    const out = await db.runTransaction(async (tx) => {
-      const [uSnap, pSnap] = await Promise.all([tx.get(userRef), tx.get(promoRef)]);
-      if (!uSnap.exists || !pSnap.exists) throw new Error("Hata.");
-      const u = uSnap.data() || {}; const p = pSnap.data() || {};
-      const amount = safeNum(p.amount, 0); if (amount <= 0) throw new Error("Kod pasif.");
-      const used = Array.isArray(u.usedPromos) ? u.usedPromos : []; if (used.includes(code)) throw new Error("Kullanılmış.");
-      const limitLeft = safeNum(p.limitLeft, -1); if (limitLeft === 0) throw new Error("Tükendi.");
-      tx.update(userRef, { balance: admin.firestore.FieldValue.increment(amount), usedPromos: admin.firestore.FieldValue.arrayUnion(code) });
-      if (limitLeft > 0) tx.update(promoRef, { limitLeft: admin.firestore.FieldValue.increment(-1) });
-      return { amount, balance: safeNum(u.balance, 0) + amount };
-    });
-    res.json({ ok: true, ...out });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
 // ==========================================
-// GRID CONQUEST API
+// GRID CONQUEST API (TAM OTOMATİK ZERO-TRUST)
 // ==========================================
+
+// SUNUCU OTOMATİK SİLME VE BİTİRME DÖNGÜSÜ (70 Saniye Kuralı)
+setInterval(async () => {
+    try {
+        const now = nowMs();
+        
+        // 1. OYUNU BİTENLERİ KONTROL ET VE SKORLA BİTİR
+        const playing = await db.collection('conquest_rooms').where('status', '==', 'playing').get();
+        playing.forEach(doc => {
+            const d = doc.data();
+            if (d.endTimeMs && now >= d.endTimeMs) {
+                let s1 = 0, s2 = 0;
+                if(d.cells) { Object.values(d.cells).forEach(v => { if(v==='p1') s1++; else if(v==='p2') s2++; }); }
+                let winner = null;
+                if (s1 > s2) winner = d.p1;
+                else if (s2 > s1) winner = d.p2;
+
+                doc.ref.update({ status: 'finished', winner, updatedAtMs: now });
+                if (winner) db.collection('users').doc(winner).update({ balance: admin.firestore.FieldValue.increment(500) });
+            }
+        });
+
+        // 2. BEKLEYEN ODALARI SİL (70 Saniye Kuralı)
+        const waiting = await db.collection('conquest_rooms').where('status', '==', 'waiting').get();
+        waiting.forEach(doc => {
+            const d = doc.data();
+            if (now - (d.createdAtMs || now) > 70000) {
+                doc.ref.delete();
+                db.collection('conquest_pass').doc(doc.id).delete();
+            }
+        });
+
+        // 3. BİTEN ODALARI LOBİDEN TAMAMEN SİL (15 Saniye Sonra Çöp Kutusu)
+        const old = await db.collection('conquest_rooms').where('status', 'in', ['finished', 'terminated']).get();
+        old.forEach(doc => {
+            const d = doc.data();
+            if (now - (d.updatedAtMs || d.createdAtMs || now) > 15000) {
+                doc.ref.delete();
+                db.collection('conquest_pass').doc(doc.id).delete();
+            }
+        });
+
+    } catch(e) { /* Sessiz hata yutucu */ }
+}, 3000); // Her 3 Saniyede Bir Bütün DB'yi Taramaya Alır
+
 
 app.post('/api/conquest/create', verifyAuth, async (req, res) => {
   try {
@@ -144,47 +144,17 @@ app.post('/api/conquest/create', verifyAuth, async (req, res) => {
     const isPrivate = pass.length >= 5;
     const rid = crypto.randomBytes(3).toString('hex').toUpperCase();
 
-    const userRef = db.collection('users').doc(req.user.uid);
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
+    const uSnap = await db.collection('users').doc(req.user.uid).get();
+    const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
 
-    await db.runTransaction(async (tx) => {
-      const uSnap = await tx.get(userRef);
-      const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
-
-      tx.set(roomRef, { 
-        id: rid, p1: req.user.uid, p1Name: uname, p2: null, p2Name: null, 
-        status: "waiting", isPrivate, cells: {}, createdAtMs: nowMs()
-      });
-      if (isPrivate) tx.set(passRef, { pass });
+    await db.collection('conquest_rooms').doc(rid).set({ 
+      id: rid, p1: req.user.uid, p1Name: uname, p2: null, p2Name: null, 
+      status: "waiting", isPrivate, cells: {}, score1: 0, score2: 0, createdAtMs: nowMs()
     });
 
+    if (isPrivate) await db.collection('conquest_pass').doc(rid).set({ pass });
     res.json({ ok: true, roomId: rid });
   } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-// Zombi Odaları (70 Saniye dolan) Temizler
-app.post('/api/conquest/cleanup', verifyAuth, async (req, res) => {
-  try {
-    const rid = cleanStr(req.body.roomId);
-    if (!rid) return res.json({ ok: false });
-    
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
-
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) return;
-      const data = snap.data();
-
-      // Sadece 70 saniyeden uzun süredir "waiting" olanları siler
-      if (data.status === 'waiting' && (nowMs() - data.createdAtMs > 70000)) {
-        tx.delete(roomRef);
-        tx.delete(passRef);
-      }
-    });
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false }); }
 });
 
 app.post('/api/conquest/join', verifyAuth, async (req, res) => {
@@ -193,9 +163,7 @@ app.post('/api/conquest/join', verifyAuth, async (req, res) => {
     const pass = cleanStr(req.body.pass);
     if (!rid) throw new Error("Arena ID gerekli!");
 
-    const userRef = db.collection('users').doc(req.user.uid);
     const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
 
     await db.runTransaction(async (tx) => {
       const rSnap = await tx.get(roomRef);
@@ -204,17 +172,15 @@ app.post('/api/conquest/join', verifyAuth, async (req, res) => {
 
       if (rData.status !== "waiting") throw new Error("Arena dolu!");
       if (rData.isPrivate) {
-          const passData = await tx.get(passRef);
+          const passData = await tx.get(db.collection('conquest_pass').doc(rid));
           if (!passData.exists || passData.data().pass !== pass) throw new Error("Hatalı şifre!");
       }
       if (rData.p1 === req.user.uid) throw new Error("Kendi arenana giremezsin.");
 
-      const uSnap = await tx.get(userRef);
+      const uSnap = await tx.get(db.collection('users').doc(req.user.uid));
       const uname = uSnap.exists ? (uSnap.data().username || "Pilot") : "Pilot";
 
-      const endTimeMs = nowMs() + 60000;
-
-      tx.update(roomRef, { p2: req.user.uid, p2Name: uname, status: "playing", endTimeMs });
+      tx.update(roomRef, { p2: req.user.uid, p2Name: uname, status: "playing", endTimeMs: nowMs() + 60000 });
     });
 
     res.json({ ok: true });
@@ -242,39 +208,14 @@ app.post('/api/conquest/click', verifyAuth, async (req, res) => {
 
     if (data.cells && data.cells[idx] === role) return res.json({ok:true});
 
-    // Direct Update -> 0 Gecikme, Çökme Yok
-    await roomRef.update({ [`cells.${idx}`]: role });
+    // Direkt yazma ile donma ihtimali %0 + Skor Güncelleme
+    const cells = data.cells || {};
+    cells[idx] = role;
+    let s1 = 0, s2 = 0;
+    Object.values(cells).forEach(v => { if(v === 'p1') s1++; else if(v === 'p2') s2++; });
+
+    await roomRef.update({ [`cells.${idx}`]: role, score1: s1, score2: s2 });
     
-    res.json({ ok: true });
-  } catch (e) { res.json({ ok: false }); }
-});
-
-app.post('/api/conquest/settle', verifyAuth, async (req, res) => {
-  try {
-    const rid = cleanStr(req.body.roomId);
-    const roomRef = db.collection('conquest_rooms').doc(rid);
-
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) return;
-      const data = snap.data();
-
-      if (data.status !== "playing") return;
-
-      let s1 = 0, s2 = 0;
-      const cells = data.cells || {};
-      for (let i=0; i<36; i++) { if (cells[i] === 'p1') s1++; else if (cells[i] === 'p2') s2++; }
-
-      let winner = null;
-      if (s1 > s2) winner = data.p1;
-      else if (s2 > s1) winner = data.p2;
-
-      tx.update(roomRef, { status: "finished", winner });
-
-      if (winner) {
-          tx.update(db.collection('users').doc(winner), { balance: admin.firestore.FieldValue.increment(500) });
-      }
-    });
     res.json({ ok: true });
   } catch (e) { res.json({ ok: false }); }
 });
@@ -283,7 +224,6 @@ app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
   try {
     const rid = cleanStr(req.body.roomId);
     const roomRef = db.collection('conquest_rooms').doc(rid);
-    const passRef = db.collection('conquest_pass').doc(rid);
 
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(roomRef);
@@ -295,11 +235,11 @@ app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
       else if (data.p2 === req.user.uid) role = "p2";
       if (!role) return;
 
-      if (data.status === "waiting" || data.status === "finished") {
-        if (role === "p1") { tx.delete(roomRef); tx.delete(passRef); }
+      if (data.status === "waiting") {
+        if (role === "p1") { tx.delete(roomRef); db.collection('conquest_pass').doc(rid).delete(); }
         else { tx.update(roomRef, { p2: null, p2Name: null, status: "waiting" }); }
       } else if (data.status === "playing") {
-        tx.update(roomRef, { status: "terminated" });
+        tx.update(roomRef, { status: "terminated", updatedAtMs: nowMs() });
       }
     });
     res.json({ ok: true });
@@ -307,7 +247,7 @@ app.post('/api/conquest/leave', verifyAuth, async (req, res) => {
 });
 
 // ==========================================
-// PIŞTİ (Aynen korundu)
+// PIŞTİ (Aynen Korundu)
 // ==========================================
 const CARD_POINTS_PISTI = { "D0": 3, "C2": 2 }; 
 const normalizeCardValPisti = (c) => { if (!c) return ""; const v = c.substring(0, c.length - 1); return (v === '0') ? '10' : v; };
