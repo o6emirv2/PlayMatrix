@@ -23,7 +23,7 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   let serviceAccount;
   try {
     serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
-  } catch (e) {
+  } catch {
     throw new Error('FIREBASE_KEY JSON parse hatası.');
   }
   admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
@@ -47,7 +47,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Genel limit: oyun tıklama / aksiyon spam’ini yumuşak keser
+// Genel limit
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 900,
@@ -59,13 +59,13 @@ app.use(generalLimiter);
 // Blackjack action endpoint’i için ekstra limit (hile/spam)
 const bjActionLimiter = rateLimit({
   windowMs: 10 * 1000,
-  max: 25, // 10 saniyede 25 aksiyon (fazlası şüpheli)
+  max: 25,
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, error: 'Çok hızlı işlem (spam) tespit edildi.' }
 });
 
-// Bonus için limit (varsa koru)
+// Bonus için limit (istersen kaldırabilirsin)
 const bonusLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -82,7 +82,7 @@ const verifyAuth = async (req, res, next) => {
   try {
     req.user = await auth.verifyIdToken(h.split(' ')[1]);
     return next();
-  } catch (e) {
+  } catch {
     return res.status(401).json({ ok: false, error: 'Geçersiz token.' });
   }
 };
@@ -98,7 +98,7 @@ const colBJ = () => db.collection('bj_sessions');
 const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 
 // ======================================================
-// KULLANICI PROFİL / ÇARK / BONUS  (KALDIRMA DEDİRMEDİN)
+// KULLANICI PROFİL / ÇARK / BONUS
 // ======================================================
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
@@ -164,7 +164,6 @@ app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
       const prize = rewards[rnd];
 
       tx.update(userRef, { balance: admin.firestore.FieldValue.increment(prize), lastSpin: nowMs() });
-
       return { index: rnd, prize, balance: safeNum(u.balance, 0) + prize };
     });
 
@@ -220,7 +219,7 @@ function createDeck(shoeCount = 8) {
   const vals = [1,2,3,4,5,6,7,8,9,10,11,12,13];
   const deck = [];
   for (let i=0;i<shoeCount;i++) for (const s of suits) for (const v of vals) deck.push({ suit: s, value: v });
-  // Fisher-Yates (crypto)
+
   for (let i = deck.length - 1; i > 0; i--) {
     const j = crypto.randomInt(0, i + 1);
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -229,8 +228,8 @@ function createDeck(shoeCount = 8) {
 }
 
 function cardPoints(v){
-  if (v === 1) return 11;     // A
-  if (v >= 11) return 10;     // J Q K
+  if (v === 1) return 11; // A
+  if (v >= 11) return 10; // J Q K
   return v;
 }
 
@@ -282,13 +281,12 @@ function publicState(session){
       insuranceBet: safeNum(session.insuranceBet, 0),
       message: session.message || '',
       lastResult: session.lastResult || null,
-      // Anti-replay için client’a gösteriyoruz (bir sonraki istekte bunu 1 arttırıp gönderecek)
       seq: safeNum(session.seq, 0),
     }
   };
 }
 
-// ---- Session TTL Cleanup ----
+// ---- Session TTL Cleanup (Sadece çok eski session’ları siler) ----
 setInterval(async () => {
   try {
     const q = await colBJ().limit(300).get();
@@ -298,6 +296,7 @@ setInterval(async () => {
     q.forEach(doc => {
       const d = doc.data() || {};
       const age = now - safeNum(d.updatedAtMs, safeNum(d.createdAtMs, 0));
+      // sadece çok eskileri sil (aktif oyunu "hızlı silme" yok)
       if (age > 20 * 60 * 1000) { // 20 dk
         batch.delete(doc.ref);
         n++;
@@ -320,13 +319,14 @@ app.get('/api/bj/state', verifyAuth, async (req, res) => {
       await sRef.delete().catch(() => {});
       return res.json({ ok: true, state: null });
     }
+
     return res.json(publicState(session));
   } catch (e) {
     res.json({ ok: false, error: e.message });
   }
 });
 
-// ---- Start ----
+// ---- Start (GÜNCELLENMİŞ: Escape Exploit kapalı) ----
 app.post('/api/bj/start', verifyAuth, async (req, res) => {
   try {
     const bet = safeNum(req.body?.bet, 0);
@@ -337,24 +337,37 @@ app.post('/api/bj/start', verifyAuth, async (req, res) => {
     const sRef = colBJ().doc(uid);
 
     const session = await db.runTransaction(async (tx) => {
+      // 1) Aktif oyun var mı? (playing/resolving ise YENİ OYUN YOK)
+      const existingSessionSnap = await tx.get(sRef);
+      if (existingSessionSnap.exists) {
+        const existing = existingSessionSnap.data() || {};
+        if (existing.gameState === 'playing' || existing.gameState === 'resolving') {
+          // İstersen burada "state'i döndür" şeklinde de yapabiliriz,
+          // ama senin istediğin gibi start engelliyoruz.
+          throw new Error('Hala devam eden aktif bir oyununuz var. Lütfen önce o eli bitirin.');
+        }
+      }
+
+      // 2) Kullanıcı bakiye kontrol
       const uSnap = await tx.get(uRef);
       if (!uSnap.exists) throw new Error('Kullanıcı yok.');
 
       const bal = safeNum(uSnap.data()?.balance, 0);
       if (bal < bet) throw new Error('Bakiye yetersiz.');
 
-      // bakiye düş (tek kaynak: sunucu)
+      // 3) Bakiye düş
       tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
 
+      // 4) Yeni oyun state’i
       const deck = createDeck(8);
       const hands = [{ cards: [], bet, status: 'playing', done: false }];
       const dealer = [];
 
-      // dağıtım
       hands[0].cards.push(deck.pop(), deck.pop());
       dealer.push(deck.pop(), deck.pop());
 
       const insuranceOffered = dealer[0]?.value === 1; // A
+
       const newSession = {
         uid,
         createdAtMs: nowMs(),
@@ -369,13 +382,11 @@ app.post('/api/bj/start', verifyAuth, async (req, res) => {
         message: insuranceOffered ? 'SİGORTA İSTER MİSİNİZ?' : '',
         lastResult: null,
         _deck: deck,
-        // anti-replay sequence
         seq: 1,
-        // anti-spam timing
         lastActionAtMs: nowMs(),
       };
 
-      // Sigorta sorusu yoksa BJ kontrol
+      // 5) Sigorta yoksa BJ kontrol
       if (!insuranceOffered) {
         const pBJ = isBJ(hands[0].cards);
         const dBJ = isBJ(dealer);
@@ -417,17 +428,16 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
       const s = sSnap.data() || {};
       if (s.gameState !== 'playing' && s.gameState !== 'resolving') throw new Error('Oyun aktif değil.');
 
-      // ---- Anti-replay / anti-macro ----
-      // Client her istekte seq gönderecek, sunucudaki seq ile eşleşmezse reddeder.
+      // Anti-replay
       const seq = safeNum(s.seq, 0);
       if (clientSeq !== seq) throw new Error('Şüpheli istek (senkron bozuk / replay).');
 
-      // çok hızlı aksiyon (bot/macro)
+      // Çok hızlı aksiyon engeli
       const lastAt = safeNum(s.lastActionAtMs, 0);
       const now = nowMs();
       if (now - lastAt < 120) throw new Error('Çok hızlı işlem tespit edildi.');
 
-      // resolving ise direkt state döndür
+      // resolving ise sadece state
       if (s.gameState === 'resolving') {
         tx.update(sRef, { seq: seq + 1, lastActionAtMs: nowMs(), updatedAtMs: nowMs() });
         return s;
@@ -449,6 +459,7 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
 
         s.insuranceOffered = false;
         s.message = '';
+
         const pBJ = isBJ(s.hands?.[0]?.cards || []);
         const dBJ = isBJ(s.dealer || []);
         if (pBJ || dBJ) { s.dealerHidden = false; s.gameState = 'resolving'; }
@@ -469,52 +480,44 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
       let cur = safeNum(s.currentHandIdx, 0);
       if (!hands[cur]) throw new Error('El bulunamadı.');
 
+      const openIdx = hands.findIndex(h => !h.done);
+      if (openIdx >= 0) { cur = openIdx; s.currentHandIdx = openIdx; }
+
       const hand = hands[cur];
       hand.cards = Array.isArray(hand.cards) ? hand.cards : [];
-
-      if (hand.done) {
-        // sıradaki el var mı kontrol
-        const openIdx = hands.findIndex(h => !h.done);
-        if (openIdx >= 0) { cur = openIdx; s.currentHandIdx = openIdx; }
-        else { s.gameState = 'resolving'; }
-      }
-
-      // tekrar al
-      const hand2 = hands[cur];
-      hand2.cards = Array.isArray(hand2.cards) ? hand2.cards : [];
-      if (hand2.done) throw new Error('Bu el bitti.');
+      if (hand.done) throw new Error('Bu el bitti.');
 
       if (action === 'hit') {
-        hand2.cards.push(deck.pop());
-        const sc = scoreHand(hand2.cards).total;
-        if (sc >= 21) { hand2.done = true; hand2.status = sc > 21 ? 'bust' : 'stand'; }
+        hand.cards.push(deck.pop());
+        const sc = scoreHand(hand.cards).total;
+        if (sc >= 21) { hand.done = true; hand.status = sc > 21 ? 'bust' : 'stand'; }
       } else if (action === 'stand') {
-        hand2.done = true;
-        hand2.status = 'stand';
+        hand.done = true;
+        hand.status = 'stand';
       } else if (action === 'double') {
-        if (hand2.cards.length !== 2) throw new Error('Double sadece ilk 2 kartta.');
+        if (hand.cards.length !== 2) throw new Error('Double sadece ilk 2 kartta.');
         const uSnap = await tx.get(uRef);
         const bal = safeNum(uSnap.data()?.balance, 0);
-        if (bal < safeNum(hand2.bet, 0)) throw new Error('Double için bakiye yetersiz.');
-        tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-safeNum(hand2.bet, 0)) });
-        hand2.bet = safeNum(hand2.bet, 0) * 2;
-        hand2.cards.push(deck.pop());
-        const sc = scoreHand(hand2.cards).total;
-        hand2.done = true;
-        hand2.status = sc > 21 ? 'bust' : 'stand';
+        if (bal < safeNum(hand.bet, 0)) throw new Error('Double için bakiye yetersiz.');
+        tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-safeNum(hand.bet, 0)) });
+        hand.bet = safeNum(hand.bet, 0) * 2;
+        hand.cards.push(deck.pop());
+        const sc = scoreHand(hand.cards).total;
+        hand.done = true;
+        hand.status = sc > 21 ? 'bust' : 'stand';
       } else if (action === 'split') {
         if (hands.length !== 1) throw new Error('Split sadece tek elde.');
-        if (!canSplit(hand2)) throw new Error('Split şartı yok.');
+        if (!canSplit(hand)) throw new Error('Split şartı yok.');
         const uSnap = await tx.get(uRef);
         const bal = safeNum(uSnap.data()?.balance, 0);
-        if (bal < safeNum(hand2.bet, 0)) throw new Error('Split için bakiye yetersiz.');
-        tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-safeNum(hand2.bet, 0)) });
+        if (bal < safeNum(hand.bet, 0)) throw new Error('Split için bakiye yetersiz.');
+        tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-safeNum(hand.bet, 0)) });
 
-        const c2 = hand2.cards.pop();
-        const newHand = { cards: [c2], bet: safeNum(hand2.bet, 0), status: 'playing', done: false };
+        const c2 = hand.cards.pop();
+        const newHand = { cards: [c2], bet: safeNum(hand.bet, 0), status: 'playing', done: false };
         hands.push(newHand);
 
-        hand2.cards.push(deck.pop());
+        hand.cards.push(deck.pop());
         newHand.cards.push(deck.pop());
       } else {
         throw new Error('Geçersiz action.');
@@ -563,7 +566,7 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
   }
 });
 
-// ---- Resolve & Payout (SUNUCUDA) ----
+// ---- Resolve & Payout ----
 async function resolveAndPayout(uid) {
   const sRef = colBJ().doc(uid);
   const uRef = colUsers().doc(uid);
@@ -582,10 +585,9 @@ async function resolveAndPayout(uid) {
     let totalWin = 0;
     let didWin = false;
 
-    // insurance: client’ta olduğu gibi 3x (stake dahil)
     const insuranceBet = safeNum(s.insuranceBet, 0);
     if (insuranceBet > 0 && dBJ) {
-      totalWin += insuranceBet * 3;
+      totalWin += insuranceBet * 3; // stake dahil 3x
       didWin = true;
     }
 
@@ -594,9 +596,8 @@ async function resolveAndPayout(uid) {
       const pTotal = scoreHand(h.cards || []).total;
       const pBJ = isBJ(h.cards || []) && hands.length === 1;
 
-      if (pTotal > 21) continue; // bust
-
-      if (dBJ && !pBJ) continue; // dealer BJ
+      if (pTotal > 21) continue;
+      if (dBJ && !pBJ) continue;
 
       if (pBJ && !dBJ) {
         totalWin += Math.floor(bet * 2.5); // 3:2
@@ -618,9 +619,7 @@ async function resolveAndPayout(uid) {
       }
     }
 
-    if (totalWin > 0) {
-      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(totalWin) });
-    }
+    if (totalWin > 0) tx.update(uRef, { balance: admin.firestore.FieldValue.increment(totalWin) });
 
     tx.update(sRef, {
       gameState: 'finished',
@@ -628,12 +627,11 @@ async function resolveAndPayout(uid) {
       lastResult: { totalWin, didWin, dealerTotal: dTotal, ts: nowMs() },
       message: totalWin > 0 ? `KAZANCINIZ: ${totalWin}` : 'KAYBETTİNİZ!',
       updatedAtMs: nowMs(),
-      // seq yine artsın (client tekrar çağırsa replay olmasın)
       seq: safeNum(s.seq, 0) + 1,
     });
   });
 
-  // finished state’i 8 sn görünsün, sonra session silinsin
+  // finished state 8 sn sonra sil
   setTimeout(async () => {
     try {
       const snap = await colBJ().doc(uid).get();
