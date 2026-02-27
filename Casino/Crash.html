@@ -4,239 +4,215 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <title>PlayMatrix Crash | Profesyonel VIP Casino</title>
     <meta name="description" content="PlayMatrix Crash | Güvenli, adil ve hızlı çarpan oyunu. Roket yükseldikçe kazan, patlamadan önce çekil!">
-    <meta name="keywords" content="crash oyunu, casino, playmatrix, çarpan oyunu, kripto oyun, güvenli bahis, roket oyunu">
-    <meta name="author" content="PlayMatrix">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#02050e">
     
-    <meta property="og:title" content="PlayMatrix Crash | Gerçek Çarpan Heyecanı">
-    <meta property="og:description" content="Kazanmak için roketin yükselişine katıl, patlamadan önce nakde çevir. %100 Provably Fair ve güvenli!">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="PlayMatrix">
-    
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="PlayMatrix Crash Oyunu">
-    <meta name="twitter:description" content="Güvenli, adil ve anlık çarpan oyunu. Hemen oyna!">
-
-    <title>PlayMatrix - Crash</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
-    <script>
-        if (window.history.replaceState) { window.history.replaceState(null, null, "/"); }
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
-        /* GENEL DÜZEN VE SIFIR KAYMA KORUMASI */
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; user-select: none; }
-        html, body { background: #02050e; color: white; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; touch-action: none; }
+        /* GENEL VIP CASINO RESET VE TEMA */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        html, body { background: #0b1118; color: #ffffff; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; font-family: 'Inter', sans-serif; }
 
-        /* PRAGMATIC STYLE AÇILIŞ EKRANI (CRASH TEMALI) */
-        #pragmaticIntro {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #02050e;
+        /* PROFESYONEL İNTRO */
+        #studioIntro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070b10;
             z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.8s ease, visibility 0.8s ease;
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+        .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+        .intro-logo i { font-size: 65px; color: #00e701; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,231,1,0.5)); }
+        .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+        .intro-logo h1 span { color: #00e701; }
+        
+        .loader-track { width: 200px; height: 3px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        .loader-fill { height: 100%; width: 0%; background: #00e701; transition: width 0.1s linear; box-shadow: 0 0 10px #00e701; }
+        .btn-intro-start { display: none; margin-top: 30px; padding: 12px 35px; background: #00e701; color: #000; border: none; border-radius: 8px; font-weight: 900; font-size: 14px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 4px 15px rgba(0,231,1,0.3); transition: 0.2s; }
+        .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
+
+        @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
+
+        /* ÜST BAR (TOP BAR) */
+        .top-bar { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 65px; background: #121a24;
+            border-bottom: 1px solid #1f2c3b; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 15px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .tb-left { display: flex; align-items: center; gap: 15px; }
+        .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .tb-logo span { color: #00e701; }
+        
+        .tb-right { display: flex; align-items: center; gap: 10px; }
+        .balance-box { display: flex; align-items: center; background: #0b1118; padding: 6px 12px; border-radius: 8px; border: 1px solid #1f2c3b; }
+        .balance-box b { font-size: 14px; color: #00e701; font-family: 'Inter', monospace; font-weight: 800; }
+        .mc-icon { background: #00e701; color: #000; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 8px; }
+        
+        .action-icon-btn { 
+            background: #1f2c3b; color: #94a3b8; border: none; width: 34px; height: 34px; 
+            border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+        }
+        .action-icon-btn:active { transform: scale(0.9); background: #2a3a4d; color: #fff; }
+        .action-icon-btn.red:active { background: #ef4444; color: #fff; }
+
+        /* CRASH GEÇMİŞİ (GERÇEK RENKLER) */
+        .history-bar { 
+            position: fixed; top: 65px; left: 0; width: 100%; height: 45px; background: #0e151d;
+            display: flex; align-items: center; padding: 0 10px; overflow-x: auto; gap: 8px;
+            scrollbar-width: none; border-bottom: 1px solid #1f2c3b; z-index: 900;
+        }
+        .history-bar::-webkit-scrollbar { display: none; }
+        .hist-pill { 
+            padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 800; 
+            font-family: 'Inter', sans-serif; background: #1a2430; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .hist-red { color: #ff3b30; background: rgba(255,59,48,0.1); border: 1px solid rgba(255,59,48,0.2); }
+        .hist-green { color: #00e701; background: rgba(0,231,1,0.1); border: 1px solid rgba(0,231,1,0.2); }
+        .hist-gold { color: #f59e0b; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+
+        /* OYUN ALANI (CANVAS) */
+        .game-area { 
+            position: absolute; top: 110px; left: 0; width: 100%; height: calc(100vh - 350px);
+            background: radial-gradient(circle at center, #121a24 0%, #0b1118 100%);
+            z-index: 1; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; }
+
+        /* MERKEZİ ÇARPAN EKRANI */
+        .multiplier-core { position: relative; z-index: 10; text-align: center; pointer-events: none; }
+        .phase-text { font-family: 'Orbitron', sans-serif; font-size: 13px; color: #94a3b8; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; }
+        .multiplier-val { font-family: 'Inter', sans-serif; font-size: 85px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 30px rgba(255,255,255,0.2); transition: color 0.2s; }
+        .val-flying { color: #00e701; text-shadow: 0 0 40px rgba(0,231,1,0.5); }
+        .val-crashed { color: #ff3b30; text-shadow: 0 0 40px rgba(255,59,48,0.5); animation: shake 0.3s ease-in-out; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px) translateY(-2px); } 75% { transform: translateX(5px) translateY(2px); } }
+
+        /* ALT PANEL (BAHİS KONTROLLERİ) */
+        .bottom-controls { 
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 240px; background: #121a24;
+            border-top: 1px solid #1f2c3b; padding: 15px; display: flex; gap: 10px; justify-content: center; z-index: 1000;
+        }
+        .bet-box { 
+            background: #1a2430; flex: 1; max-width: 300px; border-radius: 12px; padding: 12px;
+            display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #2a3a4d;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+        }
+        .bet-input-wrap { position: relative; width: 100%; background: #0b1118; border-radius: 8px; border: 1px solid #2a3a4d; overflow: hidden;}
+        .bet-input-wrap input { 
+            width: 100%; background: transparent; border: none; color: #fff; padding: 15px; 
+            text-align: center; font-size: 18px; font-weight: 800; font-family: 'Inter'; outline: none;
         }
         
-        .center-logo {
-            text-align: center; margin-bottom: 30px; transform: scale(1.2); animation: pulseLogo 2s infinite alternate;
+        /* PROFESYONEL BUTONLAR (MC KULLAN - İPTAL - ÇEK) */
+        .action-btn { 
+            width: 100%; min-height: 55px; border: none; border-radius: 8px; font-weight: 900; 
+            font-size: 16px; cursor: pointer; transition: 0.1s; text-transform: uppercase; font-family: 'Inter'; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; flex-direction: column; line-height: 1.2;
         }
-        .center-logo svg { width: 60px; height: auto; margin-bottom: 10px; fill: #4fd1ff; }
-        .center-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 28px; letter-spacing: 2px; color: #fff;}
-        .center-logo h1 span { color: #4fd1ff; }
+        .action-btn span { font-size: 11px; font-weight: 600; opacity: 0.8; text-transform: none; font-family: 'Inter';}
         
-        .loading-container { width: 220px; height: 4px; background: #161d36; margin-top: 30px; border-radius: 2px; overflow: hidden; position: relative;}
-        .loading-fill { height: 100%; width: 0%; background: #4fd1ff; transition: width 0.1s linear; box-shadow: 0 0 10px #4fd1ff; }
+        .btn-bet { background: #00e701; color: #000; box-shadow: 0 4px 0 #009900; }
+        .btn-bet:active { transform: translateY(4px); box-shadow: none; }
         
-        @keyframes pulseLogo { 0% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(79,209,255,0.2)); } 100% { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(79,209,255,0.6)); } }
-
-
-        .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(2, 5, 14, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #4fd1ff; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
-        .brand { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: linear-gradient(90deg, #4fd1ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
-        .right-menu { display: flex; gap: 6px; align-items: center; }
+        .btn-cancel { background: #ff3b30; color: #fff; box-shadow: 0 4px 0 #990000; }
+        .btn-cancel:active { transform: translateY(4px); box-shadow: none; }
         
-        .user-pill-mini { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
-        .balance-info { display: flex; align-items: center; }
-        .balance-info b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; }
-        .mc-chip { width: 22px; height: 22px; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #fff; box-shadow: 0 0 10px rgba(79, 209, 255, 0.3); border: 1.2px solid rgba(255,255,255,0.2); font-family: 'Inter', sans-serif; }
+        .btn-cashout { background: #f59e0b; color: #000; box-shadow: 0 4px 0 #b45309; animation: pulseCashout 1.5s infinite; }
+        .btn-cashout:active { transform: translateY(4px); box-shadow: none; }
 
-        .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 11px; border: 1px solid #7a0000; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .btn-disabled { background: #2a3a4d !important; color: #64748b !important; box-shadow: 0 4px 0 #1f2c3b !important; cursor: not-allowed; animation: none;}
         
-        .info-btn { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); color: white; border: 1px solid #1e3a8a; width: 32px; height: 32px; border-radius: 10px; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        .info-btn:active { transform: scale(0.9); }
+        @keyframes pulseCashout { 0% { filter: brightness(1); } 50% { filter: brightness(1.2); } 100% { filter: brightness(1); } }
 
-        .history { position: fixed; top: 70px; width: 100%; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 15px; background: rgba(0,0,0,0.4); overflow-x: auto; scrollbar-width: none; z-index: 900; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .history::-webkit-scrollbar { display: none; }
-        .history span { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; font-family: 'Orbitron'; background: rgba(255,255,255,0.05); }
-
-        /* MERKEZİ OYUN ALANI */
-        .game-container { position: absolute; top: 110px; left: 0; width: 100%; height: calc(100vh - 350px); z-index: 1; overflow: hidden; }
-        canvas { width: 100%; height: 100%; display: block; }
-
-        /* KUSURSUZ MERKEZLEME */
-        .multiplier-display { 
-            position: absolute; 
-            top: 35%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            text-align: center; 
-            pointer-events: none; 
-            z-index: 10; 
-            width: 100%; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        
-        .status-text { font-family: 'Orbitron'; font-size: 14px; color: #4fd1ff; letter-spacing: 4px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px #000; }
-        .x-value { font-family: 'Orbitron', sans-serif; font-size: 90px; font-weight: 900; color: #fff; text-shadow: 0 0 30px rgba(79, 209, 255, 0.6); transition: transform 0.1s; line-height: 1; }
-        
-        .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 30px rgba(255, 42, 77, 0.8); animation: shake 0.4s infinite; }
-
-        /* İBRE / HIZ GÖSTERGESİ */
-        .speedometer { position: absolute; right: 15px; top: 35%; transform: translateY(-50%); width: 15px; height: 60%; max-height: 200px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.15); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        .speed-fill { width: 100%; height: 0%; background: linear-gradient(to top, #00ffa3, #4fd1ff, #ff4b4b); transition: height 0.1s ease-out; box-shadow: 0 0 10px rgba(79, 209, 255, 0.5); }
-        
-        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
-
-        /* ALT PANEL - SIFIR GECİKME BUTONLARI */
-        .bottom-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 240px; background: linear-gradient(to top, #02050e, #080c18); border-top: 2px solid #161d36; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 15px; z-index: 1000; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); }
-        .bet-card { background: linear-gradient(145deg, #111827, #0a0f1a); flex: 1; max-width: 220px; height: 100%; border-radius: 16px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; border: 1px solid #1f2937; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
-        .bet-card input { width: 100%; background: #030712; border: 2px solid #1f2937; border-radius: 12px; color: #4fd1ff; padding: 12px; text-align: center; font-size: 20px; font-weight: 900; font-family: 'Orbitron'; outline: none; transition: border 0.3s; }
-        .bet-card input:focus { border-color: #4fd1ff; }
-        
-        .auto-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .auto-row span { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; }
-
-        .switch { position: relative; width: 40px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        input:checked + .slider { background-color: #00ffa3; }
-        input:checked + .slider:before { transform: translateX(18px); }
-
-        .main-btn { width: 100%; flex-grow: 1; min-height: 45px; border: none; border-radius: 12px; color: white; font-weight: 900; font-size: 15px; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; text-transform: uppercase; font-family: 'Orbitron'; letter-spacing: 1px; touch-action: manipulation; }
-        .btn-bet { background: linear-gradient(180deg, #6366f1, #4338ca); box-shadow: 0 5px 0 #312e81; }
-        .btn-cancel { background: linear-gradient(180deg, #10b981, #047857); box-shadow: 0 5px 0 #064e3b; }
-        .btn-cashout { background: linear-gradient(180deg, #f59e0b, #d97706); box-shadow: 0 5px 0 #b45309; }
-        .btn-loss { background: linear-gradient(180deg, #ef4444, #b91c1c); box-shadow: 0 5px 0 #7f1d1d; }
-        
-        .main-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
-        .main-btn:disabled { opacity: 0.6; filter: grayscale(0.8); cursor: not-allowed; transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.3) !important; }
+        /* BİLGİ MODALI */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 10000; opacity: 0; transition: opacity 0.3s; }
+        .modal-card { background: #121a24; border: 1px solid #2a3a4d; width: 90%; max-width: 360px; border-radius: 16px; padding: 25px; transform: scale(0.9); transition: 0.3s; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .modal-card h3 { color: #fff; font-family: 'Orbitron'; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #2a3a4d; padding-bottom: 10px; }
+        .modal-card p { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 10px; }
+        .modal-card p b { color: #00e701; }
+        .modal-close { background: #1a2430; color: #fff; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.2s;}
+        .modal-close:active { background: #2a3a4d; }
 
         @media (max-width: 400px) { 
-            .x-value { font-size: 70px; } 
-            .bottom-panel { height: 220px; padding: 10px; } 
-            .game-container { height: calc(100vh - 330px); } 
-            .bet-card { padding: 10px; gap: 8px;} 
-            .bet-card input { padding: 10px; font-size: 16px; } 
-            .speedometer { display: none; } 
+            .multiplier-val { font-size: 65px; } 
+            .bottom-controls { height: 210px; padding: 10px; } 
+            .game-area { height: calc(100vh - 320px); } 
+            .bet-box { padding: 8px; } 
+            .bet-input-wrap input { padding: 10px; font-size: 15px; } 
+            .action-btn { min-height: 48px; font-size: 14px; }
         }
-
-        /* MODAL EKRANLARI (BİLGİ & UYARI) */
-        .overlay-modal { position: fixed; inset: 0; background: rgba(2,5,14,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.4s; }
-        
-        .animated-border-box {
-            position: relative; width: 90%; max-width: 380px; border-radius: 16px; padding: 4px;
-            background: linear-gradient(45deg, #4fd1ff, #00ffa3, #4fd1ff, #6366f1);
-            background-size: 300% 300%; animation: gradientBorder 3s ease infinite;
-            box-shadow: 0 0 40px rgba(79, 209, 255, 0.5); transform: scale(0.9);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, gradientBorder 3s ease infinite;
-        }
-
-        @keyframes popIn { to { transform: scale(1); } }
-        @keyframes gradientBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        .start-modal { background: linear-gradient(to bottom, #0a0f1a, #000); border-radius: 12px; padding: 25px; text-align: center; width: 100%; height: 100%; }
-        .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); transition: 0.3s; }
-        
-        .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #1f2937; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; transition: 0.3s; }
-        .info-list b { color: #4fd1ff; }
-        .info-list .highlight { color: #00ffa3; font-weight: bold; }
-        .info-list .highlight-red { color: #ff4b4b; font-weight: bold; }
-        
-        .info-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-        .info-item span { font-size: 16px; line-height: 1.2; }
-
-        .btn-start-game { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(to bottom, #00ffa3, #00b894); font-weight: 900; color: #000; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,255,163,0.3); text-transform: uppercase; font-family: 'Orbitron'; transition: 0.2s; }
-        .btn-start-game:active { transform: translateY(3px); box-shadow: none; }
     </style>
 </head>
 <body>
 
-<div id="pragmaticIntro">
-    <div class="center-logo">
-        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+<div id="studioIntro">
+    <div class="intro-logo">
+        <i class="fa-solid fa-rocket"></i>
         <h1>PLAYMATRIX<br><span>CRASH</span></h1>
     </div>
-    <div class="loading-container" id="loadingBarCont"><div class="loading-fill" id="loadingFill"></div></div>
-    <button id="systemStartBtn" class="btn-start-game" style="display:none; max-width: 250px; margin-top:30px;">CRASH OYNA</button>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
 </div>
 
-<div id="howToPlayModal" class="overlay-modal" style="display: none; opacity: 0;">
-    <div class="animated-border-box">
-        <div class="start-modal">
-            <h2 class="modal-title">Nasıl Oynanır?</h2>
-            <div class="info-list">
-                <div class="info-item"><span>🚀</span><div><b>Yükselişi İzle:</b> Oyun başladığında çarpan (1.00x) sürekli artar. Gidebildiği yere kadar yükselir!</div></div>
-                <div class="info-item"><span>💰</span><div><b>Bahis Yap:</b> Süre dolmadan bakiyeni gir ve <span class="highlight">MC KULLAN</span> butonuna bas.</div></div>
-                <div class="info-item"><span>⚡</span><div><b>Zamanında Çek:</b> Çarpan aniden patlamadan (<span class="highlight-red">CRASH</span>) önce <span class="highlight">ÇEK</span> butonuna basarak kazancını cebine at!</div></div>
-                <div style="margin-top: 15px; text-align: center; color: #94a3b8; font-size: 11px; border-top: 1px solid #1f2937; padding-top: 10px;">
-                    <i>En iyi oyun deneyimi için cihazınızın sesini açınız.</i>
-                </div>
-            </div>
-            <button id="closeHowToPlayBtn" class="btn-start-game">KAPAT</button>
-        </div>
+<div id="infoModal" class="modal-overlay">
+    <div class="modal-card" id="infoCard">
+        <h3>NASIL OYNANIR?</h3>
+        <p><i class="fa-solid fa-check" style="color:#00e701; margin-right:5px;"></i> Bahis süresi içinde bakiyenizi girip <b>MC KULLAN</b> butonuna basın.</p>
+        <p><i class="fa-solid fa-rocket" style="color:#4fd1ff; margin-right:5px;"></i> Oyun başladığındaçarpan sürekli artar. Gidebildiği yere kadar yükselir.</p>
+        <p><i class="fa-solid fa-hand-pointer" style="color:#f59e0b; margin-right:5px;"></i> Roket patlamadan (CRASH) önce <b>ÇEK</b> butonuna basarsanız kazanırsınız!</p>
+        <p style="color:#ff3b30; font-size:11px; margin-top:15px;"><i class="fa-solid fa-triangle-exclamation"></i> Dikkat: Bahisler sunucuya iletildikten sonra iptal edilemez.</p>
+        <button class="modal-close" onclick="closeInfoModal()">ANLADIM</button>
     </div>
 </div>
 
-<div id="custom-alert-overlay" class="overlay-modal" style="display: none; opacity: 0; z-index: 10001;">
-    <div class="animated-border-box" id="custom-alert-box">
-        <div class="start-modal">
-            <h2 class="modal-title" id="custom-alert-title">UYARI</h2>
-            <div class="info-list" style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 25px;">
-                <span id="custom-alert-message"></span>
-            </div>
-            <button id="custom-alert-btn" class="btn-start-game">KAPAT</button>
-        </div>
+<div id="alertModal" class="modal-overlay">
+    <div class="modal-card" id="alertCard" style="text-align:center;">
+        <i class="fa-solid fa-circle-exclamation" style="font-size:40px; color:#ff3b30; margin-bottom:15px;"></i>
+        <h3 id="alertTitle" style="color:#ff3b30; border:none; padding:0;">HATA</h3>
+        <p id="alertMsg" style="font-weight:bold; color:#fff; font-size:14px;"></p>
+        <button class="modal-close" onclick="closeAlertModal()">KAPAT</button>
     </div>
 </div>
 
 <header class="top-bar">
-    <div class="brand">CRASH</div>
-    <nav class="right-menu">
-        <div class="user-pill-mini">
-            <div class="balance-info"><b id="balance">Yükleniyor...</b><div class="mc-chip">MC</div></div>
+    <div class="tb-left">
+        <div class="tb-logo">PM <span>CRASH</span></div>
+    </div>
+    <div class="tb-right">
+        <div class="balance-box">
+            <b id="uiBalance">...</b><div class="mc-icon">MC</div>
         </div>
-        <a href="/" class="back-btn">ÇIKIŞ</a>
-        <button id="openHowToPlayBtn" class="info-btn" title="Nasıl Oynanır?">?</button>
-    </nav>
+        <button class="action-icon-btn" onclick="openInfoModal()"><i class="fa-solid fa-circle-info"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
 </header>
 
-<main>
-    <div class="history" id="history"></div>
-    
-    <div class="game-container">
-        <div class="speedometer"><div class="speed-fill" id="speedFill"></div></div>
-        
-        <canvas id="gameCanvas"></canvas>
-        
-        <div class="multiplier-display">
-            <div class="status-text" id="statusText">SUNUCU BEKLENİYOR</div>
-            <div class="x-value" id="multiplier">1.00x</div>
-        </div>
-    </div>
+<div class="history-bar" id="uiHistory"></div>
 
-    <div class="bottom-panel">
-        <div class="bet-card">
-            <input type="number" id="betInput1" value="100" min="10">
-            <div class="auto-row"><span>OTO BAHİS</span><label class="switch"><input type="checkbox" id="autoSwitch1"><span class="slider"></span></label></div>
-            <button id="btn1" class="main-btn btn-bet">MC KULLAN</button>
-        </div>
-        <div class="bet-card">
-            <input type="number" id="betInput2" value="200" min="10">
-            <div class="auto-row"><span>OTO BAHİS</span><label class="switch"><input type="checkbox" id="autoSwitch2"><span class="slider"></span></label></div>
-            <button id="btn2" class="main-btn btn-bet">MC KULLAN</button>
-        </div>
+<main class="game-area">
+    <canvas id="crashCanvas"></canvas>
+    <div class="multiplier-core">
+        <div class="phase-text" id="uiPhase">YÜKLENİYOR...</div>
+        <div class="multiplier-val" id="uiMultiplier">1.00x</div>
     </div>
 </main>
+
+<div class="bottom-controls">
+    <div class="bet-box">
+        <div class="bet-input-wrap">
+            <input type="number" id="inpBet1" value="100" min="10" step="10">
+        </div>
+        <button id="btnAction1" class="action-btn btn-bet">MC KULLAN</button>
+    </div>
+
+    <div class="bet-box">
+        <div class="bet-input-wrap">
+            <input type="number" id="inpBet2" value="200" min="10" step="10">
+        </div>
+        <button id="btnAction2" class="action-btn btn-bet">MC KULLAN</button>
+    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -255,422 +231,345 @@
     const auth = getAuth(app);
     const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-    // DOM CACHING
-    const elBalance = document.getElementById("balance");
-    const elMultiplier = document.getElementById('multiplier');
-    const elStatusText = document.getElementById('statusText');
-    const elBtn1 = document.getElementById('btn1');
-    const elBtn2 = document.getElementById('btn2');
-    const elInput1 = document.getElementById('betInput1');
-    const elInput2 = document.getElementById('betInput2');
-    const elSpeed = document.getElementById('speedFill');
+    // DOM ELEMENTS
+    const elBal = document.getElementById("uiBalance");
+    const elMult = document.getElementById("uiMultiplier");
+    const elPhase = document.getElementById("uiPhase");
+    const elHist = document.getElementById("uiHistory");
+    const btn1 = document.getElementById("btnAction1");
+    const btn2 = document.getElementById("btnAction2");
+    const inp1 = document.getElementById("inpBet1");
+    const inp2 = document.getElementById("inpBet2");
 
-    // PRAGMATIC INTRO YÜKLEME
-    let loadProgress = 0;
-    const loadInt = setInterval(() => {
-        loadProgress += Math.random() * 15;
-        if(loadProgress >= 100) {
-            loadProgress = 100;
-            clearInterval(loadInt);
-            document.getElementById('loadingBarCont').style.display = 'none';
-            document.getElementById('systemStartBtn').style.display = 'block';
-        }
-        document.getElementById('loadingFill').style.width = loadProgress + '%';
-    }, 100);
+    // MODAL YÖNETİMİ
+    window.openInfoModal = () => { document.getElementById('infoModal').style.display='flex'; setTimeout(()=>document.getElementById('infoModal').style.opacity='1',10); }
+    window.closeInfoModal = () => { document.getElementById('infoModal').style.opacity='0'; setTimeout(()=>document.getElementById('infoModal').style.display='none',300); }
+    window.openAlertModal = (msg) => { document.getElementById('alertMsg').innerText=msg; document.getElementById('alertModal').style.display='flex'; setTimeout(()=>document.getElementById('alertModal').style.opacity='1',10); }
+    window.closeAlertModal = () => { document.getElementById('alertModal').style.opacity='0'; setTimeout(()=>document.getElementById('alertModal').style.display='none',300); }
 
-    // SİSTEME GİRİŞ YAP BUTONU
-    document.getElementById('systemStartBtn').addEventListener('click', () => {
-        initAudio(); 
-        const intro = document.getElementById('pragmaticIntro');
-        intro.style.opacity = '0';
-        setTimeout(() => {
-            intro.style.display = 'none'; 
-            gameStarted = true; 
-            fetchBalance(); 
-            syncState();
-            setInterval(syncState, 500); 
-        }, 800); // Css opacity transition süresi
-    });
-
-    // NASIL OYNANIR MODALI YÖNETİMİ (?)
-    const htpModal = document.getElementById('howToPlayModal');
-    document.getElementById('openHowToPlayBtn').addEventListener('click', () => {
-        htpModal.style.display = 'flex';
-        setTimeout(() => { htpModal.style.opacity = '1'; }, 10);
-    });
-    document.getElementById('closeHowToPlayBtn').addEventListener('click', () => {
-        htpModal.style.opacity = '0';
-        setTimeout(() => { htpModal.style.display = 'none'; }, 400);
-    });
-
-    // CUSTOM MODAL UYARI SİSTEMİ
-    function showCustomAlert(msg, title = "BİLDİRİM", type = "error") {
-        const overlay = document.getElementById('custom-alert-overlay');
-        const titleEl = document.getElementById('custom-alert-title');
-        const messageEl = document.getElementById('custom-alert-message');
-        const boxEl = document.getElementById('custom-alert-box');
-        const btnEl = document.getElementById('custom-alert-btn');
-
-        titleEl.innerText = title;
-        messageEl.innerHTML = `<b>${msg}</b>`;
-
-        if (type === 'error') {
-            titleEl.style.color = '#ff4b4b';
-            titleEl.style.textShadow = '0 2px 5px rgba(255,75,75,0.6)';
-            boxEl.style.background = 'linear-gradient(45deg, #ff4b4b, #b91c1c, #ff4b4b, #991b1b)';
-            btnEl.style.background = 'linear-gradient(to bottom, #ff4b4b, #cc0000)';
-            btnEl.style.boxShadow = '0 5px 15px rgba(255,75,75,0.3)';
-        } else {
-            titleEl.style.color = '#00ffa3';
-            titleEl.style.textShadow = '0 2px 5px rgba(0,255,163,0.6)';
-            boxEl.style.background = 'linear-gradient(45deg, #00ffa3, #00b894, #00ffa3, #047857)';
-            btnEl.style.background = 'linear-gradient(to bottom, #00ffa3, #00b894)';
-            btnEl.style.boxShadow = '0 5px 15px rgba(0,255,163,0.3)';
-        }
-
-        overlay.style.display = 'flex';
-        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
-    }
-
-    document.getElementById('custom-alert-btn').addEventListener('click', () => {
-        const overlay = document.getElementById('custom-alert-overlay');
-        overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 400);
-    });
-
-    // GERÇEKÇİ SES MOTORU
+    // PROFESYONEL SES MOTORU (WEB AUDIO API - SIFIR GECİKME)
     let audioCtx = null;
     const sounds = {};
-    const urls = {
-        bet: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', 
-        tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', 
-        fly: 'https://assets.mixkit.co/active_storage/sfx/1444/1444-preview.mp3', 
-        crash: 'https://assets.mixkit.co/active_storage/sfx/170/170-preview.mp3', 
-        win: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3'  
+    const sfxUrls = {
+        tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3', // Geri sayım
+        launch: 'https://freesound.org/data/previews/146/146725_2437358-lq.mp3', // Uçuş başlangıcı
+        win: 'https://freesound.org/data/previews/270/270319_5123851-lq.mp3', // Para Çekme
+        crash: 'https://freesound.org/data/previews/170/170144_2437358-lq.mp3' // Patlama
     };
 
-    function initAudio() {
-        if (audioCtx) return;
+    async function loadAudio() {
         try {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            
-            for (const [name, url] of Object.entries(urls)) {
-                fetch(url).then(res => res.arrayBuffer()).then(buf => audioCtx.decodeAudioData(buf)).then(decoded => sounds[name] = decoded).catch(e=>{});
+            for (let [key, url] of Object.entries(sfxUrls)) {
+                const res = await fetch(url);
+                const buf = await res.arrayBuffer();
+                sounds[key] = await audioCtx.decodeAudioData(buf);
             }
-        } catch (e) {}
+        } catch(e) {}
     }
 
-    let lastSoundTime = { bet: 0, tick: 0, fly: 0, crash: 0, win: 0 };
     function playSfx(name) {
         if(!audioCtx || !sounds[name]) return;
         if(audioCtx.state === 'suspended') audioCtx.resume();
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
         
-        const now = Date.now();
-        if (now - lastSoundTime[name] < 200) return; 
-        lastSoundTime[name] = now;
-
-        const source = audioCtx.createBufferSource();
-        source.buffer = sounds[name];
-        source.connect(audioCtx.destination);
-        source.start(0);
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = name === 'tick' ? 0.3 : 0.6; // Tick sesini kıs
+        
+        src.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        src.start(0);
     }
 
-    // OYUN DURUMU DEĞİŞKENLERİ
+    // INTRO LOGIC
+    let loadProg = 0;
+    const loadInt = setInterval(() => {
+        loadProg += Math.random() * 20;
+        if(loadProg >= 100) {
+            loadProg = 100; clearInterval(loadInt);
+            document.getElementById('loaderTrack').style.display = 'none';
+            document.getElementById('btnEnterGame').style.display = 'block';
+        }
+        document.getElementById('loaderFill').style.width = loadProg + '%';
+    }, 100);
+
+    document.getElementById('btnEnterGame').addEventListener('click', () => {
+        loadAudio(); // Ses motorunu kullanıcı etkileşimi ile başlat (Tarayıcı politikası)
+        document.getElementById('studioIntro').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('studioIntro').style.display = 'none';
+            initGame();
+        }, 600);
+    });
+
+    // STATE VARIABLES
     let gameStarted = false;
-    let userBalance = 0;
     let serverOffset = 0;
     let sPhase = "WAITING";
     let lastPhase = "";
     let sStartTime = 0;
     let sCrashPoint = 1.00;
     let myBets = {}; 
-    let currentMultiplierDisplay = 1.00;
-    let lineProgress = 0;
+    let currentMult = 1.00;
+    let isProc1 = false; let isProc2 = false;
+    let lastTick = -1;
 
-    let auto1 = false; let auto2 = false;
-    let processing1 = false; let processing2 = false;
-    let autoBetFiredForRound = false;
-
-    // SUNUCU İSTEKLERİ
-    async function fetchAPI(endpoint, method = 'GET', body = null) {
-        if (!auth.currentUser) return null;
+    async function api(endpoint, method='GET', body=null) {
+        if(!auth.currentUser) return null;
         const token = await getIdToken(auth.currentUser);
-        const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
-        if (body) options.body = JSON.stringify(body);
-        const res = await fetch(`${API_URL}${endpoint}`, options);
+        const opt = { method, headers: {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'} };
+        if(body) opt.body = JSON.stringify(body);
+        const res = await fetch(API_URL+endpoint, opt);
         const data = await res.json();
-        if (data.redirect) window.location.href = '/';
-        if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+        if(!data.ok) throw new Error(data.error || "Hata");
         return data;
     }
 
-    async function fetchBalance() {
+    function initGame() {
+        gameStarted = true;
+        api('/api/me').then(d => { if(d) elBal.innerText = d.balance.toLocaleString('tr-TR'); }).catch(()=>{});
+        sync();
+        setInterval(sync, 500); // Polling (Güvenli Sunucu Mimarisi gereği korunmuştur)
+    }
+
+    async function sync() {
+        if(!gameStarted) return;
         try {
-            const data = await fetchAPI('/api/me');
-            if(data) {
-                userBalance = data.balance;
-                elBalance.innerText = userBalance.toLocaleString('tr-TR');
+            const d = await api('/api/crash/state');
+            if(!d) return;
+            serverOffset = Date.now() - d.state.serverNow;
+            sPhase = d.state.phase;
+            sStartTime = d.state.startTime;
+            myBets = d.state.myBets || {};
+            sCrashPoint = d.state.crashPoint || 1.00;
+
+            // GEÇMİŞİ ÇİZ (Profesyonel Renkler)
+            elHist.innerHTML = "";
+            d.state.history.forEach(v => {
+                let c = v < 2 ? 'hist-red' : (v < 10 ? 'hist-green' : 'hist-gold');
+                elHist.innerHTML += `<div class="hist-pill ${c}">${v.toFixed(2)}x</div>`;
+            });
+
+            // FAZ GEÇİŞ TETİKLEYİCİLERİ
+            if (sPhase !== lastPhase) {
+                updateBtns();
+                if(sPhase === 'FLYING') playSfx('launch');
+                if(sPhase === 'CRASHED') { playSfx('crash'); createExplosion(); }
+                lastPhase = sPhase;
             }
         } catch(e) {}
     }
 
-    async function syncState() {
-        if (!gameStarted) return;
-        try {
-            const data = await fetchAPI('/api/crash/state');
-            if(!data) return;
-            const st = data.state;
-            serverOffset = Date.now() - st.serverNow;
-            
-            if(sPhase !== 'COUNTDOWN' && st.phase === 'COUNTDOWN') autoBetFiredForRound = false;
-            
-            sPhase = st.phase;
-            sStartTime = st.startTime;
-            myBets = st.myBets || {};
-            sCrashPoint = st.crashPoint || 1.00;
-
-            renderHistory(st.history);
-            
-            if (sPhase !== lastPhase) {
-                updateControls();
-                if(sPhase === 'FLYING') playSfx('fly'); 
-                lastPhase = sPhase;
-            }
-
-            if (sPhase === 'COUNTDOWN' && !autoBetFiredForRound) {
-                if(auto1 && !myBets.box1) handleAction(1, true);
-                if(auto2 && !myBets.box2) handleAction(2, true);
-                autoBetFiredForRound = true;
-            }
-        } catch (e) {}
-    }
-
-    function renderHistory(histArray) {
-        const hDiv = document.getElementById('history');
-        hDiv.innerHTML = "";
-        histArray.forEach(val => {
-            const span = document.createElement('span');
-            span.innerText = val.toFixed(2) + "x";
-            span.style.color = val < 2 ? "#ff4757" : "#00ffa3";
-            hDiv.appendChild(span);
-        });
-    }
-
-    // ARKA PLAN VE ÇİZİM MOTORU
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false }); 
-    let width, height;
-    let bgGlow = 0;
+    // PROFESYONEL CANVAS ÇİZİM MOTORU
+    const cvs = document.getElementById('crashCanvas');
+    const ctx = cvs.getContext('2d');
+    let W, H;
     let particles = [];
-    let stars = [];
-    let lastPointX = 0, lastPointY = 0;
-    
-    function initStars() {
-        stars = [];
-        for(let i=0; i<80; i++) {
-            stars.push({ x: Math.random()*width, y: Math.random()*height, s: Math.random()*1.5 + 0.5, speed: Math.random()*2 + 1 });
-        }
-    }
+    let endX=0, endY=0;
 
-    function resize() { width=canvas.width=canvas.offsetWidth; height=canvas.height=canvas.offsetHeight; initStars(); }
+    function resize() { W = cvs.width = cvs.offsetWidth; H = cvs.height = cvs.offsetHeight; }
     window.addEventListener('resize', resize); resize();
 
-    function createExplosion(x, y) {
-        for(let i=0; i<40; i++) {
+    function createExplosion() {
+        for(let i=0; i<30; i++) {
             particles.push({
-                x: x, y: y,
-                vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
-                life: 1, size: Math.random()*5 + 2, 
-                color: Math.random() > 0.5 ? '#ff2a4d' : '#ffaa00'
+                x: endX, y: endY,
+                vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
+                life: 1, size: Math.random()*4 + 2, 
+                c: Math.random() > 0.5 ? '#ff3b30' : '#ffaa00'
             });
         }
     }
 
-    let lastSec = -1;
-    function draw() {
-        bgGlow = sPhase === 'FLYING' ? Math.min(0.8, bgGlow + 0.01) : Math.max(0, bgGlow - 0.05);
-        const bgGrad = ctx.createRadialGradient(width/2, height, 10, width/2, height, height);
-        bgGrad.addColorStop(0, `rgba(79, 209, 255, ${0.05 + (bgGlow * 0.15)})`);
-        bgGrad.addColorStop(1, "#02050e");
-        ctx.fillStyle = bgGrad; 
-        ctx.fillRect(0,0,width,height);
+    // Roket/İmleç Çizimi
+    function drawRocket(x, y, angle) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        
+        // Ateş
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath(); ctx.moveTo(-10, -5); ctx.lineTo(-25 - Math.random()*10, 0); ctx.lineTo(-10, 5); ctx.fill();
 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-        stars.forEach(s => {
-            let currentSpeed = sPhase === "FLYING" ? s.speed * (1 + currentMultiplierDisplay * 0.2) : s.speed * 0.2;
-            if(sPhase === "CRASHED") currentSpeed = 0;
-            s.y += currentSpeed;
-            if(s.y > height) { s.y = 0; s.x = Math.random() * width; }
-            
-            ctx.beginPath();
-            if (sPhase === "FLYING" && currentMultiplierDisplay > 1.1) {
-                ctx.rect(s.x, s.y, s.s, s.s + currentSpeed * 2); 
-            } else {
-                ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); 
-            }
-            ctx.fill();
-        });
+        // Gövde (Ok / Uzay Mekiği)
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 15; ctx.shadowColor = '#00e701';
+        ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-5, 0); ctx.lineTo(-10, -10); ctx.closePath(); ctx.fill();
+        
+        ctx.restore();
+    }
 
+    function render() {
+        ctx.clearRect(0,0,W,H);
         const now = Date.now() - serverOffset;
 
+        // Kayan Grid Arka Plan (Hız hissi)
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = 1;
+        let speed = sPhase === 'FLYING' ? (now*0.05) % 50 : 0;
+        for(let x = -speed; x < W; x+=50) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+        for(let y = (now*0.02)%50; y < H; y+=50) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
         if (sPhase === 'COUNTDOWN') {
-            const left = Math.max(0, (sStartTime - now) / 1000).toFixed(1);
-            const currSec = Math.floor(left);
-            if(currSec !== lastSec && currSec <= 5 && currSec > 0) { playSfx('tick'); lastSec = currSec; }
-            
-            elMultiplier.innerText = left + "s";
-            if (elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.remove('crashed-text');
-            if (elStatusText.innerText !== "BAHİSLER AÇIK") elStatusText.innerText = "BAHİSLER AÇIK";
-            
-            lineProgress = 0; currentMultiplierDisplay = 1.00; particles = [];
-            lastPointX = 0; lastPointY = height;
-            elSpeed.style.height = "0%"; 
-        } 
-        else if (sPhase === 'FLYING') {
-            const elapsed = Math.max(0, now - sStartTime) / 1000;
-            currentMultiplierDisplay = 1 + Math.pow(elapsed * 0.18, 1.35);
-            elMultiplier.innerText = currentMultiplierDisplay.toFixed(2) + "x";
-            if (elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.remove('crashed-text');
-            if (elStatusText.innerText !== "YÜKSELİYOR") elStatusText.innerText = "YÜKSELİYOR";
-            
-            let speedPercent = (currentMultiplierDisplay / 10) * 100;
-            if(speedPercent > 100) speedPercent = 100;
-            elSpeed.style.height = `${speedPercent}%`;
+            let left = Math.max(0, (sStartTime - now) / 1000);
+            let sec = Math.floor(left);
+            if(sec !== lastTick && sec <= 5 && sec > 0) { playSfx('tick'); lastTick = sec; }
 
-            if(lineProgress < 1) lineProgress += 0.005;
+            elPhase.innerText = "BAHİSLER AÇIK";
+            elMult.innerText = left.toFixed(1) + "s";
+            elMult.className = "multiplier-val"; 
+            particles = [];
             
-            const cpY = height * (1 - (currentMultiplierDisplay / 15)); 
-            const endX = width * (0.85 + (lineProgress * 0.15)); 
-            const endY = height * (0.8 - (lineProgress * 0.6));
-            
-            lastPointX = endX; lastPointY = endY;
+            // Başlangıç noktasında bekle
+            endX = W*0.1; endY = H*0.9;
+            drawRocket(endX, endY, -Math.PI/4);
 
-            const grad = ctx.createLinearGradient(0, height, 0, endY);
-            grad.addColorStop(0, "rgba(79, 209, 255, 0)");
-            grad.addColorStop(1, "rgba(79, 209, 255, 0.4)");
+        } else if (sPhase === 'FLYING') {
+            let elapsed = Math.max(0, now - sStartTime) / 1000;
+            currentMult = 1 + Math.pow(elapsed * 0.18, 1.35);
             
+            elPhase.innerText = "UÇUŞTA";
+            elMult.innerText = currentMult.toFixed(2) + "x";
+            elMult.className = "multiplier-val val-flying";
+            
+            // Profesyonel Eğri Hesaplama (Logaritmik Görünüm)
+            let visualProg = Math.min(1, elapsed / 8); 
+            endX = W*0.1 + (W*0.8) * visualProg;
+            let yProg = currentMult / (currentMult + 3); 
+            endY = H*0.9 - (H*0.7) * yProg;
+
+            let prevX = W*0.1 + (W*0.8) * Math.min(1, (elapsed-0.1)/8);
+            let prevMult = 1 + Math.pow(Math.max(0, elapsed-0.1)*0.18, 1.35);
+            let prevY = H*0.9 - (H*0.7) * (prevMult/(prevMult+3));
+            let angle = Math.atan2(endY - prevY, endX - prevX);
+
+            // Çizgi Çizimi
             ctx.beginPath();
-            ctx.moveTo(0, height);
-            ctx.quadraticCurveTo(width * 0.5, Math.max(0, cpY), endX, Math.max(0, endY));
-            ctx.lineTo(endX, height);
-            ctx.fillStyle = grad;
-            ctx.fill();
+            ctx.moveTo(W*0.1, H*0.9);
+            ctx.quadraticCurveTo(W*0.5, endY+50, endX, endY);
+            ctx.strokeStyle = '#00e701';
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 10; ctx.shadowColor = '#00e701';
+            ctx.stroke();
+            ctx.shadowBlur = 0; // reset
 
-            ctx.save(); 
-            ctx.shadowBlur = 20; ctx.shadowColor = "#4fd1ff"; 
-            ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 5; ctx.lineCap = "round";
-            ctx.beginPath(); ctx.moveTo(0, height); ctx.quadraticCurveTo(width * 0.5, Math.max(0, cpY), endX, Math.max(0, endY)); 
-            ctx.stroke(); 
-            
-            ctx.beginPath(); ctx.arc(endX, Math.max(0, endY), 6, 0, Math.PI*2);
-            ctx.fillStyle = "#fff"; ctx.fill();
-            ctx.restore();
-            
-            if (myBets.box1 && !myBets.box1.cashed && !processing1) { elBtn1.innerText = `ÇEK MC ${Math.floor(myBets.box1.bet * currentMultiplierDisplay)}`; }
-            if (myBets.box2 && !myBets.box2.cashed && !processing2) { elBtn2.innerText = `ÇEK MC ${Math.floor(myBets.box2.bet * currentMultiplierDisplay)}`; }
-        } 
-        else if (sPhase === 'CRASHED') {
-            if(lastSec !== -2) { 
-                playSfx('crash'); 
-                createExplosion(lastPointX, lastPointY); 
-                lastSec = -2; 
-            }
-            elMultiplier.innerText = sCrashPoint.toFixed(2) + "x";
-            if (!elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.add('crashed-text');
-            if (elStatusText.innerText !== "PATLADI") elStatusText.innerText = "PATLADI";
+            drawRocket(endX, endY, angle);
 
+            // Dinamik Çekim Butonu Güncellemesi
+            if(myBets.box1 && !myBets.box1.cashed && !isProc1) { btn1.innerHTML = `ÇEK<br><span>${Math.floor(myBets.box1.bet * currentMult)} MC</span>`; }
+            if(myBets.box2 && !myBets.box2.cashed && !isProc2) { btn2.innerHTML = `ÇEK<br><span>${Math.floor(myBets.box2.bet * currentMult)} MC</span>`; }
+
+        } else if (sPhase === 'CRASHED') {
+            elPhase.innerText = "PATLADI";
+            elMult.innerText = sCrashPoint.toFixed(2) + "x";
+            elMult.className = "multiplier-val val-crashed";
+
+            // Çizgiyi Kırmızı Yap
+            ctx.beginPath();
+            ctx.moveTo(W*0.1, H*0.9);
+            ctx.quadraticCurveTo(W*0.5, endY+50, endX, endY);
+            ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 4; ctx.stroke();
+
+            // Parçacık Animasyonu (Patlama)
             particles.forEach((p, i) => {
-                p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+                p.x += p.vx; p.y += p.vy; p.life -= 0.02;
                 if(p.life <= 0) { particles.splice(i, 1); return; }
                 ctx.globalAlpha = p.life;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-                ctx.fillStyle = p.color; ctx.fill();
-                ctx.globalAlpha = 1;
+                ctx.fillStyle = p.c; ctx.fill();
             });
+            ctx.globalAlpha = 1;
         }
 
-        requestAnimationFrame(draw);
+        requestAnimationFrame(render);
     }
-    draw();
+    render();
 
-    function updateControls() {
+    // BUTON KONTROL MANTIĞI (MC KULLAN - İPTAL - ÇEK)
+    function updateBtns() {
         const u = (box) => {
-            const btn = box === 1 ? elBtn1 : elBtn2;
-            const isProc = box === 1 ? processing1 : processing2;
-            const betData = myBets[`box${box}`];
+            const btn = box === 1 ? btn1 : btn2;
+            const isProc = box === 1 ? isProc1 : isProc2;
+            const bData = myBets[`box${box}`];
 
-            if (isProc) { btn.disabled = true; btn.innerText = "İŞLENİYOR..."; btn.className = "main-btn"; return; }
+            if(isProc) { btn.className = "action-btn btn-disabled"; btn.innerHTML = "İŞLENİYOR..."; return; }
 
-            if (sPhase === 'COUNTDOWN') {
-                if (betData) { btn.disabled = true; btn.innerText = "ONAYLANDI"; btn.className = "main-btn btn-cancel"; } 
-                else { btn.disabled = false; btn.innerText = "MC KULLAN"; btn.className = "main-btn btn-bet"; }
-            } 
-            else if (sPhase === 'FLYING') {
-                if (betData && !betData.cashed) {
-                    btn.disabled = false; btn.className = "main-btn btn-cashout"; 
-                } else if (betData && betData.cashed) {
-                    btn.disabled = true; btn.innerText = `KAZANDIN: ${betData.win}`; btn.className = "main-btn btn-cancel"; btn.style.background = "#00b894";
+            if(sPhase === 'COUNTDOWN') {
+                if(bData) {
+                    // Bahis yapıldıysa İPTAL (Fakat backend desteklemediği için görsel olarak kilitli)
+                    btn.className = "action-btn btn-cancel btn-disabled";
+                    btn.innerHTML = `İPTAL<br><span>(ONAYLANDI)</span>`;
                 } else {
-                    btn.disabled = true; btn.innerText = "UÇUYOR"; btn.className = "main-btn";
+                    btn.className = "action-btn btn-bet";
+                    btn.innerHTML = `MC KULLAN<br><span>BAHİS YAP</span>`;
                 }
             } 
-            else if (sPhase === 'CRASHED') {
-                if (betData && betData.cashed) {
-                    btn.disabled = true; btn.innerText = `KAZANDIN: ${betData.win}`; btn.className = "main-btn btn-cancel"; btn.style.background = "#00b894";
-                } else if (betData && !betData.cashed) {
-                    btn.disabled = true; btn.innerText = "KAYBETTİN"; btn.className = "main-btn btn-loss";
+            else if(sPhase === 'FLYING') {
+                if(bData && !bData.cashed) {
+                    btn.className = "action-btn btn-cashout"; 
+                    // InnerHTML render döngüsünde anlık güncelleniyor.
+                } else if(bData && bData.cashed) {
+                    btn.className = "action-btn btn-disabled";
+                    btn.style.background = "#00e701"; btn.style.color = "#000";
+                    btn.innerHTML = `KAZANILDI<br><span>${bData.win} MC</span>`;
                 } else {
-                    btn.disabled = true; btn.innerText = "BEKLEYİN"; btn.className = "main-btn";
+                    btn.className = "action-btn btn-disabled";
+                    btn.innerHTML = `BEKLEYİNİZ`;
+                }
+            } 
+            else if(sPhase === 'CRASHED') {
+                if(bData && bData.cashed) {
+                    btn.className = "action-btn btn-disabled";
+                    btn.style.background = "#00e701"; btn.style.color = "#000";
+                    btn.innerHTML = `KAZANILDI<br><span>${bData.win} MC</span>`;
+                } else if(bData && !bData.cashed) {
+                    btn.className = "action-btn btn-cancel btn-disabled";
+                    btn.innerHTML = `KAYBEDİLDİ<br><span>-${bData.bet} MC</span>`;
+                } else {
+                    btn.className = "action-btn btn-disabled";
+                    btn.innerHTML = `BEKLEYİNİZ`;
                 }
             }
         };
         u(1); u(2);
     }
 
-    async function handleAction(box, isAuto = false) {
-        if(box === 1 && processing1) return;
-        if(box === 2 && processing2) return;
+    async function action(box) {
+        if(box===1 && isProc1) return;
+        if(box===2 && isProc2) return;
 
         if (sPhase === 'COUNTDOWN') {
-            const amount = Math.floor((box === 1 ? elInput1 : elInput2).value) || 0;
-            if (amount < 10) return;
+            // Bahis Yapma
+            const amt = Math.floor((box===1 ? inp1 : inp2).value);
+            if(amt < 10) return openAlertModal("Minimum bahis 10 MC olmalıdır.");
+            if(myBets[`box${box}`]) return openAlertModal("Bahisler sunucuya iletildikten sonra iptal edilemez.");
             
-            if(box===1) processing1 = true; else processing2 = true; updateControls(); 
-            
+            box===1 ? isProc1=true : isProc2=true; updateBtns();
             try {
-                const res = await fetchAPI('/api/crash/bet', 'POST', { box, amount });
+                const res = await api('/api/crash/bet', 'POST', { box, amount: amt });
                 myBets = res.myBets;
-                if(!isAuto) playSfx('bet'); 
-                fetchBalance();
-            } catch(e) { 
-                showCustomAlert(e.message, "BAHİS HATASI", "error"); 
-            }
-            
-            if(box===1) processing1 = false; else processing2 = false; updateControls();
+                api('/api/me').then(d=>{if(d) elBal.innerText=d.balance.toLocaleString('tr-TR');});
+            } catch(e) { openAlertModal(e.message); }
+            box===1 ? isProc1=false : isProc2=false; updateBtns();
         } 
         else if (sPhase === 'FLYING') {
-            if(box===1) processing1 = true; else processing2 = true; updateControls(); 
-            
+            // Çekim Yapma
+            if(!myBets[`box${box}`] || myBets[`box${box}`].cashed) return;
+            box===1 ? isProc1=true : isProc2=true; updateBtns();
             try {
-                const res = await fetchAPI('/api/crash/cashout', 'POST', { box });
+                const res = await api('/api/crash/cashout', 'POST', { box });
                 myBets = res.myBets;
-                playSfx('win'); 
-                fetchBalance();
-            } catch(e) {
-                showCustomAlert(e.message, "ÇEKİM HATASI", "error");
-            }
-            
-            if(box===1) processing1 = false; else processing2 = false; updateControls();
+                playSfx('win');
+                api('/api/me').then(d=>{if(d) elBal.innerText=d.balance.toLocaleString('tr-TR');});
+            } catch(e) { openAlertModal(e.message); }
+            box===1 ? isProc1=false : isProc2=false; updateBtns();
         }
     }
 
-    elBtn1.onclick = () => handleAction(1);
-    elBtn2.onclick = () => handleAction(2);
-    document.getElementById('autoSwitch1').onchange = (e) => auto1 = e.target.checked;
-    document.getElementById('autoSwitch2').onchange = (e) => auto2 = e.target.checked;
+    btn1.onclick = () => action(1);
+    btn2.onclick = () => action(2);
 
-    onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
 </script>
 </body>
 </html>
