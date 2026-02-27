@@ -104,6 +104,10 @@
     #ui-message { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent); padding: 5px 30px; border-radius: 5px; letter-spacing: 1px; transition: 0.3s; }
     .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
     .btn { padding: 10px 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: all 0.1s; touch-action: manipulation; }
+    
+    /* YENİ: DAĞIT BUTONU */
+    #dealBtn { background: linear-gradient(to bottom, #d4af37, #997a00); color: #000; width: 100%; max-width: 200px; display: none; }
+    
     #hitBtn { background: linear-gradient(to bottom, #2ecc71, #229954); }
     #standBtn { background: linear-gradient(to bottom, #e74c3c, #c0392b); }
     #doubleBtn { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; }
@@ -178,7 +182,7 @@
 <main class="game-container">
     <div class="table-border"></div>
     
-    <div class="card-shoe-container">
+    <div class="card-shoe-container" id="shoeTarget">
         <div class="card-shoe"></div>
         <div class="shoe-label">DESTE</div>
     </div>
@@ -192,6 +196,9 @@
     <div class="action-area">
         <div id="ui-timer">SÜRE: <span id="timerVal">10</span>s</div>
         <div id="ui-message">MC KULLAN (MİN: 1K)</div>
+        <div class="controls" id="controls-pregame">
+            <button id="dealBtn" class="btn" disabled>DAĞIT</button>
+        </div>
         <div class="controls" id="controls-main">
             <button id="hitBtn" class="btn">ÇEK</button>
             <button id="standBtn" class="btn">KAL</button>
@@ -267,7 +274,6 @@ function playSound(name) {
 // --- OYUN DEĞİŞKENLERİ ---
 let userBalance = 0; 
 let pendingBet = 0; 
-let betTimer = null; 
 let oldSeq = 0; 
 let isWaitingServer = false;
 let isRevealing = false;
@@ -321,13 +327,29 @@ function clearDecisionTimer() {
     document.getElementById("ui-timer").className = "";
 }
 
-// MASAYI TEMİZLEME MOTORU (Oyun Bittikten 4.5 Saniye Sonra)
+// MASAYI TEMİZLEME MOTORU (Oyun Bittikten Sonra)
 function clearBoard() {
     document.getElementById("ui-dealerCards").innerHTML = "";
     document.getElementById("ui-playerHands").innerHTML = "";
     document.getElementById("ui-dealerScore").innerText = "0";
     document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)";
     document.getElementById("ui-chipsArea").style.display = "flex";
+    
+    // Dağıt butonunu göster ve bahis yoksa pasif yap
+    document.getElementById("controls-pregame").style.display = "flex";
+    document.getElementById("dealBtn").style.display = "block";
+    updateDealButtonState();
+}
+
+function updateDealButtonState() {
+    const dealBtn = document.getElementById("dealBtn");
+    if(pendingBet >= 1000) {
+        dealBtn.disabled = false;
+        dealBtn.style.filter = "none";
+    } else {
+        dealBtn.disabled = true;
+        dealBtn.style.filter = "grayscale(1)";
+    }
 }
 
 // GERÇEK KART RESİMLERİ
@@ -369,7 +391,7 @@ function refreshScores() {
     });
 }
 
-// --- DESTE ÇIKIŞLI (SHOE) ANİMASYON KUYRUĞU ---
+// --- DESTEDEN ÇIKIŞLI (SHOE) ANİMASYON KUYRUĞU ---
 function handleStateSync(state) {
     if (!state) return;
     let queue = [];
@@ -378,35 +400,16 @@ function handleStateSync(state) {
     if (state.seq !== oldSeq && state.seq === 1) {
         clearDecisionTimer();
         clearBoard();
+        // Yeni oyun başlayınca pregame menüsünü gizle
+        document.getElementById("controls-pregame").style.display = "none";
     }
     oldSeq = state.seq;
 
-    const dArea = document.getElementById("ui-dealerCards");
-    state.dealer.forEach((card, i) => {
-        const cardId = `dealer_${i}`;
-        const isHidden = state.dealerHidden && i === 1;
-        let div = document.getElementById(cardId);
-        
-        if (!div) {
-            div = document.createElement("div");
-            div.className = "card-3d";
-            div.id = cardId;
-            div.setAttribute("data-val", isHidden ? 0 : card.value);
-            div.innerHTML = `<img src="${isHidden ? 'https://deckofcardsapi.com/static/img/back.png' : getCardImage(card)}" class="real-card">`;
-            
-            // KART SAĞ ÜST KÖŞEDEN (DESTEDEN) GELİYOR
-            div.style.opacity = "0"; 
-            div.style.transform = "translate(50vw, -40vh) rotate(75deg)";
-            
-            dArea.appendChild(div);
-            queue.push({ el: div, id: cardId, isFlip: false });
-        } else if (!isHidden && div.getAttribute("data-val") === "0") {
-            div.setAttribute("data-val", card.value);
-            queue.push({ el: div, id: cardId, isFlip: true, img: getCardImage(card) });
-        }
-    });
+    // Hedef: Kartların çıkacağı sağ üst köşe (Shoe)
+    const shoeTarget = document.getElementById("shoeTarget").getBoundingClientRect();
 
     const pArea = document.getElementById("ui-playerHands");
+    // 1. ÖNCE OYUNCU KARTLARI KUYRUĞA EKLENİR (Sıralama Hatası Çözümü)
     state.hands.forEach((hand, hIdx) => {
         let boxId = `playerHandBox_${hIdx}`;
         let box = document.getElementById(boxId);
@@ -429,9 +432,9 @@ function handleStateSync(state) {
                 div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", card.value);
                 div.innerHTML = `<img src="${getCardImage(card)}" class="real-card">`;
                 
-                // KART SAĞ ÜST KÖŞEDEN (DESTEDEN) GELİYOR
+                // KART TAM OLARAK DESTEDEN (SHOE) ÇIKAR
                 div.style.opacity = "0"; 
-                div.style.transform = "translate(50vw, -40vh) rotate(75deg)";
+                div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
                 
                 cWrap.appendChild(div);
                 queue.push({ el: div, id: cardId, isFlip: false });
@@ -439,6 +442,34 @@ function handleStateSync(state) {
         });
     });
 
+    const dArea = document.getElementById("ui-dealerCards");
+    // 2. SONRA KURUPİYER KARTLARI KUYRUĞA EKLENİR
+    state.dealer.forEach((card, i) => {
+        const cardId = `dealer_${i}`;
+        const isHidden = state.dealerHidden && i === 1;
+        let div = document.getElementById(cardId);
+        
+        if (!div) {
+            div = document.createElement("div");
+            div.className = "card-3d";
+            div.id = cardId;
+            div.setAttribute("data-val", isHidden ? 0 : card.value);
+            div.innerHTML = `<img src="${isHidden ? 'https://deckofcardsapi.com/static/img/back.png' : getCardImage(card)}" class="real-card">`;
+            
+            // KART TAM OLARAK DESTEDEN (SHOE) ÇIKAR
+            div.style.opacity = "0"; 
+            div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
+            
+            dArea.appendChild(div);
+            queue.push({ el: div, id: cardId, isFlip: false });
+        } else if (!isHidden && div.getAttribute("data-val") === "0") {
+            div.setAttribute("data-val", card.value);
+            // Kurupiyerin kapalı kartı açılışı en sona kalmalı
+            queue.push({ el: div, id: cardId, isFlip: true, img: getCardImage(card) });
+        }
+    });
+
+    // İlk dağıtımda gerçek sıraya sok: Oyuncu -> Kurupiyer -> Oyuncu -> Kurupiyer (Kapalı)
     if (state.seq === 1 && queue.length === 4) {
         const order = ['player_0_0', 'dealer_0', 'player_0_1', 'dealer_1'];
         queue.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -454,6 +485,7 @@ function processRevealQueue(queue, finalState) {
         refreshScores();
         
         if (finalState.gameState === 'playing' && !finalState.insuranceOffered) {
+            document.getElementById("controls-pregame").style.display = "none";
             document.getElementById("controls-main").style.display = "flex"; document.getElementById("controls-ins").style.display = "none";
             const curHand = finalState.hands[finalState.currentHandIdx];
             document.getElementById("doubleBtn").style.display = (curHand.cards.length === 2) ? "block" : "none";
@@ -463,9 +495,11 @@ function processRevealQueue(queue, finalState) {
             startDecisionTimer();
 
         } else if (finalState.insuranceOffered) {
+            document.getElementById("controls-pregame").style.display = "none";
             document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "flex";
             startDecisionTimer(); // Sigorta için de sayaç
         } else {
+            document.getElementById("controls-pregame").style.display = "none";
             document.getElementById("controls-main").style.display = "none"; document.getElementById("controls-ins").style.display = "none";
             clearDecisionTimer();
         }
@@ -478,7 +512,7 @@ function processRevealQueue(queue, finalState) {
             else if (finalState.message.includes("BERABERE") || finalState.message.includes("İADE")) playSound('push');
             else playSound('bust');
 
-            // OYUN BİTİNCE 4.5 SANİYE SONRA MASAYI TEMİZLE
+            // OYUN BİTİNCE 4.5 SANİYE SONRA MASAYI TEMİZLE VE DAĞIT BUTONUNU GERİ GETİR
             setTimeout(() => {
                 if(oldSeq === finalState.seq) clearBoard();
             }, 4500);
@@ -493,6 +527,7 @@ function processRevealQueue(queue, finalState) {
 
     isRevealing = true;
     clearDecisionTimer(); // Dağıtım sırasında sayaç durur
+    document.getElementById("controls-pregame").style.display = "none";
     document.getElementById("controls-main").style.display = "none";
     document.getElementById("controls-ins").style.display = "none";
     document.getElementById("ui-chipsArea").style.display = "none";
@@ -515,21 +550,29 @@ function processRevealQueue(queue, finalState) {
         refreshScores();
     }
 
-    // 2 SANİYE BEKLEME
-    setTimeout(() => processRevealQueue(queue, finalState), 2000); 
+    // YENİ: Akıcılık için kartlar arası 1.2 saniye bekleme
+    setTimeout(() => processRevealQueue(queue, finalState), 1200); 
 }
 
 // --- KULLANICI ETKİLEŞİMLERİ ---
-async function startNewGame() {
+
+// YENİ: Sadece Dağıt (Deal) butonuna basılınca oyun başlar
+document.getElementById("dealBtn").addEventListener('click', async () => {
     if(pendingBet < 1000) return;
     clearDecisionTimer();
-    isWaitingServer = true; document.getElementById("ui-chipsArea").style.display = "none"; document.getElementById("ui-message").innerText = "MASA HAZIRLANIYOR...";
+    isWaitingServer = true; 
+    document.getElementById("controls-pregame").style.display = "none";
+    document.getElementById("ui-chipsArea").style.display = "none"; 
+    document.getElementById("ui-message").innerText = "MASA HAZIRLANIYOR...";
     try {
         const res = await fetchAPI('/api/bj/start', 'POST', { bet: pendingBet });
         fetchBalance(); if (res.state) handleStateSync(res.state); 
-    } catch(e) { alert(e.message); document.getElementById("ui-chipsArea").style.display = "flex"; pendingBet = 0; document.getElementById("ui-betAmount").innerText = "0"; document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; }
+    } catch(e) { 
+        alert(e.message); 
+        clearBoard();
+    }
     isWaitingServer = false;
-}
+});
 
 async function sendAction(actionStr) {
     if(isWaitingServer || isRevealing) return;
@@ -551,14 +594,20 @@ document.querySelectorAll('.chip').forEach(chip => {
         pendingBet += val; 
         document.getElementById("ui-betAmount").innerText = pendingBet.toLocaleString('tr-TR'); 
         document.getElementById("ui-balance").innerText = (userBalance - pendingBet).toLocaleString('tr-TR');
-        if(betTimer) clearTimeout(betTimer); 
-        document.getElementById("ui-message").innerText = "BAHİS ONAYI BEKLENİYOR..."; 
-        betTimer = setTimeout(startNewGame, 1500);
+        
+        // Bahis yapıldıkça DAĞIT butonunu aktif et
+        document.getElementById("controls-pregame").style.display = "flex";
+        document.getElementById("dealBtn").style.display = "block";
+        updateDealButtonState();
     });
 });
 
 document.getElementById("cancelBetBtn").addEventListener('click', () => { 
-    if(betTimer) clearTimeout(betTimer); pendingBet = 0; document.getElementById("ui-betAmount").innerText = "0"; document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; 
+    pendingBet = 0; 
+    document.getElementById("ui-betAmount").innerText = "0"; 
+    document.getElementById("ui-balance").innerText = userBalance.toLocaleString('tr-TR'); 
+    document.getElementById("ui-message").innerText = "MC KULLAN (MİN: 1K)"; 
+    updateDealButtonState();
 });
 
 document.getElementById("hitBtn").onclick = () => sendAction('hit');
@@ -576,7 +625,17 @@ document.getElementById('systemStartBtn').addEventListener('click', () => {
         const splash = document.getElementById('introSplash');
         splash.style.display = 'flex';
         playSound('push'); 
-        setTimeout(() => { splash.style.display = 'none'; fetchBalance(); pollState(); }, 2000);
+        setTimeout(() => { 
+            splash.style.display = 'none'; 
+            fetchBalance(); 
+            pollState(); 
+            
+            // Başlangıçta DAĞIT butonunu göster ama bahis yoksa pasif olsun
+            document.getElementById("controls-pregame").style.display = "flex";
+            document.getElementById("dealBtn").style.display = "block";
+            updateDealButtonState();
+
+        }, 2000);
     }, 500);
 });
 
