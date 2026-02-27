@@ -46,14 +46,13 @@
         .history::-webkit-scrollbar { display: none; }
         .history span { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; font-family: 'Orbitron'; background: rgba(255,255,255,0.05); }
 
-        /* OYUN ALANI (Ortalamanın hesaplandığı ana container) */
+        /* MERKEZİ OYUN ALANI */
         .game-container { position: absolute; top: 110px; left: 0; width: 100%; height: calc(100vh - 350px); z-index: 1; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
 
-        /* YENİ: 3 TIK YUKARI TAŞINMIŞ ÇARPAN GÖSTERGESİ (Visual Center) */
+        /* KUSURSUZ MERKEZLEME (ABSOLUTE DEAD CENTER) */
         .multiplier-display { 
             position: absolute; 
-            /* Önceden top: 50% idi. Görsel merkez için %35'e çekildi (3 tık yukarı) */
             top: 35%; left: 50%; 
             transform: translate(-50%, -50%); 
             text-align: center; 
@@ -68,7 +67,7 @@
         
         .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 30px rgba(255, 42, 77, 0.8); animation: shake 0.4s infinite; }
 
-        /* İBRE / HIZ GÖSTERGESİ - Onun da konumu hizalandı */
+        /* İBRE / HIZ GÖSTERGESİ */
         .speedometer { position: absolute; right: 15px; top: 35%; transform: translateY(-50%); width: 15px; height: 60%; max-height: 200px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.15); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .speed-fill { width: 100%; height: 0%; background: linear-gradient(to top, #00ffa3, #4fd1ff, #ff4b4b); transition: height 0.1s ease-out; box-shadow: 0 0 10px rgba(79, 209, 255, 0.5); }
         
@@ -108,7 +107,7 @@
             .speedometer { display: none; } 
         }
 
-        /* YENİ: DAHA AÇIKLAYICI NASIL OYNANIR EKRANI */
+        /* MODAL EKRANLARI (AÇILIŞ & HATA/UYARI) */
         .start-overlay { position: fixed; inset: 0; background: rgba(2,5,14,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.5s; }
         
         .animated-border-box {
@@ -123,14 +122,13 @@
         @keyframes gradientBorder { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
         .start-modal { background: linear-gradient(to bottom, #0a0f1a, #000); border-radius: 12px; padding: 25px; text-align: center; width: 100%; height: 100%; }
-        .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); }
+        .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.6); transition: 0.3s; }
         
-        .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #1f2937; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; }
+        .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border: 1px solid #1f2937; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; transition: 0.3s; }
         .info-list b { color: #4fd1ff; }
         .info-list .highlight { color: #00ffa3; font-weight: bold; }
         .info-list .highlight-red { color: #ff4b4b; font-weight: bold; }
         
-        /* Liste İkonları için ekstra css */
         .info-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
         .info-item span { font-size: 16px; line-height: 1.2; }
 
@@ -143,7 +141,7 @@
 <div id="start-overlay" class="start-overlay">
     <div class="animated-border-box">
         <div class="start-modal">
-            <h2 class="modal-title">Crash Nedir?</h2>
+            <h2 class="modal-title">Nasıl Oynanır?</h2>
             <div class="info-list">
                 <div class="info-item"><span>🚀</span><div><b>Yükselişi İzle:</b> Oyun başladığında çarpan (1.00x) sürekli artar. Gidebildiği yere kadar yükselir!</div></div>
                 <div class="info-item"><span>💰</span><div><b>Bahis Yap:</b> Süre dolmadan bakiyeni gir ve <span class="highlight">MC KULLAN</span> butonuna bas.</div></div>
@@ -153,6 +151,18 @@
                 </div>
             </div>
             <button id="systemStartBtn" class="btn-start-game">Hemen Başla</button>
+        </div>
+    </div>
+</div>
+
+<div id="custom-alert-overlay" class="start-overlay" style="display: none; opacity: 0; z-index: 10001;">
+    <div class="animated-border-box" id="custom-alert-box">
+        <div class="start-modal">
+            <h2 class="modal-title" id="custom-alert-title">UYARI</h2>
+            <div class="info-list" style="text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 25px;">
+                <span id="custom-alert-message"></span>
+            </div>
+            <button id="custom-alert-btn" class="btn-start-game">KAPAT</button>
         </div>
     </div>
 </div>
@@ -212,7 +222,7 @@
     const auth = getAuth(app);
     const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-    // DOM CACHING (Performans ve Sıfır Gecikme İçin)
+    // DOM CACHING
     const elBalance = document.getElementById("balance");
     const elMultiplier = document.getElementById('multiplier');
     const elStatusText = document.getElementById('statusText');
@@ -221,6 +231,41 @@
     const elInput1 = document.getElementById('betInput1');
     const elInput2 = document.getElementById('betInput2');
     const elSpeed = document.getElementById('speedFill');
+
+    // --- YENİ: CUSTOM MODAL UYARI SİSTEMİ (Standart alert yerine) ---
+    function showCustomAlert(msg, title = "BİLDİRİM", type = "error") {
+        const overlay = document.getElementById('custom-alert-overlay');
+        const titleEl = document.getElementById('custom-alert-title');
+        const messageEl = document.getElementById('custom-alert-message');
+        const boxEl = document.getElementById('custom-alert-box');
+        const btnEl = document.getElementById('custom-alert-btn');
+
+        titleEl.innerText = title;
+        messageEl.innerHTML = `<b>${msg}</b>`;
+
+        if (type === 'error') {
+            titleEl.style.color = '#ff4b4b';
+            titleEl.style.textShadow = '0 2px 5px rgba(255,75,75,0.6)';
+            boxEl.style.background = 'linear-gradient(45deg, #ff4b4b, #b91c1c, #ff4b4b, #991b1b)';
+            btnEl.style.background = 'linear-gradient(to bottom, #ff4b4b, #cc0000)';
+            btnEl.style.boxShadow = '0 5px 15px rgba(255,75,75,0.3)';
+        } else {
+            titleEl.style.color = '#00ffa3';
+            titleEl.style.textShadow = '0 2px 5px rgba(0,255,163,0.6)';
+            boxEl.style.background = 'linear-gradient(45deg, #00ffa3, #00b894, #00ffa3, #047857)';
+            btnEl.style.background = 'linear-gradient(to bottom, #00ffa3, #00b894)';
+            btnEl.style.boxShadow = '0 5px 15px rgba(0,255,163,0.3)';
+        }
+
+        overlay.style.display = 'flex';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
+    }
+
+    document.getElementById('custom-alert-btn').addEventListener('click', () => {
+        const overlay = document.getElementById('custom-alert-overlay');
+        overlay.style.opacity = '0';
+        setTimeout(() => { overlay.style.display = 'none'; }, 500);
+    });
 
     // GERÇEKÇİ SES MOTORU YÜKLEMESİ
     let audioCtx = null;
@@ -317,14 +362,12 @@
 
             renderHistory(st.history);
             
-            // Faz değişimi
             if (sPhase !== lastPhase) {
                 updateControls();
                 if(sPhase === 'FLYING') playSfx('fly'); 
                 lastPhase = sPhase;
             }
 
-            // OTO BAHİS KONTROLÜ
             if (sPhase === 'COUNTDOWN' && !autoBetFiredForRound) {
                 if(auto1 && !myBets.box1) handleAction(1, true);
                 if(auto2 && !myBets.box2) handleAction(2, true);
@@ -376,7 +419,6 @@
 
     let lastSec = -1;
     function draw() {
-        // Profesyonel Radial Arka Plan
         bgGlow = sPhase === 'FLYING' ? Math.min(0.8, bgGlow + 0.01) : Math.max(0, bgGlow - 0.05);
         const bgGrad = ctx.createRadialGradient(width/2, height, 10, width/2, height, height);
         bgGrad.addColorStop(0, `rgba(79, 209, 255, ${0.05 + (bgGlow * 0.15)})`);
@@ -384,7 +426,6 @@
         ctx.fillStyle = bgGrad; 
         ctx.fillRect(0,0,width,height);
 
-        // Uçuş Efekti (Warp Speed / Yıldızlar)
         ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
         stars.forEach(s => {
             let currentSpeed = sPhase === "FLYING" ? s.speed * (1 + currentMultiplierDisplay * 0.2) : s.speed * 0.2;
@@ -394,9 +435,9 @@
             
             ctx.beginPath();
             if (sPhase === "FLYING" && currentMultiplierDisplay > 1.1) {
-                ctx.rect(s.x, s.y, s.s, s.s + currentSpeed * 2); // Işık hüzmesi
+                ctx.rect(s.x, s.y, s.s, s.s + currentSpeed * 2); 
             } else {
-                ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); // Nokta
+                ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); 
             }
             ctx.fill();
         });
@@ -414,7 +455,7 @@
             
             lineProgress = 0; currentMultiplierDisplay = 1.00; particles = [];
             lastPointX = 0; lastPointY = height;
-            elSpeed.style.height = "0%"; // İbre Sıfırla
+            elSpeed.style.height = "0%"; 
         } 
         else if (sPhase === 'FLYING') {
             const elapsed = Math.max(0, now - sStartTime) / 1000;
@@ -423,12 +464,10 @@
             if (elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.remove('crashed-text');
             if (elStatusText.innerText !== "YÜKSELİYOR") elStatusText.innerText = "YÜKSELİYOR";
             
-            // İbre Güncellemesi (Maksimum 10x'te dolar)
             let speedPercent = (currentMultiplierDisplay / 10) * 100;
             if(speedPercent > 100) speedPercent = 100;
             elSpeed.style.height = `${speedPercent}%`;
 
-            // Profesyonel Çizgi Animasyonu
             if(lineProgress < 1) lineProgress += 0.005;
             
             const cpY = height * (1 - (currentMultiplierDisplay / 15)); 
@@ -437,7 +476,6 @@
             
             lastPointX = endX; lastPointY = endY;
 
-            // Degrade Dolgu (Neon Gölge Etkisi)
             const grad = ctx.createLinearGradient(0, height, 0, endY);
             grad.addColorStop(0, "rgba(79, 209, 255, 0)");
             grad.addColorStop(1, "rgba(79, 209, 255, 0.4)");
@@ -449,33 +487,29 @@
             ctx.fillStyle = grad;
             ctx.fill();
 
-            // Parlayan Çizgi
             ctx.save(); 
             ctx.shadowBlur = 20; ctx.shadowColor = "#4fd1ff"; 
             ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 5; ctx.lineCap = "round";
             ctx.beginPath(); ctx.moveTo(0, height); ctx.quadraticCurveTo(width * 0.5, Math.max(0, cpY), endX, Math.max(0, endY)); 
             ctx.stroke(); 
             
-            // Roket Noktası
             ctx.beginPath(); ctx.arc(endX, Math.max(0, endY), 6, 0, Math.PI*2);
             ctx.fillStyle = "#fff"; ctx.fill();
             ctx.restore();
             
-            // DOM GÜNCELLEMESİ (Performanslı)
             if (myBets.box1 && !myBets.box1.cashed && !processing1) { elBtn1.innerText = `ÇEK MC ${Math.floor(myBets.box1.bet * currentMultiplierDisplay)}`; }
             if (myBets.box2 && !myBets.box2.cashed && !processing2) { elBtn2.innerText = `ÇEK MC ${Math.floor(myBets.box2.bet * currentMultiplierDisplay)}`; }
         } 
         else if (sPhase === 'CRASHED') {
             if(lastSec !== -2) { 
                 playSfx('crash'); 
-                createExplosion(lastPointX, lastPointY); // Patlama Efekti
+                createExplosion(lastPointX, lastPointY); 
                 lastSec = -2; 
             }
             elMultiplier.innerText = sCrashPoint.toFixed(2) + "x";
             if (!elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.add('crashed-text');
             if (elStatusText.innerText !== "PATLADI") elStatusText.innerText = "PATLADI";
 
-            // Partikül Çizimi (Kıvılcımlar)
             particles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy; p.life -= 0.03;
                 if(p.life <= 0) { particles.splice(i, 1); return; }
@@ -490,7 +524,6 @@
     }
     draw();
 
-    // SADECE DURUM DEĞİŞTİĞİNDE ÇALIŞIR (Sıfır Gecikme Anti-Lag)
     function updateControls() {
         const u = (box) => {
             const btn = box === 1 ? elBtn1 : elBtn2;
@@ -505,7 +538,7 @@
             } 
             else if (sPhase === 'FLYING') {
                 if (betData && !betData.cashed) {
-                    btn.disabled = false; btn.className = "main-btn btn-cashout"; // Çarpan draw'da güncellenir
+                    btn.disabled = false; btn.className = "main-btn btn-cashout"; 
                 } else if (betData && betData.cashed) {
                     btn.disabled = true; btn.innerText = `KAZANDIN: ${betData.win}`; btn.className = "main-btn btn-cancel"; btn.style.background = "#00b894";
                 } else {
@@ -533,26 +566,30 @@
             const amount = Math.floor((box === 1 ? elInput1 : elInput2).value) || 0;
             if (amount < 10) return;
             
-            if(box===1) processing1 = true; else processing2 = true; updateControls(); // ANINDA TEPKİ
+            if(box===1) processing1 = true; else processing2 = true; updateControls(); 
             
             try {
                 const res = await fetchAPI('/api/crash/bet', 'POST', { box, amount });
                 myBets = res.myBets;
-                if(!isAuto) playSfx('bet'); // Bahis Sesi
+                if(!isAuto) playSfx('bet'); 
                 fetchBalance();
-            } catch(e) { alert(e.message); }
+            } catch(e) { 
+                showCustomAlert(e.message, "BAHİS HATASI", "error"); 
+            }
             
             if(box===1) processing1 = false; else processing2 = false; updateControls();
         } 
         else if (sPhase === 'FLYING') {
-            if(box===1) processing1 = true; else processing2 = true; updateControls(); // ANINDA TEPKİ
+            if(box===1) processing1 = true; else processing2 = true; updateControls(); 
             
             try {
                 const res = await fetchAPI('/api/crash/cashout', 'POST', { box });
                 myBets = res.myBets;
-                playSfx('win'); // Kazanma Sesi
+                playSfx('win'); 
                 fetchBalance();
-            } catch(e) {}
+            } catch(e) {
+                showCustomAlert(e.message, "ÇEKİM HATASI", "error");
+            }
             
             if(box===1) processing1 = false; else processing2 = false; updateControls();
         }
