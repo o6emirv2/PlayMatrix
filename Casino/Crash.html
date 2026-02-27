@@ -2,74 +2,129 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>PlayMatrix Crash</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="PlayMatrix Crash | Güvenli ve Hızlı Çarpan Oyunu">
+    <title>PlayMatrix Crash | %100 Güvenli Sunucu Tabanlı</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; }
-        body { background: #02040a; color: white; height: 100vh; overflow: hidden; }
+    
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, "/");
+        }
+    </script>
 
-        .top-bar { position: fixed; top: 0; width: 100%; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #4fd1ff; z-index: 1000; }
-        .brand { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: linear-gradient(90deg, #4fd1ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        body { background: #02040a; color: white; height: 100vh; overflow: hidden; overscroll-behavior: none; touch-action: none; }
+
+        .top-bar { position: fixed; top: 0; width: 100%; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #4fd1ff; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
+        .brand { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: linear-gradient(90deg, #4fd1ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
         .right-menu { display: flex; gap: 8px; align-items: center; }
         
-        .user-pill-mini { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .user-pill-mini { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         .balance-info { display: flex; align-items: center; }
         .balance-info b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; }
         .mc-chip { width: 22px; height: 22px; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #fff; box-shadow: 0 0 10px rgba(79, 209, 255, 0.3); border: 1.2px solid rgba(255,255,255,0.2); font-family: 'Inter', sans-serif; }
 
-        .back-btn { background: #d63031; color: white; text-decoration: none; padding: 8px 15px; border-radius: 10px; font-weight: 800; font-size: 11px; border: none; cursor: pointer; transition: 0.3s; margin-left: 5px; }
+        .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 8px 15px; border-radius: 10px; font-weight: 800; font-size: 11px; border: 1px solid #7a0000; cursor: pointer; transition: 0.3s; margin-left: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
-        .history { position: fixed; top: 70px; width: 100%; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 15px; background: rgba(0,0,0,0.4); overflow-x: auto; scrollbar-width: none; z-index: 900; }
-        .history span { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; font-family: 'Orbitron'; }
+        .history { position: fixed; top: 70px; width: 100%; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 15px; background: rgba(0,0,0,0.4); overflow-x: auto; scrollbar-width: none; z-index: 900; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .history::-webkit-scrollbar { display: none; }
+        .history span { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; font-family: 'Orbitron'; background: rgba(255,255,255,0.05); }
 
         .game-container { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 240px); z-index: 1; }
         canvas { width: 100%; height: 100%; }
 
         .multiplier-display { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 10; width: 100%; }
-        .x-value { font-family: 'Orbitron', sans-serif; font-size: 80px; font-weight: 900; color: #fff; text-shadow: 0 0 25px rgba(79, 209, 255, 0.7); }
-        .status-text { font-family: 'Orbitron'; font-size: 14px; color: #4fd1ff; letter-spacing: 3px; margin-bottom: 5px; text-transform: uppercase; }
+        .x-value { font-family: 'Orbitron', sans-serif; font-size: 80px; font-weight: 900; color: #fff; text-shadow: 0 0 25px rgba(79, 209, 255, 0.7); transition: color 0.2s; }
+        .status-text { font-family: 'Orbitron'; font-size: 14px; color: #4fd1ff; letter-spacing: 3px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px #000; }
         .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 20px #ff2a4d; animation: shake 0.4s infinite; }
         
-        .provably-fair { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 9px; color: rgba(255,255,255,0.4); font-family: monospace; z-index: 10; padding: 0 10px; word-break: break-all; }
-
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
 
-        .bottom-panel { position: fixed; bottom: 0; width: 100%; height: 240px; background: #080c18; border-top: 2px solid #161d36; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 15px; z-index: 1000; }
-        .bet-card { background: #111827; flex: 1; max-width: 190px; height: 100%; border-radius: 20px; padding: 12px; display: flex; flex-direction: column; gap: 10px; border: 1px solid #1f2937; }
-        .bet-card input { width: 100%; background: #030712; border: 2px solid #1f2937; border-radius: 12px; color: #4fd1ff; padding: 12px; text-align: center; font-size: 18px; font-weight: 800; font-family: 'Orbitron'; outline: none; }
+        .bottom-panel { position: fixed; bottom: 0; width: 100%; height: 240px; background: linear-gradient(to top, #02050e, #080c18); border-top: 2px solid #161d36; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 15px; z-index: 1000; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); }
+        .bet-card { background: linear-gradient(145deg, #111827, #0a0f1a); flex: 1; max-width: 220px; height: 100%; border-radius: 16px; padding: 15px; display: flex; flex-direction: column; gap: 12px; border: 1px solid #1f2937; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+        .bet-card input { width: 100%; background: #030712; border: 2px solid #1f2937; border-radius: 12px; color: #4fd1ff; padding: 15px; text-align: center; font-size: 20px; font-weight: 900; font-family: 'Orbitron'; outline: none; transition: border 0.3s; }
+        .bet-card input:focus { border-color: #4fd1ff; }
         
-        .auto-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 10px; }
-        .auto-row span { font-size: 10px; font-weight: 800; color: #94a3b8; }
+        .auto-row { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .auto-row span { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; }
 
-        .switch { position: relative; width: 38px; height: 20px; }
+        .switch { position: relative; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         input:checked + .slider { background-color: #00ffa3; }
         input:checked + .slider:before { transform: translateX(18px); }
 
-        .main-btn { width: 100%; flex-grow: 1; border: none; border-radius: 14px; color: white; font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-family: 'Orbitron'; }
-        .btn-bet { background: linear-gradient(180deg, #6366f1, #4338ca); box-shadow: 0 4px 0 #312e81; }
-        .btn-cancel { background: linear-gradient(180deg, #10b981, #047857); box-shadow: 0 4px 0 #064e3b; }
-        .btn-cashout { background: linear-gradient(180deg, #f59e0b, #d97706); box-shadow: 0 4px 0 #b45309; }
-        .btn-loss { background: linear-gradient(180deg, #ef4444, #b91c1c); box-shadow: 0 4px 0 #7f1d1d; }
-        .main-btn:active { transform: translateY(2px); box-shadow: none; }
-        .main-btn:disabled { opacity: 0.5; filter: grayscale(0.5); cursor: not-allowed; }
+        .main-btn { width: 100%; flex-grow: 1; border: none; border-radius: 12px; color: white; font-weight: 900; font-size: 15px; cursor: pointer; transition: 0.1s; text-transform: uppercase; font-family: 'Orbitron'; letter-spacing: 1px; touch-action: manipulation; }
+        .btn-bet { background: linear-gradient(180deg, #6366f1, #4338ca); box-shadow: 0 5px 0 #312e81; }
+        .btn-cancel { background: linear-gradient(180deg, #10b981, #047857); box-shadow: 0 5px 0 #064e3b; }
+        .btn-cashout { background: linear-gradient(180deg, #f59e0b, #d97706); box-shadow: 0 5px 0 #b45309; }
+        .btn-loss { background: linear-gradient(180deg, #ef4444, #b91c1c); box-shadow: 0 5px 0 #7f1d1d; }
+        
+        .main-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+        .main-btn:disabled { opacity: 0.6; filter: grayscale(0.8); cursor: not-allowed; transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.3) !important; }
 
-        @media (max-width: 400px) { .x-value { font-size: 55px; } .bottom-panel { height: 210px; } }
+        @media (max-width: 400px) { .x-value { font-size: 55px; } .bottom-panel { height: 220px; padding: 10px; } .bet-card { padding: 10px; gap: 8px;} .bet-card input { padding: 10px; font-size: 16px; } }
 
-        .start-overlay { position: fixed; inset: 0; background: rgba(2,4,10,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px); flex-direction: column; }
-        .start-modal { background: rgba(10,15,25,0.95); padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #4fd1ff; box-shadow: 0 0 30px rgba(79,209,255,0.2); width: 85%; max-width: 350px; }
+        /* YENİ: ANİMASYONLU BİLGİLENDİRME MODALI */
+        .start-overlay { position: fixed; inset: 0; background: rgba(2,4,10,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); touch-action: none; }
+        
+        .animated-border-box {
+            position: relative;
+            width: 90%; max-width: 380px;
+            border-radius: 16px;
+            padding: 4px; /* Çerçeve kalınlığı */
+            background: linear-gradient(45deg, #4fd1ff, #00ffa3, #4fd1ff, #6366f1);
+            background-size: 300% 300%;
+            animation: gradientBorder 3s ease infinite;
+            box-shadow: 0 0 30px rgba(79, 209, 255, 0.4);
+        }
+
+        @keyframes gradientBorder {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .start-modal { 
+            background: linear-gradient(to bottom, #111, #000); 
+            border-radius: 12px; 
+            padding: 25px; 
+            text-align: center; 
+            width: 100%;
+            height: 100%;
+        }
+
+        .modal-title { color: #4fd1ff; margin-bottom: 15px; font-family: 'Orbitron', sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(79,209,255,0.5); }
+        
+        .info-list { font-size: 13px; color: #ddd; margin-bottom: 25px; text-align: left; background: rgba(20,20,20,0.8); padding: 15px; border-radius: 10px; border: 1px solid #333; line-height: 1.6; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); font-family: 'Inter', sans-serif; }
+        .info-list b { color: #4fd1ff; }
+        .info-list .highlight { color: #00ffa3; font-weight: bold; }
+        .info-list .highlight-red { color: #ff4b4b; font-weight: bold; }
+
+        .btn-start-game { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(to bottom, #00ffa3, #00b894); font-weight: 900; color: #000; font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,255,163,0.3); text-transform: uppercase; font-family: 'Orbitron'; transition: 0.2s; }
+        .btn-start-game:active { transform: translateY(3px); box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div id="start-overlay" class="start-overlay">
-    <div class="start-modal">
-        <h2 style="font-family:'Orbitron'; color:#4fd1ff; font-size: 24px; margin-bottom: 10px;">CRASH PROTOKOLÜ</h2>
-        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 25px; font-family: 'Inter';">Sunucuya bağlanmak ve sesleri aktifleştirmek için sistemi başlatın.</p>
-        <button id="systemStartBtn" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00ffa3, #00b894); color: #000; font-weight: 900; font-family: 'Orbitron'; font-size: 16px; cursor: pointer; text-transform: uppercase;">SİSTEMİ BAŞLAT</button>
+    <div class="animated-border-box">
+        <div class="start-modal">
+            <h2 class="modal-title">Nasıl Oynanır?</h2>
+            <div class="info-list">
+                <b>1. Bahis Yap:</b> Süre dolmadan bahis miktarını gir ve <span class="highlight">MC KULLAN</span> butonuna bas.<br>
+                <b>2. Yükselişi İzle:</b> Roket havalandıkça çarpanınız hızla artar.<br>
+                <b>3. Zamanında Çek:</b> Roket patlamadan (Crash) önce <span class="highlight">ÇEK</span> butonuna basarak kazancını al!<br>
+                <b>4. VIP Güvenlik:</b> Oyun %100 Sunucu tabanlıdır, hile yapılamaz.<br>
+                <div style="margin-top: 10px; text-align: center; color: #999; font-size: 11px;">
+                    <i>Lütfen akıcı bir deneyim için sesleri açınız.</i>
+                </div>
+            </div>
+            <button id="systemStartBtn" class="btn-start-game">SİSTEMİ BAŞLAT</button>
+        </div>
     </div>
 </div>
 
@@ -91,16 +146,15 @@
             <div class="status-text" id="statusText">SUNUCU BEKLENİYOR</div>
             <div class="x-value" id="multiplier">1.00x</div>
         </div>
-        <div class="provably-fair" id="pfInfo">Adil Oyun Başlatılıyor...</div>
     </div>
     <div class="bottom-panel">
         <div class="bet-card">
-            <input type="number" id="betInput1" value="100">
+            <input type="number" id="betInput1" value="100" min="10">
             <div class="auto-row"><span>OTO BAHİS</span><label class="switch"><input type="checkbox" id="autoSwitch1"><span class="slider"></span></label></div>
             <button id="btn1" class="main-btn btn-bet">MC KULLAN</button>
         </div>
         <div class="bet-card">
-            <input type="number" id="betInput2" value="200">
+            <input type="number" id="betInput2" value="200" min="10">
             <div class="auto-row"><span>OTO BAHİS</span><label class="switch"><input type="checkbox" id="autoSwitch2"><span class="slider"></span></label></div>
             <button id="btn2" class="main-btn btn-bet">MC KULLAN</button>
         </div>
@@ -124,12 +178,22 @@
     const auth = getAuth(app);
     const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
+    // DOM CACHING (Performans ve Sıfır Gecikme İçin)
+    const elBalance = document.getElementById("balance");
+    const elMultiplier = document.getElementById('multiplier');
+    const elStatusText = document.getElementById('statusText');
+    const elBtn1 = document.getElementById('btn1');
+    const elBtn2 = document.getElementById('btn2');
+    const elInput1 = document.getElementById('betInput1');
+    const elInput2 = document.getElementById('betInput2');
+
     let audioCtx = null;
     let gameStarted = false;
     let userBalance = 0;
 
     let serverOffset = 0;
     let sPhase = "WAITING";
+    let lastPhase = "";
     let sStartTime = 0;
     let sCrashPoint = 1.00;
     let myBets = {}; 
@@ -157,7 +221,7 @@
             const data = await fetchAPI('/api/me');
             if(data) {
                 userBalance = data.balance;
-                document.getElementById("balance").innerText = userBalance.toLocaleString('tr-TR');
+                elBalance.innerText = userBalance.toLocaleString('tr-TR');
             }
         } catch(e) { console.error(e); }
     }
@@ -170,7 +234,7 @@
             const source = audioCtx.createBufferSource();
             source.buffer = audioCtx.createBuffer(1, 1, 22050);
             source.connect(audioCtx.destination); source.start(0);
-        } catch (e) { console.error(e); }
+        } catch (e) {}
     }
 
     function playSfx(type) {
@@ -208,22 +272,21 @@
             sCrashPoint = st.crashPoint || 1.00;
 
             renderHistory(st.history);
-            updateControls();
             
-            // PROVABLY FAIR GÖSTERİMİ
-            if(st.hash) {
-                let pfText = `🔒 Hash: ${st.hash}`;
-                if(st.seed) pfText += `<br>🔓 Seed (Açıklandı): ${st.seed}`;
-                document.getElementById('pfInfo').innerHTML = pfText;
+            // Faz değiştiyse buton görünümlerini güncelle
+            if (sPhase !== lastPhase) {
+                updateControls();
+                lastPhase = sPhase;
             }
 
+            // OTO BAHİS KONTROLÜ
             if (sPhase === 'COUNTDOWN' && !autoBetFiredForRound) {
                 if(auto1 && !myBets.box1) handleAction(1, true);
                 if(auto2 && !myBets.box2) handleAction(2, true);
                 autoBetFiredForRound = true;
             }
 
-        } catch (e) { console.error("Sync error:", e); }
+        } catch (e) {}
     }
 
     function renderHistory(histArray) {
@@ -238,10 +301,10 @@
     }
 
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Performans optimizasyonu
     let width, height, stars = [];
     
-    function initStars() { stars = []; for(let i=0; i<100; i++) stars.push({x: Math.random()*width, y: Math.random()*height, s: Math.random()*2}); }
+    function initStars() { stars = []; for(let i=0; i<80; i++) stars.push({x: Math.random()*width, y: Math.random()*height, s: Math.random()*2}); }
     function resize() { width=canvas.width=canvas.offsetWidth; height=canvas.height=canvas.offsetHeight; initStars(); }
     window.addEventListener('resize', resize); resize();
 
@@ -263,18 +326,20 @@
             const currSec = Math.floor(left);
             if(currSec !== lastSec && currSec <= 5 && currSec > 0) { playSfx('countdown'); lastSec = currSec; }
             
-            document.getElementById('multiplier').innerText = left + "s";
-            document.getElementById('multiplier').classList.remove('crashed-text');
-            document.getElementById('statusText').innerText = "BAHİSLER AÇIK";
+            elMultiplier.innerText = left + "s";
+            if (elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.remove('crashed-text');
+            if (elStatusText.innerText !== "BAHİSLER AÇIK") elStatusText.innerText = "BAHİSLER AÇIK";
+            
             lineProgress = 0; currentMultiplierDisplay = 1.00;
         } 
         else if (sPhase === 'FLYING') {
             const elapsed = Math.max(0, now - sStartTime) / 1000;
             currentMultiplierDisplay = 1 + Math.pow(elapsed * 0.18, 1.35);
-            document.getElementById('multiplier').innerText = currentMultiplierDisplay.toFixed(2) + "x";
-            document.getElementById('multiplier').classList.remove('crashed-text');
-            document.getElementById('statusText').innerText = "UÇUŞTA";
+            elMultiplier.innerText = currentMultiplierDisplay.toFixed(2) + "x";
+            if (elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.remove('crashed-text');
+            if (elStatusText.innerText !== "UÇUŞTA") elStatusText.innerText = "UÇUŞTA";
             
+            // Çizgi Animasyonu
             if(lineProgress < 1) lineProgress += 0.002;
             ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = "#4fd1ff"; ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 4; ctx.lineCap = "round";
             const cpY = height * (1 - (currentMultiplierDisplay / 10)); 
@@ -282,26 +347,33 @@
             ctx.setLineDash([width * 2]); ctx.lineDashOffset = (width * 2) * (1 - lineProgress);
             ctx.beginPath(); ctx.moveTo(0, height); ctx.quadraticCurveTo(width * 0.5, Math.max(0, cpY), endX, Math.max(0, endY)); ctx.stroke(); ctx.restore();
             
-            updateControls(); 
+            // DOM OVERLOAD KORUMASI: Uçuş sırasında buton textlerini akıcı güncelle
+            if (myBets.box1 && !myBets.box1.cashed && !processing1) {
+                elBtn1.innerText = `ÇEK MC ${Math.floor(myBets.box1.bet * currentMultiplierDisplay)}`;
+            }
+            if (myBets.box2 && !myBets.box2.cashed && !processing2) {
+                elBtn2.innerText = `ÇEK MC ${Math.floor(myBets.box2.bet * currentMultiplierDisplay)}`;
+            }
         } 
         else if (sPhase === 'CRASHED') {
             if(lastSec !== -2) { playSfx('crash'); lastSec = -2; }
-            document.getElementById('multiplier').innerText = sCrashPoint.toFixed(2) + "x";
-            document.getElementById('multiplier').classList.add('crashed-text');
-            document.getElementById('statusText').innerText = "PATLADI";
+            elMultiplier.innerText = sCrashPoint.toFixed(2) + "x";
+            if (!elMultiplier.classList.contains('crashed-text')) elMultiplier.classList.add('crashed-text');
+            if (elStatusText.innerText !== "PATLADI") elStatusText.innerText = "PATLADI";
         }
 
         requestAnimationFrame(draw);
     }
     draw();
 
+    // SADECE DURUM DEĞİŞTİĞİNDE ÇALIŞIR (Sıfır Gecikme Sağlar)
     function updateControls() {
         const u = (box) => {
-            const btn = document.getElementById('btn' + box);
+            const btn = box === 1 ? elBtn1 : elBtn2;
             const isProc = box === 1 ? processing1 : processing2;
             const betData = myBets[`box${box}`];
 
-            if (isProc) { btn.disabled = true; btn.innerText = "İşleniyor..."; return; }
+            if (isProc) { btn.disabled = true; btn.innerText = "İŞLENİYOR..."; btn.className = "main-btn"; return; }
 
             if (sPhase === 'COUNTDOWN') {
                 if (betData) { btn.disabled = true; btn.innerText = "ONAYLANDI"; btn.className = "main-btn btn-cancel"; } 
@@ -309,9 +381,7 @@
             } 
             else if (sPhase === 'FLYING') {
                 if (betData && !betData.cashed) {
-                    btn.disabled = false; 
-                    btn.innerText = `ÇEK MC ${Math.floor(betData.bet * currentMultiplierDisplay)}`; 
-                    btn.className = "main-btn btn-cashout";
+                    btn.disabled = false; btn.className = "main-btn btn-cashout"; // Text will be updated by draw loop
                 } else if (betData && betData.cashed) {
                     btn.disabled = true; btn.innerText = `KAZANDIN: ${betData.win}`; btn.className = "main-btn btn-cancel"; btn.style.background = "#00b894";
                 } else {
@@ -324,7 +394,7 @@
                 } else if (betData && !betData.cashed) {
                     btn.disabled = true; btn.innerText = "KAYBETTİN"; btn.className = "main-btn btn-loss";
                 } else {
-                    btn.disabled = true; btn.innerText = "BEKLE"; btn.className = "main-btn";
+                    btn.disabled = true; btn.innerText = "BEKLEYİN"; btn.className = "main-btn";
                 }
             }
         };
@@ -336,10 +406,10 @@
         if(box === 2 && processing2) return;
 
         if (sPhase === 'COUNTDOWN') {
-            const amount = Math.floor(document.getElementById('betInput'+box).value) || 0;
+            const amount = Math.floor((box === 1 ? elInput1 : elInput2).value) || 0;
             if (amount < 10) return;
             
-            if(box===1) processing1 = true; else processing2 = true; updateControls();
+            if(box===1) processing1 = true; else processing2 = true; updateControls(); // OPTİMİSTİK UI GÜNCELLEMESİ (Sıfır Gecikme)
             
             try {
                 const res = await fetchAPI('/api/crash/bet', 'POST', { box, amount });
@@ -351,7 +421,7 @@
             if(box===1) processing1 = false; else processing2 = false; updateControls();
         } 
         else if (sPhase === 'FLYING') {
-            if(box===1) processing1 = true; else processing2 = true; updateControls();
+            if(box===1) processing1 = true; else processing2 = true; updateControls(); // OPTİMİSTİK UI GÜNCELLEMESİ (Sıfır Gecikme)
             
             try {
                 const res = await fetchAPI('/api/crash/cashout', 'POST', { box });
@@ -370,8 +440,8 @@
         setInterval(syncState, 500); 
     });
 
-    document.getElementById('btn1').onclick = () => handleAction(1);
-    document.getElementById('btn2').onclick = () => handleAction(2);
+    elBtn1.onclick = () => handleAction(1);
+    elBtn2.onclick = () => handleAction(2);
     document.getElementById('autoSwitch1').onchange = (e) => auto1 = e.target.checked;
     document.getElementById('autoSwitch2').onchange = (e) => auto2 = e.target.checked;
 
