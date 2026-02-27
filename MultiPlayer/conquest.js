@@ -253,8 +253,17 @@ onAuthStateChanged(auth, async (user) => {
     }
   } catch {}
 
-  listenLobby();
-});
+  unsubLobby = onSnapshot(
+  q,
+  (snap) => {
+    // ... senin lobby render kodun
+  },
+  (err) => {
+    console.error("Lobby snapshot error", err);
+    const msg = err?.code ? `${err.code}: ${err.message}` : (err?.message || "Bilinmeyen hata");
+    showModalAlert("HATA", "Lobby canlı bağlantı hatası:\n" + msg);
+  }
+);
 
 // -------------------- Lobby (CANLI) --------------------
 function listenLobby() {
