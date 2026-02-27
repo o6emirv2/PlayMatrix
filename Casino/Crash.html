@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>PlayMatrix Crash - Çarpan Oyunu</title>
+    <title>PlayMatrix Crash | Profesyonel VIP Casino ve Çarpan Oyunu</title>
     <meta name="description" content="PlayMatrix Crash ile heyecanı zirvede yaşa! %100 Provably Fair adil sistem, gerçek zamanlı yüksek çarpanlar ve anında kazanç. Hemen oyna!">
     <meta name="keywords" content="crash oyunu, casino, playmatrix, çarpan oyunu, kripto bahis, roket oyunu, online casino, canlı bahis">
     <meta name="author" content="PlayMatrix Global">
@@ -274,7 +274,7 @@
     const auth = getAuth(app);
     const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-    // --- ZOOM (ÇİFT TIKLAMA) ENGELLEYİCİ (JS YÖNTEMİ) ---
+    // --- KÖKLÜ ÇÖZÜM: ZOOM (ÇİFT TIKLAMA) ENGELLEYİCİ ---
     document.addEventListener('dblclick', function(event) {
         event.preventDefault();
     }, { passive: false });
@@ -328,9 +328,9 @@
         );
     };
 
-    // PROFESYONEL SES MOTORU (Web Audio API - iOS & Safari Uyumu Çözüldü)
+    // --- PROFESYONEL SES MOTORU (iOS İÇİN ÖZEL KİLİT AÇICI SİSTEM) ---
     let audioCtx = null;
-    let audioUnlocked = false; // iOS kilidi durumu
+    let audioUnlocked = false; 
     const sounds = {};
     const sfxUrls = {
         tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3',       
@@ -340,43 +340,75 @@
         bet: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3'         
     };
 
-    async function loadAudio() {
+    // 1. KULLANICI TIKLADIĞI "AN" SENKRON OLARAK ÇALIŞMASI GEREKEN KOD (iOS Safari Güvenliği İçin)
+    function initAndUnlockAudio() {
+        if (audioUnlocked) return;
         try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            for (let [key, url] of Object.entries(sfxUrls)) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            // Sessiz buffer ile cihazın ses motorunu kandırarak kilidi açıyoruz.
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            audioUnlocked = true;
+        } catch (e) {
+            console.warn("Ses motoru başlatılamadı:", e);
+        }
+    }
+
+    // 2. SES DOSYALARINI ARKA PLANDA İNDİRME İŞLEMİ (Asenkron)
+    async function loadSoundFiles() {
+        if (!audioCtx) return;
+        for (let [key, url] of Object.entries(sfxUrls)) {
+            try {
                 const res = await fetch(url);
                 const buf = await res.arrayBuffer();
                 sounds[key] = await audioCtx.decodeAudioData(buf);
+            } catch(e) { 
+                console.warn(`${key} sesi yüklenemedi.`, e); 
             }
-        } catch(e) { console.warn("Sesler yüklenemedi."); }
+        }
     }
 
-    // iOS İÇİN GÜVENLİK KİLİDİ AÇMA (Sessiz buffer çalarak cihazı kandırma)
-    function unlockAudioForIOS() {
-        if(audioUnlocked || !audioCtx) return;
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-        audioCtx.resume().then(() => {
-            audioUnlocked = true;
-        });
-    }
-
+    // 3. SES ÇALMA FONKSİYONU
     function playSfx(name) {
-        if(!audioCtx || !sounds[name]) return;
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        const src = audioCtx.createBufferSource();
-        src.buffer = sounds[name];
+        if(!audioCtx || !sounds[name] || !audioUnlocked) return;
         
-        const gainNode = audioCtx.createGain();
-        gainNode.gain.value = (name === 'tick' || name === 'bet') ? 0.4 : 0.8; 
+        // Safari uyku modundan çıkınca context askıya alınmış olabilir, uyandır
+        if(audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
         
-        src.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        src.start(0);
+        try {
+            const src = audioCtx.createBufferSource();
+            src.buffer = sounds[name];
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = (name === 'tick' || name === 'bet') ? 0.4 : 0.8; 
+            
+            src.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            src.start(0);
+        } catch (e) {
+            console.warn("Ses çalma hatası:", e);
+        }
     }
+
+    // GENEL DOKUNMATİK EKRAN SES KİLİDİ AÇICI (Ekstra Önlem)
+    const unlockOnTouch = () => {
+        initAndUnlockAudio();
+        document.removeEventListener('touchstart', unlockOnTouch);
+        document.removeEventListener('click', unlockOnTouch);
+    };
+    document.addEventListener('touchstart', unlockOnTouch, { once: true, passive: true });
+    document.addEventListener('click', unlockOnTouch, { once: true, passive: true });
 
     // INTRO LOGIC
     let loadProg = 0;
@@ -390,10 +422,11 @@
         document.getElementById('loaderFill').style.width = loadProg + '%';
     }, 100);
 
-    // KULLANICI İLK BUTONA BASTIĞINDA SES MOTORUNU KİLİTTEN ÇIKARIR
-    document.getElementById('btnEnterGame').addEventListener('click', async () => {
-        await loadAudio();
-        unlockAudioForIOS(); // iOS SES KİLİDİ AÇILIYOR
+    // OYUNA BAŞLAMA BUTONU EVENTİ (GÜNCELLENDİ)
+    document.getElementById('btnEnterGame').addEventListener('click', () => {
+        initAndUnlockAudio(); // 1. Adım: Await olmadan senkron olarak kilidi kır
+        loadSoundFiles();     // 2. Adım: Dosyaları arka planda yükle
+        
         document.getElementById('studioIntro').style.opacity = '0';
         setTimeout(() => {
             document.getElementById('studioIntro').style.display = 'none';
