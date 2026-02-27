@@ -263,11 +263,9 @@ function listenLobby() {
   // ✅ waiting + playing odaları kesin görünsün (AÇIK / DOLU)
   // orderBy ile daha stabil liste (en yeni üstte) — tek alan, pratikte sorun çıkarmaz
   const q = query(
-    collection(db, "conquest_rooms"),
-    where("status", "in", ["waiting", "playing"]),
-    orderBy("createdAtMs", "desc"),
-    limit(100)
-  );
+  collection(db, "conquest_rooms"),
+  where("status", "in", ["waiting", "playing"])
+);
 
   unsubLobby = onSnapshot(
     q,
