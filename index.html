@@ -547,7 +547,6 @@ const showMatrixModal = (title, message, type = 'info') => {
     document.getElementById("alertTitle").innerText = title;
     document.getElementById("alertBody").innerText = message;
     
-    // Type'a göre özel ikon ve renk
     if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-circle-exclamation" style="color:var(--danger)"></i>'; } 
     else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--success)"></i>'; } 
     else { icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color:var(--primary)"></i>'; }
@@ -558,16 +557,14 @@ const showMatrixModal = (title, message, type = 'info') => {
 const openModal = (id) => { 
     const modal = document.getElementById(id); 
     modal.style.display = 'flex'; 
-    // Animasyonun pürüzsüz çalışması için display:flex'ten hemen sonra show class'ını ekler
     setTimeout(() => { modal.classList.add('show'); }, 10);
-    
     if(id === 'wheelModal') { drawWheel(); document.getElementById("wheelCanvas").style.transform = "rotate(0deg)"; currentRotation = 0; document.getElementById("wheelResultText").innerText = ""; checkWheelCooldown(); }
 };
 
 const closeModal = (id) => { 
     const modal = document.getElementById(id); 
     modal.classList.remove('show'); 
-    setTimeout(() => { modal.style.display = 'none'; }, 400); // 400ms CSS transition süresi ile uyumlu
+    setTimeout(() => { modal.style.display = 'none'; }, 400); 
     if(id === 'authOverlay') document.getElementById("authErrorMsg").innerText = "";
 };
 
@@ -599,8 +596,15 @@ setTimeout(drawWheel, 500);
 
 async function loadUserData() {
     try {
+        const wasEmailClaimed = globalUserData ? globalUserData.emailRewardClaimed : false;
+
         const data = await fetchAPI('/api/me');
         globalUserData = data.user || {};
+        
+        // E-POSTA ONAY ÖDÜLÜ BİLDİRİMİ (Otomatik Yakalar)
+        if (!wasEmailClaimed && globalUserData.emailRewardClaimed) {
+            showMatrixModal("🎉 50.000 MC Kazandınız!", "E-posta adresinizi doğruladığınız için hoşgeldin ödülünüz bakiyenize başarıyla eklendi! İyi oyunlar.", "success");
+        }
         
         document.getElementById("userBalance").innerText = (data.balance || 0).toLocaleString();
         document.getElementById("userProfileImg").src = globalUserData.avatar || avatarLinks[0];
@@ -719,14 +723,19 @@ function loadAvatars(current) {
     });
 }
 
+// TELEFON NUMARASI ÖDÜL KONTROLÜ
 const updateProfile = async () => {
     const newName = document.getElementById("profNameSurname").value.trim();
     const newPhone = document.getElementById("profPhone").value.trim();
     const newUser = document.getElementById("profUser").value.trim();
     
     try {
-        await fetchAPI('/api/profile/update', 'POST', { fullName: newName, phone: newPhone, username: newUser, avatar: selectedAvatar || globalUserData.avatar });
-        showMatrixModal("Başarılı", "Profiliniz güvenle güncellendi.", "success");
+        const res = await fetchAPI('/api/profile/update', 'POST', { fullName: newName, phone: newPhone, username: newUser, avatar: selectedAvatar || globalUserData.avatar });
+        
+        let msg = "Profiliniz güvenle güncellendi.";
+        if (res.phoneRewarded) msg += "\n\n🎁 Telefon numaranızı doğruladığınız için 100.000 MC ödül kazandınız!";
+        
+        showMatrixModal("Başarılı", msg, "success");
         closeModal('profileModal');
         await loadUserData();
     } catch(e) { showMatrixModal("Reddedildi", e.message, "error"); }
@@ -785,7 +794,7 @@ function updateAuthUI() {
     document.getElementById("switchMode").innerHTML = isLogin ? 'Hesabın yok mu? <b style="color:var(--primary)">Hemen Kayıt Ol</b>' : 'Zaten hesabın var mı? <b style="color:var(--primary)">Giriş Yap</b>';
 }
 
-// === HATA ÇÖZÜMÜ: Çift Listener Engellendi (Tek ve Güçlü Listener) ===
+// KAYIT OLMA VE SPLIT-BRAIN (Çift Taraflı Durum) ÇÖZÜMÜ
 document.getElementById("authSubmit").addEventListener('click', async () => {
     const errorMsg = document.getElementById("authErrorMsg");
     const pass = document.getElementById("authPassword").value;
@@ -796,6 +805,8 @@ document.getElementById("authSubmit").addEventListener('click', async () => {
             if(!email || !pass) throw new Error("Kimlik bilgileri eksik.");
             await signInWithEmailAndPassword(auth, email, pass);
             closeModal('authOverlay');
+            // Giriş yapınca E-posta Ödülü varsa kontrol etmesi için data tetikleniyor
+            await loadUserData();
         } else {
             const email = document.getElementById("regEmail").value.trim();
             const userN = document.getElementById("authUsername").value.trim();
@@ -804,18 +815,33 @@ document.getElementById("authSubmit").addEventListener('click', async () => {
             // 1. Firebase Auth'ta Kullanıcı Yarat
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             
-            // YENİ: E-POSTA DOĞRULAMA (Fake Hesap Koruması)
+            // YENİ: E-POSTA DOĞRULAMA 
             await sendEmailVerification(userCredential.user);
 
-            // 2. SUNUCUDA PROFİLİ OLUŞTUR 
-            await fetchAPI('/api/profile/update', 'POST', { username: userN, avatar: avatarLinks[0] });
+            // 2. PROFİL OLUŞTURMA İÇİN TRY-CATCH (HATA ÇÖZÜMÜ)
+            try {
+                await fetchAPI('/api/profile/update', 'POST', { username: userN, avatar: avatarLinks[0] });
+            } catch (profileErr) {
+                // E-posta yaratıldı fakat İSİM alınamadı (İsim veritabanında var)
+                closeModal('authOverlay');
+                showMatrixModal(
+                    "Kayıt Başarılı (İsim Alınamadı)", 
+                    "Hesabınız açıldı ve onay e-postası gönderildi. Ancak seçtiğiniz isim kullanımda olduğu için atanamadı. Profil ayarlarından yeni isim belirleyebilirsiniz.\n\n🎁 E-postanızı doğruladığınızda 50.000 MC kazanacaksınız!", 
+                    "info"
+                );
+                await loadUserData();
+                return; // İşlemi kes (Başarılı hesabın var olduğunu bilsin)
+            }
             
             // 3. Verileri arayüze çek
-            await fetchAPI('/api/me'); 
+            await loadUserData(); 
             
             closeModal('authOverlay');
-            // Yeni Animasyonlu Modal Sistemiyle Karşılama (E-posta vurgusu)
-            showMatrixModal("Hesap Oluşturuldu!", "Güvenlik için e-posta adresinize bir onay linki gönderdik. Çark ve Promosyonları kullanabilmek için lütfen e-postanızı doğrulayın.", "success");
+            showMatrixModal(
+                "Hesap Oluşturuldu!", 
+                "Güvenlik için e-posta adresinize bir onay linki gönderdik.\n\n🎁 E-postanızı doğrulayıp tekrar giriş yaptığınızda hesabınıza otomatik 50.000 MC tanımlanacaktır!", 
+                "success"
+            );
         }
     } catch(e) { 
         if(e.code === "auth/email-already-in-use") errorMsg.innerText = "E-posta kullanımda!";
@@ -827,7 +853,6 @@ document.getElementById("authSubmit").addEventListener('click', async () => {
 document.getElementById("avatarTrigger").addEventListener('click', (e) => { e.stopPropagation(); document.getElementById("userDropdown").classList.toggle("active"); });
 window.addEventListener('click', (e) => { if(!e.target.closest('#userPill')) { document.getElementById("userDropdown").classList.remove("active"); } });
 
-// YENİ HATA ÇÖZÜMÜ: Çıkış Yaptıktan Sonra Sayfa Yenileme (UX İyileştirmesi)
 document.getElementById("logoutBtn").addEventListener('click', async () => {
     await signOut(auth);
     window.location.reload(); 
@@ -850,5 +875,3 @@ document.querySelectorAll('.game-card').forEach(card => {
     });
 });
 </script>
-</body>
-</html>
