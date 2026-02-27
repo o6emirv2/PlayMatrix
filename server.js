@@ -19,7 +19,6 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => 
 (function initFirebase() {
   if (admin.apps.length) return;
   
-  // FAIL-FAST: FIREBASE_KEY yoksa sunucu anında durdurulur (Ara ara patlama riskini yok eder)
   if (!process.env.FIREBASE_KEY) {
       console.error('⚠️ CRITICAL: FIREBASE_KEY bulunamadı. Sunucu durduruluyor.');
       process.exit(1); 
@@ -31,7 +30,7 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => 
       console.log('✅ Firebase Admin başarıyla bağlandı.');
   } catch (e) { 
       console.error('⚠️ CRITICAL: FIREBASE_KEY parse edilemedi:', e.message); 
-      process.exit(1); // Parse hatasında da anında durdur
+      process.exit(1);
   }
 })();
 
@@ -43,12 +42,8 @@ app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '1mb' }));
 
-// ======================================================
-// CORS GÜVENLİK VE ALLOWLIST AYARLARI
-// ======================================================
 app.use(cors({
   origin: function (origin, cb) {
-    // ALLOWED_ORIGINS boşsa, * içeriyorsa veya origin listedeyse izin ver
     if (!origin || ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
         return cb(null, true);
     }
@@ -83,8 +78,6 @@ const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 // ======================================================
 // 1. PROFİL & GENEL SİSTEMLER
 // ======================================================
-
-// Otomatik Kayıt: Kullanıcı ilk kez girdiğinde kaydı otomatik oluşturulur
 app.get('/api/me', verifyAuth, async (req, res) => {
   try {
     const snap = await colUsers().doc(req.user.uid).get();
@@ -104,15 +97,12 @@ app.post('/api/profile/update', verifyAuth, async (req, res) => {
     
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(colUsers().doc(uid));
-      let u = {};
-      let isNewUser = false;
+      let u = {}; let isNewUser = false;
       
       if (!snap.exists) {
           isNewUser = true;
           u = { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
-      } else {
-          u = snap.data();
-      }
+      } else { u = snap.data(); }
 
       const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
@@ -211,7 +201,7 @@ app.get('/api/bj/state', verifyAuth, async (req, res) => {
 app.post('/api/bj/start', verifyAuth, async (req, res) => {
   try {
     const bet = safeNum(req.body?.bet, 0);
-    if (bet < 10) throw new Error('Min bahis 10 MC.'); // Tutarlılık için güncellendi
+    if (bet < 10) throw new Error('Min bahis 10 MC.'); 
     const uid = req.user.uid;
 
     const session = await db.runTransaction(async (tx) => {
@@ -221,8 +211,7 @@ app.post('/api/bj/start', verifyAuth, async (req, res) => {
           else throw new Error('Devam eden eliniz var.');
       }
       const uSnap = await tx.get(colUsers().doc(uid));
-      if (!uSnap.exists) throw new Error('Kayıt yok.');
-      if (safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
+      if (!uSnap.exists || safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
       
       tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
       const deck = createDeck(8);
@@ -244,7 +233,6 @@ app.post('/api/bj/start', verifyAuth, async (req, res) => {
 app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
   try {
     const uid = req.user.uid, action = (req.body?.action || ''), clientSeq = safeNum(req.body?.seq, 0);
-    
     const updated = await db.runTransaction(async (tx) => {
       const sSnap = await tx.get(colBJ().doc(uid));
       if (!sSnap.exists) throw new Error('Oyun yok.');
@@ -259,7 +247,7 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
       if (s.insuranceOffered) {
         if (action === 'insurance_yes') {
           const insCost = Math.floor(safeNum(s.hands[0].bet, 0) / 2);
-          if (userBal < insCost) throw new Error('Sigorta için bakiye yetersiz.'); 
+          if (userBal < insCost) throw new Error('Bakiye yetersiz.'); 
           tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-insCost) }); s.insuranceBet = insCost;
         }
         s.insuranceOffered = false;
@@ -272,13 +260,13 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
         } 
         else if (action === 'stand') { h.done = true; } 
         else if (action === 'double') {
-          if (h.cards.length !== 2) throw new Error('Sadece ilk 2 kartta geçerlidir.');
-          if (userBal < h.bet) throw new Error('Double için bakiye yetersiz.'); 
+          if (h.cards.length !== 2) throw new Error('Sadece ilk 2 kartta.');
+          if (userBal < h.bet) throw new Error('Bakiye yetersiz.'); 
           tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-h.bet) });
           h.bet *= 2; h.cards.push(s._deck.pop()); h.done = true;
         } else if (action === 'split') {
-          if (s.hands.length !== 1 || h.cards[0].value !== h.cards[1].value) throw new Error('Geçersiz Split.');
-          if (userBal < h.bet) throw new Error('Split için bakiye yetersiz.'); 
+          if (s.hands.length !== 1 || h.cards[0].value !== h.cards[1].value) throw new Error('Geçersiz.');
+          if (userBal < h.bet) throw new Error('Bakiye yetersiz.'); 
           tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-h.bet) });
           s.hands.push({ cards: [h.cards.pop(), s._deck.pop()], bet: h.bet, status: 'playing', done: false });
           h.cards.push(s._deck.pop());
@@ -289,10 +277,7 @@ app.post('/api/bj/action', verifyAuth, bjActionLimiter, async (req, res) => {
         else {
           s.dealerHidden = false;
           let dScore = scoreHand(s.dealer);
-          while (dScore.total < 17 || (dScore.total === 17 && dScore.softAces > 0)) {
-              s.dealer.push(s._deck.pop());
-              dScore = scoreHand(s.dealer);
-          }
+          while (dScore.total < 17 || (dScore.total === 17 && dScore.softAces > 0)) { s.dealer.push(s._deck.pop()); dScore = scoreHand(s.dealer); }
           s.gameState = 'resolving';
         }
       }
@@ -329,22 +314,32 @@ async function resolveAndPayout(uid) {
 }
 
 // ======================================================
-// 3. CRASH MOTORU
+// 3. CRASH MOTORU - %60 OYUNCU %40 KASA KAZANÇ AYARI
 // ======================================================
-
 function generateRoundProvablyFair() {
     const serverSeed = crypto.randomBytes(32).toString('hex');
     const hash = crypto.createHash('sha256').update(serverSeed).digest('hex');
-    const n = parseInt(hash.substring(0, 8), 16);
-    const r = n / 0xffffffff; 
+    
+    // Hash'in ilk 52 bitini alıp sayıya çeviriyoruz
+    const n = parseInt(hash.substring(0, 13), 16);
+    const e = Math.pow(2, 52); 
+    const r = n / e; 
 
     let cp = 1.00;
-    if (r < 0.45) cp = 1.00 + ((n % 15) / 100); 
-    else if (r < 0.85) cp = 1.15 + ((n % 35) / 100); 
-    else {
-        const h = (n % 10000) / 100;
-        cp = Math.max(1.50, Math.floor(100 * 100 / (100 - h)) / 100);
+
+    // YENİ RTP (Return to Player) SİSTEMİ: %60 Kazanma Şansı, %40 Kasa Avantajı
+    if (r < 0.40) { 
+        // %40 İhtimalle kasa kazanır (1.00x ile 1.15x arası anında patlar)
+        cp = 1.00 + (Math.floor(r * 100) % 15) / 100; 
+    } else { 
+        // %60 İhtimalle oyuncu kazanır (Matematiksel yükseliş)
+        const h = 99 / (1 - r);
+        cp = Math.max(1.15, Math.floor(h) / 100);
     }
+    
+    // Güvenlik limiti: Maksimum 1000x
+    if(cp > 1000) cp = 1000.00;
+
     return { serverSeed, hash, crashPoint: Number(cp.toFixed(2)) };
 }
 
