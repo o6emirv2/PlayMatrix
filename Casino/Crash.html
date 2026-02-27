@@ -8,7 +8,7 @@
     <meta name="keywords" content="crash oyunu, casino, playmatrix, çarpan oyunu, kripto oyun, güvenli bahis, roket oyunu">
     <meta name="author" content="PlayMatrix">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#02040a">
+    <meta name="theme-color" content="#02050e">
     
     <meta property="og:title" content="PlayMatrix Crash | Gerçek Çarpan Heyecanı">
     <meta property="og:description" content="Kazanmak için roketin yükselişine katıl, patlamadan önce nakde çevir. %100 Provably Fair ve güvenli!">
@@ -20,7 +20,7 @@
     <meta name="twitter:description" content="Güvenli, adil ve anlık çarpan oyunu. Hemen oyna!">
 
     <title>PlayMatrix - Crash</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     
     <script>
         if (window.history.replaceState) { window.history.replaceState(null, null, "/"); }
@@ -29,9 +29,9 @@
     <style>
         /* GENEL DÜZEN VE SIFIR KAYMA KORUMASI */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; user-select: none; }
-        html, body { background: #02040a; color: white; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; touch-action: none; }
+        html, body { background: #02050e; color: white; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; touch-action: none; }
 
-        .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #4fd1ff; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
+        .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(2, 5, 14, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #4fd1ff; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
         .brand { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: linear-gradient(90deg, #4fd1ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
         .right-menu { display: flex; gap: 8px; align-items: center; }
         
@@ -47,16 +47,28 @@
         .history span { padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 800; font-family: 'Orbitron'; background: rgba(255,255,255,0.05); }
 
         /* PROFESYONEL OYUN ALANI */
-        .game-container { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 240px); z-index: 1; background: radial-gradient(circle at 50% 100%, #06112a 0%, #02040a 80%); }
+        .game-container { position: absolute; top: 0; left: 0; width: 100%; height: calc(100% - 240px); z-index: 1; }
         canvas { width: 100%; height: 100%; display: block; }
 
-        .multiplier-display { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 10; width: 100%; }
-        .x-value { font-family: 'Orbitron', sans-serif; font-size: 85px; font-weight: 900; color: #fff; text-shadow: 0 0 25px rgba(79, 209, 255, 0.7); transition: transform 0.1s; }
+        /* TAM MERKEZE ALINMIŞ ÇARPAN GÖSTERGESİ */
+        .multiplier-display { 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            text-align: center; 
+            pointer-events: none; 
+            z-index: 10; 
+            width: 100%; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        
         .status-text { font-family: 'Orbitron'; font-size: 14px; color: #4fd1ff; letter-spacing: 4px; margin-bottom: 5px; text-transform: uppercase; text-shadow: 0 2px 4px #000; }
-        .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 20px #ff2a4d; animation: shake 0.4s infinite; }
+        .x-value { font-family: 'Orbitron', sans-serif; font-size: 90px; font-weight: 900; color: #fff; text-shadow: 0 0 30px rgba(79, 209, 255, 0.6); transition: transform 0.1s; line-height: 1; }
+        
+        .crashed-text { color: #ff2a4d !important; text-shadow: 0 0 30px rgba(255, 42, 77, 0.8); animation: shake 0.4s infinite; }
 
-        /* YENİ: İBRE / HIZ GÖSTERGESİ */
-        .speedometer { position: absolute; right: 20px; top: 130px; width: 20px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.2); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; }
+        /* İBRE / HIZ GÖSTERGESİ */
+        .speedometer { position: absolute; right: 15px; top: 130px; width: 15px; height: 180px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(79, 209, 255, 0.15); overflow: hidden; z-index: 10; display: flex; flex-direction: column-reverse; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .speed-fill { width: 100%; height: 0%; background: linear-gradient(to top, #00ffa3, #4fd1ff, #ff4b4b); transition: height 0.1s ease-out; box-shadow: 0 0 10px rgba(79, 209, 255, 0.5); }
         
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
@@ -86,10 +98,10 @@
         .main-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
         .main-btn:disabled { opacity: 0.6; filter: grayscale(0.8); cursor: not-allowed; transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.3) !important; }
 
-        @media (max-width: 400px) { .x-value { font-size: 60px; } .bottom-panel { height: 220px; padding: 10px; } .bet-card { padding: 10px; gap: 8px;} .bet-card input { padding: 10px; font-size: 16px; } .speedometer { display: none; } }
+        @media (max-width: 400px) { .x-value { font-size: 70px; } .bottom-panel { height: 220px; padding: 10px; } .bet-card { padding: 10px; gap: 8px;} .bet-card input { padding: 10px; font-size: 16px; } .speedometer { display: none; } }
 
         /* AÇIKLAYICI NASIL OYNANIR EKRANI */
-        .start-overlay { position: fixed; inset: 0; background: rgba(2,4,10,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.5s; }
+        .start-overlay { position: fixed; inset: 0; background: rgba(2,5,14,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.5s; }
         
         .animated-border-box {
             position: relative; width: 90%; max-width: 380px; border-radius: 16px; padding: 4px;
@@ -218,9 +230,17 @@
         } catch (e) {}
     }
 
+    // Ses Çakışmasını Engellemek İçin currentTime kontrolü
+    let lastSoundTime = { bet: 0, tick: 0, fly: 0, crash: 0, win: 0 };
     function playSfx(name) {
         if(!audioCtx || !sounds[name]) return;
         if(audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const now = Date.now();
+        // Aynı sesin çok kısa sürede üst üste çalmasını engelle
+        if (now - lastSoundTime[name] < 200) return; 
+        lastSoundTime[name] = now;
+
         const source = audioCtx.createBufferSource();
         source.buffer = sounds[name];
         source.connect(audioCtx.destination);
@@ -314,7 +334,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false }); 
     let width, height;
-    let gridOffset = 0;
+    let bgGlow = 0;
     let particles = [];
     let lastPointX = 0, lastPointY = 0;
     
@@ -322,31 +342,25 @@
     window.addEventListener('resize', resize); resize();
 
     function createExplosion(x, y) {
-        for(let i=0; i<50; i++) {
+        for(let i=0; i<40; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random()-0.5)*18, vy: (Math.random()-0.5)*18,
-                life: 1, size: Math.random()*4 + 2, 
-                color: Math.random() > 0.5 ? '#ff2a4d' : '#ff9800'
+                vx: (Math.random()-0.5)*20, vy: (Math.random()-0.5)*20,
+                life: 1, size: Math.random()*5 + 2, 
+                color: Math.random() > 0.5 ? '#ff2a4d' : '#ffaa00'
             });
         }
     }
 
     let lastSec = -1;
     function draw() {
-        // Arka Plan Temizle
-        ctx.fillStyle = "#02040a"; ctx.fillRect(0,0,width,height);
-        
-        // Hareketli Grid (Matrix Tarzı Profesyonel Derinlik)
-        ctx.strokeStyle = "rgba(79, 209, 255, 0.04)";
-        ctx.lineWidth = 1;
-        gridOffset += (sPhase === 'FLYING' ? currentMultiplierDisplay * 1.5 : 0.5);
-        if(gridOffset > 50) gridOffset = 0;
-        
-        ctx.beginPath();
-        for(let x= -gridOffset; x<width; x+=50) { ctx.moveTo(x,0); ctx.lineTo(x,height); }
-        for(let y= height + gridOffset; y>0; y-=50) { ctx.moveTo(0,y); ctx.lineTo(width,y); }
-        ctx.stroke();
+        // Profesyonel Radial Arka Plan (Kareler Silindi)
+        bgGlow = sPhase === 'FLYING' ? Math.min(0.8, bgGlow + 0.01) : Math.max(0, bgGlow - 0.05);
+        const bgGrad = ctx.createRadialGradient(width/2, height, 10, width/2, height, height);
+        bgGrad.addColorStop(0, `rgba(79, 209, 255, ${0.1 + (bgGlow * 0.2)})`);
+        bgGrad.addColorStop(1, "#02050e");
+        ctx.fillStyle = bgGrad; 
+        ctx.fillRect(0,0,width,height);
 
         const now = Date.now() - serverOffset;
 
@@ -399,7 +413,7 @@
             // Parlayan Çizgi
             ctx.save(); 
             ctx.shadowBlur = 20; ctx.shadowColor = "#4fd1ff"; 
-            ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 4; ctx.lineCap = "round";
+            ctx.strokeStyle = "#4fd1ff"; ctx.lineWidth = 5; ctx.lineCap = "round";
             ctx.beginPath(); ctx.moveTo(0, height); ctx.quadraticCurveTo(width * 0.5, Math.max(0, cpY), endX, Math.max(0, endY)); 
             ctx.stroke(); 
             
@@ -424,7 +438,7 @@
 
             // Partikül Çizimi (Kıvılcımlar)
             particles.forEach((p, i) => {
-                p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                p.x += p.vx; p.y += p.vy; p.life -= 0.03;
                 if(p.life <= 0) { particles.splice(i, 1); return; }
                 ctx.globalAlpha = p.life;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
