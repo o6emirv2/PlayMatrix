@@ -31,16 +31,39 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; user-select: none; }
         html, body { background: #02050e; color: white; height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none; touch-action: none; }
 
+        /* PRAGMATIC STYLE AÇILIŞ EKRANI (CRASH TEMALI) */
+        #pragmaticIntro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #02050e;
+            z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+        
+        .center-logo {
+            text-align: center; margin-bottom: 30px; transform: scale(1.2); animation: pulseLogo 2s infinite alternate;
+        }
+        .center-logo svg { width: 60px; height: auto; margin-bottom: 10px; fill: #4fd1ff; }
+        .center-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 28px; letter-spacing: 2px; color: #fff;}
+        .center-logo h1 span { color: #4fd1ff; }
+        
+        .loading-container { width: 220px; height: 4px; background: #161d36; margin-top: 30px; border-radius: 2px; overflow: hidden; position: relative;}
+        .loading-fill { height: 100%; width: 0%; background: #4fd1ff; transition: width 0.1s linear; box-shadow: 0 0 10px #4fd1ff; }
+        
+        @keyframes pulseLogo { 0% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(79,209,255,0.2)); } 100% { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(79,209,255,0.6)); } }
+
+
         .top-bar { position: fixed; top: 0; left: 0; right: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(2, 5, 14, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #4fd1ff; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.8); }
         .brand { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: linear-gradient(90deg, #4fd1ff, #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
-        .right-menu { display: flex; gap: 8px; align-items: center; }
+        .right-menu { display: flex; gap: 6px; align-items: center; }
         
         .user-pill-mini { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); }
         .balance-info { display: flex; align-items: center; }
         .balance-info b { font-size: 14px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; }
         .mc-chip { width: 22px; height: 22px; background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); border-radius: 50%; margin-left: 6px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #fff; box-shadow: 0 0 10px rgba(79, 209, 255, 0.3); border: 1.2px solid rgba(255,255,255,0.2); font-family: 'Inter', sans-serif; }
 
-        .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 8px 15px; border-radius: 10px; font-weight: 800; font-size: 11px; border: 1px solid #7a0000; cursor: pointer; transition: 0.3s; margin-left: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .back-btn { background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: white; text-decoration: none; padding: 8px 12px; border-radius: 10px; font-weight: 800; font-size: 11px; border: 1px solid #7a0000; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        
+        .info-btn { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); color: white; border: 1px solid #1e3a8a; width: 32px; height: 32px; border-radius: 10px; font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .info-btn:active { transform: scale(0.9); }
 
         .history { position: fixed; top: 70px; width: 100%; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 15px; background: rgba(0,0,0,0.4); overflow-x: auto; scrollbar-width: none; z-index: 900; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .history::-webkit-scrollbar { display: none; }
@@ -50,7 +73,7 @@
         .game-container { position: absolute; top: 110px; left: 0; width: 100%; height: calc(100vh - 350px); z-index: 1; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
 
-        /* KUSURSUZ MERKEZLEME (ABSOLUTE DEAD CENTER) */
+        /* KUSURSUZ MERKEZLEME */
         .multiplier-display { 
             position: absolute; 
             top: 35%; left: 50%; 
@@ -107,8 +130,8 @@
             .speedometer { display: none; } 
         }
 
-        /* MODAL EKRANLARI (AÇILIŞ & HATA/UYARI) */
-        .start-overlay { position: fixed; inset: 0; background: rgba(2,5,14,0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.5s; }
+        /* MODAL EKRANLARI (BİLGİ & UYARI) */
+        .overlay-modal { position: fixed; inset: 0; background: rgba(2,5,14,0.95); display: flex; align-items: center; justify-content: center; z-index: 10000; backdrop-filter: blur(15px); touch-action: none; transition: opacity 0.4s; }
         
         .animated-border-box {
             position: relative; width: 90%; max-width: 380px; border-radius: 16px; padding: 4px;
@@ -138,7 +161,16 @@
 </head>
 <body>
 
-<div id="start-overlay" class="start-overlay">
+<div id="pragmaticIntro">
+    <div class="center-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <h1>PLAYMATRIX<br><span>CRASH</span></h1>
+    </div>
+    <div class="loading-container" id="loadingBarCont"><div class="loading-fill" id="loadingFill"></div></div>
+    <button id="systemStartBtn" class="btn-start-game" style="display:none; max-width: 250px; margin-top:30px;">SİSTEME GİRİŞ YAP</button>
+</div>
+
+<div id="howToPlayModal" class="overlay-modal" style="display: none; opacity: 0;">
     <div class="animated-border-box">
         <div class="start-modal">
             <h2 class="modal-title">Nasıl Oynanır?</h2>
@@ -150,12 +182,12 @@
                     <i>En iyi oyun deneyimi için cihazınızın sesini açınız.</i>
                 </div>
             </div>
-            <button id="systemStartBtn" class="btn-start-game">ANLADIM BAŞLA</button>
+            <button id="closeHowToPlayBtn" class="btn-start-game">KAPAT</button>
         </div>
     </div>
 </div>
 
-<div id="custom-alert-overlay" class="start-overlay" style="display: none; opacity: 0; z-index: 10001;">
+<div id="custom-alert-overlay" class="overlay-modal" style="display: none; opacity: 0; z-index: 10001;">
     <div class="animated-border-box" id="custom-alert-box">
         <div class="start-modal">
             <h2 class="modal-title" id="custom-alert-title">UYARI</h2>
@@ -174,6 +206,7 @@
             <div class="balance-info"><b id="balance">Yükleniyor...</b><div class="mc-chip">MC</div></div>
         </div>
         <a href="/" class="back-btn">ÇIKIŞ</a>
+        <button id="openHowToPlayBtn" class="info-btn" title="Nasıl Oynanır?">?</button>
     </nav>
 </header>
 
@@ -232,7 +265,45 @@
     const elInput2 = document.getElementById('betInput2');
     const elSpeed = document.getElementById('speedFill');
 
-    // --- YENİ: CUSTOM MODAL UYARI SİSTEMİ (Standart alert yerine) ---
+    // PRAGMATIC INTRO YÜKLEME
+    let loadProgress = 0;
+    const loadInt = setInterval(() => {
+        loadProgress += Math.random() * 15;
+        if(loadProgress >= 100) {
+            loadProgress = 100;
+            clearInterval(loadInt);
+            document.getElementById('loadingBarCont').style.display = 'none';
+            document.getElementById('systemStartBtn').style.display = 'block';
+        }
+        document.getElementById('loadingFill').style.width = loadProgress + '%';
+    }, 100);
+
+    // SİSTEME GİRİŞ YAP BUTONU
+    document.getElementById('systemStartBtn').addEventListener('click', () => {
+        initAudio(); 
+        const intro = document.getElementById('pragmaticIntro');
+        intro.style.opacity = '0';
+        setTimeout(() => {
+            intro.style.display = 'none'; 
+            gameStarted = true; 
+            fetchBalance(); 
+            syncState();
+            setInterval(syncState, 500); 
+        }, 800); // Css opacity transition süresi
+    });
+
+    // NASIL OYNANIR MODALI YÖNETİMİ (?)
+    const htpModal = document.getElementById('howToPlayModal');
+    document.getElementById('openHowToPlayBtn').addEventListener('click', () => {
+        htpModal.style.display = 'flex';
+        setTimeout(() => { htpModal.style.opacity = '1'; }, 10);
+    });
+    document.getElementById('closeHowToPlayBtn').addEventListener('click', () => {
+        htpModal.style.opacity = '0';
+        setTimeout(() => { htpModal.style.display = 'none'; }, 400);
+    });
+
+    // CUSTOM MODAL UYARI SİSTEMİ
     function showCustomAlert(msg, title = "BİLDİRİM", type = "error") {
         const overlay = document.getElementById('custom-alert-overlay');
         const titleEl = document.getElementById('custom-alert-title');
@@ -264,10 +335,10 @@
     document.getElementById('custom-alert-btn').addEventListener('click', () => {
         const overlay = document.getElementById('custom-alert-overlay');
         overlay.style.opacity = '0';
-        setTimeout(() => { overlay.style.display = 'none'; }, 500);
+        setTimeout(() => { overlay.style.display = 'none'; }, 400);
     });
 
-    // GERÇEKÇİ SES MOTORU YÜKLEMESİ
+    // GERÇEKÇİ SES MOTORU
     let audioCtx = null;
     const sounds = {};
     const urls = {
@@ -290,7 +361,6 @@
         } catch (e) {}
     }
 
-    // Ses Çakışmasını Engellemek İçin currentTime kontrolü
     let lastSoundTime = { bet: 0, tick: 0, fly: 0, crash: 0, win: 0 };
     function playSfx(name) {
         if(!audioCtx || !sounds[name]) return;
@@ -387,7 +457,7 @@
         });
     }
 
-    // YENİ PROFESYONEL ARKA PLAN VE ÇİZİM MOTORU
+    // ARKA PLAN VE ÇİZİM MOTORU
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false }); 
     let width, height;
@@ -594,16 +664,6 @@
             if(box===1) processing1 = false; else processing2 = false; updateControls();
         }
     }
-
-    document.getElementById('systemStartBtn').addEventListener('click', () => {
-        initAudio(); 
-        document.getElementById('start-overlay').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('start-overlay').style.display = 'none'; 
-            gameStarted = true; fetchBalance(); syncState();
-            setInterval(syncState, 500); 
-        }, 500);
-    });
 
     elBtn1.onclick = () => handleAction(1);
     elBtn2.onclick = () => handleAction(2);
