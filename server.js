@@ -924,8 +924,9 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 7. ONLINE SATRANÇ MOTORU (YENİ PING SİSTEMİ EKLENDİ)
+// 7. ONLINE SATRANÇ MOTORU (GÜNCELLENDİ VE HATALAR ÇÖZÜLDÜ)
 // ======================================================
+
 const colChess = () => db.collection('chess_rooms');
 
 app.get('/api/chess/lobby', verifyAuth, async (req, res) => {
@@ -1020,21 +1021,29 @@ app.post('/api/chess/join', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// PING (HEARTBEAT) SİSTEMİ - Oyuncuların odada kalıp kalmadığını denetler
+app.get('/api/chess/state/:id', verifyAuth, async (req, res) => {
+    try {
+        const roomId = cleanStr(req.params.id);
+        const snap = await colChess().doc(roomId).get();
+        if (!snap.exists) throw new Error("Oda bulunamadı.");
+        res.json({ ok: true, room: { id: roomId, ...snap.data() } });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// HEARTBEAT (PING) VE ÇIKAN OYUNCUYU İPTAL ETME SİSTEMİ
 app.post('/api/chess/ping', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
         const roomId = cleanStr(req.body.roomId);
-        if (!roomId) throw new Error("Room ID yok");
+        if (!roomId) throw new Error("Oda ID yok");
 
         const result = await db.runTransaction(async (tx) => {
             const snap = await tx.get(colChess().doc(roomId));
             if (!snap.exists) throw new Error("Oda Yok");
             let r = snap.data();
 
-            // Eğer oyun bitmişse veya iptal edildiyse hiçbir işlem yapma
             if (r.status === 'finished' || r.status === 'abandoned') {
-                return { status: r.status, message: "Oyun zaten bitti veya iptal oldu." };
+                return { status: r.status, message: "Oyun zaten bitti." };
             }
 
             const isHost = r.host && r.host.uid === uid;
@@ -1043,14 +1052,14 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
             if (isHost) r.host.lastPing = nowMs();
             if (isGuest) r.guest.lastPing = nowMs();
 
-            // ÇIKMA KONTROLÜ (Eğer oynanıyorsa ve oyunculardan birinden 10 saniyedir haber yoksa)
+            // 30 Saniye boyunca ses vermeyen oyuncu odadan atılır, oyun iptal olur.
             if (r.status === 'playing') {
-                const hostDrop = nowMs() - (r.host.lastPing || 0) > 10000;
-                const guestDrop = nowMs() - (r.guest.lastPing || 0) > 10000;
+                const hostDrop = nowMs() - (r.host.lastPing || 0) > 30000;
+                const guestDrop = nowMs() - (r.guest.lastPing || 0) > 30000;
 
                 if (hostDrop || guestDrop) {
                     r.status = 'abandoned';
-                    r.winner = 'none'; // Kimse kazanmaz/kaybetmez
+                    r.winner = 'none';
                     r.updatedAt = nowMs();
                     tx.update(colChess().doc(roomId), r);
                     setTimeout(() => colChess().doc(roomId).delete().catch(()=>null), 5000);
@@ -1069,8 +1078,7 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
 app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
-        // İstemciden gelen SAN (Kısa Hamle Notasyonu - e4, Nf3, O-O vb.) alınır.
-        const { roomId, moveSan } = req.body;
+        const { roomId, from, to, promotion } = req.body;
 
         const result = await db.runTransaction(async (tx) => {
             const rSnap = await tx.get(colChess().doc(roomId));
@@ -1086,9 +1094,10 @@ app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
             if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
 
             const chess = new Chess(r.fen);
-            // Sürükleme hatası burada giderildi. Sunucu sadece 'san' ile hamle kabul edecek.
-            const move = chess.move(moveSan);
-            if (move === null) throw new Error("Geçersiz hamle! Kural hatası veya hile girişimi.");
+            // SÜRÜM UYUMSUZLUĞU HATASI DÜZELTİLDİ: Sadece from, to objesi alınır.
+            const move = chess.move({ from, to, promotion: promotion || 'q' });
+
+            if (move === null) throw new Error("Geçersiz hamle! Kural hatası.");
 
             r.fen = chess.fen();
             r.turn = chess.turn(); 
@@ -1135,11 +1144,8 @@ app.post('/api/chess/resign', verifyAuth, async (req, res) => {
             if (!isWhite && !isBlack) throw new Error("Yetkiniz yok.");
 
             r.status = 'finished'; r.winner = isWhite ? 'black' : 'white'; r.updatedAt = nowMs();
-            const winnerUid = isWhite ? r.guest.uid : r.host.uid;
             
-            tx.update(colUsers().doc(winnerUid), { balance: admin.firestore.FieldValue.increment(5000) });
             tx.update(colChess().doc(roomId), r);
-            
             return { room: { id: roomId, ...r } };
         });
         
