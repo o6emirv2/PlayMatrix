@@ -504,6 +504,39 @@ const auth = getAuth(app);
 
 const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
+// ===============================
+// KAYIT GÜVENLİĞİ / SPLIT-BRAIN ÖNLEMLERİ
+// ===============================
+function normalizeUsername(u) {
+    return String(u || "").trim().replace(/\s+/g, " ");
+}
+function isDisposableEmail(email) {
+    const e = String(email || "").trim().toLowerCase();
+    const at = e.lastIndexOf("@");
+    if (at < 0) return false;
+    const domain = e.slice(at + 1);
+    // Basit (genişletilebilir) temp-mail / disposable domain listesi
+    const blocked = [
+        "mailinator.com","guerrillamail.com","guerrillamail.net","guerrillamail.org",
+        "10minutemail.com","10minutemail.net","10minemail.com",
+        "tempmail.com","temp-mail.org","temp-mail.io","temp-mail.com",
+        "yopmail.com","yopmail.fr","yopmail.net",
+        "trashmail.com","getnada.com","dispostable.com","minuteinbox.com"
+    ];
+    return blocked.includes(domain) || domain.endsWith(".mailinator.com") || domain.endsWith(".yopmail.com");
+}
+async function checkUsernameAvailable(username) {
+    const u = normalizeUsername(username);
+    if (!u) throw new Error("Kullanıcı adı boş olamaz.");
+    // Sunucu tarafı doğrulama + müsaitlik kontrolü (Auth hesabı açılmadan önce)
+    const res = await fetch(`${API_URL}/api/check-username?username=${encodeURIComponent(u)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) throw new Error(data.error || "Kullanıcı adı kontrol edilemedi.");
+    if (!data.available) throw new Error("Bu kullanıcı adı kullanımda!");
+    return true;
+}
+
+
 let globalUserData = null; 
 
 const toggleTheme = () => {
@@ -819,6 +852,12 @@ document.getElementById("authSubmit").addEventListener('click', async () => {
             if(!userN || !email || !pass) throw new Error("Tüm alanları doldurmalısınız.");
             
             // 1. Firebase Auth'ta Kullanıcı Yarat
+            // Temp-mail / disposable e-posta basit engeli
+            if (isDisposableEmail(email)) throw new Error("Geçersiz e-posta sağlayıcısı. Lütfen gerçek bir e-posta adresi kullanın.");
+
+            // Split-Brain önlemi: Auth hesabı açılmadan önce kullanıcı adı boşta mı kontrol et
+            await checkUsernameAvailable(userN);
+
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
             
             // YENİ: E-POSTA DOĞRULAMA 
@@ -861,7 +900,8 @@ window.addEventListener('click', (e) => { if(!e.target.closest('#userPill')) { d
 
 document.getElementById("logoutBtn").addEventListener('click', async () => {
     await signOut(auth);
-    window.location.reload(); 
+    // Güvenli çıkış sonrası ana siteye yönlendir
+    window.location.href = "https://playmatrix.com.tr";
 });
 
 const canvasSnow = document.getElementById("snow"); const ctxS = canvasSnow.getContext("2d"); let particles = [];
