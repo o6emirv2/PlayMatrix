@@ -31,11 +31,11 @@
         width: 100vw; height: 100vh; overflow: hidden; 
         overscroll-behavior: none; touch-action: manipulation; 
         font-family: 'Inter', -apple-system, sans-serif;
-        background-color: #062312;
-        /* PROFESYONEL SPOT IŞIKLI VIP ÇUHA ARKA PLANI */
+        background-color: #1a0505;
+        /* PROFESYONEL PİŞTİ ÇUHASI (KOYU BORDO/KIRMIZI LÜKS ARKA PLAN) */
         background-image: 
-            radial-gradient(circle at 50% -20%, #0f5228 0%, transparent 65%),
-            radial-gradient(circle at 50% 100%, #020c06 0%, transparent 80%);
+            radial-gradient(circle at 50% -20%, #4a0f0f 0%, transparent 65%),
+            radial-gradient(circle at 50% 100%, #0a0202 0%, transparent 80%);
         color: white;
     }
     
@@ -97,14 +97,14 @@
     .table-line {
         position: absolute; top: 15%; left: -20vw; right: -20vw; height: 70%;
         border-top: 4px solid rgba(255, 59, 48, 0.2); border-radius: 50%;
-        pointer-events: none; z-index: 0; box-shadow: inset 0 40px 60px rgba(0,0,0,0.3);
+        pointer-events: none; z-index: 0; box-shadow: inset 0 40px 60px rgba(0,0,0,0.4);
     }
 
     /* KART KUTUSU (SHOE) */
     .card-shoe-container { 
         position: absolute; top: 20px; right: 20px; z-index: 50; 
         display: flex; flex-direction: column; align-items: center; 
-        background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+        background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
     }
     .card-shoe {
         width: 45px; height: 65px; background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
@@ -125,7 +125,7 @@
     
     .card-3d { 
         width: 65px; height: 95px; position: relative; 
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
         transform-style: preserve-3d; cursor: pointer;
     }
     .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -4px 4px 10px rgba(0,0,0,0.6); object-fit: cover; backface-visibility: hidden;}
@@ -139,6 +139,15 @@
     .table-card:nth-last-child(2) { transform: rotate(-8deg) translate(-5px, -5px); z-index: 3; }
     .table-card:nth-last-child(3) { transform: rotate(12deg) translate(5px, -8px); z-index: 2; }
     .table-card:nth-last-child(4) { transform: rotate(-15deg) translate(-8px, -12px); z-index: 1; }
+
+    /* Yeni atılan kart animasyonu (Ortaya fırlatma) */
+    .new-card-anim {
+        animation: throwCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes throwCard {
+        0% { transform: scale(1.5) translateY(-50px) rotate(-20deg); opacity: 0; }
+        100% { transform: scale(1) translateY(0) rotate(5deg); opacity: 1; }
+    }
 
     /* AKSİYON VE BİLGİ ALANI */
     .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60px; z-index: 10; margin-top: 5px;}
@@ -154,7 +163,7 @@
     /* YAN YANA BOZULMAYAN PROFESYONEL ÇİPLER */
     .chips-wrapper { width: 100%; display: flex; justify-content: center; padding-bottom: 10px; z-index: 10; }
     .chips-area { 
-        display: flex; justify-content: center; align-items: center; gap: 8px; 
+        display: flex; justify-content: flex-start; align-items: center; gap: 8px; 
         background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 30px; 
         border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px);
         flex-wrap: nowrap; overflow-x: auto; max-width: 95%; scrollbar-width: none; -webkit-overflow-scrolling: touch;
@@ -355,12 +364,15 @@ let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
 
+// YENİ PROFESYONEL SES DOSYALARI
 const sfxUrls = {
     chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Çip sesine dokunulmadı
-    deal: 'https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3', // Tok kart çekme (Sürtme)
-    bust: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', // Kayıp Sesi
-    win:  'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Kazanç (Casino Jingle)
-    push: 'https://assets.mixkit.co/active_storage/sfx/2058/2058-preview.mp3', // İade / Capture Sesi
+    deal: 'https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3', // Dağıtım Sesi (Shuffle/Deal)
+    play: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3', // Kart Atma Sesi (Sürtme/Flick)
+    capture: 'https://assets.mixkit.co/active_storage/sfx/2058/2058-preview.mp3', // Kartları Toplama (Swoosh)
+    bust: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', // Kayıp Sesi (Thud)
+    win:  'https://assets.mixkit.co/active_storage/sfx/1071/1071-preview.mp3', // Kazanç (Casino Jingle)
+    push: 'https://assets.mixkit.co/active_storage/sfx/2025/2025-preview.mp3', // İade Sesi
     pisti: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3' // Pişti şıkırtısı
 };
 
@@ -373,7 +385,6 @@ function initAndUnlockAudio() {
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); 
         if (source.start) source.start(0); else source.noteOn(0);
-        
         if (audioCtx.state === 'suspended') audioCtx.resume();
         audioUnlocked = true;
     } catch (e) {}
@@ -399,7 +410,7 @@ function playSfx(name) {
         const gainNode = audioCtx.createGain();
         
         if (name === 'chip') gainNode.gain.value = 0.5;
-        else if (name === 'deal') gainNode.gain.value = 0.8;
+        else if (name === 'play') gainNode.gain.value = 0.9;
         else gainNode.gain.value = 1.0;
         
         src.connect(gainNode);
@@ -433,11 +444,13 @@ document.getElementById('btnEnterGame').addEventListener('click', () => {
     setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initGame(); }, 600);
 });
 
-// --- OYUN DEĞİŞKENLERİ ---
+// --- OYUN DEĞİŞKENLERİ VE BEKLEME (SLEEP) FONKSİYONU ---
 let userBalance = 0; 
 let currentBet = 0; 
 let gameState = null;
 let actionLock = false;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // API İSTEKLERİ
 async function fetchAPI(endpoint, method = 'GET', body = null) {
@@ -519,7 +532,7 @@ document.getElementById("startBtn").addEventListener("click", async () => {
         userBalance = res.balance;
         document.getElementById("ui-balance").innerText = Math.floor(userBalance).toLocaleString('tr-TR');
         gameState = res.state;
-        renderBoard(true); // Animasyonlu dağıtım
+        renderBoard(true); 
     } catch(e) {
         showMatrixModal("Hata", e.message, "error");
         document.getElementById("ui-chipsArea").style.display = "flex";
@@ -528,13 +541,12 @@ document.getElementById("startBtn").addEventListener("click", async () => {
     actionLock = false;
 });
 
+// PROFESYONEL VE GECİKMELİ KART ANİMASYONLARI
 function renderBoard(animate = false) {
     if (!gameState) return;
 
     document.getElementById("playerScore").innerText = gameState.playerScore;
     document.getElementById("botScore").innerText = gameState.botScore;
-    
-    // Geçmiş (alınmış) kart sayıları + eldeki kartlar
     document.getElementById("playerCardCount").innerText = gameState.playerCardCount;
     document.getElementById("botCardCount").innerText = gameState.botCardCount;
 
@@ -544,7 +556,7 @@ function renderBoard(animate = false) {
 
     bHand.innerHTML = ""; pHand.innerHTML = ""; tArea.innerHTML = "";
 
-    // BOT KARTLARI (Kapalı)
+    // BOT KARTLARI
     for (let i = 0; i < gameState.botCardCount; i++) {
         let div = document.createElement("div"); div.className = "card-3d";
         div.innerHTML = `<img src="https://deckofcardsapi.com/static/img/back.png" class="real-card">`;
@@ -598,6 +610,7 @@ function renderBoard(animate = false) {
     }
 }
 
+// BİREBİR CASINO YAVAŞLIĞINDA SIRA BAZLI KART ATMA MANTIĞI
 async function playCard(idx) {
     if (actionLock || !gameState || gameState.status !== 'playing') return;
     actionLock = true;
@@ -606,43 +619,69 @@ async function playCard(idx) {
     try {
         const res = await fetchAPI('/api/pisti/play', 'POST', { cardIndex: idx });
         const log = res.log;
+        
+        // 1. OYUNCU HAMLESİ ANİMASYONU
+        const pHandDiv = document.getElementById("playerHand");
+        if(pHandDiv.children[idx]) pHandDiv.children[idx].style.opacity = "0"; // Oyuncunun elinden kartı gizle
+        
+        playSfx('play');
+        let tArea = document.getElementById("tableCards");
+        let pCardDiv = document.createElement("div"); 
+        pCardDiv.className = "table-card new-card-anim";
+        pCardDiv.innerHTML = `<img src="${getCardImage(log.playerAction.card)}" class="real-card">`;
+        tArea.appendChild(pCardDiv);
+        
+        await sleep(800); // Kartın atıldığının görülmesi için bekle
+
+        if (log.playerAction.captured) {
+            playSfx(log.playerAction.isPisti ? 'pisti' : 'capture');
+            if(log.playerAction.isPisti) triggerPistiAnim();
+            tArea.innerHTML = ""; // Yeri topla
+            document.getElementById("playerScore").innerText = parseInt(document.getElementById("playerScore").innerText) + (log.playerAction.isPisti ? (log.playerAction.card[0]==='J'?20:10) : 0);
+            await sleep(600);
+        }
+
+        // 2. BOT HAMLESİ ANİMASYONU
+        if (log.botAction) {
+            document.getElementById("ui-message").innerText = "KRUPİYER OYNUYOR...";
+            await sleep(500); 
+            
+            const bHandDiv = document.getElementById("botHand");
+            if(bHandDiv.children.length > 0) bHandDiv.removeChild(bHandDiv.lastChild); 
+            
+            playSfx('play');
+            let bCardDiv = document.createElement("div"); 
+            bCardDiv.className = "table-card new-card-anim";
+            bCardDiv.innerHTML = `<img src="${getCardImage(log.botAction.card)}" class="real-card">`;
+            tArea.appendChild(bCardDiv);
+            
+            await sleep(800);
+
+            if (log.botAction.captured) {
+                playSfx(log.botAction.isPisti ? 'pisti' : 'capture');
+                if(log.botAction.isPisti) triggerPistiAnim();
+                tArea.innerHTML = ""; 
+                await sleep(600);
+            }
+        }
+
+        // 3. SUNUCU VERİLERİNİ EŞİTLE VE DURUMA GÖRE İŞLEM YAP
         gameState = res.state;
         userBalance = res.balance;
         document.getElementById("ui-balance").innerText = Math.floor(userBalance).toLocaleString('tr-TR');
-        
-        // Oyuncu Hamlesi
-        playSfx('deal');
-        if (log.playerAction.captured) {
-            setTimeout(() => { 
-                playSfx(log.playerAction.isPisti ? 'pisti' : 'push'); 
-                if(log.playerAction.isPisti) triggerPistiAnim();
-            }, 300);
+
+        if (log.gameOver) {
+            renderBoard(false); // Son durumu çiz
+            handleGameOver(log);
+        } else if (log.roundOver) {
+            document.getElementById("ui-message").innerText = "YENİ KARTLAR DAĞITILIYOR...";
+            renderBoard(false); 
+            await sleep(500);
+            renderBoard(true); 
+        } else {
+            renderBoard(false); 
+            actionLock = false;
         }
-
-        renderBoard(false);
-
-        // Bot Hamlesi Animasyon Gecikmesi
-        setTimeout(() => {
-            if (log.botAction) {
-                playSfx('deal');
-                if (log.botAction.captured) {
-                    setTimeout(() => { 
-                        playSfx(log.botAction.isPisti ? 'pisti' : 'push'); 
-                        if(log.botAction.isPisti) triggerPistiAnim();
-                    }, 300);
-                }
-                renderBoard(false);
-            }
-
-            if (log.gameOver) {
-                handleGameOver(log);
-            } else if (log.roundOver) {
-                document.getElementById("ui-message").innerText = "YENİ KARTLAR DAĞITILIYOR...";
-                setTimeout(() => renderBoard(true), 800);
-            } else {
-                actionLock = false;
-            }
-        }, 1000);
 
     } catch(e) {
         showMatrixModal("Hata", e.message, "error");
