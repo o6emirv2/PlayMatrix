@@ -371,27 +371,34 @@ function startLobbyPolling() {
 }
 
 async function fetchLobby() {
-    if (currentRoomId) return; // Oyundaysak lobi çekme
+    if (currentRoomId) return; 
     try {
         const res = await fetchAPI('/api/chess/lobby');
         const list = document.getElementById("roomList");
         list.innerHTML = "";
-        if (res.rooms.length === 0) {
+        
+        if (!res || !res.rooms || res.rooms.length === 0) {
             list.innerHTML = `<div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:13px;">Aktif oda bulunamadı. Yeni oda kurun!</div>`;
             return;
         }
+        
         res.rooms.forEach(r => {
-            const isMe = false; // logic
+            const isMe = r.hostUid === userUid;
             const statusTxt = r.status === 'waiting' ? '<span style="color:#2ecc71">Bekleniyor</span>' : '<span style="color:#f1c40f">Oynanıyor</span>';
-            const btnHtml = r.status === 'waiting' ? `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>` : '';
             
+            let actionHtml = '';
+            if(r.status === 'waiting') {
+                if(isMe) actionHtml = '<span style="color:#d4af37; font-size:11px; font-weight:bold;">SENİN ODAN</span>';
+                else actionHtml = `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>`;
+            }
+
             list.innerHTML += `
                 <div class="room-card">
                     <div class="room-info">
                         <span>${r.host} Odası</span>
                         <small>Durum: ${statusTxt}</small>
                     </div>
-                    ${btnHtml}
+                    ${actionHtml}
                 </div>
             `;
         });
@@ -479,10 +486,9 @@ function syncBoardUI(r) {
         gameLogic.load(r.fen);
         drawBoard();
         
-        // Ses efekti (Eğer oyun başı değilse)
+        // Ses efekti
         if (lastFen !== "") {
             if (gameLogic.in_check()) playSfx('check');
-            // Basit capture kontrolü (fen uzunluğu vb.)
             else playSfx('move'); 
         }
         lastFen = r.fen;
@@ -504,7 +510,7 @@ function drawBoard() {
         for (let c = 0; c < 8; c++) {
             const sqDiv = document.createElement("div");
             
-            // Gerçek kare ismini bul (a1, e4 vb.)
+            // Gerçek kare ismini bul
             let rank = myColor === 'w' ? 8 - r : r + 1;
             let fileStr = "abcdefgh";
             let file = myColor === 'w' ? fileStr[c] : fileStr[7 - c];
@@ -553,12 +559,10 @@ async function handleSquareClick(sq) {
         drawBoard(); // Vurguları temizle
 
         try {
-            // Piyon terfisi (promotion) basitçe vezir ('q') varsayılır
             const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
-            // Sunucu dönünce poll zaten halledecek
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
-            pollGameState(); // Hata durumunda tahtayı sunucuya göre geri al
+            pollGameState(); 
         }
         return;
     }
