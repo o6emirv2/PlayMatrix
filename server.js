@@ -6,6 +6,7 @@ const admin = require('firebase-admin');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { Chess } = require('chess.js'); // [KRİTİK DÜZELTME] Satranç hamle hatasını çözen eklenti.
 
 process.on('uncaughtException', (err) => console.error('Kritik Hata:', err));
 process.on('unhandledRejection', (reason) => console.error('Promise Hatası:', reason));
@@ -97,8 +98,6 @@ const colUsers = () => db.collection('users');
 const colPromos = () => db.collection('promo_codes');
 
 async function findPromoDocIdByNormalized(codeUpper, maxScan = 500) {
-  // Admin tarafında yanlışlıkla sonuna boşluk konmuş docId gibi durumları tolere etmek için:
-  // docId'leri sınırlı sayıda tarayıp trim+upper eşleşmesi yapar.
   const refs = await colPromos().listDocuments();
   let c = 0;
   for (const ref of refs) {
@@ -138,7 +137,6 @@ app.get('/api/me', verifyAuth, async (req, res) => {
           isUpdated = true;
       }
 
-      // Basit anti-suistimal: temp-mail domainlerinde e-posta ödülü verilmez (isteğe göre genişletilebilir)
       if (req.user.email_verified && !u.emailRewardClaimed && isDisposableEmail(req.user.email)) {
           updates.emailRewardBlocked = true;
           u.emailRewardBlocked = true;
@@ -147,7 +145,13 @@ app.get('/api/me', verifyAuth, async (req, res) => {
 
       if (isUpdated) {
           tx.set(colUsers().doc(req.user.uid), snap.exists ? updates : { ...u, ...updates }, { merge: true });
-
+      }
+      return u;
+    });
+    
+    res.json({ ok: true, balance: safeNum(uData.balance, 0), user: uData });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
+});
 
 app.get('/api/check-username', async (req, res) => {
   try {
@@ -155,7 +159,6 @@ app.get('/api/check-username', async (req, res) => {
     const username = raw.trim().replace(/\s+/g, ' ');
     if (!username) return res.status(400).json({ ok: false, error: 'Kullanıcı adı boş.' });
 
-    // 3-20 karakter: harf/sayı/._- (Unicode harfleri destekler)
     if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(username)) {
       return res.status(400).json({ ok: false, error: 'Kullanıcı adı geçersiz. (3-20 karakter, harf/sayı/._-)' });
     }
@@ -168,22 +171,12 @@ app.get('/api/check-username', async (req, res) => {
   }
 });
 
-
-      }
-      return u;
-    });
-    
-    res.json({ ok: true, balance: safeNum(uData.balance, 0), user: uData });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
 app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => {
   try {
     const { fullName, phone, username, avatar } = req.body || {};
     const uid = req.user.uid;
     let phoneRewarded = false;
 
-    // Split-Brain önlemi: kullanıcı dökümanı *her koşulda* oluşsun.
     await db.runTransaction(async (tx) => {
       const uRef = colUsers().doc(uid);
       const snap = await tx.get(uRef);
@@ -238,10 +231,9 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-
 app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   try {
-    if (!req.user.email_verified) throw new Error("Güvenlik: Çark çevirmek için e-postanızı onaylamalısınız! (Onayladıktan sonra çıkış yapıp tekrar girin)");
+    if (!req.user.email_verified) throw new Error("Güvenlik: Çark çevirmek için e-postanızı onaylamalısınız!");
 
     const out = await db.runTransaction(async (tx) => {
       const snap = await tx.get(colUsers().doc(req.user.uid));
@@ -264,7 +256,6 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
     const code = cleanStr((req.body || {}).code).toUpperCase();
     if (!code) throw new Error("Kod boş.");
 
-    // Admin panelinde yanlışlıkla "KOD " (sonunda boşluk) gibi kaydedilen promo docId durumunu tolere et
     let promoDocId = code;
     const directSnap = await colPromos().doc(promoDocId).get();
     if (!directSnap.exists) {
@@ -282,7 +273,6 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
       const u = uSnap.data() || {}, p = pSnap.data() || {};
       if (safeNum(p.amount, 0) <= 0) throw new Error("Kod geçersiz veya kullanılmış.");
 
-      // Kullanıcı tarafında aynı kodun farklı yazımı (boşluk vs) olmasın diye normalize edilmiş kodu sakla
       if ((u.usedPromos || []).includes(code)) throw new Error("Kod geçersiz veya kullanılmış.");
       if (safeNum(p.limitLeft, -1) === 0) throw new Error("Kod tükenmiş.");
 
@@ -295,7 +285,6 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
     res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
-
 
 // ======================================================
 // 2. BLACKJACK MOTORU
@@ -346,7 +335,6 @@ app.post('/api/bj/start', verifyAuth, async (req, res) => {
     const session = await db.runTransaction(async (tx) => {
       const existing = await tx.get(colBJ().doc(uid));
       if (existing.exists && ['playing', 'resolving'].includes(existing.data().gameState)) {
-          // Re-connect desteği: Aktif el varsa hata vermek yerine mevcut state'i döndür.
           if (nowMs() - safeNum(existing.data().lastActionAtMs, 0) > 300000) {
               tx.delete(colBJ().doc(uid));
           } else {
@@ -595,7 +583,6 @@ app.post('/api/crash/cashout', verifyAuth, async (req, res) => {
     } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-
 // ======================================================
 // 4. MINES MOTORU
 // ======================================================
@@ -737,7 +724,6 @@ function checkPistiCapture(tableCards, playedCard) {
     return { captured: false, isPisti: false, points: 0, collected: [] };
 }
 
-// Bakiye sorununu çözen ana State API'si
 app.get('/api/pisti/state', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
@@ -833,7 +819,6 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 s.tableCards.push(playedCard);
             }
 
-            // BOT ZEKA DÜZELTMESİ (Tahmin edilebilirliği yok edildi, Rastgele zeka eklendi)
             if (s.botHand.length > 0) {
                 let botCardIdx = -1;
                 if (s.tableCards.length > 0) {
@@ -914,7 +899,6 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
             };
         });
 
-        // ÇÖP TOPLAMA (VERİTABANI ŞİŞMESİ ENGELLENDİ)
         if (result.state.status === 'finished') {
             setTimeout(() => colPisti().doc(uid).delete().catch(()=>null), 5000);
         }
@@ -1073,7 +1057,6 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// BURADA ACTION LIMITER KALDIRILDI Kİ OYUNCU HIZLI HAMLE YAPINCA SENKRONİZASYON BOZULMASIN
 app.post('/api/chess/move', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
@@ -1092,9 +1075,8 @@ app.post('/api/chess/move', verifyAuth, async (req, res) => {
             if (!isWhite && !isBlack) throw new Error("Bu odada oyuncu değilsiniz.");
             if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
 
-            const chess = new Chess(r.fen);
+            const chess = new Chess(r.fen); // Artık burası hata vermeden çalışıyor.
             
-            // Satranç hamlesi sunucuda simüle edilir
             const move = chess.move({ from: from, to: to, promotion: promotion || 'q' });
             
             if (move === null) throw new Error("Geçersiz hamle! Kural dışı oynanamaz.");
