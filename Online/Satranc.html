@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-<title>PlayMatrix VIP Satranç | Online Turnuva</title>
+<title>PlayMatrix VIP Satranç | Online Arena</title>
 <meta name="description" content="PlayMatrix VIP Satranç ile rakiplerine karşı zekanı konuştur. Hilesiz, %100 online, ödüllü profesyonel satranç arenası!">
 <meta name="theme-color" content="#0b1118">
 
@@ -67,22 +67,27 @@
     .action-icon-btn.red { color: #ff4b4b; border-color:#552222; }
     .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
-    /* LOBİ EKRANI */
+    /* LOBİ EKRANI (PLAYER VS PLAYER) */
     #lobbyArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
     
-    .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; }
-    .btn-create { flex: 1; background: linear-gradient(180deg, #d4af37, #997a00); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #665200; cursor: pointer; transition: 0.1s; margin-right: 10px;}
+    .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; gap: 10px;}
+    .btn-create { flex: 1; background: linear-gradient(180deg, #d4af37, #997a00); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #665200; cursor: pointer; transition: 0.1s;}
     .btn-create:active { transform: translateY(4px); box-shadow: 0 1px 0 #665200; }
     .btn-quick { flex: 1; background: linear-gradient(180deg, #2ecc71, #1e8449); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #145a32; cursor: pointer; transition: 0.1s; }
     .btn-quick:active { transform: translateY(4px); box-shadow: 0 1px 0 #145a32; }
 
-    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
-    .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(5px); }
-    .room-info { display: flex; flex-direction: column; }
-    .room-info span { font-size: 14px; font-weight: 800; color: #fff; }
-    .room-info small { font-size: 11px; color: #94a3b8; margin-top: 5px; }
-    .btn-join { background: #d4af37; color: #000; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s;}
+    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+    
+    /* VS KARTI TASARIMI */
+    .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
+    .room-vs-area { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+    .player-name { font-size: 15px; font-weight: 800; color: #fff; width: 40%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vs-badge { font-family: 'Orbitron'; font-size: 16px; font-weight: 900; color: #d4af37; text-shadow: 0 0 10px rgba(212,175,55,0.5); }
+    .room-footer { display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }
+    .room-status { font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;}
+    .btn-join { background: #d4af37; color: #000; border: none; padding: 8px 25px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s;}
     .btn-join:active { transform: scale(0.9); }
+    .btn-disabled { background: #3a2b1f; color: #666; cursor: not-allowed; }
 
     /* OYUN ALANI */
     #gameArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); display: none; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 10px; }
@@ -94,20 +99,19 @@
     .p-name { font-size: 14px; font-weight: 800; color: #fff; }
     .p-color { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #fff; }
 
-    /* AHŞAP SATRANÇ TAHTASI */
+    /* AHŞAP SATRANÇ TAHTASI (SÜRÜKLE BIRAK YERİNE DOKUN-OYNA) */
     .board-wrapper { width: 100%; max-width: 450px; aspect-ratio: 1; border: 8px solid #4a3424; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; }
     #chessboard { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
     
-    .sq { display: flex; align-items: center; justify-content: center; position: relative; }
+    .sq { display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
     .sq.light { background-color: #f0d9b5; }
     .sq.dark { background-color: #b58863; }
-    .sq.highlight { box-shadow: inset 0 0 0 4px rgba(212,175,55,0.8); }
-    .sq.valid-move::after { content: ''; width: 25%; height: 25%; background: rgba(0,0,0,0.2); border-radius: 50%; position: absolute; }
-    .sq.valid-capture::after { content: ''; width: 80%; height: 80%; border: 4px solid rgba(0,0,0,0.2); border-radius: 50%; position: absolute; background: transparent; }
+    .sq.highlight { box-shadow: inset 0 0 0 4px rgba(212,175,55,1); }
+    .sq.valid-move::after { content: ''; width: 25%; height: 25%; background: rgba(0,0,0,0.3); border-radius: 50%; position: absolute; }
+    .sq.valid-capture::after { content: ''; width: 85%; height: 85%; border: 5px solid rgba(0,0,0,0.3); border-radius: 50%; position: absolute; background: transparent; }
 
-    .piece { width: 85%; height: 85%; cursor: pointer; transition: transform 0.1s; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); z-index: 10;}
-    .piece:active { transform: scale(1.2) translateY(-10px); z-index: 20; }
-
+    .piece { width: 85%; height: 85%; transition: transform 0.1s; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); pointer-events: none;}
+    
     .status-text { font-family: 'Orbitron'; font-size: 14px; font-weight: 900; color: #d4af37; text-align: center; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px #000; }
     .btn-resign { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 4px 0 #78231c; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 5px; transition: 0.1s; font-family: 'Inter'; font-size: 12px;}
     .btn-resign:active { transform: translateY(4px); box-shadow: none; }
@@ -243,7 +247,7 @@ window.closeMatrixModal = () => {
 };
 
 window.showHowToPlay = () => {
-    showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Beyaz başlar.\n🔹 Hamle yapmak için taşa, ardından gideceği kareye tıklayın.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Hile koruması aktiftir, illegal hamleler sunucudan reddedilir.", "info");
+    showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Hile koruması aktiftir, illegal hamleler sunucudan reddedilir.", "info");
 };
 
 // --- PROFESYONEL SES MOTORU (iOS DESTEKLİ) ---
@@ -327,6 +331,7 @@ let selectedSq = null;
 let validMovesForSelected = [];
 let pollingInterval = null;
 let lastFen = "";
+let isProcessingMove = false; // Spam koruması
 
 const PIECE_IMGS = {
     'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
@@ -384,21 +389,34 @@ async function fetchLobby() {
         
         res.rooms.forEach(r => {
             const isMe = r.hostUid === userUid;
-            const statusTxt = r.status === 'waiting' ? '<span style="color:#2ecc71">Bekleniyor</span>' : '<span style="color:#f1c40f">Oynanıyor</span>';
             
-            let actionHtml = '';
-            if(r.status === 'waiting') {
-                if(isMe) actionHtml = '<span style="color:#d4af37; font-size:11px; font-weight:bold;">SENİN ODAN</span>';
-                else actionHtml = `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>`;
+            // VS KARTI MANTIĞI
+            const p1 = r.host;
+            const p2 = r.guest === 'Bilinmeyen' ? '?' : r.guest;
+            
+            let statusText = '';
+            let btnHtml = '';
+
+            if (r.status === 'waiting') {
+                statusText = '<span style="color:#2ecc71"><i class="fa-solid fa-clock"></i> Rakip Bekleniyor</span>';
+                if(isMe) btnHtml = `<button class="btn-join btn-disabled" disabled>SENİN ODAN</button>`;
+                else btnHtml = `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>`;
+            } else if (r.status === 'playing') {
+                statusText = '<span style="color:#f1c40f"><i class="fa-solid fa-fire"></i> Maç Devam Ediyor</span>';
+                btnHtml = `<button class="btn-join btn-disabled" disabled>DOLU</button>`;
             }
 
             list.innerHTML += `
                 <div class="room-card">
-                    <div class="room-info">
-                        <span>${r.host} Odası</span>
-                        <small>Durum: ${statusTxt}</small>
+                    <div class="room-vs-area">
+                        <div class="player-name">${p1}</div>
+                        <div class="vs-badge">VS</div>
+                        <div class="player-name">${p2}</div>
                     </div>
-                    ${actionHtml}
+                    <div class="room-footer">
+                        <div class="room-status">${statusText}</div>
+                        ${btnHtml}
+                    </div>
                 </div>
             `;
         });
@@ -437,7 +455,7 @@ function enterGame(roomData) {
 }
 
 async function pollGameState() {
-    if (!currentRoomId) return;
+    if (!currentRoomId || isProcessingMove) return; // Hamle işlenirken sunucuyu darlama
     try {
         const res = await fetchAPI(`/api/chess/state/${currentRoomId}`);
         syncBoardUI(res.room);
@@ -445,7 +463,6 @@ async function pollGameState() {
 }
 
 function syncBoardUI(r) {
-    // Bilgi Güncelleme
     const isHost = r.host.uid === userUid;
     const me = isHost ? r.host : (r.guest || {username:'Sen'});
     const opp = isHost ? (r.guest || {username:'Bekleniyor...'}) : r.host;
@@ -456,7 +473,6 @@ function syncBoardUI(r) {
     document.getElementById("oppName").innerText = opp.username;
     if(opp.avatar) document.getElementById("oppAvatar").src = opp.avatar;
 
-    // Durum
     const statusTxt = document.getElementById("gameStatusTxt");
     if (r.status === 'waiting') {
         statusTxt.innerText = "RAKİP BEKLENİYOR...";
@@ -480,15 +496,16 @@ function syncBoardUI(r) {
         return;
     }
 
-    // Tahta Çizimi (Sadece FEN değişirse)
+    // FEN Güncellemesi (Sadece değişmişse)
     if (r.fen !== lastFen) {
         let oldLogic = new Chess(lastFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
         gameLogic.load(r.fen);
         drawBoard();
         
-        // Ses efekti
         if (lastFen !== "") {
             if (gameLogic.in_check()) playSfx('check');
+            // Eğer fen kısaldıysa (Taş alındıysa) capture sesi
+            else if (r.fen.length < lastFen.length) playSfx('capture');
             else playSfx('move'); 
         }
         lastFen = r.fen;
@@ -500,7 +517,6 @@ function drawBoard() {
     boardEl.innerHTML = "";
     
     let board = gameLogic.board(); 
-    // Eğer oyuncu Siyah ise tahtayı ters çevir
     if (myColor === 'b') {
         board = board.slice().reverse();
         board = board.map(row => row.slice().reverse());
@@ -510,7 +526,6 @@ function drawBoard() {
         for (let c = 0; c < 8; c++) {
             const sqDiv = document.createElement("div");
             
-            // Gerçek kare ismini bul
             let rank = myColor === 'w' ? 8 - r : r + 1;
             let fileStr = "abcdefgh";
             let file = myColor === 'w' ? fileStr[c] : fileStr[7 - c];
@@ -519,17 +534,14 @@ function drawBoard() {
             sqDiv.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
             sqDiv.dataset.sq = sqName;
 
-            // Seçili kare vurgusu
             if (selectedSq === sqName) sqDiv.classList.add('highlight');
             
-            // Geçerli hamle noktası vurgusu
             const isMoveObj = validMovesForSelected.find(m => m.to === sqName);
             if (isMoveObj) {
                 if(board[r][c] !== null) sqDiv.classList.add('valid-capture');
                 else sqDiv.classList.add('valid-move');
             }
 
-            // Taş varsa çiz
             const piece = board[r][c];
             if (piece) {
                 const char = piece.color === 'w' ? piece.type.toUpperCase() : piece.type.toLowerCase();
@@ -539,7 +551,7 @@ function drawBoard() {
                 sqDiv.appendChild(img);
             }
 
-            // Tıklama Eventi
+            // DOKUN-OYNA MANTIĞI
             sqDiv.onclick = () => handleSquareClick(sqName);
             boardEl.appendChild(sqDiv);
         }
@@ -547,27 +559,40 @@ function drawBoard() {
 }
 
 async function handleSquareClick(sq) {
-    if (document.getElementById("gameStatusTxt").innerText !== "SIRA SENDE") return;
+    if (isProcessingMove || document.getElementById("gameStatusTxt").innerText !== "SIRA SENDE") return;
 
-    // Eğer seçili kareden başka bir geçerli kareye tıklanmışsa Hamle yap
+    // Eğer seçili taşı geçerli bir noktaya tıkladıysa
     const moveObj = validMovesForSelected.find(m => m.to === sq);
     if (selectedSq && moveObj) {
-        // Hamleyi Sunucuya Gönder
+        
+        isProcessingMove = true;
         document.getElementById("gameStatusTxt").innerText = "HAMLE İLETİLİYOR...";
+        
+        // Optimistic UI Update (Kullanıcıya hamleyi anında göster)
+        gameLogic.move({ from: moveObj.from, to: moveObj.to, promotion: 'q' });
         selectedSq = null;
         validMovesForSelected = [];
-        drawBoard(); // Vurguları temizle
+        drawBoard(); 
+        
+        if (gameLogic.in_check()) playSfx('check');
+        else if (moveObj.captured) playSfx('capture');
+        else playSfx('move');
 
         try {
             const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
+            lastFen = res.room.fen; // Sunucudan gelen kesin fen
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
-            pollGameState(); 
+            // Hata olursa tahtayı geri al
+            gameLogic.load(lastFen);
+            drawBoard();
         }
+        
+        isProcessingMove = false;
         return;
     }
 
-    // Taş seçimi
+    // Yeni taş seçimi
     const pieceObj = gameLogic.get(sq);
     if (pieceObj && pieceObj.color === myColor) {
         selectedSq = sq;
@@ -582,9 +607,7 @@ async function handleSquareClick(sq) {
 
 window.resignGame = async () => {
     if(!confirm("Teslim olmak istediğinize emin misiniz?")) return;
-    try {
-        await fetchAPI('/api/chess/resign', 'POST', { roomId: currentRoomId });
-    } catch(e) {}
+    try { await fetchAPI('/api/chess/resign', 'POST', { roomId: currentRoomId }); } catch(e) {}
 };
 
 onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
