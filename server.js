@@ -924,24 +924,33 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 6. ONLINE SATRANÇ MOTORU
+// 7. ONLINE SATRANÇ MOTORU (FIREBASE INDEX HATASI ÇÖZÜLDÜ)
 // ======================================================
 
 const colChess = () => db.collection('chess_rooms');
 
 app.get('/api/chess/lobby', verifyAuth, async (req, res) => {
     try {
-        const snap = await colChess().where('status', 'in', ['waiting', 'playing']).orderBy('createdAt', 'desc').limit(20).get();
+        // Firebase "Composite Index" hatasını önlemek için orderBy kullanmadan tüm bekleyenleri çekiyoruz.
+        const snapWait = await colChess().where('status', '==', 'waiting').get();
+        const snapPlay = await colChess().where('status', '==', 'playing').get();
+        
         let rooms = [];
-        snap.forEach(doc => {
+        
+        snapWait.forEach(doc => {
             let d = doc.data();
-            rooms.push({
-                id: doc.id,
-                host: d.host.username,
-                status: d.status,
-                createdAt: d.createdAt
-            });
+            rooms.push({ id: doc.id, hostUid: d.host.uid, host: d.host.username, status: d.status, createdAt: d.createdAt });
         });
+
+        snapPlay.forEach(doc => {
+            let d = doc.data();
+            rooms.push({ id: doc.id, hostUid: d.host.uid, host: d.host.username, status: d.status, createdAt: d.createdAt });
+        });
+
+        // Sunucu belleğinde sıralayarak index ihtiyacını eziyoruz
+        rooms.sort((a, b) => b.createdAt - a.createdAt);
+        rooms = rooms.slice(0, 20); // Performans için sadece en yeni 20 odayı gönder.
+
         res.json({ ok: true, rooms });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
@@ -963,9 +972,9 @@ app.post('/api/chess/create', verifyAuth, async (req, res) => {
             const newRoom = {
                 host: { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null },
                 guest: null,
-                status: 'waiting', // waiting, playing, finished
+                status: 'waiting', 
                 fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-                turn: 'w', // w (white - host), b (black - guest)
+                turn: 'w', 
                 winner: null,
                 createdAt: nowMs(),
                 updatedAt: nowMs()
@@ -982,14 +991,14 @@ app.post('/api/chess/create', verifyAuth, async (req, res) => {
 app.post('/api/chess/join', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
-        const roomId = cleanStr(req.body.roomId);
+        const roomId = req.body.roomId ? cleanStr(req.body.roomId) : null;
 
         const roomData = await db.runTransaction(async (tx) => {
             const uSnap = await tx.get(colUsers().doc(uid));
             const u = uSnap.data();
 
             if (roomId) {
-                // Spesifik odaya katıl
+                // Özel Odaya Katıl
                 const rSnap = await tx.get(colChess().doc(roomId));
                 if (!rSnap.exists) throw new Error("Oda bulunamadı.");
                 let r = rSnap.data();
@@ -1002,19 +1011,24 @@ app.post('/api/chess/join', verifyAuth, async (req, res) => {
                 tx.update(colChess().doc(roomId), r);
                 return { id: roomId, ...r };
             } else {
-                // Hızlı Katıl
-                const snap = await tx.get(colChess().where('status', '==', 'waiting').orderBy('createdAt', 'asc').limit(1));
+                // Hızlı Katıl (Index hatası önleyici mantıkla)
+                const snap = await tx.get(colChess().where('status', '==', 'waiting'));
                 if (snap.empty) throw new Error("Müsait oda bulunamadı. Lütfen yeni oda kurun.");
                 
-                let doc = snap.docs[0];
-                let r = doc.data();
-                if (r.host.uid === uid) throw new Error("Sadece kendi kurduğunuz oda müsait.");
+                let docToJoin = null;
+                snap.forEach(doc => {
+                    // Kullanıcı kendi odasına hızlı katılamaz, başkasını bul
+                    if (doc.data().host.uid !== uid && !docToJoin) docToJoin = doc;
+                });
 
+                if (!docToJoin) throw new Error("Şu an sadece kendi kurduğunuz oda var. Başka bir oyuncunun gelmesini bekleyin.");
+
+                let r = docToJoin.data();
                 r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null };
                 r.status = 'playing';
                 r.updatedAt = nowMs();
-                tx.update(doc.ref, r);
-                return { id: doc.id, ...r };
+                tx.update(docToJoin.ref, r);
+                return { id: docToJoin.id, ...r };
             }
         });
 
@@ -1056,7 +1070,7 @@ app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
             if (move === null) throw new Error("Geçersiz hamle! Hile girişimi engellendi.");
 
             r.fen = chess.fen();
-            r.turn = chess.turn(); // 'w' veya 'b'
+            r.turn = chess.turn(); 
             r.updatedAt = nowMs();
             
             let winAmount = 0;
@@ -1120,13 +1134,12 @@ app.post('/api/chess/resign', verifyAuth, async (req, res) => {
 setInterval(async () => {
     try {
         const now = Date.now();
-        // 30 Dakika = 1800000 ms
         const oldTime = now - 1800000; 
         const snap = await colChess().where('updatedAt', '<', oldTime).get();
         snap.forEach(doc => {
             doc.ref.delete().catch(()=>null);
         });
-    } catch(e) { console.error("Oda temizleme hatası:", e); }
+    } catch(e) { }
 }, 30 * 60 * 1000);
 
 app.listen(PORT, () => console.log(`🚀 PlayMatrix Core Backend Started. Port: ${PORT}`));
