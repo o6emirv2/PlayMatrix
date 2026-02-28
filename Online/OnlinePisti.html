@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>PlayMatrix VIP Online Pişti | Arena</title>
+<meta name="theme-color" content="#0b1118">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    html, body { width: 100vw; height: 100vh; overflow: hidden; overscroll-behavior: none; font-family: 'Inter', sans-serif; background-color: #1a1612; background-image: radial-gradient(circle at 50% 50%, #3a2b1f 0%, #1a1612 80%); color: white; }
+    
+    /* İNTRO EKRANI */
+    #studioIntro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0c0907; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease, visibility 0.6s ease; }
+    .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+    .intro-logo i { font-size: 65px; color: #e74c3c; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(231,76,60,0.5)); }
+    .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+    .intro-logo h1 span { color: #e74c3c; }
+    
+    .loader-track { width: 220px; height: 4px; background: #2a221b; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+    .loader-fill { height: 100%; width: 0%; background: #e74c3c; transition: width 0.1s linear; box-shadow: 0 0 10px #e74c3c; }
+    .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #e74c3c, #c0392b); color: #fff; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(231,76,60,0.4); transition: 0.2s; letter-spacing: 1px; }
+    .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
+
+    @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
+
+    /* ÜST BAR */
+    .top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 65px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(12, 9, 7, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(231,76,60,0.2); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+    .tb-left { display: flex; align-items: center; gap: 10px; }
+    .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;}
+    .tb-logo span { color: #e74c3c; }
+    
+    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; overflow: hidden; }
+    .balance-box { display: flex; align-items: center; background: #1a1612; padding: 6px 10px; border-radius: 8px; border: 1px solid #3a2b1f; max-width: 130px; }
+    .balance-box b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; display: inline-block; vertical-align: middle; }
+    .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 6px; box-shadow: 0 0 10px rgba(79, 209, 255, 0.4); }
+
+    .action-icon-btn { background: #2a221b; color: #e74c3c; border: 1px solid #3a2b1f; width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+    .action-icon-btn:active { transform: scale(0.9); background: #e74c3c; color: #fff; }
+
+    /* LOBİ */
+    #lobbyArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; gap: 10px;}
+    .btn-create { flex: 1; background: linear-gradient(180deg, #e74c3c, #c0392b); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #78231c; cursor: pointer; transition: 0.1s;}
+    .btn-create:active { transform: translateY(4px); box-shadow: 0 1px 0 #78231c; }
+
+    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+    .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; backdrop-filter: blur(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
+    .room-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;}
+    .room-host { font-size: 14px; font-weight: 800; color: #fff; }
+    .room-mode { font-size: 12px; font-family: 'Orbitron'; font-weight: 700; color: #e74c3c; background: rgba(231,76,60,0.1); padding: 4px 8px; border-radius: 4px;}
+    .room-footer { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .room-players { font-size: 12px; color: #94a3b8; font-weight: 700; }
+    .btn-join { background: #e74c3c; color: #fff; border: none; padding: 8px 25px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s;}
+    .btn-join:active { transform: scale(0.9); }
+    .btn-disabled { background: #3a2b1f; color: #666; cursor: not-allowed; }
+
+    /* OYUN ALANI */
+    #gameArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 5px; background: radial-gradient(circle, #1e3a29 0%, #0d1a12 100%); }
+    
+    .status-box { background: rgba(0,0,0,0.6); border: 1px solid #e74c3c; padding: 8px 20px; border-radius: 20px; font-family: 'Orbitron'; font-size: 12px; font-weight: 900; color: #fff; letter-spacing: 1px; text-align: center;}
+    
+    .other-players-container { display: flex; width: 100%; max-width: 500px; justify-content: space-around; }
+    .player-mini { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px; border: 1px solid #3a2b1f; transition: 0.3s;}
+    .player-mini.active { border-color: #00ffa3; box-shadow: 0 0 10px rgba(0,255,163,0.3); }
+    .player-mini img { width: 30px; height: 30px; border-radius: 5px; margin-bottom: 5px; }
+    .player-mini span { font-size: 11px; font-weight: 800; color: #fff; }
+    .player-mini .p-score { font-size: 10px; color: #f1c40f; }
+
+    .table-area { width: 100%; max-width: 350px; height: 200px; border: 2px dashed rgba(255,255,255,0.2); border-radius: 20px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .deck-info { position: absolute; top: 10px; right: 10px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 5px;}
+
+    .my-hand-area { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; gap: 10px;}
+    .my-info { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 10px; border: 1px solid #3a2b1f; width: 100%; justify-content: space-between;}
+    .my-info.active { border-color: #00ffa3; box-shadow: 0 0 10px rgba(0,255,163,0.3); }
+    
+    .cards-container { display: flex; gap: 5px; justify-content: center; width: 100%; height: 100px; }
+    
+    /* KART TASARIMI */
+    .card { width: 65px; height: 95px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 5px; cursor: pointer; transition: 0.2s; border: 1px solid #ccc;}
+    .card:active { transform: scale(0.9); }
+    .card.red { color: #e74c3c; }
+    .card.black { color: #2c3e50; }
+    .card .val { font-size: 18px; font-weight: 900; line-height: 1; }
+    .card .suit { font-size: 24px; text-align: right; line-height: 1; }
+    .card .center-suit { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 35px; opacity: 0.3; }
+    
+    .card.back { background: repeating-linear-gradient(45deg, #2c3e50, #2c3e50 5px, #1a252f 5px, #1a252f 10px); border: 2px solid #fff; cursor: default; }
+    
+    /* MODALLAR */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s; }
+    .modal-overlay.show { opacity: 1; display: flex; }
+    .modal-card { background: linear-gradient(145deg, #1a1612, #0c0907); border: 1px solid #3a2b1f; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px 25px; transform: scale(0.8); opacity: 0; transition: all 0.4s; box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center; }
+    .modal-overlay.show .modal-card { transform: scale(1); opacity: 1; }
+    .modal-icon { font-size: 50px; margin-bottom: 15px; color: #e74c3c;}
+    .modal-card h3 { color: #fff; font-size: 20px; font-weight: 900; margin-bottom: 15px; }
+    .modal-card select, .modal-card input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; color: #fff; font-weight: 700; outline: none; }
+    
+    .modal-close { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(231,76,60,0.3); }
+    .modal-close:active { transform: translateY(2px); box-shadow: none; }
+    
+    .btn-dual { display: flex; gap: 10px; }
+    .btn-yes { flex: 1; background: #2ecc71; color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; cursor: pointer; }
+    .btn-no { flex: 1; background: #3a2b1f; color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 900; cursor: pointer; }
+
+</style>
+</head>
+<body>
+
+<div id="studioIntro">
+    <div class="intro-logo">
+        <i class="fa-solid fa-layer-group"></i>
+        <h1>PİŞTİ<br><span>ARENA</span></h1>
+    </div>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
+</div>
+
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"><i class="fa-solid fa-bell"></i></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc" style="color:#94a3b8; font-size:14px; margin-bottom:20px;"></p>
+        <button class="modal-close" id="matrixModalCloseBtn">TAMAM</button>
+    </div>
+</div>
+
+<div id="createModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-icon"><i class="fa-solid fa-gear"></i></div>
+        <h3>Oda Kur</h3>
+        <select id="roomModeSelect">
+            <option value="2-52">2 Kişi - Tek Deste (52)</option>
+            <option value="2-104">2 Kişi - Çift Deste (104)</option>
+            <option value="4-104">4 Kişi - Çift Deste (104)</option>
+        </select>
+        <input type="number" id="roomBetInput" value="100" min="100" placeholder="Bahis Miktarı (Min 100 MC)">
+        <div class="btn-dual">
+            <button class="btn-yes" onclick="submitCreateRoom()">KUR</button>
+            <button class="btn-no" onclick="closeCreateModal()">İPTAL</button>
+        </div>
+    </div>
+</div>
+
+<header class="top-bar">
+    <div class="tb-left"><div class="tb-logo">PM <span>PİŞTİ</span></div></div>
+    <div class="tb-right">
+        <div class="balance-box"><b id="ui-balance">...</b><div class="mc-icon">MC</div></div>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+</header>
+
+<div id="lobbyArea">
+    <div class="lobby-header"><button class="btn-create" onclick="openCreateModal()">YENİ ODA KUR</button></div>
+    <div class="room-list" id="roomList">
+        <div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:12px;">Odalar Yükleniyor...</div>
+    </div>
+</div>
+
+<div id="gameArea">
+    <div class="status-box" id="gameStatusTxt">RAKİPLER BEKLENİYOR...</div>
+    
+    <div class="other-players-container" id="otherPlayersArea"></div>
+
+    <div class="table-area">
+        <div class="deck-info" id="deckCountInfo">DESTE: 0</div>
+        <div class="cards-container" id="tableCardsArea" style="align-items:center;"></div>
+    </div>
+
+    <div class="my-hand-area">
+        <div class="my-info" id="myInfoBox">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="" id="myAvatar" style="width:30px; height:30px; border-radius:5px; background:#333;">
+                <span style="font-size:13px; font-weight:800;" id="myName">Sen</span>
+            </div>
+            <div style="font-size:12px; color:#f1c40f; font-weight:800;">Skor: <span id="myScore">0</span></div>
+        </div>
+        <div class="cards-container" id="myCardsArea"></div>
+    </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = { apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA", authDomain:"emirhan-site.firebaseapp.com", projectId:"emirhan-site", storageBucket:"emirhan-site.firebasestorage.app", messagingSenderId:"668871888390", appId:"1:668871888390:web:76568bda84cb1641f7bd87" };
+const app = initializeApp(firebaseConfig); const auth = getAuth(app);
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
+
+let userUid = null; let currentRoomId = null; let pollingInterval = null; let isProcessing = false;
+
+document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
+
+window.showMatrixModal = (title, message, type = 'info', backToLobby = false) => {
+    document.getElementById("matrixModalTitle").innerText = title;
+    document.getElementById("matrixModalDesc").innerText = message;
+    const modal = document.getElementById('matrixModal');
+    modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10);
+
+    const closeBtn = document.getElementById('matrixModalCloseBtn');
+    const newBtn = closeBtn.cloneNode(true); closeBtn.parentNode.replaceChild(newBtn, closeBtn);
+    newBtn.onclick = () => {
+        modal.classList.remove('show'); setTimeout(() => modal.style.display = 'none', 300);
+        if(backToLobby) resetToLobby();
+    };
+};
+
+window.openCreateModal = () => { document.getElementById('createModal').style.display = 'flex'; setTimeout(() => document.getElementById('createModal').classList.add('show'), 10); }
+window.closeCreateModal = () => { document.getElementById('createModal').classList.remove('show'); setTimeout(() => document.getElementById('createModal').style.display = 'none', 300); }
+
+// Intro
+let loadProg = 0;
+const loadInt = setInterval(() => { loadProg += Math.random() * 20; if(loadProg >= 100) { loadProg = 100; clearInterval(loadInt); document.getElementById('loaderTrack').style.display = 'none'; document.getElementById('btnEnterGame').style.display = 'block'; } document.getElementById('loaderFill').style.width = loadProg + '%'; }, 100);
+
+document.getElementById('btnEnterGame').addEventListener('click', () => { document.getElementById('studioIntro').style.opacity = '0'; setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initApp(); }, 600); });
+
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) return null;
+    const token = await getIdToken(auth.currentUser);
+    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${API_URL}${endpoint}`, options); return await res.json();
+}
+
+function initApp() { userUid = auth.currentUser.uid; fetchBalance(); startLobbyPolling(); }
+async function fetchBalance() { try { const res = await fetchAPI('/api/me'); if(res.ok) document.getElementById("ui-balance").innerText = Math.floor(res.balance).toLocaleString('tr-TR'); } catch(e){} }
+
+function resetToLobby() {
+    clearInterval(pollingInterval); currentRoomId = null; isProcessing = false;
+    document.getElementById("gameArea").style.display = "none"; document.getElementById("lobbyArea").style.display = "flex";
+    fetchBalance(); startLobbyPolling();
+}
+
+function startLobbyPolling() { fetchLobby(); pollingInterval = setInterval(fetchLobby, 3000); }
+
+async function fetchLobby() {
+    if (currentRoomId) return; 
+    try {
+        const res = await fetchAPI('/api/pisti-online/lobby');
+        if(!res.ok) return;
+        const list = document.getElementById("roomList"); list.innerHTML = "";
+        if (res.rooms.length === 0) { list.innerHTML = `<div style="color:#94a3b8; text-align:center;">Aktif oda yok.</div>`; return; }
+        
+        res.rooms.forEach(r => {
+            const isMe = r.hostUid === userUid;
+            let statusText = r.status === 'waiting' ? `<span style="color:#2ecc71">${r.currentPlayers}/${r.maxPlayers} Bekleniyor</span>` : `<span style="color:#f1c40f">Oynanıyor</span>`;
+            let btnHtml = r.status === 'waiting' && !isMe ? `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>` : `<button class="btn-join btn-disabled" disabled>${isMe ? 'SENİN ODAN' : 'DOLU'}</button>`;
+            
+            list.innerHTML += `<div class="room-card"><div class="room-card-top"><span class="room-host"><i class="fa-solid fa-crown" style="color:#f1c40f; margin-right:5px;"></i>${r.host}</span><span class="room-mode">${r.mode} | ${r.bet} MC</span></div><div class="room-footer"><span class="room-players">${statusText}</span>${btnHtml}</div></div>`;
+        });
+    } catch(e) {}
+}
+
+window.submitCreateRoom = async () => {
+    closeCreateModal();
+    const mode = document.getElementById('roomModeSelect').value;
+    const bet = parseInt(document.getElementById('roomBetInput').value) || 100;
+    try {
+        const res = await fetchAPI('/api/pisti-online/create', 'POST', { mode, bet });
+        if(!res.ok) throw new Error(res.error);
+        enterGame(res.room.id);
+    } catch(e) { showMatrixModal("Hata", e.message, "error"); }
+};
+
+window.joinRoom = async (id) => {
+    try {
+        const res = await fetchAPI('/api/pisti-online/join', 'POST', { roomId: id });
+        if(!res.ok) throw new Error(res.error);
+        enterGame(id);
+    } catch(e) { showMatrixModal("Hata", e.message, "error"); }
+};
+
+function enterGame(id) {
+    clearInterval(pollingInterval); currentRoomId = id; isProcessing = false;
+    document.getElementById("lobbyArea").style.display = "none"; document.getElementById("gameArea").style.display = "flex";
+    pollGameState(); pollingInterval = setInterval(pollGameState, 1500);
+}
+
+async function pollGameState() {
+    if (!currentRoomId || isProcessing) return;
+    try {
+        // Ping
+        const pingRes = await fetchAPI('/api/pisti-online/ping', 'POST', { roomId: currentRoomId });
+        if (pingRes && pingRes.status === 'abandoned') { showMatrixModal("İPTAL", "Bağlantı koptuğu için oyun iptal edildi.", "error", true); return; }
+
+        const res = await fetchAPI(`/api/pisti-online/state/${currentRoomId}`);
+        if(!res.ok) throw new Error(res.error);
+        syncUI(res.room);
+    } catch(e) {
+        if(e.message === "Oda bulunamadı.") showMatrixModal("BİLGİ", "Oda kapandı veya bitti.", "info", true);
+    }
+}
+
+function getCardHTML(cardCode) {
+    if(cardCode === 'BACK') return `<div class="card back"></div>`;
+    const valMap = {'0':'10'}; const suitMap = {'H':{s:'♥',c:'red'},'D':{s:'♦',c:'red'},'C':{s:'♣',c:'black'},'S':{s:'♠',c:'black'}};
+    const v = valMap[cardCode[0]] || cardCode[0]; const s = suitMap[cardCode[1]];
+    return `<div class="card ${s.c}"><div class="val">${v}</div><div class="center-suit">${s.s}</div><div class="suit">${s.s}</div></div>`;
+}
+
+function syncUI(r) {
+    if (r.status === 'finished') {
+        clearInterval(pollingInterval);
+        if(r.winner.includes(userUid)) showMatrixModal("KAZANDIN!", "Oyun bitti, ödül hesabına eklendi.", "success", true);
+        else showMatrixModal("OYUN BİTTİ", "Maalesef kaybettin.", "error", true);
+        return;
+    }
+
+    const stTxt = document.getElementById("gameStatusTxt");
+    if(r.status === 'waiting') { stTxt.innerText = "RAKİPLER BEKLENİYOR..."; stTxt.style.color = "#94a3b8"; }
+    else { 
+        const isMyTurn = r.players[r.turn].uid === userUid; 
+        stTxt.innerText = isMyTurn ? "SIRA SENDE!" : `SIRA: ${r.players[r.turn].username.toUpperCase()}`;
+        stTxt.style.color = isMyTurn ? "#00ffa3" : "#f1c40f"; 
+    }
+
+    document.getElementById("deckCountInfo").innerText = `DESTE: ${r.deckCount}`;
+
+    // Masa Kartları
+    let tHTML = '';
+    if(r.tableCards.length > 0) {
+        if(r.tableCards.length > 1) tHTML += `<div style="position:absolute; opacity:0.5;">${getCardHTML('BACK')}</div>`;
+        const topCard = r.tableCards[r.tableCards.length - 1];
+        tHTML += `<div style="z-index:2; transform: rotate(3deg);">${getCardHTML(topCard)}</div>`;
+    }
+    document.getElementById("tableCardsArea").innerHTML = tHTML;
+
+    // Oyuncular
+    const me = r.players.find(p => p.uid === userUid);
+    const others = r.players.filter(p => p.uid !== userUid);
+
+    // Kendi Alanım
+    if(me) {
+        document.getElementById("myName").innerText = me.username;
+        if(me.avatar) document.getElementById("myAvatar").src = me.avatar;
+        document.getElementById("myScore").innerText = `${me.score} (Kart: ${me.cardCount})`;
+        document.getElementById("myInfoBox").className = (r.status === 'playing' && r.players[r.turn].uid === userUid) ? "my-info active" : "my-info";
+
+        let myH = '';
+        me.hand.forEach((c, idx) => { myH += `<div onclick="playCard(${idx})">${getCardHTML(c)}</div>`; });
+        document.getElementById("myCardsArea").innerHTML = myH;
+    }
+
+    // Diğerleri
+    let othHTML = '';
+    others.forEach(oth => {
+        const isActive = (r.status === 'playing' && r.players[r.turn].uid === oth.uid) ? 'active' : '';
+        othHTML += `<div class="player-mini ${isActive}"><img src="${oth.avatar||'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s'}"><span>${oth.username}</span><span class="p-score">Kart: ${oth.hand.length} | Puan: ${oth.score}</span></div>`;
+    });
+    document.getElementById("otherPlayersArea").innerHTML = othHTML;
+}
+
+window.playCard = async (idx) => {
+    if(isProcessing) return;
+    isProcessing = true;
+    try {
+        const res = await fetchAPI('/api/pisti-online/play', 'POST', { roomId: currentRoomId, cardIndex: idx });
+        if(!res.ok) throw new Error(res.error);
+        syncUI(res.room); // Anında güncelle
+    } catch(e) { showMatrixModal("Uyarı", e.message, "error"); }
+    isProcessing = false;
+};
+
+onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
+</script>
+</body>
+</html>
