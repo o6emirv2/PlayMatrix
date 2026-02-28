@@ -53,13 +53,11 @@
         #howToPlayScreen {
             display: none; flex-direction: column; align-items: center; justify-content: center;
             width: 100%; height: 100%; padding: 20px; text-align: center;
-            overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         .htp-box {
             background: rgba(20,20,20,0.9); border: 1px solid var(--pm-orange); padding: 25px;
             border-radius: 15px; max-width: 380px; box-shadow: 0 10px 30px rgba(255,138,0,0.15);
-            max-height: calc(100vh - 140px);
-            overflow: auto; -webkit-overflow-scrolling: touch;
+            max-height: 72vh; overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box;
         }
         .htp-box h2 { color: var(--pm-orange); margin-bottom: 20px; font-size: 24px; font-weight: 900; letter-spacing: 1px;}
         .htp-box ul { list-style: none; text-align: left; font-size: 14px; line-height: 1.7; color: #eee; margin-bottom: 25px;}
@@ -223,7 +221,7 @@
 <header class="top-bar">
     <a href="https://playmatrix.com.tr" class="back-btn">LOBİYE DÖN</a>
     <div class="balance-container">
-        <div class="balance-val" id="uiBalance">0</div>
+        <div class="balance-val" id="uiBalance">...</div>
         <div class="currency-badge">MC</div>
     </div>
 </header>
@@ -296,6 +294,7 @@ let userToken = null;
 let balance = 0;
 let currentBet = 0;
 let gameState = null;
+let pistiSeq = 0;
 let actionLock = true; 
 
 // Intro Yükleme Animasyonu
@@ -385,31 +384,50 @@ window.clearBet = function() {
 
 async function checkGameState() {
     const res = await apiCall('/api/pisti/state');
-    if(res.ok && res.state && res.state.status === 'playing') {
-        gameState = res.state;
-        renderBoard(false);
+    if (res.ok) {
+        if (Number.isFinite(Number(res.balance))) balance = Number(res.balance);
+        if (res.state && res.state.status === 'playing') {
+            gameState = res.state;
+            pistiSeq = Number(gameState.seq || 0);
+            renderBoard(false);
+        } else {
+            gameState = null;
+            pistiSeq = 0;
+        }
     }
     updateUI();
 }
 
 window.startGame = async function() {
-    if(currentBet < 100) return;
+    if (currentBet < 100) return;
+    if (actionLock) return;
     actionLock = true;
     document.getElementById("startBtn").innerText = "BAŞLIYOR...";
-    
+
     const res = await apiCall('/api/pisti/start', 'POST', { bet: currentBet });
     document.getElementById("startBtn").innerText = "OYNA";
-    
-    if(res.ok) {
+
+    if (res.ok) {
+        // Sunucudan kesin bakiye (client tarafında sadece ön-izleme yapıyoruz)
+        if (Number.isFinite(Number(res.balance))) balance = Number(res.balance);
+
         gameState = res.state;
+        pistiSeq = Number(gameState?.seq || 0);
+
+        // Bahis artık oyuna girdi, UI bet göstergesini sıfırla
+        currentBet = 0;
+
         updateUI();
-        renderBoard(true); 
-        fetchBalance();
-        setTimeout(() => { actionLock = false; }, 1500);
+        renderBoard(true);
+
+        setTimeout(() => { actionLock = false; }, 900);
     } else {
         showModal("Hata", res.error, "lose");
-        balance += currentBet; currentBet = 0; updateUI();
-        actionLock = false;
+        // Hata olursa bahis iadesi (local)
+        balance += currentBet; 
+        currentBet = 0; 
+        updateUI();
+        setTimeout(() => { actionLock = false; }, 900);
     }
 }
 
@@ -476,9 +494,12 @@ window.playCard = async function(index, el) {
     el.classList.remove("playable");
     playSound('throw');
 
-    const res = await apiCall('/api/pisti/play', 'POST', { cardIndex: index });
+    const res = await apiCall('/api/pisti/play', 'POST', { cardIndex: index, seq: pistiSeq });
     
     if(!res.ok) { showModal("Hata", res.error, "lose"); checkGameState(); actionLock = false; return; }
+
+    if (Number.isFinite(Number(res.balance))) balance = Number(res.balance);
+    if (res.state && typeof res.state.seq !== 'undefined') pistiSeq = Number(res.state.seq || 0);
 
     const log = res.log;
     
