@@ -924,7 +924,7 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 7. ONLINE SATRANÇ MOTORU (GÜNCELLENDİ VE HATALAR ÇÖZÜLDÜ)
+// 7. ONLINE SATRANÇ MOTORU (HATA KÖKTEN ÇÖZÜLDÜ)
 // ======================================================
 
 const colChess = () => db.collection('chess_rooms');
@@ -1076,8 +1076,10 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
 app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
-        // HAMLE HATASI (INVALID MOVE) KÖKTEN ÇÖZÜMÜ: Client'tan sadece moveSan (Örn: 'e4') alınır
-        const { roomId, moveSan } = req.body;
+        
+        // SUNUCU & İSTEMCİ VERSİYON FARKINI ÇÖZEN NET HAMLE MANTIĞI:
+        // moveSan yerine from ve to ile koordinat alınır (Örn: {from: 'e2', to: 'e4'})
+        const { roomId, from, to, promotion } = req.body;
 
         const result = await db.runTransaction(async (tx) => {
             const rSnap = await tx.get(colChess().doc(roomId));
@@ -1094,8 +1096,9 @@ app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
 
             const chess = new Chess(r.fen);
             
-            // Satranç hamlesi (SAN formatında) sunucuda işletilir
-            const move = chess.move(moveSan);
+            // Kökten çözüm: Hamleyi koordinat (from-to) objesi olarak işle. Hata vermez.
+            const move = chess.move({ from: from, to: to, promotion: promotion || 'q' });
+            
             if (move === null) throw new Error("Geçersiz hamle! Kural hatası.");
 
             r.fen = chess.fen();
@@ -1144,7 +1147,7 @@ app.post('/api/chess/resign', verifyAuth, async (req, res) => {
 
             r.status = 'finished'; r.winner = isWhite ? 'black' : 'white'; r.updatedAt = nowMs();
             
-            // Teslimiyette 5000 MC verme isteğin doğrultusunda bu satır KALDIRILDI.
+            // HATA ÇÖZÜLDÜ: Teslimiyette karşı tarafa ödül (5000 MC) VERİLMİYOR.
             
             tx.update(colChess().doc(roomId), r);
             return { room: { id: roomId, ...r } };
