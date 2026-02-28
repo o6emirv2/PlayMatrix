@@ -1,937 +1,226 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlayMatrix | Resmi Bakım Bildirisi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <title>PlayMatrix Pişti | VIP Pişti Masası</title>
-  <meta name="description" content="PlayMatrix Pişti ile profesyonel pişti masasında oynayın. Gerçek kurallar, stabil altyapı, animasyonlu VIP arayüz ve anında kazanç." />
-  <meta name="keywords" content="pişti oyna, pişti casino, playmatrix, pişti pro, online pişti, iskambil, mc kazan" />
-  <meta name="author" content="PlayMatrix Global" />
-  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-  <meta name="theme-color" content="#0b1118" />
+    <style>
+        :root {
+            /* Kurumsal ve Prestijli Renk Paleti */
+            --bg-official: #0a1525; /* Derin Lacivert */
+            --gold-accent: #d4af37; /* Metalik Altın */
+            --gold-glow: rgba(212, 175, 55, 0.4); /* Sıcak Altın Işık */
+            --text-light: #f0f2f5;
+            --text-muted: #aab4c0;
+        }
 
-  <meta property="og:locale" content="tr_TR" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="PlayMatrix Pişti | VIP Pişti Masası" />
-  <meta property="og:description" content="Profesyonel pişti masası: gerçek kurallar, hızlı hamle, animasyonlu arayüz. Hemen oyna!" />
-  <meta property="og:site_name" content="PlayMatrix" />
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="PlayMatrix Pişti | Profesyonel Masa" />
-  <meta name="twitter:description" content="Kesintisiz ve stabil pişti deneyimi. Hemen masaya otur." />
+        body {
+            background: radial-gradient(circle at center, #112240 0%, var(--bg-official) 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
 
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        /* Arka plan için ince resmi doku */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            z-index: -1;
+        }
 
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-    html, body {
-      height: 100vh; width: 100vw; overflow: hidden; overscroll-behavior: none;
-      background: #0b1118; color: #fff; font-family: 'Inter', sans-serif;
-      touch-action: manipulation;
-    }
+        /* MODAL ANA YAPI */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 21, 37, 0.95); /* Koyu, ciddi arka plan */
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
 
-    :root{
-      --bg: #0b1118;
-      --panel: rgba(18, 26, 36, 0.95);
-      --panel2: rgba(14, 21, 29, 0.9);
-      --border: rgba(255,255,255,0.06);
-      --soft: #94a3b8;
-      --accent: #00ffa3;
-      --accent2: #00f0ff;
-      --danger: #ff3b30;
-      --gold: #f59e0b;
-      --felt: radial-gradient(circle at center, #0e6a36 0%, #052413 55%, #03170c 100%);
-      --feltEdge: rgba(0,0,0,0.55);
-    }
+        .modal-card {
+            width: 90%;
+            max-width: 500px;
+            background: linear-gradient(145deg, #13243a, #0e1a2b);
+            border: 2px solid var(--gold-accent);
+            /* Çift çerçeve efekti ile resmiyet */
+            outline: 4px solid rgba(212, 175, 55, 0.1);
+            border-radius: 12px;
+            padding: 50px 40px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            
+            /* Giriş Animasyonu */
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideInOfficial 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
 
-    /* === INTRO (Crash ile uyumlu) === */
-    #studioIntro{
-      position: fixed; inset: 0; background: #070b10;
-      z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      transition: opacity .6s ease, visibility .6s ease;
-    }
-    .intro-logo{ transform: scale(1.08); animation: breathe 2s infinite alternate; text-align: center; }
-    .intro-logo i{ font-size: 68px; color: var(--accent); margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,255,163,0.5)); }
-    .intro-logo h1{ font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
-    .intro-logo h1 span{ color: var(--accent); }
-    .loader-track{ width: 220px; height: 4px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
-    .loader-fill{ height: 100%; width: 0%; background: var(--accent); transition: width .1s linear; box-shadow: 0 0 10px var(--accent); }
-    .btn-intro-start{
-      display:none; margin-top: 30px; padding: 15px 40px;
-      background: linear-gradient(to bottom, var(--accent), #00b894);
-      color:#000; border:none; border-radius: 12px; font-weight: 900; font-size: 15px;
-      cursor:pointer; text-transform: uppercase; font-family: 'Orbitron'; letter-spacing: 1px;
-      box-shadow: 0 5px 20px rgba(0,255,163,0.35); transition: .2s;
-    }
-    .btn-intro-start:active{ transform: scale(.95); box-shadow:none; }
-    @keyframes breathe{ 0%{ transform: scale(1); filter: brightness(1);} 100%{ transform: scale(1.05); filter: brightness(1.15);} }
+        /* Arkadan vuran prestijli altın ışık */
+        .modal-card::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%; height: 120%;
+            background: radial-gradient(circle, var(--gold-glow) 10%, transparent 60%);
+            filter: blur(40px);
+            z-index: -1;
+            animation: majesticPulse 4s infinite alternate;
+        }
 
-    /* === TOP BAR (taşma korumalı) === */
-    .top-bar{
-      position: fixed; top: 0; left: 0; width: 100%; height: 65px;
-      background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      display:flex; align-items:center; justify-content: space-between;
-      padding: 0 14px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      gap: 10px;
-    }
-    .tb-left{ display:flex; align-items:center; gap: 12px; min-width: 0; }
-    .tb-logo{
-      font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 900;
-      letter-spacing: 1px; white-space: nowrap;
-    }
-    .tb-logo span{ color: var(--accent2); }
-    .tb-sub{
-      font-size: 11px; color: var(--soft); letter-spacing: .6px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: 180px;
-    }
-    .tb-right{ display:flex; align-items:center; gap: 10px; flex-shrink: 0; }
-    .balance-box{
-      display:flex; align-items:center; background: #0b1118;
-      padding: 6px 10px; border-radius: 10px; border: 1px solid #1f2c3b;
-      max-width: 160px; min-width: 120px;
-    }
-    .balance-box b{
-      font-size: 14px; color: var(--accent); font-family: 'Inter', monospace; font-weight: 900;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: 95px; display: inline-block; vertical-align: middle;
-    }
-    .mc-icon{
-      background: linear-gradient(135deg, var(--accent2), #0055ff);
-      color:#fff; font-size: 9px; font-weight: 900; padding: 3px 6px; border-radius: 6px;
-      margin-left: 8px; box-shadow: 0 0 10px rgba(0,240,255,0.35); flex-shrink: 0;
-    }
-    .icon-btn{
-      background: #1f2c3b; color: #94a3b8; border:none;
-      width: 36px; height: 36px; border-radius: 10px;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition: .15s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
-      text-decoration: none;
-    }
-    .icon-btn:active{ transform: scale(.92); background:#2a3a4d; color:#fff; }
-    .icon-btn.red:active{ background: var(--danger); color:#fff; }
+        @keyframes slideInOfficial {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes majesticPulse {
+            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.95); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+        }
 
-    /* === GAME AREA === */
-    .game-area{
-      position:absolute; top: 65px; left:0; width: 100%;
-      height: calc(100vh - 280px);
-      display:flex; align-items:center; justify-content:center;
-      background: radial-gradient(circle at center, #121a24 0%, #0b1118 100%);
-      overflow:hidden;
-    }
+        .icon-box {
+            font-size: 70px;
+            /* Altın degrade ikon */
+            background: linear-gradient(135deg, #d4af37, #fceabb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 4px 6px rgba(212, 175, 55, 0.3));
+        }
 
-    .table-wrap{
-      width: min(540px, 94vw);
-      height: min(520px, 58vh);
-      position: relative;
-      border-radius: 28px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
-      padding: 18px;
-    }
+        h2 {
+            font-family: 'Merriweather', serif; /* Resmiyet için serif font */
+            color: var(--gold-accent);
+            font-size: 26px;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+            position: relative;
+            padding-bottom: 15px;
+        }
+        
+        /* Başlık altı resmi çizgi */
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 60px; height: 3px;
+            background: var(--gold-accent);
+        }
 
-    .felt{
-      position:absolute; inset: 14px;
-      border-radius: 22px;
-      background: var(--felt);
-      box-shadow: inset 0 0 80px rgba(0,0,0,0.55);
-      border: 10px solid rgba(15, 10, 7, 0.65);
-    }
+        p {
+            color: var(--text-light);
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 35px;
+            font-weight: 400;
+            border-top: 1px solid rgba(212, 175, 55, 0.1);
+            padding-top: 20px;
+        }
 
-    .score-pill{
-      position:absolute; top: 14px; left: 50%; transform: translateX(-50%);
-      z-index: 5;
-      display:flex; gap: 18px; align-items:center;
-      background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08);
-      padding: 8px 16px; border-radius: 999px; backdrop-filter: blur(6px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-      font-weight: 900;
-    }
-    .score-pill .lbl{ font-size: 11px; color: var(--soft); letter-spacing: 1px; text-transform: uppercase;}
-    .score-pill .val{ font-size: 16px; color: var(--gold); margin-left: 6px; }
-    .score-pill .sep{ width:1px; height: 18px; background: rgba(255,255,255,0.12); }
+        .official-note {
+            display: block;
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-style: italic;
+        }
 
-    .lane{
-      position:absolute; left: 50%; transform: translateX(-50%);
-      width: calc(100% - 60px);
-      display:flex; align-items:center; justify-content:center;
-      pointer-events:none;
-    }
-    .lane.bot{ top: 62px; }
-    .lane.player{ bottom: 34px; pointer-events:auto; }
-    .lane.center{ top: 50%; transform: translate(-50%, -50%); width: 150px; height: 140px; }
+        .btn-exit {
+            width: 100%;
+            padding: 18px;
+            border-radius: 6px; /* Daha keskin köşeler */
+            border: 1px solid var(--gold-accent);
+            background: linear-gradient(180deg, var(--gold-accent) 0%, #b39329 100%);
+            color: #0a1525; /* Altın üzerine koyu yazı */
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-family: 'Merriweather', serif;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        }
 
-    .hand{
-      position: relative; height: 120px; width: 100%;
-      display:flex; align-items:center; justify-content:center;
-    }
+        .btn-exit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+            background: linear-gradient(180deg, #eacda3 0%, #d6ae7b 100%);
+        }
 
-    .card{
-      width: 72px; height: 104px;
-      border-radius: 10px;
-      background-size: cover; background-position: center;
-      box-shadow: 0 18px 35px rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.14);
-      position:absolute;
-      transform-origin: center bottom;
-      will-change: transform, opacity, top, left;
-      transition: transform .25s ease, filter .2s ease, top .25s ease, left .25s ease, opacity .2s ease;
-    }
-    .card.small{ width: 64px; height: 92px; border-radius: 9px; }
-    .card.playable{ cursor:pointer; pointer-events:auto; }
-    .card.playable:active{ transform: translateY(6px) scale(0.98) !important; }
-    .card.disabled{ pointer-events:none; filter: brightness(0.7) grayscale(0.15); }
-
-    .table-stack{
-      position:relative; width: 150px; height: 140px;
-    }
-
-    /* === BOTTOM CONTROLS === */
-    .bottom-controls{
-      position: fixed; bottom: 0; left:0; width: 100%; height: 260px;
-      background: #0b1118; border-top: 2px solid #1f2c3b;
-      z-index: 1000; box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
-      padding: 14px;
-      display:flex; flex-direction: column; gap: 12px; align-items:center; justify-content:flex-start;
-    }
-
-    .bet-row{
-      width: min(560px, 96vw);
-      display:flex; gap: 10px; align-items:center; justify-content: space-between;
-    }
-
-    .bet-box{
-      flex: 1;
-      background: linear-gradient(145deg, #111827, #0a0f1a);
-      border: 1px solid #1f2937; border-radius: 16px;
-      padding: 12px 12px;
-      box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
-      display:flex; align-items:center; justify-content: space-between; gap: 10px;
-      min-width: 0;
-    }
-    .bet-box .bet-label{
-      font-size: 11px; font-weight: 900; letter-spacing: 1px; color: var(--soft);
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-    .bet-box .bet-val{
-      font-family: 'Orbitron', sans-serif;
-      font-size: 18px; font-weight: 900; color: var(--accent2);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: 180px;
-    }
-
-    .chips{
-      width: min(560px, 96vw);
-      display:flex; gap: 10px; align-items:center; justify-content:center;
-      padding: 12px;
-      border-radius: 18px;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.06);
-      backdrop-filter: blur(6px);
-    }
-    .chip{
-      width: 58px; height: 58px; border-radius: 50%;
-      display:flex; align-items:center; justify-content:center;
-      font-weight: 900; letter-spacing: .5px;
-      border: 3px solid rgba(255,255,255,0.25);
-      box-shadow: inset 0 0 14px rgba(0,0,0,0.55), 0 10px 18px rgba(0,0,0,0.45);
-      cursor:pointer; transition: transform .12s ease, filter .12s ease;
-      font-size: 12px;
-    }
-    .chip:active{ transform: translateY(3px) scale(0.96); filter: brightness(1.1); }
-    .chip.c100{ background: radial-gradient(circle at 30% 30%, #cbd5e1, #475569); color:#0b1118; }
-    .chip.c500{ background: radial-gradient(circle at 30% 30%, #34d399, #065f46); }
-    .chip.c2k{ background: radial-gradient(circle at 30% 30%, #60a5fa, #1d4ed8); }
-    .chip.c10k{ background: radial-gradient(circle at 30% 30%, #fbbf24, #b45309); color:#0b1118; }
-
-    .actions{
-      width: min(560px, 96vw);
-      display:flex; gap: 10px; align-items:center; justify-content:center;
-    }
-    .btn{
-      flex: 1;
-      min-height: 56px;
-      border:none; border-radius: 14px;
-      font-weight: 900; font-size: 15px; letter-spacing: 1px;
-      cursor:pointer; transition: transform .1s, filter .1s, box-shadow .1s;
-      text-transform: uppercase;
-      display:flex; align-items:center; justify-content:center; gap: 8px;
-      touch-action: manipulation;
-    }
-    .btn:active{ transform: translateY(3px); }
-    .btn.primary{
-      background: linear-gradient(180deg, var(--accent), #00b894);
-      color:#00140b;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.35);
-    }
-    .btn.secondary{
-      background: linear-gradient(180deg, #334155, #1f2937);
-      color:#e2e8f0;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.35);
-    }
-    .btn.danger{
-      background: linear-gradient(180deg, #ef4444, #b91c1c);
-      color:#fff;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.35);
-    }
-    .btn:disabled{
-      opacity: .65; cursor: not-allowed; filter: grayscale(0.5);
-      transform: translateY(3px) !important;
-      box-shadow: 0 2px 0 rgba(0,0,0,0.35) !important;
-    }
-
-    /* === MODAL (Crash ile %100 uyumlu - animasyonlu) === */
-    .modal-overlay{
-      position: fixed; inset:0;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      display:none; align-items:center; justify-content:center;
-      z-index: 100000; opacity: 0; transition: opacity .3s ease;
-    }
-    .modal-overlay.show{ display:flex; opacity:1; }
-    .modal-card{
-      background: linear-gradient(145deg, #111827, #0a0f1a);
-      border: 1px solid #1f2937;
-      width: 90%; max-width: 380px;
-      border-radius: 20px;
-      padding: 26px 22px;
-      transform: scale(.86) translateY(30px);
-      opacity: 0;
-      transition: all .35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 0 25px 50px rgba(0,0,0,0.9);
-      text-align:center;
-    }
-    .modal-overlay.show .modal-card{ transform: scale(1) translateY(0); opacity:1; }
-    .modal-icon{ font-size: 50px; margin-bottom: 12px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
-    .modal-card h3{ color:#fff; font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing:.5px; }
-    .modal-card p{ font-size: 14px; color: #94a3b8; line-height: 1.65; margin-bottom: 18px; font-weight: 600; white-space: pre-line; text-align:left; }
-    .modal-card p b{ color: var(--accent2); }
-    .modal-btn{
-      width: 100%;
-      background: linear-gradient(135deg, var(--accent2), #0055ff);
-      color:#fff; border:none;
-      padding: 14px; border-radius: 14px;
-      font-weight: 900; font-size: 15px; letter-spacing: 1px;
-      cursor:pointer; transition: .15s;
-      box-shadow: 0 5px 15px rgba(0,240,255,0.25);
-      text-transform: uppercase;
-    }
-    .modal-btn:active{ transform: translateY(2px); box-shadow:none; }
-
-    /* === PİŞTİ ANİM === */
-    #pistiAnim{
-      position: fixed; inset: 0;
-      display:flex; align-items:center; justify-content:center;
-      pointer-events:none; z-index: 20000;
-      opacity:0;
-    }
-    #pistiAnim .txt{
-      font-family:'Orbitron', sans-serif;
-      font-size: 76px; font-weight: 900;
-      background: linear-gradient(180deg, #fff, #ffcc00, #ff3b30);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      filter: drop-shadow(0 10px 20px rgba(255,0,0,0.65));
-      transform: scale(0.7);
-    }
-    @keyframes pistiPop{
-      0%{ opacity:0; transform: scale(0.65); }
-      25%{ opacity:1; transform: scale(1.05); }
-      75%{ opacity:1; transform: scale(1); }
-      100%{ opacity:0; transform: scale(1.18); }
-    }
-
-    @media (max-width: 420px){
-      .table-wrap{ height: min(520px, 56vh); }
-      .card{ width: 66px; height: 96px; }
-      .bottom-controls{ height: 270px; }
-      .balance-box{ max-width: 150px; min-width: 112px; }
-      .balance-box b{ max-width: 85px; }
-      .tb-sub{ max-width: 120px; }
-      .chip{ width: 54px; height: 54px; }
-    }
-  </style>
+        .brand-seal {
+            margin-top: 25px;
+            font-family: 'Merriweather', serif;
+            font-size: 13px;
+            color: var(--gold-accent);
+            opacity: 0.7;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .brand-seal i { font-size: 16px; }
+    </style>
 </head>
-
 <body>
-  <!-- INTRO -->
-  <div id="studioIntro">
-    <div class="intro-logo">
-      <i class="fa-solid fa-clover"></i>
-      <h1>PLAYMATRİX<br><span>PİŞTİ</span></h1>
-    </div>
-    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
-    <button id="btnEnterGame" class="btn-intro-start">MASAYA OTUR</button>
-  </div>
 
-  <!-- MODAL -->
-  <div id="matrixModal" class="modal-overlay">
-    <div class="modal-card">
-      <div id="matrixModalIcon" class="modal-icon"></div>
-      <h3 id="matrixModalTitle">Bilgi</h3>
-      <p id="matrixModalDesc">Mesaj</p>
-      <button class="modal-btn" onclick="closeMatrixModal()">TAMAM</button>
-    </div>
-  </div>
+    <div class="modal-overlay">
+        <div class="modal-card">
+            <div class="icon-box">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2>SİSTEM BAKIM BİLDİRİSİ</h2>
+            <p>
+                Sayın Kullanıcımız,
+                <br><br>
+                PlayMatrix Platformu, Hizmet Kalitesini Artırmak ve Yeni "Profesyonel" Altyapıyı Entegre Etmek Üzere Planlı Bakım Çalışmasına Alınmıştır.
+                <span class="official-note">Bu Süreçte Gösterdiğiniz Anlayış İçin Teşekkür Ederiz.</span>
+            </p>
+            
+            <button class="btn-exit" onclick="exitGame()">
+                <i class="fa-solid fa-right-from-bracket"></i> GÜVENLİ ÇIKIŞ YAP
+            </button>
 
-  <!-- PİŞTİ ANİM -->
-  <div id="pistiAnim"><div class="txt">PİŞTİ!</div></div>
-
-  <!-- TOP BAR -->
-  <header class="top-bar">
-    <div class="tb-left">
-      <div class="tb-logo">PM <span>PİŞTİ</span></div>
-      <div class="tb-sub" id="uiStatus">SUNUCU BEKLENİYOR…</div>
-    </div>
-    <div class="tb-right">
-      <div class="balance-box" title="Bakiye">
-        <b id="uiBalance">Yükleniyor</b>
-        <div class="mc-icon">MC</div>
-      </div>
-      <!-- (?) sağda info -->
-      <button class="icon-btn" onclick="showHowToPlay()" aria-label="Nasıl Oynanır">
-        <i class="fa-solid fa-circle-question"></i>
-      </button>
-      <!-- çıkış -->
-      <a href="https://playmatrix.com.tr" class="icon-btn red" aria-label="Çıkış">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </a>
-    </div>
-  </header>
-
-  <!-- GAME -->
-  <main class="game-area">
-    <div class="table-wrap">
-      <div class="felt"></div>
-
-      <div class="score-pill">
-        <div>
-          <span class="lbl">SİZ</span>
-          <span class="val" id="uiPlayerScore">0</span>
+            <div class="brand-seal">
+                <i class="fa-solid fa-certificate"></i> PlayMatrix Protokolü
+            </div>
         </div>
-        <div class="sep"></div>
-        <div>
-          <span class="lbl">KRUPİYE</span>
-          <span class="val" id="uiBotScore">0</span>
-        </div>
-      </div>
-
-      <div class="lane bot">
-        <div class="hand" id="botHand"></div>
-      </div>
-
-      <div class="lane center">
-        <div class="table-stack" id="tableCenter"></div>
-      </div>
-
-      <div class="lane player">
-        <div class="hand" id="playerHand"></div>
-      </div>
-    </div>
-  </main>
-
-  <!-- BOTTOM -->
-  <section class="bottom-controls">
-    <div class="bet-row">
-      <div class="bet-box">
-        <div class="bet-label">BAHİS</div>
-        <div class="bet-val"><span id="uiCurrentBet">0</span> MC</div>
-      </div>
-      <button class="btn secondary" id="btnClearBet" onclick="clearBet()" disabled>
-        <i class="fa-solid fa-rotate-left"></i> SIFIRLA
-      </button>
     </div>
 
-    <div class="chips" id="chipsRow">
-      <div class="chip c100" onclick="addBet(100)">100</div>
-      <div class="chip c500" onclick="addBet(500)">500</div>
-      <div class="chip c2k" onclick="addBet(2000)">2K</div>
-      <div class="chip c10k" onclick="addBet(10000)">10K</div>
-    </div>
-
-    <div class="actions">
-      <button class="btn primary" id="startBtn" onclick="startGame()" disabled>
-        <i class="fa-solid fa-play"></i> OYNA
-      </button>
-    </div>
-  </section>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-    authDomain: "emirhan-site.firebaseapp.com",
-    projectId: "emirhan-site",
-    storageBucket: "emirhan-site.firebasestorage.app",
-    messagingSenderId: "668871888390",
-    appId: "1:668871888390:web:76568bda84cb1641f7bd87"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  // ====== AUDIO (iOS dahil stabil) ======
-  // CHIP sesine dokunmuyoruz: aynı URL.
-  const chipAudio = new Audio("https://freesound.org/data/previews/240/240776_4107740-lq.mp3"); // chip (dokunma)
-  chipAudio.preload = "auto";
-
-  let audioCtx = null;
-  let audioUnlocked = false;
-
-  function ensureAudioUnlocked() {
-    if (audioUnlocked) return;
-
-    try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    } catch {}
-
-    // iOS unlock: kullanıcı dokunuşundan sonra bir kez play/pause
-    chipAudio.volume = 0.4;
-    chipAudio.currentTime = 0;
-    chipAudio.play().then(() => {
-      chipAudio.pause();
-      chipAudio.currentTime = 0;
-      audioUnlocked = true;
-    }).catch(() => {
-      // yine de context açıldıysa synth sesler çalışır
-      audioUnlocked = true;
-    });
-  }
-
-  function playChip() {
-    if (!chipAudio) return;
-    chipAudio.currentTime = 0;
-    chipAudio.volume = 0.45;
-    chipAudio.play().catch(()=>{});
-  }
-
-  // Profesyonel sentez sesleri (download gerektirmez, her cihazda çalışır)
-  function playClickyNoise(duration=0.06, gain=0.25, hp=800) {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const bufferSize = Math.floor(audioCtx.sampleRate * duration);
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
-
-    const src = audioCtx.createBufferSource();
-    src.buffer = buffer;
-
-    const biquad = audioCtx.createBiquadFilter();
-    biquad.type = 'highpass';
-    biquad.frequency.setValueAtTime(hp, now);
-
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(gain, now + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    src.connect(biquad).connect(g).connect(audioCtx.destination);
-    src.start(now);
-    src.stop(now + duration);
-  }
-
-  function playTone(freq=440, duration=0.12, gain=0.18, type='sine') {
-    if (!audioCtx) return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, now);
-
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0001, now);
-    g.gain.exponentialRampToValueAtTime(gain, now + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    osc.connect(g).connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + duration);
-  }
-
-  const SFX = {
-    deal() { playClickyNoise(0.08, 0.24, 700); },
-    draw() { playClickyNoise(0.05, 0.20, 900); },
-    capture() { playTone(880, 0.10, 0.16, 'triangle'); playTone(660, 0.10, 0.12, 'triangle'); },
-    pisti() { playTone(988, 0.10, 0.22, 'sawtooth'); playTone(1318, 0.14, 0.18, 'sawtooth'); },
-    win() { playTone(523, 0.12, 0.18); playTone(659, 0.14, 0.16); playTone(784, 0.16, 0.14); },
-    lose() { playTone(220, 0.16, 0.18, 'square'); playTone(196, 0.18, 0.14, 'square'); },
-    push() { playTone(392, 0.12, 0.14, 'triangle'); playTone(392, 0.12, 0.10, 'triangle'); }
-  };
-
-  // ====== STATE ======
-  let userToken = null;
-  let balance = 0;
-  let currentBet = 0;
-  let gameState = null;
-  let inFlight = false;
-  let seq = 0;
-
-  // ====== INTRO LOADER ======
-  let loadProgress = 0;
-  const loadInt = setInterval(() => {
-    loadProgress += Math.random() * 14;
-    if (loadProgress >= 100) {
-      loadProgress = 100;
-      clearInterval(loadInt);
-      document.getElementById('btnEnterGame').style.display = 'inline-block';
-      document.getElementById('loaderTrack').style.display = 'none';
-    }
-    document.getElementById('loaderFill').style.width = loadProgress + '%';
-  }, 90);
-
-  document.getElementById('btnEnterGame').addEventListener('click', () => {
-    ensureAudioUnlocked();
-    // küçük bir ses (iOS unlock sonrası)
-    try { SFX.deal(); } catch {}
-
-    const intro = document.getElementById('studioIntro');
-    intro.style.opacity = '0';
-    setTimeout(() => {
-      intro.style.visibility = 'hidden';
-      intro.style.display = 'none';
-      // girişten sonra state çek
-      checkGameState();
-      fetchBalance();
-    }, 600);
-  });
-
-  // ====== AUTH ======
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) return (window.location.href = "login.html");
-    userToken = await user.getIdToken();
-    // intro beklerken bile bakiye çekebiliriz
-    fetchBalance();
-  });
-
-  async function apiCall(endpoint, method='GET', body=null) {
-    if (!userToken) return { ok:false, error:'Oturum yok.' };
-    const opt = { method, headers: { 'Authorization': `Bearer ${userToken}`, 'Content-Type': 'application/json' } };
-    if (body) opt.body = JSON.stringify(body);
-    try {
-      const r = await fetch(endpoint, opt);
-      return await r.json();
-    } catch (e) {
-      return { ok:false, error:'Bağlantı hatası.' };
-    }
-  }
-
-  async function fetchBalance() {
-    const res = await apiCall('/api/me');
-    if (res.ok && typeof res.balance === 'number') {
-      balance = res.balance;
-      updateUI();
-    }
-  }
-
-  function setStatus(text) {
-    const el = document.getElementById('uiStatus');
-    el.textContent = text;
-  }
-
-  function updateUI() {
-    document.getElementById('uiBalance').textContent = Number(balance || 0).toLocaleString('tr-TR');
-    document.getElementById('uiCurrentBet').textContent = Number(currentBet || 0).toLocaleString('tr-TR');
-
-    document.getElementById('btnClearBet').disabled = !(currentBet > 0 && (!gameState || gameState.status !== 'playing'));
-    document.getElementById('startBtn').disabled = !(currentBet >= 100 && (!gameState || gameState.status !== 'playing') && !inFlight);
-
-    if (gameState) {
-      document.getElementById('uiPlayerScore').textContent = gameState.playerScore;
-      document.getElementById('uiBotScore').textContent = gameState.botScore;
-    } else {
-      document.getElementById('uiPlayerScore').textContent = '0';
-      document.getElementById('uiBotScore').textContent = '0';
-    }
-  }
-
-  // ====== BET ======
-  window.addBet = function(amount) {
-    ensureAudioUnlocked();
-    if (inFlight) return;
-    if (gameState && gameState.status === 'playing') return;
-    if (balance < amount) return showMatrixModal('Hata', 'Bakiye yetersiz.', 'danger');
-    if (currentBet + amount > 50000) return showMatrixModal('Hata', 'Maksimum bahis 50.000 MC.', 'danger');
-
-    currentBet += amount;
-    balance -= amount;
-    playChip(); // CHIP sesine dokunma
-    updateUI();
-  }
-
-  window.clearBet = function() {
-    ensureAudioUnlocked();
-    if (inFlight) return;
-    if (gameState && gameState.status === 'playing') return;
-    balance += currentBet;
-    currentBet = 0;
-    playChip(); // CHIP sesine dokunma
-    updateUI();
-  }
-
-  // ====== GAME STATE ======
-  async function checkGameState() {
-    const res = await apiCall('/api/pisti/state');
-    if (res.ok) {
-      if (typeof res.balance === 'number') balance = res.balance;
-      if (res.state && res.state.status === 'playing') {
-        gameState = res.state;
-        seq = Number(res.state.seq || 0);
-        setStatus('OYUN DEVAM EDİYOR');
-        renderBoard(false);
-      } else {
-        setStatus('BAHİS SEÇ VE OYNA');
-        gameState = null;
-      }
-      updateUI();
-    } else {
-      setStatus('SUNUCU HATASI');
-    }
-  }
-
-  window.startGame = async function() {
-    ensureAudioUnlocked();
-    if (inFlight) return;
-    if (currentBet < 100) return;
-    inFlight = true;
-    updateUI();
-    setStatus('MASA HAZIRLANIYOR…');
-    try { SFX.deal(); } catch {}
-
-    const res = await apiCall('/api/pisti/start', 'POST', { bet: currentBet });
-    inFlight = false;
-
-    if (!res.ok) {
-      setStatus('BAHİS SEÇ VE OYNA');
-      // bahis iadesi (UI)
-      balance += currentBet;
-      currentBet = 0;
-      updateUI();
-      return showMatrixModal('Hata', res.error || 'İşlem başarısız.', 'danger');
-    }
-
-    if (typeof res.balance === 'number') balance = res.balance;
-    gameState = res.state;
-    seq = Number(res.state.seq || 0);
-    currentBet = 0; // artık sunucuda kilitlendi
-    updateUI();
-    renderBoard(true);
-    setStatus('OYUN BAŞLADI');
-  }
-
-  function getCardImg(code) {
-    if (!code) return "https://deckofcardsapi.com/static/img/back.png";
-    if (code === 'back') return "https://deckofcardsapi.com/static/img/back.png";
-    // deckofcardsapi 10 kartı 0 ile ister: 0H gibi
-    return `https://deckofcardsapi.com/static/img/${code}.png`;
-  }
-
-  function positionFan(count, idx, spread=24) {
-    if (count <= 1) return { x: 0, r: 0 };
-    const mid = (count - 1) / 2;
-    const x = (idx - mid) * spread;
-    const r = (idx - mid) * 4.5;
-    return { x, r };
-  }
-
-  function renderBoard(animateDeal=false) {
-    if (!gameState) return;
-    const ph = document.getElementById('playerHand');
-    const bh = document.getElementById('botHand');
-    const tc = document.getElementById('tableCenter');
-
-    ph.innerHTML = '';
-    bh.innerHTML = '';
-    tc.innerHTML = '';
-
-    // table stack
-    gameState.tableCards.forEach((c, i) => {
-      const card = document.createElement('div');
-      card.className = 'card small';
-      card.style.backgroundImage = `url(${getCardImg(c)})`;
-      card.style.left = `${Math.min(60, i*3)}px`;
-      card.style.top = `${Math.min(40, i*2)}px`;
-      const rot = (Math.random()*10 - 5);
-      card.style.transform = `rotate(${rot}deg)`;
-      card.style.zIndex = String(10 + i);
-      tc.appendChild(card);
-    });
-
-    // bot hand (kapalı)
-    const botCount = gameState.botCardCount || 0;
-    for (let i=0;i<botCount;i++){
-      const { x, r } = positionFan(botCount, i, 22);
-      const card = document.createElement('div');
-      card.className = 'card small';
-      card.style.backgroundImage = `url(${getCardImg('back')})`;
-      card.style.left = `calc(50% + ${x}px)`;
-      card.style.transform = `translateX(-50%) rotate(${r}deg) translateY(0px)`;
-      card.style.zIndex = String(10 + i);
-      bh.appendChild(card);
-    }
-
-    // player hand (açık)
-    const hand = gameState.playerHand || [];
-    hand.forEach((c, i) => {
-      const { x, r } = positionFan(hand.length, i, 34);
-      const card = document.createElement('div');
-      card.className = 'card playable';
-      card.style.backgroundImage = `url(${getCardImg(c)})`;
-      card.style.left = `calc(50% + ${x}px)`;
-      card.style.transform = `translateX(-50%) rotate(${r}deg)`;
-      card.style.zIndex = String(100 + i);
-
-      if (animateDeal) {
-        card.style.opacity = '0';
-        card.style.top = '40px';
-        setTimeout(() => {
-          card.style.opacity = '1';
-          card.style.top = '0px';
-          try { SFX.deal(); } catch {}
-        }, 120 + i * 110);
-      }
-
-      card.addEventListener('click', () => playCard(i, card));
-      ph.appendChild(card);
-    });
-
-    updateUI();
-  }
-
-  async function playCard(index, el){
-    ensureAudioUnlocked();
-    if (inFlight) return;
-    if (!gameState || gameState.status !== 'playing') return;
-
-    inFlight = true;
-    updateUI();
-
-    // anim: kart ileri
-    el.classList.add('disabled');
-    el.style.transform = el.style.transform + ' translateY(-24px) scale(1.02)';
-    try { SFX.draw(); } catch {}
-
-    const res = await apiCall('/api/pisti/play', 'POST', { cardIndex: index, seq });
-    inFlight = false;
-
-    if (!res.ok) {
-      setStatus('SENKRON HATASI');
-      showMatrixModal('Uyarı', res.error || 'Senkronizasyon hatası. Sayfayı yenileyin.', 'danger');
-      // state yeniden çek
-      await checkGameState();
-      return;
-    }
-
-    if (typeof res.balance === 'number') balance = res.balance;
-    gameState = res.state;
-    seq = Number(res.state.seq || (seq + 1));
-    updateUI();
-
-    // log efektleri
-    const log = res.log || {};
-    if (log.playerAction?.captured) {
-      try { SFX.capture(); } catch {}
-      if (log.playerAction?.isPisti) triggerPistiAnim();
-    }
-
-    if (log.botAction?.captured) {
-      setTimeout(() => { try { SFX.capture(); } catch {} }, 220);
-      if (log.botAction?.isPisti) setTimeout(() => triggerPistiAnim(), 200);
-    }
-
-    // board
-    if (log.roundOver) {
-      setStatus('YENİ EL DAĞITILIYOR…');
-      renderBoard(true);
-      setTimeout(()=>setStatus('OYUN DEVAM'), 600);
-    } else if (log.gameOver) {
-      // oyun bitti modal
-      handleGameOver(log);
-      renderBoard(false);
-    } else {
-      renderBoard(false);
-      setStatus('OYUN DEVAM');
-    }
-  }
-
-  function triggerPistiAnim(){
-    const wrap = document.getElementById('pistiAnim');
-    const txt = wrap.querySelector('.txt');
-    wrap.style.opacity = '1';
-    txt.style.animation = 'none';
-    void txt.offsetHeight;
-    txt.style.animation = 'pistiPop 1.25s ease-out forwards';
-    try { SFX.pisti(); } catch {}
-    setTimeout(()=>{ wrap.style.opacity='0'; }, 1250);
-  }
-
-  function handleGameOver(log){
-    const bet = Number(log.bet || 0);
-    const winAmount = Number(log.winAmount || 0);
-
-    if (winAmount > bet) { try { SFX.win(); } catch {} }
-    else if (winAmount === bet) { try { SFX.push(); } catch {} }
-    else { try { SFX.lose(); } catch {} }
-
-    const title = (winAmount > bet) ? '🏆 TEBRİKLER!' : (winAmount === bet ? '🤝 BERABERE' : '💥 KAYBETTİNİZ');
-    const desc = (winAmount > bet)
-      ? `Kazanılan: <b>${winAmount.toLocaleString('tr-TR')} MC</b>`
-      : (winAmount === bet ? 'Bahsiniz iade edildi.' : 'Krupiye daha yüksek puan topladı.');
-
-    showMatrixModal(title, desc, winAmount >= bet ? 'success' : 'danger');
-
-    // server bakiyesi kesin doğru
-    fetchBalance();
-    setStatus('BAHİS SEÇ VE OYNA');
-    gameState = null;
-    seq = 0;
-    currentBet = 0;
-    updateUI();
-  }
-
-  // ====== MODAL ======
-  window.showMatrixModal = function(title, desc, type='success'){
-    const modal = document.getElementById('matrixModal');
-    const icon = document.getElementById('matrixModalIcon');
-    const t = document.getElementById('matrixModalTitle');
-    const p = document.getElementById('matrixModalDesc');
-
-    t.textContent = title || 'Bilgi';
-    // desc içinde <b> kullanıyoruz
-    p.innerHTML = desc || '';
-
-    if (type === 'danger') icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger)"></i>';
-    else if (type === 'info') icon.innerHTML = '<i class="fa-solid fa-circle-info" style="color: var(--accent2)"></i>';
-    else icon.innerHTML = '<i class="fa-solid fa-badge-check" style="color: var(--accent)"></i>';
-
-    modal.classList.add('show');
-  }
-  window.closeMatrixModal = function(){
-    document.getElementById('matrixModal').classList.remove('show');
-  }
-  document.getElementById('matrixModal').addEventListener('click', (e) => {
-    if (e.target.id === 'matrixModal') closeMatrixModal();
-  });
-
-  // ====== HOW TO PLAY (modal popup) ======
-  window.showHowToPlay = function(){
-    ensureAudioUnlocked();
-    const rules =
-`• Yerdeki en üst kart ile <b>aynı değeri</b> atarak yerdeki tüm kartları toplarsınız.
-• <b>Vale (J)</b> her zaman yerdeki tüm kartları toplar.
-• Yerde sadece <b>1 kart</b> varken aynı kartı atarsanız <b>PİŞTİ</b> yaparsınız.
-• Normal Pişti <b>10 Puan</b>, Vale ile yapılan Pişti <b>20 Puan</b> değerindedir.
-• Özel Kartlar: <b>Karo 10</b> (3 Puan), <b>Sinek 2</b> (2 Puan), <b>As</b> ve <b>Vale</b> (1 Puan).
-• Oyun sonunda en çok kartı toplayan <b>3 Puan (Kart Fazlası)</b> alır.`;
-    showMatrixModal('Pişti Kuralları', rules, 'info');
-  }
-</script>
+    <script>
+        function exitGame() {
+            // Resmiyet hissi veren daha yavaş ve tok bir çıkış animasyonu
+            const modal = document.querySelector('.modal-card');
+            modal.style.transition = "all 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045)";
+            modal.style.transform = "translateY(50px)";
+            modal.style.opacity = "0";
+            
+            document.querySelector('.modal-overlay').style.transition = "opacity 0.5s ease";
+            document.querySelector('.modal-overlay').style.opacity = "0";
+
+            setTimeout(() => {
+                // Ana sayfaya yönlendirme
+                window.location.href = "https://playmatrix.com.tr";
+            }, 500);
+        }
+    </script>
 </body>
 </html>
