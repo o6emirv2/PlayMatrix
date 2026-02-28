@@ -6,15 +6,15 @@
 
 <title>PlayMatrix VIP Satranç | Online Arena</title>
 <meta name="description" content="PlayMatrix VIP Satranç ile rakiplerine karşı zekanı konuştur. Hilesiz, %100 online, ödüllü profesyonel satranç arenası!">
-<meta name="keywords" content="satranç, online satranç, chess, playmatrix, vip satranç, çok oyunculu satranç, zeka oyunu, turnuva">
+<meta name="keywords" content="satranç, online satranç, chess, playmatrix, vip satranç, çok oyunculu satranç, zeka oyunu, turnuva, mc ödülü">
 <meta name="author" content="PlayMatrix Global">
-<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0b1118">
 
 <meta property="og:locale" content="tr_TR">
 <meta property="og:type" content="website">
-<meta property="og:title" content="PlayMatrix VIP Satranç">
-<meta property="og:description" content="Gerçek rakiplere karşı online satranç oyna. Şah-Mat yap, ödülleri topla!">
+<meta property="og:title" content="PlayMatrix VIP Satranç - Online Arena">
+<meta property="og:description" content="Gerçek rakiplere karşı online satranç oyna. Şah-Mat yap, 5000 MC ödülü kap!">
 <meta property="og:site_name" content="PlayMatrix">
 
 <meta name="twitter:card" content="summary_large_image">
@@ -117,7 +117,7 @@
     .btn-resign { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 4px 0 #78231c; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 5px; transition: 0.1s; font-family: 'Inter'; font-size: 12px;}
     .btn-resign:active { transform: translateY(4px); box-shadow: none; }
 
-    /* MODAL MİMARİSİ (ÖZEL ONAY MODALI EKLENDİ) */
+    /* MODAL MİMARİSİ (İZOLASYON VE KUSURSUZ ÇALIŞMA SAĞLANDI) */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
     .modal-overlay.show { opacity: 1; display: flex; }
     .modal-card { background: linear-gradient(145deg, #1a1612, #0c0907); border: 1px solid #3a2b1f; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center; }
@@ -150,7 +150,7 @@
         <div id="matrixModalIcon" class="modal-icon"><i class="fa-solid fa-chess-king"></i></div>
         <h3 id="matrixModalTitle">Bilgi</h3>
         <p id="matrixModalDesc">Mesaj içeriği</p>
-        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
+        <button class="modal-close" id="matrixModalCloseBtn">TAMAM</button>
     </div>
 </div>
 
@@ -243,7 +243,7 @@ document.addEventListener('touchend', function (event) {
     lastTouchEnd = now;
 }, { passive: false });
 
-// --- MODAL SİSTEMLERİ ---
+// --- MODAL SİSTEMLERİ (Eski Hatalar İyileştirildi) ---
 let modalActionCallback = null;
 
 window.showMatrixModal = (title, message, type = 'info', backToLobby = false) => {
@@ -259,9 +259,14 @@ window.showMatrixModal = (title, message, type = 'info', backToLobby = false) =>
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
 
-    document.querySelector('.modal-close').onclick = () => {
+    // Düğme tıklama olayı önceki ayarlarla çakışmasın diye klonlanıp yeniden atanır.
+    const closeBtn = document.getElementById('matrixModalCloseBtn');
+    const newCloseBtn = closeBtn.cloneNode(true);
+    closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+
+    newCloseBtn.onclick = () => {
         closeMatrixModal();
-        if (backToLobby) resetToLobby(); // Sayfa yenilenmez, lobiye atar
+        if (backToLobby) resetToLobby(); // Sayfa yenilenmez, lobiye atar.
     };
 };
 
@@ -297,10 +302,12 @@ window.showHowToPlay = () => {
     showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Rakip odadan çıkarsa oyun iptal olur.", "info");
 };
 
+// --- TAM OTOMATİK LOBİYE DÖNÜŞ SİSTEMİ (Sayfa yenilenmesini engeller) ---
 function resetToLobby() {
     clearInterval(pollingInterval);
     clearInterval(pingInterval);
     currentRoomId = null;
+    isProcessingMove = false;
     document.getElementById("gameArea").style.display = "none";
     document.getElementById("lobbyArea").style.display = "flex";
     fetchBalance();
@@ -502,6 +509,8 @@ function startGamePing() {
         try {
             const res = await fetchAPI('/api/chess/ping', 'POST', { roomId: currentRoomId });
             if (res && res.room && res.room.status === 'abandoned') {
+                clearInterval(pollingInterval);
+                clearInterval(pingInterval);
                 showMatrixModal("OYUN İPTAL", res.room.message, "error", true);
             }
         } catch(e) {}
@@ -511,6 +520,7 @@ function startGamePing() {
 function enterGame(roomData) {
     clearInterval(pollingInterval);
     currentRoomId = roomData.id;
+    isProcessingMove = false;
     document.getElementById("lobbyArea").style.display = "none";
     document.getElementById("gameArea").style.display = "flex";
     
@@ -530,11 +540,20 @@ async function pollGameState() {
     try {
         const res = await fetchAPI(`/api/chess/state/${currentRoomId}?t=${Date.now()}`); 
         if(res.room.status === 'abandoned') {
+            clearInterval(pollingInterval);
+            clearInterval(pingInterval);
             showMatrixModal("OYUN İPTAL", "Rakip odadan ayrıldı.", "error", true);
             return;
         }
         syncBoardUI(res.room);
-    } catch(e) {}
+    } catch(e) {
+        // [KRİTİK DÜZELTME] EĞER ODA BULUNAMADIYSA (Oyun Bitip Oda Silindiyse) OYUNCUYU LOBİYE AT.
+        if (e.message === "Oda bulunamadı.") {
+            clearInterval(pollingInterval);
+            clearInterval(pingInterval);
+            showMatrixModal("BİLGİ", "Oda kapandı veya oyun sona erdi.", "info", true);
+        }
+    }
 }
 
 function syncBoardUI(r) {
@@ -559,6 +578,10 @@ function syncBoardUI(r) {
         statusTxt.innerText = myTurn ? "SIRA SENDE" : "SIRA RAKİPTE";
         statusTxt.style.color = myTurn ? "#00ffa3" : "#f1c40f";
     } else if (r.status === 'finished') {
+        // [KRİTİK DÜZELTME] DÖNGÜYÜ DURDURARAK SPAM ENGELLENDİ.
+        clearInterval(pollingInterval);
+        clearInterval(pingInterval);
+
         statusTxt.innerText = "OYUN BİTTİ";
         statusTxt.style.color = "#ff3b30";
         if(r.winner === 'draw') {
@@ -631,7 +654,6 @@ function drawBoard() {
 }
 
 async function handleSquareClick(sq) {
-    // SIRA KONTROLÜ (KİLİT): Sıra sende değilse veya hamle işleniyorsa dokunmayı yasakla
     if (isProcessingMove || gameLogic.turn() !== myColor) return;
 
     const moveObj = validMovesForSelected.find(m => m.to === sq);
@@ -640,7 +662,6 @@ async function handleSquareClick(sq) {
         isProcessingMove = true;
         document.getElementById("gameStatusTxt").innerText = "HAMLE İLETİLİYOR...";
         
-        // Optimistic UI
         const m = gameLogic.move({ from: moveObj.from, to: moveObj.to, promotion: 'q' });
         selectedSq = null;
         validMovesForSelected = [];
@@ -651,9 +672,9 @@ async function handleSquareClick(sq) {
         else playSfx('move');
 
         try {
-            // SADECE FROM VE TO GÖNDERİLİR. SUNUCUDA YENİDEN SİMÜLE EDİLİR.
             const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
             lastFen = res.room.fen; 
+            syncBoardUI(res.room); // Anlık Senkronizasyon (Geçikmeyi giderir)
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
             gameLogic.load(lastFen); 
@@ -664,7 +685,6 @@ async function handleSquareClick(sq) {
         return;
     }
 
-    // Yalnızca kendi taşına dokunabilir
     const pieceObj = gameLogic.get(sq);
     if (pieceObj && pieceObj.color === myColor) {
         selectedSq = sq;
