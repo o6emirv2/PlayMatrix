@@ -357,13 +357,13 @@ let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
 
-// TAMAMEN YENİ VE PROFESYONEL CASINO SESLERİ EKLENDİ
+// TAMAMEN YENİ VE PROFESYONEL CASINO SESLERİ
 const sfxUrls = {
     chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Çip sesine dokunulmadı
-    deal: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', // Profesyonel Kart Çekme/Dağıtma (Sürtme/Tok)
-    bust: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Patlama (Bust - Ağır Thud Sesi)
-    win:  'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3', // Kazanç Şıkırtısı
-    push: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', // İade (Soft Bell)
+    deal: 'https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3', // Hızlı/Tok kart çekme (Sürtme)
+    bust: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', // Patlama (Bust - Ağır Thud/Kayıp Sesi)
+    win:  'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Kazanç (Casino Jingle)
+    push: 'https://assets.mixkit.co/active_storage/sfx/2058/2058-preview.mp3', // İade (Yumuşak geçiş/Swoosh)
     tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'  // Sayaç Tiktak
 };
 
@@ -375,7 +375,9 @@ function initAndUnlockAudio() {
         // Sessiz buffer ile iOS cihazların ses kilidi sonsuza dek açılır (0 gecikme)
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
-        source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+        source.buffer = buffer; source.connect(audioCtx.destination); 
+        if (source.start) source.start(0); else source.noteOn(0);
+        
         if (audioCtx.state === 'suspended') audioCtx.resume();
         audioUnlocked = true;
     } catch (e) {}
@@ -385,10 +387,10 @@ async function loadSoundFiles() {
     if (!audioCtx) return;
     for (let [key, url] of Object.entries(sfxUrls)) {
         try {
-            const res = await fetch(url);
+            const res = await fetch(url, { mode: 'cors' });
             const buf = await res.arrayBuffer();
             sounds[key] = await audioCtx.decodeAudioData(buf);
-        } catch(e) {}
+        } catch(e) { console.error("Audio load error", e); }
     }
 }
 
@@ -400,11 +402,11 @@ function playSfx(name) {
         src.buffer = sounds[name];
         const gainNode = audioCtx.createGain();
         
-        // Ses dengelemesi (Tick zayıf, diğerleri tok duyulsun)
-        if (name === 'tick') gainNode.gain.value = 0.3; 
+        // Ses dengelemesi
+        if (name === 'tick') gainNode.gain.value = 0.2; 
         else if (name === 'chip') gainNode.gain.value = 0.5;
-        else if (name === 'deal') gainNode.gain.value = 0.7;
-        else gainNode.gain.value = 0.9;
+        else if (name === 'deal') gainNode.gain.value = 0.8;
+        else gainNode.gain.value = 1.0;
         
         src.connect(gainNode);
         gainNode.connect(audioCtx.destination);
@@ -412,10 +414,13 @@ function playSfx(name) {
     } catch (e) {}
 }
 
-// Ekranın neresine dokunulursa dokunulsun kilidi garanti aç.
-const unlockOnTouch = () => { initAndUnlockAudio(); document.removeEventListener('touchstart', unlockOnTouch); document.removeEventListener('click', unlockOnTouch);};
-document.addEventListener('touchstart', unlockOnTouch, { once: true, passive: true });
-document.addEventListener('click', unlockOnTouch, { once: true, passive: true });
+// Cihazın neresine dokunulursa dokunulsun kilidi %100 aç.
+const unlockEvents = ['touchstart', 'touchend', 'click', 'keydown'];
+const unlockOnTouch = () => { 
+    initAndUnlockAudio(); 
+    unlockEvents.forEach(e => document.removeEventListener(e, unlockOnTouch)); 
+};
+unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: true, passive: true }));
 
 // --- INTRO LOGIC ---
 let loadProg = 0;
