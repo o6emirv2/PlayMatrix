@@ -1,231 +1,692 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlayMatrix | Resmi Bakım Bildirisi</title>
-<script>
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, "/");
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+<title>PlayMatrix VIP Pişti | Profesyonel Casino Deneyimi</title>
+<meta name="description" content="PlayMatrix VIP Pişti ile gerçek casino ortamını yaşayın. %100 güvenli, donmasız, sunucu tabanlı profesyonel kart oyunu. Hemen masaya oturun!">
+<meta name="keywords" content="pişti, pişti oyna, casino, playmatrix, vip casino, güvenli bahis, canlı pişti, kart oyunu">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0b1118">
+
+<meta property="og:locale" content="tr_TR">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PlayMatrix VIP Pişti">
+<meta property="og:description" content="Gerçek kurallar, yüksek kazançlar ve kesintisiz VIP Pişti heyecanı.">
+<meta property="og:site_name" content="PlayMatrix">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix VIP Pişti">
+<meta name="twitter:description" content="Gerçek casino standartlarında pişti oyna. Şansını hemen dene!">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+<style>
+    /* SIFIR KAYMA, %100 RESPONSIVE VE ZOOM KORUMASI RESET */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    html, body {
+        width: 100vw; height: 100vh; overflow: hidden; 
+        overscroll-behavior: none; touch-action: manipulation; 
+        font-family: 'Inter', -apple-system, sans-serif;
+        background-color: #062312;
+        /* PROFESYONEL SPOT IŞIKLI VIP ÇUHA ARKA PLANI */
+        background-image: 
+            radial-gradient(circle at 50% -20%, #0f5228 0%, transparent 65%),
+            radial-gradient(circle at 50% 100%, #020c06 0%, transparent 80%);
+        color: white;
     }
-</script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    /* PROFESYONEL İNTRO */
+    #studioIntro {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070b10;
+        z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+    .intro-suits { font-size: 40px; color: #ff3b30; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(255,59,48,0.5)); letter-spacing: 10px; }
+    .intro-suits span { color: #fff; }
+    .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+    .intro-logo h1 span { color: #ff3b30; }
+    
+    .loader-track { width: 220px; height: 4px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+    .loader-fill { height: 100%; width: 0%; background: #ff3b30; transition: width 0.1s linear; box-shadow: 0 0 10px #ff3b30; }
+    .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: #fff; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(255,75,75,0.4); transition: 0.2s; letter-spacing: 1px; }
+    .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
 
-    <style>
-        :root {
-            /* Kurumsal ve Prestijli Renk Paleti */
-            --bg-official: #0a1525; /* Derin Lacivert */
-            --gold-accent: #d4af37; /* Metalik Altın */
-            --gold-glow: rgba(212, 175, 55, 0.4); /* Sıcak Altın Işık */
-            --text-light: #f0f2f5;
-            --text-muted: #aab4c0;
-        }
+    @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* ÜST BAR (TAŞMA KORUMALI & GLASSMORPHISM) */
+    .top-bar { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
+        display: flex; align-items: center; justify-content: space-between; padding: 0 15px; 
+        background: rgba(18, 26, 36, 0.95); backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); 
+    }
+    .tb-left { display: flex; align-items: center; gap: 15px; }
+    .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;}
+    .tb-logo span { color: #ff3b30; }
+    
+    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; overflow: hidden; }
+    
+    .balance-box { display: flex; align-items: center; background: #0b1118; padding: 6px 10px; border-radius: 8px; border: 1px solid #1f2c3b; max-width: 130px; }
+    .balance-box b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; display: inline-block; vertical-align: middle; }
+    
+    .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 6px; box-shadow: 0 0 10px rgba(79, 209, 255, 0.4); }
 
-        body {
-            background: radial-gradient(circle at center, #112240 0%, var(--bg-official) 100%);
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-        }
+    .action-icon-btn { 
+        background: #1f2c3b; color: #ff3b30; border: none; width: 34px; height: 34px; flex-shrink: 0;
+        border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
+        display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .action-icon-btn:active { transform: scale(0.9); background: #2a3a4d; color: #ff4b4b; }
+    .action-icon-btn.red { color: #ff4b4b; }
+    .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
-        /* Arka plan için ince resmi doku */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-            z-index: -1;
-        }
+    /* VIP MASA VE KART DAĞITICI (SHOE) */
+    .game-container { 
+        position: absolute; top: 65px; bottom: 0; width: 100vw;
+        display: flex; flex-direction: column; justify-content: space-between; 
+        padding: 10px 0 20px 0; perspective: 1200px; 
+        overflow-y: auto; overflow-x: hidden; touch-action: pan-y;
+        z-index: 1;
+    }
+    
+    .table-line {
+        position: absolute; top: 15%; left: -20vw; right: -20vw; height: 70%;
+        border-top: 4px solid rgba(255, 59, 48, 0.2); border-radius: 50%;
+        pointer-events: none; z-index: 0; box-shadow: inset 0 40px 60px rgba(0,0,0,0.3);
+    }
 
-        /* MODAL ANA YAPI */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 21, 37, 0.95); /* Koyu, ciddi arka plan */
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
+    /* KART KUTUSU (SHOE) */
+    .card-shoe-container { 
+        position: absolute; top: 20px; right: 20px; z-index: 50; 
+        display: flex; flex-direction: column; align-items: center; 
+        background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+    }
+    .card-shoe {
+        width: 45px; height: 65px; background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
+        border-radius: 4px; box-shadow: -1px 1px 0 #ddd, -2px 2px 0 #999, -3px 3px 0 #ddd, -4px 4px 0 #999, -8px 8px 15px rgba(0,0,0,0.8);
+        transform: rotate(-10deg);
+    }
 
-        .modal-card {
-            width: 90%;
-            max-width: 500px;
-            background: linear-gradient(145deg, #13243a, #0e1a2b);
-            border: 2px solid var(--gold-accent);
-            /* Çift çerçeve efekti ile resmiyet */
-            outline: 4px solid rgba(212, 175, 55, 0.1);
-            border-radius: 12px;
-            padding: 50px 40px;
-            text-align: center;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            
-            /* Giriş Animasyonu */
-            opacity: 0;
-            transform: translateY(30px);
-            animation: slideInOfficial 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
+    .area { width: 100%; text-align: center; position: relative; z-index: 2; margin-top: 5px; }
+    
+    .score-board {
+        display: flex; justify-content: space-between; padding: 0 20px; font-family: 'Orbitron'; font-size: 11px; font-weight: 900; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase;
+    }
+    .score-board span { color: #ff3b30; font-size: 14px; }
+    .score-board div { background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
 
-        /* Arkadan vuran prestijli altın ışık */
-        .modal-card::before {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 120%; height: 120%;
-            background: radial-gradient(circle, var(--gold-glow) 10%, transparent 60%);
-            filter: blur(40px);
-            z-index: -1;
-            animation: majesticPulse 4s infinite alternate;
-        }
+    /* GERÇEK KART TASARIMLARI VE 3D UÇUŞ ANİMASYONLARI */
+    .cards-wrapper { display: flex; justify-content: center; gap: 5px; min-height: 100px; padding: 0 10px; perspective: 1000px; }
+    
+    .card-3d { 
+        width: 65px; height: 95px; position: relative; 
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
+        transform-style: preserve-3d; cursor: pointer;
+    }
+    .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -4px 4px 10px rgba(0,0,0,0.6); object-fit: cover; backface-visibility: hidden;}
+    .card-3d:hover { transform: translateY(-10px); }
 
-        @keyframes slideInOfficial {
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes majesticPulse {
-            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.95); }
-            100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-        }
+    /* Yerdeki Kartlar (Üst üste binme efekti) */
+    .table-cards { position: relative; display: flex; justify-content: center; align-items: center; min-height: 120px; margin: 15px 0; }
+    .table-card { position: absolute; width: 70px; height: 100px; transition: 0.3s; }
+    
+    .table-card:nth-last-child(1) { transform: rotate(5deg) translate(0, 0); z-index: 4; }
+    .table-card:nth-last-child(2) { transform: rotate(-8deg) translate(-5px, -5px); z-index: 3; }
+    .table-card:nth-last-child(3) { transform: rotate(12deg) translate(5px, -8px); z-index: 2; }
+    .table-card:nth-last-child(4) { transform: rotate(-15deg) translate(-8px, -12px); z-index: 1; }
 
-        .icon-box {
-            font-size: 70px;
-            /* Altın degrade ikon */
-            background: linear-gradient(135deg, #d4af37, #fceabb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 25px;
-            filter: drop-shadow(0 4px 6px rgba(212, 175, 55, 0.3));
-        }
+    /* AKSİYON VE BİLGİ ALANI */
+    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60px; z-index: 10; margin-top: 5px;}
+    
+    #ui-message { font-size: 13px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: rgba(0,0,0,0.6); padding: 6px 20px; border-radius: 8px; letter-spacing: 1px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1);}
+    
+    .btn { padding: 14px 40px; border-radius: 12px; border: none; font-weight: 900; font-size: 16px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: transform 0.1s, box-shadow 0.1s; touch-action: manipulation; font-family: 'Orbitron'; letter-spacing: 1px;}
+    
+    #startBtn { background: linear-gradient(180deg, #ff4b4b, #990000); box-shadow: 0 5px 0 #550000; width: 100%; max-width: 250px;}
+    #startBtn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+    #startBtn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.5) !important;}
+    
+    /* YAN YANA BOZULMAYAN PROFESYONEL ÇİPLER */
+    .chips-wrapper { width: 100%; display: flex; justify-content: center; padding-bottom: 10px; z-index: 10; }
+    .chips-area { 
+        display: flex; justify-content: center; align-items: center; gap: 8px; 
+        background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 30px; 
+        border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px);
+        flex-wrap: nowrap; overflow-x: auto; max-width: 95%; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .chips-area::-webkit-scrollbar { display: none; }
+    
+    .chip { 
+        width: 13vw; max-width: 50px; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        font-weight: 900; font-size: 12px; cursor: pointer; border: 3px dashed rgba(255,255,255,0.7); 
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5); transition: transform 0.1s; 
+        touch-action: manipulation; font-family: 'Inter'; text-shadow: 1px 1px 2px #000; flex-shrink: 0;
+    }
+    .chip:active { transform: scale(0.9) translateY(4px); box-shadow: inset 0 0 5px rgba(0,0,0,0.8), 0 2px 3px rgba(0,0,0,0.5); }
+    .c1k { background: radial-gradient(circle, #a0a0a0 30%, #555 90%); color: #fff;}
+    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; }
+    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; }
+    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; }
+    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; }
+    .c50k { background: radial-gradient(circle, #222 30%, #000 90%); color: #ff3b30; border-color: #ff3b30;}
+    .cancel-btn { 
+        width: 13vw; max-width: 50px; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(to bottom, #444, #111); 
+        color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; 
+        cursor: pointer; border: 2px solid #666; touch-action: manipulation; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    }
+    .cancel-btn:active { transform: scale(0.9); }
 
-        h2 {
-            font-family: 'Merriweather', serif; /* Resmiyet için serif font */
-            color: var(--gold-accent);
-            font-size: 26px;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            font-weight: 900;
-            position: relative;
-            padding-bottom: 15px;
-        }
-        
-        /* Başlık altı resmi çizgi */
-        h2::after {
-            content: '';
-            position: absolute;
-            bottom: 0; left: 50%;
-            transform: translateX(-50%);
-            width: 60px; height: 3px;
-            background: var(--gold-accent);
-        }
+    /* ÖZEL ANİMASYONLU MODAL (POPUP) SİSTEMİ %100 TEMA UYUMLU */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.show { opacity: 1; display: flex; }
+    
+    .modal-card { 
+        background: linear-gradient(145deg, #111827, #0a0f1a); border: 1px solid #1f2937; width: 90%; max-width: 360px; 
+        border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center;
+    }
+    .modal-overlay.show .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+    
+    .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
+    .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing: 0.5px; }
+    .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);}
+    .modal-card p b { color: #ff3b30; }
+    .modal-close { background: linear-gradient(135deg, #ff4b4b, #990000); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(255,75,75,0.3); text-transform: uppercase;}
+    .modal-close:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,75,75,0.5); }
+    .modal-close:active { transform: translateY(2px); box-shadow: none; }
+    
+    @media (max-width: 400px) { 
+        .card-3d { width: 55px; height: 85px; }
+        .table-card { width: 60px; height: 90px; }
+        .tb-logo { font-size: 14px; }
+        .balance-box b { max-width: 60px; font-size: 11px; }
+        .btn { font-size: 14px; padding: 12px; }
+        .score-board { padding: 0 5px; }
+    }
 
-        p {
-            color: var(--text-light);
-            font-size: 16px;
-            line-height: 1.7;
-            margin-bottom: 35px;
-            font-weight: 400;
-            border-top: 1px solid rgba(212, 175, 55, 0.1);
-            padding-top: 20px;
-        }
-
-        .official-note {
-            display: block;
-            margin-top: 15px;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-style: italic;
-        }
-
-        .btn-exit {
-            width: 100%;
-            padding: 18px;
-            border-radius: 6px; /* Daha keskin köşeler */
-            border: 1px solid var(--gold-accent);
-            background: linear-gradient(180deg, var(--gold-accent) 0%, #b39329 100%);
-            color: #0a1525; /* Altın üzerine koyu yazı */
-            font-weight: 900;
-            font-size: 16px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            font-family: 'Merriweather', serif;
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
-        }
-
-        .btn-exit:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
-            background: linear-gradient(180deg, #eacda3 0%, #d6ae7b 100%);
-        }
-
-        .brand-seal {
-            margin-top: 25px;
-            font-family: 'Merriweather', serif;
-            font-size: 13px;
-            color: var(--gold-accent);
-            opacity: 0.7;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .brand-seal i { font-size: 16px; }
-    </style>
+    /* PİŞTİ EFEKTİ */
+    .pisti-flash { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #ff3b30; text-shadow: 0 0 30px #fff; z-index: 100; opacity: 0; pointer-events: none; font-family: 'Orbitron'; letter-spacing: 5px; }
+    @keyframes flashPisti { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+</style>
 </head>
 <body>
 
-    <div class="modal-overlay">
-        <div class="modal-card">
-            <div class="icon-box">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <h2>SİSTEM BAKIM BİLDİRİSİ</h2>
-            <p>
-                Sayın Kullanıcımız,
-                <br><br>
-                PlayMatrix Platformu, Hizmet Kalitesini Artırmak ve Yeni "Profesyonel" Altyapıyı Entegre Etmek Üzere Planlı Bakım Çalışmasına Alınmıştır.
-                <span class="official-note">Bu Süreçte Gösterdiğiniz Anlayış İçin Teşekkür Ederiz.</span>
-            </p>
-            
-            <button class="btn-exit" onclick="exitGame()">
-                <i class="fa-solid fa-right-from-bracket"></i> GÜVENLİ ÇIKIŞ YAP
-            </button>
+<div id="studioIntro">
+    <div class="intro-logo">
+        <div class="intro-suits">♦<span>♣</span>♥<span>♠</span></div>
+        <h1>VIP<br><span>PİŞTİ</span></h1>
+    </div>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
+</div>
 
-            <div class="brand-seal">
-                <i class="fa-solid fa-certificate"></i> PlayMatrix Protokolü
-            </div>
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj içeriği</p>
+        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
+    </div>
+</div>
+
+<header class="top-bar">
+    <div class="tb-left">
+        <div class="tb-logo">PM <span>PİŞTİ</span></div>
+    </div>
+    <div class="tb-right">
+        <div class="balance-box">
+            <b id="ui-balance">Yükleniyor</b><div class="mc-icon">MC</div>
         </div>
+        <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-info"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+</header>
+
+<main class="game-container">
+    <div class="table-line"></div>
+    
+    <div class="card-shoe-container" id="shoeTarget">
+        <div class="card-shoe"></div>
     </div>
 
-    <script>
-        function exitGame() {
-            // Resmiyet hissi veren daha yavaş ve tok bir çıkış animasyonu
-            const modal = document.querySelector('.modal-card');
-            modal.style.transition = "all 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045)";
-            modal.style.transform = "translateY(50px)";
-            modal.style.opacity = "0";
-            
-            document.querySelector('.modal-overlay').style.transition = "opacity 0.5s ease";
-            document.querySelector('.modal-overlay').style.opacity = "0";
+    <div class="area">
+        <div class="score-board">
+            <div>Bot Puan: <span id="botScore">0</span></div>
+            <div>Kartlar: <span id="botCardCount">0</span></div>
+        </div>
+        <div id="botHand" class="cards-wrapper"></div>
+    </div>
+    
+    <div class="area">
+        <div class="table-cards" id="tableCards"></div>
+    </div>
 
-            setTimeout(() => {
-                // Ana sayfaya yönlendirme
-                window.location.href = "https://playmatrix.com.tr";
-            }, 500);
+    <div class="pisti-flash" id="pistiAnim">PİŞTİ!</div>
+    
+    <div class="area" style="margin-bottom: 10px;">
+        <div class="score-board">
+            <div>Sizin Puan: <span id="playerScore">0</span></div>
+            <div>Kartlar: <span id="playerCardCount">0</span></div>
+        </div>
+        <div id="playerHand" class="cards-wrapper"></div>
+    </div>
+    
+    <div class="action-area">
+        <div id="ui-message">MC KULLAN (MİN: 100)</div>
+        <button id="startBtn" class="btn" disabled>OYNA (<span id="ui-betAmount">0</span> MC)</button>
+    </div>
+    
+    <div class="chips-wrapper" id="ui-chipsArea">
+        <div class="chips-area">
+            <div class="cancel-btn" id="cancelBetBtn">SİL</div>
+            <div class="chip c1k" data-val="100">100</div>
+            <div class="chip c3k" data-val="500">500</div>
+            <div class="chip c5k" data-val="1000">1K</div>
+            <div class="chip c15k" data-val="5000">5K</div>
+            <div class="chip c20k" data-val="10000">10K</div>
+            <div class="chip c50k" data-val="50000">50K</div>
+        </div>
+    </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain:"emirhan-site.firebaseapp.com",
+    projectId:"emirhan-site",
+    storageBucket:"emirhan-site.firebasestorage.app",
+    messagingSenderId:"668871888390",
+    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
+
+// --- KÖKLÜ ÇÖZÜM: ZOOM (ÇİFT TIKLAMA) ENGELLEYİCİ ---
+document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+    lastTouchEnd = now;
+}, { passive: false });
+
+// --- PROFESYONEL MODAL YÖNETİCİSİ ---
+window.showMatrixModal = (title, message, type = 'info') => {
+    const icon = document.getElementById("matrixModalIcon");
+    document.getElementById("matrixModalTitle").innerText = title;
+    document.getElementById("matrixModalDesc").innerHTML = message;
+    
+    if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30"></i>'; document.getElementById("matrixModalTitle").style.color = '#ff3b30'; } 
+    else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#00ffa3"></i>'; document.getElementById("matrixModalTitle").style.color = '#00ffa3'; } 
+    else if(type === 'push') { icon.innerHTML = '<i class="fa-solid fa-handshake" style="color:#f1c40f"></i>'; document.getElementById("matrixModalTitle").style.color = '#f1c40f'; }
+    else { icon.innerHTML = '<i class="fa-solid fa-clone" style="color:#ff3b30"></i>'; document.getElementById("matrixModalTitle").style.color = '#ff3b30'; }
+    
+    const modal = document.getElementById('matrixModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+
+window.closeMatrixModal = () => {
+    const modal = document.getElementById('matrixModal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+};
+
+window.showHowToPlay = () => {
+    showMatrixModal(
+        "Pişti Nasıl Oynanır?", 
+        "🔹 Çiplerle bahsini seç ve <b>OYNA</b> butonuna bas.\n🔹 Sıra sana geldiğinde elindeki kartlardan birine tıkla.\n🔹 Yerdeki kartla <b>aynı numarayı</b> veya <b>Vale (J)</b> atarsan yerdeki tüm kartları alırsın.\n🔹 Yerde tek kart varken aynı kartı veya Vale'yi atarsan <b>PİŞTİ</b> yaparsın (+10 veya +20 Puan).\n🔹 Oyun sonunda en çok puanı toplayan kazanır.", 
+        "info"
+    );
+};
+
+// --- PROFESYONEL SES MOTORU (VIP CASINO SESLERİ & iOS KİLİT AÇICI) ---
+let audioCtx = null;
+let audioUnlocked = false; 
+const sounds = {};
+
+const sfxUrls = {
+    chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Çip sesine dokunulmadı
+    deal: 'https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3', // Tok kart çekme (Sürtme)
+    bust: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', // Kayıp Sesi
+    win:  'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Kazanç (Casino Jingle)
+    push: 'https://assets.mixkit.co/active_storage/sfx/2058/2058-preview.mp3', // İade / Capture Sesi
+    pisti: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3' // Pişti şıkırtısı
+};
+
+function initAndUnlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer; source.connect(audioCtx.destination); 
+        if (source.start) source.start(0); else source.noteOn(0);
+        
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audioUnlocked = true;
+    } catch (e) {}
+}
+
+async function loadSoundFiles() {
+    if (!audioCtx) return;
+    for (let [key, url] of Object.entries(sfxUrls)) {
+        try {
+            const res = await fetch(url, { mode: 'cors' });
+            const buf = await res.arrayBuffer();
+            sounds[key] = await audioCtx.decodeAudioData(buf);
+        } catch(e) {}
+    }
+}
+
+function playSfx(name) {
+    if(!audioCtx || !sounds[name] || !audioUnlocked) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
+        const gainNode = audioCtx.createGain();
+        
+        if (name === 'chip') gainNode.gain.value = 0.5;
+        else if (name === 'deal') gainNode.gain.value = 0.8;
+        else gainNode.gain.value = 1.0;
+        
+        src.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        src.start(0);
+    } catch (e) {}
+}
+
+const unlockEvents = ['touchstart', 'touchend', 'click'];
+const unlockOnTouch = () => { 
+    initAndUnlockAudio(); 
+    unlockEvents.forEach(e => document.removeEventListener(e, unlockOnTouch)); 
+};
+unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: true, passive: true }));
+
+// --- INTRO LOGIC ---
+let loadProg = 0;
+const loadInt = setInterval(() => {
+    loadProg += Math.random() * 20;
+    if(loadProg >= 100) {
+        loadProg = 100; clearInterval(loadInt);
+        document.getElementById('loaderTrack').style.display = 'none';
+        document.getElementById('btnEnterGame').style.display = 'block';
+    }
+    document.getElementById('loaderFill').style.width = loadProg + '%';
+}, 100);
+
+document.getElementById('btnEnterGame').addEventListener('click', () => {
+    initAndUnlockAudio(); loadSoundFiles();     
+    document.getElementById('studioIntro').style.opacity = '0';
+    setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initGame(); }, 600);
+});
+
+// --- OYUN DEĞİŞKENLERİ ---
+let userBalance = 0; 
+let currentBet = 0; 
+let gameState = null;
+let actionLock = false;
+
+// API İSTEKLERİ
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) return null;
+    const token = await getIdToken(auth.currentUser);
+    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+    const data = await res.json();
+    if (data.redirect || res.status === 401 || res.status === 403) { window.location.href = '/'; throw new Error("Yönlendiriliyorsunuz."); }
+    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
+}
+
+function initGame() {
+    apiState();
+    updateBetUI();
+}
+
+async function apiState() {
+    try {
+        const res = await fetchAPI('/api/pisti/state');
+        if(res) {
+            userBalance = res.balance;
+            document.getElementById("ui-balance").innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+            if(res.state && res.state.status === 'playing') {
+                gameState = res.state;
+                currentBet = res.state.bet;
+                document.getElementById("ui-chipsArea").style.display = "none";
+                document.getElementById("startBtn").style.display = "none";
+                document.getElementById("ui-message").innerText = "SIRA SİZDE";
+                renderBoard(false);
+            }
         }
-    </script>
+    } catch(e) {}
+}
+
+function getCardImage(cardStr) {
+    if(!cardStr) return 'https://deckofcardsapi.com/static/img/back.png';
+    return `https://deckofcardsapi.com/static/img/${cardStr}.png`;
+}
+
+function updateBetUI() {
+    const btn = document.getElementById("startBtn");
+    document.getElementById("ui-betAmount").innerText = currentBet.toLocaleString('tr-TR');
+    if(currentBet >= 100) {
+        btn.disabled = false; btn.style.filter = "none";
+    } else {
+        btn.disabled = true; btn.style.filter = "grayscale(1)";
+    }
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        if(actionLock || (gameState && gameState.status === 'playing')) return;
+        const val = parseInt(chip.getAttribute('data-val')); if (currentBet + val > userBalance) return;
+        playSfx('chip'); currentBet += val; 
+        document.getElementById("ui-balance").innerText = Math.floor(userBalance - currentBet).toLocaleString('tr-TR');
+        updateBetUI();
+    });
+});
+
+document.getElementById("cancelBetBtn").addEventListener('click', () => { 
+    if(actionLock || (gameState && gameState.status === 'playing')) return;
+    playSfx('chip'); currentBet = 0; 
+    document.getElementById("ui-balance").innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+    updateBetUI();
+});
+
+document.getElementById("startBtn").addEventListener("click", async () => {
+    if (currentBet < 100) return;
+    actionLock = true;
+    document.getElementById("ui-chipsArea").style.display = "none";
+    document.getElementById("startBtn").style.display = "none";
+    document.getElementById("ui-message").innerText = "KARTLAR DAĞITILIYOR...";
+    
+    try {
+        const res = await fetchAPI('/api/pisti/start', 'POST', { bet: currentBet });
+        userBalance = res.balance;
+        document.getElementById("ui-balance").innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+        gameState = res.state;
+        renderBoard(true); // Animasyonlu dağıtım
+    } catch(e) {
+        showMatrixModal("Hata", e.message, "error");
+        document.getElementById("ui-chipsArea").style.display = "flex";
+        document.getElementById("startBtn").style.display = "block";
+    }
+    actionLock = false;
+});
+
+function renderBoard(animate = false) {
+    if (!gameState) return;
+
+    document.getElementById("playerScore").innerText = gameState.playerScore;
+    document.getElementById("botScore").innerText = gameState.botScore;
+    
+    // Geçmiş (alınmış) kart sayıları + eldeki kartlar
+    document.getElementById("playerCardCount").innerText = gameState.playerCardCount;
+    document.getElementById("botCardCount").innerText = gameState.botCardCount;
+
+    const bHand = document.getElementById("botHand");
+    const pHand = document.getElementById("playerHand");
+    const tArea = document.getElementById("tableCards");
+
+    bHand.innerHTML = ""; pHand.innerHTML = ""; tArea.innerHTML = "";
+
+    // BOT KARTLARI (Kapalı)
+    for (let i = 0; i < gameState.botCardCount; i++) {
+        let div = document.createElement("div"); div.className = "card-3d";
+        div.innerHTML = `<img src="https://deckofcardsapi.com/static/img/back.png" class="real-card">`;
+        if (animate) {
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
+            setTimeout(() => { playSfx('deal'); div.style.opacity = "1"; div.style.transform = `translate(0, 0) rotate(0deg) scale(1)`; }, i * 150);
+        }
+        bHand.appendChild(div);
+    }
+
+    // YERDEKİ KARTLAR
+    gameState.tableCards.forEach((c, i) => {
+        let div = document.createElement("div"); div.className = "table-card";
+        div.innerHTML = `<img src="${getCardImage(c)}" class="real-card">`;
+        if (animate && gameState.round === 1 && i < 4) {
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
+            setTimeout(() => { playSfx('deal'); div.style.opacity = "1"; div.style.transform = ""; }, 600 + (i * 150));
+        }
+        tArea.appendChild(div);
+    });
+
+    // OYUNCU KARTLARI
+    gameState.playerHand.forEach((c, i) => {
+        let div = document.createElement("div"); div.className = "card-3d";
+        
+        if (animate) {
+            div.innerHTML = `<img src="https://deckofcardsapi.com/static/img/back.png" class="real-card">`;
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
+            setTimeout(() => { 
+                playSfx('deal'); 
+                div.style.opacity = "1"; 
+                div.style.transform = "rotateY(90deg) scale(1.1)";
+                setTimeout(() => {
+                    div.innerHTML = `<img src="${getCardImage(c)}" class="real-card">`;
+                    div.style.transform = "rotateY(0deg) scale(1)";
+                }, 150);
+            }, 1200 + (i * 150));
+        } else {
+            div.innerHTML = `<img src="${getCardImage(c)}" class="real-card">`;
+        }
+
+        div.onclick = () => playCard(i);
+        pHand.appendChild(div);
+    });
+
+    if (animate) {
+        actionLock = true;
+        setTimeout(() => { actionLock = false; document.getElementById("ui-message").innerText = "SIRA SİZDE"; }, 1800);
+    } else {
+        document.getElementById("ui-message").innerText = "SIRA SİZDE";
+    }
+}
+
+async function playCard(idx) {
+    if (actionLock || !gameState || gameState.status !== 'playing') return;
+    actionLock = true;
+    document.getElementById("ui-message").innerText = "BEKLENİYOR...";
+
+    try {
+        const res = await fetchAPI('/api/pisti/play', 'POST', { cardIndex: idx });
+        const log = res.log;
+        gameState = res.state;
+        userBalance = res.balance;
+        document.getElementById("ui-balance").innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+        
+        // Oyuncu Hamlesi
+        playSfx('deal');
+        if (log.playerAction.captured) {
+            setTimeout(() => { 
+                playSfx(log.playerAction.isPisti ? 'pisti' : 'push'); 
+                if(log.playerAction.isPisti) triggerPistiAnim();
+            }, 300);
+        }
+
+        renderBoard(false);
+
+        // Bot Hamlesi Animasyon Gecikmesi
+        setTimeout(() => {
+            if (log.botAction) {
+                playSfx('deal');
+                if (log.botAction.captured) {
+                    setTimeout(() => { 
+                        playSfx(log.botAction.isPisti ? 'pisti' : 'push'); 
+                        if(log.botAction.isPisti) triggerPistiAnim();
+                    }, 300);
+                }
+                renderBoard(false);
+            }
+
+            if (log.gameOver) {
+                handleGameOver(log);
+            } else if (log.roundOver) {
+                document.getElementById("ui-message").innerText = "YENİ KARTLAR DAĞITILIYOR...";
+                setTimeout(() => renderBoard(true), 800);
+            } else {
+                actionLock = false;
+            }
+        }, 1000);
+
+    } catch(e) {
+        showMatrixModal("Hata", e.message, "error");
+        actionLock = false;
+    }
+}
+
+function triggerPistiAnim() {
+    const el = document.getElementById("pistiAnim");
+    el.style.animation = 'none';
+    el.offsetHeight; 
+    el.style.animation = 'flashPisti 1.5s ease-out forwards';
+}
+
+function handleGameOver(log) {
+    gameState = null;
+    let title, desc, type;
+    
+    if(log.winAmount > currentBet) {
+        playSfx('win');
+        title = "🏆 TEBRİKLER!"; type = "success";
+        desc = `Krupiyeyi mağlup ettiniz.\n\nKazanılan: ${log.winAmount.toLocaleString('tr-TR')} MC`;
+    } else if(log.winAmount === currentBet) {
+        playSfx('push');
+        title = "🤝 BERABERE"; type = "push";
+        desc = "Oyun berabere bitti.\nBahsiniz iade edildi.";
+    } else {
+        playSfx('bust');
+        title = "💥 KAYBETTİNİZ"; type = "error";
+        desc = "Krupiye daha yüksek puan topladı.\nŞansınızı tekrar deneyin.";
+    }
+
+    currentBet = 0;
+    
+    setTimeout(() => {
+        document.getElementById("ui-chipsArea").style.display = "flex";
+        document.getElementById("startBtn").style.display = "block";
+        updateBetUI();
+        showMatrixModal(title, desc, type);
+        actionLock = false;
+    }, 1000);
+}
+
+onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
+</script>
 </body>
 </html>
