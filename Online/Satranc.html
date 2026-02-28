@@ -78,7 +78,6 @@
 
     .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
     
-    /* VS KARTI TASARIMI */
     .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
     .room-vs-area { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px; }
     .player-name { font-size: 15px; font-weight: 800; color: #fff; width: 40%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -99,7 +98,7 @@
     .p-name { font-size: 14px; font-weight: 800; color: #fff; }
     .p-color { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #fff; }
 
-    /* AHŞAP SATRANÇ TAHTASI (SÜRÜKLE BIRAK YERİNE DOKUN-OYNA) */
+    /* AHŞAP SATRANÇ TAHTASI (DOKUN-OYNA) */
     .board-wrapper { width: 100%; max-width: 450px; aspect-ratio: 1; border: 8px solid #4a3424; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; }
     #chessboard { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
     
@@ -227,7 +226,7 @@ document.addEventListener('touchend', function (event) {
 }, { passive: false });
 
 // --- MODAL SİSTEMİ ---
-window.showMatrixModal = (title, message, type = 'info') => {
+window.showMatrixModal = (title, message, type = 'info', forceReload = false) => {
     const icon = document.getElementById("matrixModalIcon");
     document.getElementById("matrixModalTitle").innerText = title;
     document.getElementById("matrixModalDesc").innerHTML = message;
@@ -239,7 +238,14 @@ window.showMatrixModal = (title, message, type = 'info') => {
     const modal = document.getElementById('matrixModal');
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
+
+    if (forceReload) {
+        document.querySelector('.modal-close').onclick = () => window.location.reload();
+    } else {
+        document.querySelector('.modal-close').onclick = closeMatrixModal;
+    }
 };
+
 window.closeMatrixModal = () => {
     const modal = document.getElementById('matrixModal');
     modal.classList.remove('show');
@@ -247,7 +253,7 @@ window.closeMatrixModal = () => {
 };
 
 window.showHowToPlay = () => {
-    showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Hile koruması aktiftir, illegal hamleler sunucudan reddedilir.", "info");
+    showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Rakip odadan çıkarsa oyun iptal olur.", "info");
 };
 
 // --- PROFESYONEL SES MOTORU (iOS DESTEKLİ) ---
@@ -330,8 +336,9 @@ let myColor = 'w';
 let selectedSq = null;
 let validMovesForSelected = [];
 let pollingInterval = null;
+let pingInterval = null;
 let lastFen = "";
-let isProcessingMove = false; // Spam koruması
+let isProcessingMove = false; 
 
 const PIECE_IMGS = {
     'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
@@ -390,7 +397,6 @@ async function fetchLobby() {
         res.rooms.forEach(r => {
             const isMe = r.hostUid === userUid;
             
-            // VS KARTI MANTIĞI
             const p1 = r.host;
             const p2 = r.guest === 'Bilinmeyen' ? '?' : r.guest;
             
@@ -437,6 +443,22 @@ window.joinRoom = async (id) => {
     } catch(e) { showMatrixModal("Hata", e.message, "error"); }
 };
 
+// --- OYUN İÇİ PING SİSTEMİ ---
+function startGamePing() {
+    pingInterval = setInterval(async () => {
+        if (!currentRoomId) return;
+        try {
+            const res = await fetchAPI('/api/chess/ping', 'POST', { roomId: currentRoomId });
+            if (res && res.room && res.room.status === 'abandoned') {
+                clearInterval(pingInterval);
+                clearInterval(pollingInterval);
+                showMatrixModal("OYUN İPTAL", res.room.message, "error", true);
+            }
+        } catch(e) {}
+    }, 3000); // 3 Saniyede bir ben buradayım der
+}
+
+
 // --- OYUN ---
 function enterGame(roomData) {
     clearInterval(pollingInterval);
@@ -452,12 +474,19 @@ function enterGame(roomData) {
     playSfx('start');
     syncBoardUI(roomData);
     pollingInterval = setInterval(pollGameState, 1500);
+    startGamePing();
 }
 
 async function pollGameState() {
-    if (!currentRoomId || isProcessingMove) return; // Hamle işlenirken sunucuyu darlama
+    if (!currentRoomId || isProcessingMove) return; 
     try {
         const res = await fetchAPI(`/api/chess/state/${currentRoomId}`);
+        if(res.room.status === 'abandoned') {
+            clearInterval(pollingInterval);
+            clearInterval(pingInterval);
+            showMatrixModal("OYUN İPTAL", "Rakip odadan ayrıldı.", "error", true);
+            return;
+        }
         syncBoardUI(res.room);
     } catch(e) {}
 }
@@ -485,27 +514,24 @@ function syncBoardUI(r) {
         statusTxt.innerText = "OYUN BİTTİ";
         statusTxt.style.color = "#ff3b30";
         if(r.winner === 'draw') {
-            showMatrixModal("BERABERE", "Oyun berabere bitti.", "info");
+            showMatrixModal("BERABERE", "Oyun berabere bitti.", "info", true);
         } else {
             const iWon = (r.winner === 'white' && myColor === 'w') || (r.winner === 'black' && myColor === 'b');
-            if (iWon) { playSfx('win'); showMatrixModal("KAZANDIN!", "Tebrikler! 5.000 MC Kazandın.", "success"); }
-            else { playSfx('end'); showMatrixModal("KAYBETTİN", "Rakip kazandı.", "error"); }
+            if (iWon) { playSfx('win'); showMatrixModal("KAZANDIN!", "Tebrikler! 5.000 MC Kazandın.", "success", true); }
+            else { playSfx('end'); showMatrixModal("KAYBETTİN", "Rakip kazandı.", "error", true); }
         }
         clearInterval(pollingInterval);
-        setTimeout(() => { location.reload(); }, 4000);
+        clearInterval(pingInterval);
         return;
     }
 
-    // FEN Güncellemesi (Sadece değişmişse)
+    // Tahta Çizimi
     if (r.fen !== lastFen) {
-        let oldLogic = new Chess(lastFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
         gameLogic.load(r.fen);
         drawBoard();
         
         if (lastFen !== "") {
             if (gameLogic.in_check()) playSfx('check');
-            // Eğer fen kısaldıysa (Taş alındıysa) capture sesi
-            else if (r.fen.length < lastFen.length) playSfx('capture');
             else playSfx('move'); 
         }
         lastFen = r.fen;
@@ -561,6 +587,8 @@ function drawBoard() {
 async function handleSquareClick(sq) {
     if (isProcessingMove || document.getElementById("gameStatusTxt").innerText !== "SIRA SENDE") return;
 
+    const moves = gameLogic.moves({ verbose: true });
+    
     // Eğer seçili taşı geçerli bir noktaya tıkladıysa
     const moveObj = validMovesForSelected.find(m => m.to === sq);
     if (selectedSq && moveObj) {
@@ -568,23 +596,23 @@ async function handleSquareClick(sq) {
         isProcessingMove = true;
         document.getElementById("gameStatusTxt").innerText = "HAMLE İLETİLİYOR...";
         
-        // Optimistic UI Update (Kullanıcıya hamleyi anında göster)
-        gameLogic.move({ from: moveObj.from, to: moveObj.to, promotion: 'q' });
+        // Optimistic UI Update 
+        const m = gameLogic.move({ from: moveObj.from, to: moveObj.to, promotion: 'q' });
         selectedSq = null;
         validMovesForSelected = [];
         drawBoard(); 
         
         if (gameLogic.in_check()) playSfx('check');
-        else if (moveObj.captured) playSfx('capture');
+        else if (m && m.captured) playSfx('capture');
         else playSfx('move');
 
         try {
-            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
-            lastFen = res.room.fen; // Sunucudan gelen kesin fen
+            // Sunucunun kabul edeceği SAN notasyonunu yolla
+            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, moveSan: m.san });
+            lastFen = res.room.fen; 
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
-            // Hata olursa tahtayı geri al
-            gameLogic.load(lastFen);
+            gameLogic.load(lastFen); // Geri al
             drawBoard();
         }
         
