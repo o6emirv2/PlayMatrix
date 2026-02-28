@@ -1030,7 +1030,6 @@ app.get('/api/chess/state/:id', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// HEARTBEAT (PING) VE ÇIKAN OYUNCUYU İPTAL ETME SİSTEMİ
 app.post('/api/chess/ping', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
@@ -1052,7 +1051,6 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
             if (isHost) r.host.lastPing = nowMs();
             if (isGuest) r.guest.lastPing = nowMs();
 
-            // 30 Saniye boyunca ses vermeyen oyuncu odadan atılır, oyun iptal olur.
             if (r.status === 'playing') {
                 const hostDrop = nowMs() - (r.host.lastPing || 0) > 30000;
                 const guestDrop = nowMs() - (r.guest.lastPing || 0) > 30000;
@@ -1078,7 +1076,8 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
 app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
-        const { roomId, from, to, promotion } = req.body;
+        // HAMLE HATASI (INVALID MOVE) KÖKTEN ÇÖZÜMÜ: Client'tan sadece moveSan (Örn: 'e4') alınır
+        const { roomId, moveSan } = req.body;
 
         const result = await db.runTransaction(async (tx) => {
             const rSnap = await tx.get(colChess().doc(roomId));
@@ -1094,9 +1093,9 @@ app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
             if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
 
             const chess = new Chess(r.fen);
-            // SÜRÜM UYUMSUZLUĞU HATASI DÜZELTİLDİ: Sadece from, to objesi alınır.
-            const move = chess.move({ from, to, promotion: promotion || 'q' });
-
+            
+            // Satranç hamlesi (SAN formatında) sunucuda işletilir
+            const move = chess.move(moveSan);
             if (move === null) throw new Error("Geçersiz hamle! Kural hatası.");
 
             r.fen = chess.fen();
@@ -1145,6 +1144,8 @@ app.post('/api/chess/resign', verifyAuth, async (req, res) => {
 
             r.status = 'finished'; r.winner = isWhite ? 'black' : 'white'; r.updatedAt = nowMs();
             
+            // Teslimiyette 5000 MC verme isteğin doğrultusunda bu satır KALDIRILDI.
+            
             tx.update(colChess().doc(roomId), r);
             return { room: { id: roomId, ...r } };
         });
@@ -1154,7 +1155,6 @@ app.post('/api/chess/resign', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ZATEN BEKLEYEN ODALAR İÇİN GENEL TEMİZLİK (30 DK)
 setInterval(async () => {
     try {
         const now = Date.now();
