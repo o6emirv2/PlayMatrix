@@ -923,4 +923,210 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ======================================================
+// 6. ONLINE SATRANÇ MOTORU
+// ======================================================
+
+const colChess = () => db.collection('chess_rooms');
+
+app.get('/api/chess/lobby', verifyAuth, async (req, res) => {
+    try {
+        const snap = await colChess().where('status', 'in', ['waiting', 'playing']).orderBy('createdAt', 'desc').limit(20).get();
+        let rooms = [];
+        snap.forEach(doc => {
+            let d = doc.data();
+            rooms.push({
+                id: doc.id,
+                host: d.host.username,
+                status: d.status,
+                createdAt: d.createdAt
+            });
+        });
+        res.json({ ok: true, rooms });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/chess/create', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        
+        const roomData = await db.runTransaction(async (tx) => {
+            const uSnap = await tx.get(colUsers().doc(uid));
+            if (!uSnap.exists) throw new Error("Kullanıcı bulunamadı.");
+            const u = uSnap.data();
+
+            // Zaten bekleyen odası var mı?
+            const activeRooms = await tx.get(colChess().where('host.uid', '==', uid).where('status', '==', 'waiting'));
+            if (!activeRooms.empty) throw new Error("Zaten bekleyen bir odanız var.");
+
+            const newRoomRef = colChess().doc();
+            const newRoom = {
+                host: { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null },
+                guest: null,
+                status: 'waiting', // waiting, playing, finished
+                fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+                turn: 'w', // w (white - host), b (black - guest)
+                winner: null,
+                createdAt: nowMs(),
+                updatedAt: nowMs()
+            };
+            
+            tx.set(newRoomRef, newRoom);
+            return { id: newRoomRef.id, ...newRoom };
+        });
+
+        res.json({ ok: true, room: roomData });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/chess/join', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const roomId = cleanStr(req.body.roomId);
+
+        const roomData = await db.runTransaction(async (tx) => {
+            const uSnap = await tx.get(colUsers().doc(uid));
+            const u = uSnap.data();
+
+            if (roomId) {
+                // Spesifik odaya katıl
+                const rSnap = await tx.get(colChess().doc(roomId));
+                if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+                let r = rSnap.data();
+                if (r.status !== 'waiting') throw new Error("Bu oda artık müsait değil.");
+                if (r.host.uid === uid) throw new Error("Kendi odanıza katılamazsınız.");
+                
+                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null };
+                r.status = 'playing';
+                r.updatedAt = nowMs();
+                tx.update(colChess().doc(roomId), r);
+                return { id: roomId, ...r };
+            } else {
+                // Hızlı Katıl
+                const snap = await tx.get(colChess().where('status', '==', 'waiting').orderBy('createdAt', 'asc').limit(1));
+                if (snap.empty) throw new Error("Müsait oda bulunamadı. Lütfen yeni oda kurun.");
+                
+                let doc = snap.docs[0];
+                let r = doc.data();
+                if (r.host.uid === uid) throw new Error("Sadece kendi kurduğunuz oda müsait.");
+
+                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null };
+                r.status = 'playing';
+                r.updatedAt = nowMs();
+                tx.update(doc.ref, r);
+                return { id: doc.id, ...r };
+            }
+        });
+
+        res.json({ ok: true, room: roomData });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/chess/state/:id', verifyAuth, async (req, res) => {
+    try {
+        const roomId = cleanStr(req.params.id);
+        const snap = await colChess().doc(roomId).get();
+        if (!snap.exists) throw new Error("Oda bulunamadı.");
+        res.json({ ok: true, room: { id: roomId, ...snap.data() } });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const { roomId, from, to, promotion } = req.body;
+
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colChess().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
+
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            
+            let isWhite = r.host.uid === uid;
+            let isBlack = r.guest.uid === uid;
+            
+            if (!isWhite && !isBlack) throw new Error("Bu odada oyuncu değilsiniz.");
+            if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
+
+            // Hile koruması: chess.js ile sunucuda doğrulama
+            const chess = new Chess(r.fen);
+            const move = chess.move({ from, to, promotion: promotion || 'q' });
+
+            if (move === null) throw new Error("Geçersiz hamle! Hile girişimi engellendi.");
+
+            r.fen = chess.fen();
+            r.turn = chess.turn(); // 'w' veya 'b'
+            r.updatedAt = nowMs();
+            
+            let winAmount = 0;
+            let gameOverMessage = null;
+
+            if (chess.in_checkmate()) {
+                r.status = 'finished';
+                r.winner = isWhite ? 'white' : 'black';
+                winAmount = 5000;
+                gameOverMessage = "ŞAH MAT!";
+                tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(winAmount) });
+            } else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) {
+                r.status = 'finished';
+                r.winner = 'draw';
+                gameOverMessage = "BERABERE!";
+            }
+
+            tx.update(colChess().doc(roomId), r);
+            return { room: { id: roomId, ...r }, moveStr: move.san, winAmount, gameOverMessage };
+        });
+
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/chess/resign', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const { roomId } = req.body;
+
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colChess().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
+
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            
+            let isWhite = r.host.uid === uid;
+            let isBlack = r.guest.uid === uid;
+            
+            if (!isWhite && !isBlack) throw new Error("Yetkiniz yok.");
+
+            r.status = 'finished';
+            r.winner = isWhite ? 'black' : 'white';
+            r.updatedAt = nowMs();
+
+            const winnerUid = isWhite ? r.guest.uid : r.host.uid;
+            
+            // Kazanana 5000 MC ver
+            tx.update(colUsers().doc(winnerUid), { balance: admin.firestore.FieldValue.increment(5000) });
+            tx.update(colChess().doc(roomId), r);
+            
+            return { room: { id: roomId, ...r } };
+        });
+
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+// BOŞ ODA TEMİZLEME (GARBAGE COLLECTION) - 30 Dakikada bir çalışır
+setInterval(async () => {
+    try {
+        const now = Date.now();
+        // 30 Dakika = 1800000 ms
+        const oldTime = now - 1800000; 
+        const snap = await colChess().where('updatedAt', '<', oldTime).get();
+        snap.forEach(doc => {
+            doc.ref.delete().catch(()=>null);
+        });
+    } catch(e) { console.error("Oda temizleme hatası:", e); }
+}, 30 * 60 * 1000);
+
 app.listen(PORT, () => console.log(`🚀 PlayMatrix Core Backend Started. Port: ${PORT}`));
