@@ -1146,7 +1146,7 @@ setInterval(async () => {
 }, 30 * 60 * 1000);
 
 // ======================================================
-// 8. YENİ ONLINE PİŞTİ MOTORU (2-52, 2-104, 4-104 MULTIPLAYER)
+// 8. YENİ ONLINE PİŞTİ MOTORU (VIP)
 // ======================================================
 const colOnlinePisti = () => db.collection('pisti_online_rooms');
 
@@ -1158,6 +1158,34 @@ function createMultiPistiDeck(deckCount = 1) {
     for (let i = deck.length - 1; i > 0; i--) { const j = crypto.randomInt(0, i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }
     return deck;
 }
+
+function calculateCardPoints(cards) {
+    let pts = 0;
+    for (let c of cards) {
+        if (c === '0D') pts += 3; 
+        else if (c === '2C') pts += 2; 
+        else if (c[0] === 'A') pts += 1; 
+        else if (c[0] === 'J') pts += 1; 
+    }
+    return pts;
+}
+
+function checkPistiCapture(tableCards, playedCard) {
+    if (tableCards.length === 0) return { captured: false, isPisti: false, points: 0, collected: [] };
+    const topCard = tableCards[tableCards.length - 1];
+    const isJack = playedCard[0] === 'J';
+    const isMatch = playedCard[0] === topCard[0];
+
+    if (isJack || isMatch) {
+        const collected = [...tableCards, playedCard];
+        const isPisti = (tableCards.length === 1 && isMatch); 
+        let pistiPoints = isPisti ? (isJack ? 20 : 10) : 0;
+        const cardPoints = calculateCardPoints(collected);
+        return { captured: true, isPisti: isPisti, points: pistiPoints + cardPoints, collected: collected };
+    }
+    return { captured: false, isPisti: false, points: 0, collected: [] };
+}
+
 
 app.get('/api/pisti-online/lobby', verifyAuth, async (req, res) => {
     try {
@@ -1181,7 +1209,7 @@ app.post('/api/pisti-online/create', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
         const bet = safeNum(req.body.bet, 100);
-        const mode = req.body.mode || '2-52'; // '2-52', '2-104', '4-104'
+        const mode = req.body.mode || '2-52'; 
         
         if (bet < 100) throw new Error("Minimum bahis 100 MC.");
 
@@ -1191,9 +1219,6 @@ app.post('/api/pisti-online/create', verifyAuth, async (req, res) => {
             const u = uSnap.data();
 
             if (safeNum(u.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
-
-            const activeRooms = await tx.get(colOnlinePisti().where('players', 'array-contains', {uid: uid}).where('status', '==', 'waiting'));
-            // Odadan çıkış mekanizması eklenebilir ama basit tutalım, aktif oyun kontrolü
             
             let maxP = 2, deckCount = 1;
             if(mode === '2-104') { maxP = 2; deckCount = 2; }
@@ -1240,7 +1265,6 @@ app.post('/api/pisti-online/join', verifyAuth, async (req, res) => {
             if(r.players.length === r.maxPlayers) {
                 r.status = 'playing';
                 r.deck = createMultiPistiDeck(r.deckCount);
-                // İlk dağıtım: 4 yere, 4 herkese
                 r.tableCards = [r.deck.pop(), r.deck.pop(), r.deck.pop(), r.deck.pop()];
                 r.players.forEach(p => { p.hand = [r.deck.pop(), r.deck.pop(), r.deck.pop(), r.deck.pop()]; });
             }
@@ -1260,7 +1284,6 @@ app.get('/api/pisti-online/state/:id', verifyAuth, async (req, res) => {
         if (!snap.exists) throw new Error("Oda bulunamadı.");
         let r = snap.data();
         
-        // Sadece kullanıcının kendi elini ve genel durumu gönder (Hile koruması)
         let safePlayers = r.players.map(p => ({
             uid: p.uid, username: p.username, avatar: p.avatar, score: p.score, cardCount: p.cardCount,
             hand: p.uid === req.user.uid ? p.hand : Array(p.hand.length).fill('BACK')
@@ -1301,23 +1324,19 @@ app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res)
                 r.tableCards.push(playedCard);
             }
 
-            // Sırayı ilerlet
             r.turn = (r.turn + 1) % r.players.length;
 
-            // Tur sonu kontrolü (Herkesin eli bitti mi?)
             const allEmpty = r.players.every(pl => pl.hand.length === 0);
             if(allEmpty) {
                 if(r.deck.length >= r.maxPlayers * 4) {
                     r.players.forEach(pl => { pl.hand = [r.deck.pop(), r.deck.pop(), r.deck.pop(), r.deck.pop()]; });
                 } else {
-                    // OYUN BİTTİ
                     r.status = 'finished';
                     if(r.tableCards.length > 0 && r.lastCapturer) {
                         const lastCapP = r.players.find(pl => pl.uid === r.lastCapturer);
                         if(lastCapP) { lastCapP.cardCount += r.tableCards.length; lastCapP.score += calculateCardPoints(r.tableCards); }
                     }
                     
-                    // Kart çoğunluğu 3 puan
                     let maxCards = 0, maxCardUid = null, tie = false;
                     r.players.forEach(pl => {
                         if(pl.cardCount > maxCards) { maxCards = pl.cardCount; maxCardUid = pl.uid; tie = false; }
@@ -1325,7 +1344,6 @@ app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res)
                     });
                     if(!tie && maxCardUid) { r.players.find(pl => pl.uid === maxCardUid).score += 3; }
 
-                    // Kazananı Belirle (En yüksek skor)
                     let highestScore = -1, winnerUids = [];
                     r.players.forEach(pl => {
                         if(pl.score > highestScore) { highestScore = pl.score; winnerUids = [pl.uid]; }
@@ -1334,11 +1352,10 @@ app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res)
 
                     r.winner = winnerUids;
                     
-                    // Ödül Dağıtımı (Toplam Havuz = bet * maxPlayers)
-                    const totalPool = r.bet * r.maxPlayers;
-                    const winShare = Math.floor(totalPool / winnerUids.length);
+                    // [KRİTİK GÜNCELLEME] 11. MADDE: Kazanan Kişiye 5.000 MC Sabit Ödül
+                    const fixedReward = 5000;
                     for(let wUid of winnerUids) {
-                        tx.update(colUsers().doc(wUid), { balance: admin.firestore.FieldValue.increment(winShare) });
+                        tx.update(colUsers().doc(wUid), { balance: admin.firestore.FieldValue.increment(fixedReward) });
                     }
                 }
             }
@@ -1382,7 +1399,7 @@ app.post('/api/pisti-online/ping', verifyAuth, async (req, res) => {
                     r.updatedAt = now;
                     tx.update(colOnlinePisti().doc(roomId), r);
                     setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 5000);
-                    return { status: 'abandoned', message: "Bir oyuncu bağlantıdan koptu. Oyun İptal Edildi." };
+                    return { status: 'abandoned', message: "Rakip bağlantıdan koptu. Oyun İptal Edildi." };
                 }
             }
 
@@ -1393,5 +1410,20 @@ app.post('/api/pisti-online/ping', verifyAuth, async (req, res) => {
         res.json({ ok: true, ...result });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
+
+// [KRİTİK GÜNCELLEME] 2-3. MADDELER: 30 Dakikayı Dolduran Odaları Otomatik Silen Temizlik Döngüsü
+setInterval(async () => {
+    try {
+        const now = Date.now();
+        const oldTime = now - 1800000; // 30 Dakika (Milisaniye)
+        
+        // Satranç ve Pisti Odalarını Temizle
+        const chessSnap = await colChess().where('updatedAt', '<', oldTime).get();
+        chessSnap.forEach(doc => { doc.ref.delete().catch(()=>null); });
+
+        const pistiSnap = await colOnlinePisti().where('updatedAt', '<', oldTime).get();
+        pistiSnap.forEach(doc => { doc.ref.delete().catch(()=>null); });
+    } catch(e) { }
+}, 10 * 60 * 1000); // Her 10 dakikada bir kontrol eder
 
 app.listen(PORT, () => console.log(`🚀 PlayMatrix Core Backend Started. Port: ${PORT}`));
