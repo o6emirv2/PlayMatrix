@@ -2,308 +2,230 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PlayMatrix Cyber</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlayMatrix | Resmi Bakım Bildirisi</title>
+<script>
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, "/");
+    }
+</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
-            --primary: #00ffa3;
-            --bg: #03050a;
-            --glass: rgba(10, 15, 25, 0.9);
-            --border: rgba(0, 255, 163, 0.2);
-            --off: rgba(30, 41, 59, 0.7);
-            --tile-size: 65px; 
+            /* Kurumsal ve Prestijli Renk Paleti */
+            --bg-official: #0a1525; /* Derin Lacivert */
+            --gold-accent: #d4af37; /* Metalik Altın */
+            --gold-glow: rgba(212, 175, 55, 0.4); /* Sıcak Altın Işık */
+            --text-light: #f0f2f5;
+            --text-muted: #aab4c0;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: radial-gradient(circle at center, #112240 0%, var(--bg-official) 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Arka plan için ince resmi doku */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        /* MODAL ANA YAPI */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 21, 37, 0.95); /* Koyu, ciddi arka plan */
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-card {
+            width: 90%;
+            max-width: 500px;
+            background: linear-gradient(145deg, #13243a, #0e1a2b);
+            border: 2px solid var(--gold-accent);
+            /* Çift çerçeve efekti ile resmiyet */
+            outline: 4px solid rgba(212, 175, 55, 0.1);
+            border-radius: 12px;
+            padding: 50px 40px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            
+            /* Giriş Animasyonu */
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideInOfficial 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Arkadan vuran prestijli altın ışık */
+        .modal-card::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%; height: 120%;
+            background: radial-gradient(circle, var(--gold-glow) 10%, transparent 60%);
+            filter: blur(40px);
+            z-index: -1;
+            animation: majesticPulse 4s infinite alternate;
+        }
+
+        @keyframes slideInOfficial {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes majesticPulse {
+            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.95); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .icon-box {
+            font-size: 70px;
+            /* Altın degrade ikon */
+            background: linear-gradient(135deg, #d4af37, #fceabb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+            filter: drop-shadow(0 4px 6px rgba(212, 175, 55, 0.3));
+        }
+
+        h2 {
+            font-family: 'Merriweather', serif; /* Resmiyet için serif font */
+            color: var(--gold-accent);
+            font-size: 26px;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: 900;
+            position: relative;
+            padding-bottom: 15px;
+        }
         
-        body { 
-            background: var(--bg); color: white; font-family: 'Inter', sans-serif; 
-            overflow: hidden; height: 100vh; display: flex; flex-direction: column;
+        /* Başlık altı resmi çizgi */
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 60px; height: 3px;
+            background: var(--gold-accent);
         }
 
-        #neural-canvas { position: fixed; inset: 0; z-index: -1; background: radial-gradient(circle at center, #0a1520 0%, #03050a 100%); }
-
-        .top-bar {
-            height: 65px; min-height: 65px; display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px; background: var(--glass); backdrop-filter: blur(25px);
-            border-bottom: 1px solid var(--border); z-index: 1000;
+        p {
+            color: var(--text-light);
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 35px;
+            font-weight: 400;
+            border-top: 1px solid rgba(212, 175, 55, 0.1);
+            padding-top: 20px;
         }
 
-        .brand { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 900; color: var(--primary); text-shadow: 0 0 10px rgba(0, 255, 163, 0.5); white-space: nowrap; }
-        
-        .level-info { font-weight: 800; font-size: 12px; background: rgba(0,255,163,0.1); padding: 6px 12px; border-radius: 12px; border: 1px solid var(--border); white-space: nowrap; }
-        .best-score-badge { color: var(--primary); opacity: 0.8; margin-left: 5px; padding-left: 5px; border-left: 1px solid var(--border); }
-        .exit-btn { color: white; text-decoration: none; font-size: 11px; font-weight: 800; opacity: 0.6; padding: 8px; transition: 0.3s; }
-
-        #game-wrapper { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px; }
-
-        #grid {
-            display: grid; gap: 8px; padding: 20px; background: rgba(255, 255, 255, 0.03);
-            border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4); transition: 0.5s; opacity: 0; pointer-events: none;
+        .official-note {
+            display: block;
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-style: italic;
         }
 
-        .tile {
-            width: var(--tile-size); height: var(--tile-size); background: var(--off);
-            border-radius: 12px; cursor: pointer; position: relative;
-            display: flex; align-items: center; justify-content: center;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
-            border: 1px solid rgba(255,255,255,0.05);
+        .btn-exit {
+            width: 100%;
+            padding: 18px;
+            border-radius: 6px; /* Daha keskin köşeler */
+            border: 1px solid var(--gold-accent);
+            background: linear-gradient(180deg, var(--gold-accent) 0%, #b39329 100%);
+            color: #0a1525; /* Altın üzerine koyu yazı */
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-family: 'Merriweather', serif;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
         }
 
-        .tile:active { transform: scale(0.9); }
-        .line { position: absolute; background: #475569; border-radius: 4px; transition: all 0.4s; }
-
-        .tile.connected { background: rgba(0, 255, 163, 0.08); border-color: var(--border); }
-        .tile.connected .line { background: var(--primary); box-shadow: 0 0 12px var(--primary); }
-
-        .overlay {
-            position: absolute; inset: 0; background: rgba(3,5,10,0.85);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 2000; backdrop-filter: blur(12px);
+        .btn-exit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+            background: linear-gradient(180deg, #eacda3 0%, #d6ae7b 100%);
         }
 
-        .modal { background: var(--glass); padding: 35px; border-radius: 28px; border: 1px solid var(--border); text-align: center; width: 85%; max-width: 340px; }
-        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--primary); color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 20px; font-size: 14px; transition: 0.2s; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #win-status { font-size: 11px; letter-spacing: 2px; color: #fff; opacity: 0.5; margin-bottom: 5px; display: block; }
+        .brand-seal {
+            margin-top: 25px;
+            font-family: 'Merriweather', serif;
+            font-size: 13px;
+            color: var(--gold-accent);
+            opacity: 0.7;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .brand-seal i { font-size: 16px; }
     </style>
 </head>
 <body>
 
-    <canvas id="neural-canvas"></canvas>
+    <div class="modal-overlay">
+        <div class="modal-card">
+            <div class="icon-box">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2>SİSTEM BAKIM BİLDİRİSİ</h2>
+            <p>
+                Sayın Kullanıcımız,
+                <br><br>
+                PlayMatrix Platformu, Hizmet Kalitesini Artırmak ve Yeni "Profesyonel" Altyapıyı Entegre Etmek Üzere Planlı Bakım Çalışmasına Alınmıştır.
+                <span class="official-note">Bu Süreçte Gösterdiğiniz Anlayış İçin Teşekkür Ederiz.</span>
+            </p>
+            
+            <button class="btn-exit" onclick="exitGame()">
+                <i class="fa-solid fa-right-from-bracket"></i> GÜVENLİ ÇIKIŞ YAP
+            </button>
 
-    <header class="top-bar">
-        <div class="brand"><i class="fa-solid fa-microchip"></i> CYBER</div>
-        <div class="level-info">
-            NODE: <span id="level-num">Yükleniyor</span>
-            <span class="best-score-badge">EN İYİ: <span id="best-score">...</span></span>
-        </div>
-        <a href="/" class="exit-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
-    </header>
-
-    <main id="game-wrapper">
-        <div id="grid"></div>
-
-        <div id="win-overlay" class="overlay" style="display:none;">
-            <div class="modal">
-                <span id="win-status">[DURUM: ONAYLANDI]</span>
-                <h2 id="win-title" style="color:var(--primary); font-family: Montserrat;">SİSTEM SIZILDI</h2>
-                <p id="win-desc" style="margin-top:10px; opacity:0.7; font-size: 14px;">Sunucu bağlantıyı doğruladı.</p>
-                <button class="btn" id="nextLevelBtn">SONRAKİ NODE GEÇ</button>
+            <div class="brand-seal">
+                <i class="fa-solid fa-certificate"></i> PlayMatrix Protokolü
             </div>
         </div>
+    </div>
 
-        <div id="start-overlay" class="overlay">
-            <div class="modal">
-                <h2 style="color:var(--primary); font-family: Montserrat;">BAĞLANTIYI KUR</h2>
-                <p style="margin-top:10px; opacity:0.7; font-size: 14px;">Zihnini odakla ve tüm devreleri merkeze bağla. (Sunucu Korumalı Mod)</p>
-                <button class="btn" id="startSystemBtn">SİSTEMİ AÇ</button>
-            </div>
-        </div>
-    </main>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-    const firebaseConfig = {
-        apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
-        authDomain:"emirhan-site.firebaseapp.com",
-        projectId:"emirhan-site",
-        storageBucket:"emirhan-site.firebasestorage.app",
-        messagingSenderId:"668871888390",
-        appId:"1:668871888390:web:76568bda84cb1641f7bd87"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
-
-    const sounds = {
-        rotate: new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
-        success: new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'),
-        start: new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3')
-    };
-    Object.values(sounds).forEach(s => s.volume = 0.3);
-
-    let isGameLocked = true;
-    let tilesData = [];
-    let currentLevel = 1;
-    let isVerifying = false;
-
-    // --- API İSTEK FONKSİYONU ---
-    async function fetchAPI(endpoint, method = 'GET', body = null) {
-        if (!auth.currentUser) return { redirect: true };
-        const token = await getIdToken(auth.currentUser);
-        const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
-        if (body) options.body = JSON.stringify(body);
-        const res = await fetch(`${API_URL}${endpoint}`, options);
-        const data = await res.json();
-        if (data.redirect) window.location.href = '/';
-        if (!data.ok) throw new Error(data.error || "Sunucu hatası");
-        return data;
-    }
-
-    // --- OYUN YÜKLEME ---
-    async function loadServerState() {
-        try {
-            const data = await fetchAPI('/api/cyber/state');
-            currentLevel = data.state.level;
-            document.getElementById('level-num').innerText = currentLevel;
-            document.getElementById('best-score').innerText = data.state.bestLevel;
-            renderGrid(data.state.gridSize, data.state.grid);
-        } catch (e) {
-            alert("Sunucuya bağlanılamadı: " + e.message);
-        }
-    }
-
-    function calculateTileSize(gridSize) {
-        const maxWidth = window.innerWidth > 450 ? 400 : window.innerWidth * 0.85;
-        const gapSize = 8;
-        const totalGap = (gridSize - 1) * gapSize;
-        let newSize = Math.floor((maxWidth - totalGap) / gridSize);
-        if (newSize > 65) newSize = 65; if (newSize < 30) newSize = 30;
-        document.documentElement.style.setProperty('--tile-size', `${newSize}px`);
-    }
-
-    function renderLines(type) {
-        if(type === 0) return `<div class="line" style="width:100%; height:4px;"></div>`;
-        return `<div class="line" style="width:55%; height:4px; right:0; top:50%; transform:translateY(-50%);"></div>
-                <div class="line" style="width:4px; height:55%; left:50%; bottom:0; transform:translateX(-50%);"></div>`;
-    }
-
-    function renderGrid(gridSize, gridData) {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '';
-        grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-        calculateTileSize(gridSize);
-
-        tilesData = gridData.map((t, index) => ({
-            type: t.type,
-            rotation: t.rotation,
-            index: index
-        }));
-
-        tilesData.forEach((t, i) => {
-            const div = document.createElement('div');
-            div.className = 'tile';
-            div.style.transform = `rotate(${t.rotation}deg)`;
-            div.innerHTML = renderLines(t.type);
-            div.onclick = () => handleRotate(i, div);
-            grid.appendChild(div);
-            t.element = div;
-        });
-
-        grid.style.opacity = '1';
-        grid.style.pointerEvents = 'auto';
-        isGameLocked = false;
-        visualCheck(); // Başlangıçta doğru olanları yak
-    }
-
-    function handleRotate(index, element) {
-        if (isGameLocked || isVerifying) return;
-        
-        sounds.rotate.currentTime = 0; sounds.rotate.play();
-        tilesData[index].rotation = (tilesData[index].rotation + 90) % 360;
-        element.style.transform = `rotate(${tilesData[index].rotation}deg)`;
-        
-        visualCheck();
-    }
-
-    // İstemci tarafında sadece görsel geri bildirim (Gerçek kontrol sunucuda)
-    function visualCheck() {
-        let allVisuallyCorrect = true;
-
-        tilesData.forEach(t => {
-            let isCorrect = false;
-            const rot = t.rotation;
-            if (t.type === 0 && (rot === 0 || rot === 180)) isCorrect = true;
-            else if (t.type === 1 && rot === 0) isCorrect = true;
-
-            if (isCorrect) t.element.classList.add('connected');
-            else { t.element.classList.remove('connected'); allVisuallyCorrect = false; }
-        });
-
-        if (allVisuallyCorrect && !isVerifying) {
-            verifyWithServer();
-        }
-    }
-
-    async function verifyWithServer() {
-        isVerifying = true;
-        isGameLocked = true;
-        const rotations = tilesData.map(t => t.rotation);
-
-        try {
-            const data = await fetchAPI('/api/cyber/verify', 'POST', { rotations });
+    <script>
+        function exitGame() {
+            // Resmiyet hissi veren daha yavaş ve tok bir çıkış animasyonu
+            const modal = document.querySelector('.modal-card');
+            modal.style.transition = "all 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045)";
+            modal.style.transform = "translateY(50px)";
+            modal.style.opacity = "0";
             
-            // Eğer sunucu doğruladıysa
-            sounds.success.play();
-            const nextLvl = currentLevel + 1;
-            document.getElementById('win-title').innerText = `SİSTEM SIZILDI [LVL ${currentLevel}]`;
-            document.getElementById('win-overlay').style.display = 'flex';
-            
-        } catch (e) {
-            // Eğer sunucu reddederse (Hile girişimi vb.)
-            isVerifying = false;
-            isGameLocked = false;
-            console.warn("Sunucu Doğrulaması Başarısız:", e.message);
-            // Görsel olarak yanlışları sıfırla veya uyarı ver
+            document.querySelector('.modal-overlay').style.transition = "opacity 0.5s ease";
+            document.querySelector('.modal-overlay').style.opacity = "0";
+
+            setTimeout(() => {
+                // Ana sayfaya yönlendirme
+                window.location.href = "https://playmatrix.com.tr";
+            }, 500);
         }
-    }
-
-    document.getElementById('nextLevelBtn').addEventListener('click', async () => {
-        document.getElementById('win-overlay').style.display = 'none';
-        document.getElementById('grid').style.opacity = '0'; // Geçiş efekti
-        document.getElementById('grid').style.pointerEvents = 'none';
-        isVerifying = false;
-        await loadServerState();
-    });
-
-    document.getElementById('startSystemBtn').addEventListener('click', () => {
-        Object.values(sounds).forEach(s => { s.play(); s.pause(); });
-        sounds.start.play();
-        document.getElementById('start-overlay').style.display = 'none';
-        loadServerState();
-    });
-
-    // --- ARKA PLAN ANİMASYONU ---
-    const canvas = document.getElementById('neural-canvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    window.addEventListener('resize', resize); resize();
-
-    class Particle {
-        constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.vx = (Math.random()-0.5)*0.5; this.vy = (Math.random()-0.5)*0.5; }
-        update() { this.x += this.vx; this.y += this.vy; if(this.x<0||this.x>canvas.width) this.vx*=-1; if(this.y<0||this.y>canvas.height) this.vy*=-1; }
-    }
-    for(let i=0; i<40; i++) particles.push(new Particle());
-
-    function animateBG() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0, 255, 163, 0.5)'; ctx.strokeStyle = 'rgba(0, 255, 163, 0.1)';
-        particles.forEach((p, i) => {
-            p.update(); ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
-            for(let j=i+1; j<particles.length; j++) {
-                let p2 = particles[j]; let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                if(dist < 150) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
-            }
-        });
-        requestAnimationFrame(animateBG);
-    }
-    animateBG();
-
-    // OTURUM KONTROLÜ
-    onAuthStateChanged(auth, user => {
-        if(!user) window.location.href = '/'; 
-    });
-
-</script>
+    </script>
 </body>
 </html>
