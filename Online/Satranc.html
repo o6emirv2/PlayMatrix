@@ -80,7 +80,7 @@
     .action-icon-btn.red { color: #ff4b4b; border-color:#552222; }
     .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
-    /* LOBİ EKRANI (PLAYER VS PLAYER) */
+    /* LOBİ EKRANI */
     #lobbyArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
     
     .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; gap: 10px;}
@@ -104,7 +104,7 @@
     /* OYUN ALANI */
     #gameArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); display: none; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 10px; }
     
-    .player-plate { width: 100%; max-width: 450px; background: rgba(0,0,0,0.6); border: 1px solid #3a2b1f; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .player-plate { width: 100%; max-width: 450px; background: rgba(0,0,0,0.6); border: 1px solid #3a2b1f; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
     .player-plate.active { border-color: #d4af37; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
     .player-info { display: flex; align-items: center; gap: 10px; }
     .p-avatar { width: 35px; height: 35px; border-radius: 5px; background: #333; object-fit: cover;}
@@ -238,8 +238,8 @@ document.addEventListener('touchend', function (event) {
     lastTouchEnd = now;
 }, { passive: false });
 
-// --- MODAL SİSTEMİ ---
-window.showMatrixModal = (title, message, type = 'info', forceReload = false) => {
+// --- MODAL SİSTEMİ (RELOAD YERİNE SOFT-RESET) ---
+window.showMatrixModal = (title, message, type = 'info', backToLobby = false) => {
     const icon = document.getElementById("matrixModalIcon");
     document.getElementById("matrixModalTitle").innerText = title;
     document.getElementById("matrixModalDesc").innerHTML = message;
@@ -252,8 +252,11 @@ window.showMatrixModal = (title, message, type = 'info', forceReload = false) =>
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('show'), 10);
 
-    if (forceReload) {
-        document.querySelector('.modal-close').onclick = () => window.location.reload();
+    if (backToLobby) {
+        document.querySelector('.modal-close').onclick = () => {
+            closeMatrixModal();
+            resetToLobby(); // Sayfayı yenilemeden lobiye dön
+        };
     } else {
         document.querySelector('.modal-close').onclick = closeMatrixModal;
     }
@@ -268,6 +271,16 @@ window.closeMatrixModal = () => {
 window.showHowToPlay = () => {
     showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Rakip odadan çıkarsa oyun iptal olur.", "info");
 };
+
+function resetToLobby() {
+    clearInterval(pollingInterval);
+    clearInterval(pingInterval);
+    currentRoomId = null;
+    document.getElementById("gameArea").style.display = "none";
+    document.getElementById("lobbyArea").style.display = "flex";
+    fetchBalance();
+    startLobbyPolling();
+}
 
 // --- PROFESYONEL SES MOTORU ---
 let audioCtx = null;
@@ -463,8 +476,6 @@ function startGamePing() {
         try {
             const res = await fetchAPI('/api/chess/ping', 'POST', { roomId: currentRoomId });
             if (res && res.room && res.room.status === 'abandoned') {
-                clearInterval(pingInterval);
-                clearInterval(pollingInterval);
                 showMatrixModal("OYUN İPTAL", res.room.message, "error", true);
             }
         } catch(e) {}
@@ -493,8 +504,6 @@ async function pollGameState() {
     try {
         const res = await fetchAPI(`/api/chess/state/${currentRoomId}?t=${Date.now()}`); 
         if(res.room.status === 'abandoned') {
-            clearInterval(pollingInterval);
-            clearInterval(pingInterval);
             showMatrixModal("OYUN İPTAL", "Rakip odadan ayrıldı.", "error", true);
             return;
         }
@@ -509,9 +518,11 @@ function syncBoardUI(r) {
 
     document.getElementById("myName").innerText = me.username;
     if(me.avatar) document.getElementById("myAvatar").src = me.avatar;
+    document.getElementById("myPlate").className = (r.turn === myColor) ? "player-plate active" : "player-plate";
 
     document.getElementById("oppName").innerText = opp.username;
     if(opp.avatar) document.getElementById("oppAvatar").src = opp.avatar;
+    document.getElementById("oppPlate").className = (r.turn !== myColor && r.status === 'playing') ? "player-plate active" : "player-plate";
 
     const statusTxt = document.getElementById("gameStatusTxt");
     if (r.status === 'waiting') {
@@ -531,8 +542,6 @@ function syncBoardUI(r) {
             if (iWon) { playSfx('win'); showMatrixModal("KAZANDIN!", "Tebrikler! 5.000 MC Kazandın.", "success", true); }
             else { playSfx('end'); showMatrixModal("KAYBETTİN", "Rakip kazandı veya sen teslim oldun.", "error", true); }
         }
-        clearInterval(pollingInterval);
-        clearInterval(pingInterval);
         return;
     }
 
@@ -596,7 +605,8 @@ function drawBoard() {
 }
 
 async function handleSquareClick(sq) {
-    if (isProcessingMove || document.getElementById("gameStatusTxt").innerText !== "SIRA SENDE") return;
+    // SIRA BİZDE DEĞİLSE TIKLAMALARI KESİNLİKLE ENGELLE
+    if (isProcessingMove || gameLogic.turn() !== myColor) return;
 
     const moveObj = validMovesForSelected.find(m => m.to === sq);
     if (selectedSq && moveObj) {
@@ -614,8 +624,8 @@ async function handleSquareClick(sq) {
         else playSfx('move');
 
         try {
-            // HATA ÇÖZÜMÜ: SADECE SAN FORMATINDA HAMLE GÖNDERİLİR.
-            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, moveSan: m.san });
+            // HATA KÖKTEN ÇÖZÜMÜ: SADECE FROM VE TO GÖNDERİLİR
+            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
             lastFen = res.room.fen; 
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
@@ -627,7 +637,7 @@ async function handleSquareClick(sq) {
         return;
     }
 
-    // SADECE KENDİ TAŞINA DOKUNABİLME KONTROLÜ
+    // SIRA BİZDEYSE VE KENDİ TAŞIMIZSA SEÇİM YAP
     const pieceObj = gameLogic.get(sq);
     if (pieceObj && pieceObj.color === myColor) {
         selectedSq = sq;
