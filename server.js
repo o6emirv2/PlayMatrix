@@ -1145,4 +1145,253 @@ setInterval(async () => {
     } catch(e) { }
 }, 30 * 60 * 1000);
 
+// ======================================================
+// 8. YENİ ONLINE PİŞTİ MOTORU (2-52, 2-104, 4-104 MULTIPLAYER)
+// ======================================================
+const colOnlinePisti = () => db.collection('pisti_online_rooms');
+
+function createMultiPistiDeck(deckCount = 1) {
+    const suits = ["H", "D", "C", "S"];
+    const vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"];
+    let deck = [];
+    for(let d=0; d<deckCount; d++){ suits.forEach(s => vals.forEach(v => deck.push(v + s))); }
+    for (let i = deck.length - 1; i > 0; i--) { const j = crypto.randomInt(0, i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+    return deck;
+}
+
+app.get('/api/pisti-online/lobby', verifyAuth, async (req, res) => {
+    try {
+        const snap = await colOnlinePisti().get();
+        let rooms = [];
+        snap.forEach(doc => {
+            let d = doc.data();
+            if(d.status !== 'finished' && d.status !== 'abandoned') {
+                rooms.push({ 
+                    id: doc.id, hostUid: d.players[0].uid, host: d.players[0].username, 
+                    currentPlayers: d.players.length, maxPlayers: d.maxPlayers, mode: d.mode, bet: d.bet, status: d.status, createdAt: d.createdAt 
+                });
+            }
+        });
+        rooms.sort((a, b) => b.createdAt - a.createdAt);
+        res.json({ ok: true, rooms: rooms.slice(0, 30) });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/pisti-online/create', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const bet = safeNum(req.body.bet, 100);
+        const mode = req.body.mode || '2-52'; // '2-52', '2-104', '4-104'
+        
+        if (bet < 100) throw new Error("Minimum bahis 100 MC.");
+
+        const roomData = await db.runTransaction(async (tx) => {
+            const uSnap = await tx.get(colUsers().doc(uid));
+            if (!uSnap.exists) throw new Error("Kullanıcı bulunamadı.");
+            const u = uSnap.data();
+
+            if (safeNum(u.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
+
+            const activeRooms = await tx.get(colOnlinePisti().where('players', 'array-contains', {uid: uid}).where('status', '==', 'waiting'));
+            // Odadan çıkış mekanizması eklenebilir ama basit tutalım, aktif oyun kontrolü
+            
+            let maxP = 2, deckCount = 1;
+            if(mode === '2-104') { maxP = 2; deckCount = 2; }
+            if(mode === '4-104') { maxP = 4; deckCount = 2; }
+
+            tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
+
+            const newRoomRef = colOnlinePisti().doc();
+            const newRoom = {
+                mode: mode, maxPlayers: maxP, deckCount: deckCount, bet: bet,
+                players: [{ uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, score: 0, cardCount: 0, hand: [], lastPing: nowMs() }],
+                tableCards: [], deck: [], turn: 0, lastCapturer: null,
+                status: 'waiting', winner: null, createdAt: nowMs(), updatedAt: nowMs()
+            };
+            tx.set(newRoomRef, newRoom);
+            return { id: newRoomRef.id, ...newRoom };
+        });
+        res.json({ ok: true, room: roomData });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/pisti-online/join', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const roomId = cleanStr(req.body.roomId);
+        if(!roomId) throw new Error("Oda seçilmedi.");
+
+        const roomData = await db.runTransaction(async (tx) => {
+            const uSnap = await tx.get(colUsers().doc(uid));
+            const u = uSnap.data();
+
+            const rSnap = await tx.get(colOnlinePisti().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
+            
+            if (r.status !== 'waiting') throw new Error("Bu oda dolmuş veya maç başlamış.");
+            if (r.players.find(p => p.uid === uid)) throw new Error("Zaten bu odadasınız.");
+            if (safeNum(u.balance, 0) < r.bet) throw new Error('Bakiye yetersiz.');
+
+            tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-r.bet) });
+            
+            r.players.push({ uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, score: 0, cardCount: 0, hand: [], lastPing: nowMs() });
+            
+            if(r.players.length === r.maxPlayers) {
+                r.status = 'playing';
+                r.deck = createMultiPistiDeck(r.deckCount);
+                // İlk dağıtım: 4 yere, 4 herkese
+                r.tableCards = [r.deck.pop(), r.deck.pop(), r.deck.pop(), r.deck.pop()];
+                r.players.forEach(p => { p.hand = [r.deck.pop(), r.deck.pop(), r.deck.pop(), r.deck.pop()]; });
+            }
+            
+            r.updatedAt = nowMs();
+            tx.update(colOnlinePisti().doc(roomId), r);
+            return { id: roomId, ...r };
+        });
+        res.json({ ok: true, room: roomData });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.get('/api/pisti-online/state/:id', verifyAuth, async (req, res) => {
+    try {
+        const roomId = cleanStr(req.params.id);
+        const snap = await colOnlinePisti().doc(roomId).get();
+        if (!snap.exists) throw new Error("Oda bulunamadı.");
+        let r = snap.data();
+        
+        // Sadece kullanıcının kendi elini ve genel durumu gönder (Hile koruması)
+        let safePlayers = r.players.map(p => ({
+            uid: p.uid, username: p.username, avatar: p.avatar, score: p.score, cardCount: p.cardCount,
+            hand: p.uid === req.user.uid ? p.hand : Array(p.hand.length).fill('BACK')
+        }));
+        
+        res.json({ ok: true, room: { id: roomId, status: r.status, mode: r.mode, bet: r.bet, maxPlayers: r.maxPlayers, turn: r.turn, tableCards: r.tableCards, deckCount: r.deck.length, players: safePlayers, winner: r.winner } });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const { roomId, cardIndex } = req.body;
+
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colOnlinePisti().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
+
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            
+            const playerIdx = r.players.findIndex(p => p.uid === uid);
+            if(playerIdx === -1) throw new Error("Oyuncu değilsiniz.");
+            if(r.turn !== playerIdx) throw new Error("Sıra sizde değil.");
+            
+            let p = r.players[playerIdx];
+            if(cardIndex < 0 || cardIndex >= p.hand.length) throw new Error("Geçersiz kart.");
+
+            const playedCard = p.hand.splice(cardIndex, 1)[0];
+            const capture = checkPistiCapture(r.tableCards, playedCard);
+
+            if (capture.captured) {
+                p.score += capture.points;
+                p.cardCount += capture.collected.length;
+                r.lastCapturer = uid;
+                r.tableCards = []; 
+            } else {
+                r.tableCards.push(playedCard);
+            }
+
+            // Sırayı ilerlet
+            r.turn = (r.turn + 1) % r.players.length;
+
+            // Tur sonu kontrolü (Herkesin eli bitti mi?)
+            const allEmpty = r.players.every(pl => pl.hand.length === 0);
+            if(allEmpty) {
+                if(r.deck.length >= r.maxPlayers * 4) {
+                    r.players.forEach(pl => { pl.hand = [r.deck.pop(), r.deck.pop(), r.deck.pop(), r.deck.pop()]; });
+                } else {
+                    // OYUN BİTTİ
+                    r.status = 'finished';
+                    if(r.tableCards.length > 0 && r.lastCapturer) {
+                        const lastCapP = r.players.find(pl => pl.uid === r.lastCapturer);
+                        if(lastCapP) { lastCapP.cardCount += r.tableCards.length; lastCapP.score += calculateCardPoints(r.tableCards); }
+                    }
+                    
+                    // Kart çoğunluğu 3 puan
+                    let maxCards = 0, maxCardUid = null, tie = false;
+                    r.players.forEach(pl => {
+                        if(pl.cardCount > maxCards) { maxCards = pl.cardCount; maxCardUid = pl.uid; tie = false; }
+                        else if(pl.cardCount === maxCards) { tie = true; }
+                    });
+                    if(!tie && maxCardUid) { r.players.find(pl => pl.uid === maxCardUid).score += 3; }
+
+                    // Kazananı Belirle (En yüksek skor)
+                    let highestScore = -1, winnerUids = [];
+                    r.players.forEach(pl => {
+                        if(pl.score > highestScore) { highestScore = pl.score; winnerUids = [pl.uid]; }
+                        else if(pl.score === highestScore) { winnerUids.push(pl.uid); }
+                    });
+
+                    r.winner = winnerUids;
+                    
+                    // Ödül Dağıtımı (Toplam Havuz = bet * maxPlayers)
+                    const totalPool = r.bet * r.maxPlayers;
+                    const winShare = Math.floor(totalPool / winnerUids.length);
+                    for(let wUid of winnerUids) {
+                        tx.update(colUsers().doc(wUid), { balance: admin.firestore.FieldValue.increment(winShare) });
+                    }
+                }
+            }
+
+            r.updatedAt = nowMs();
+            tx.update(colOnlinePisti().doc(roomId), r);
+            return { room: r };
+        });
+
+        if (result.room.status === 'finished') {
+            setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 10000);
+        }
+
+        res.json({ ok: true });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
+app.post('/api/pisti-online/ping', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const roomId = cleanStr(req.body.roomId);
+        if (!roomId) throw new Error("Oda ID yok");
+
+        const result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(colOnlinePisti().doc(roomId));
+            if (!snap.exists) throw new Error("Oda Yok");
+            let r = snap.data();
+
+            if (r.status === 'finished' || r.status === 'abandoned') return { status: r.status };
+
+            const pIdx = r.players.findIndex(p => p.uid === uid);
+            if (pIdx !== -1) r.players[pIdx].lastPing = nowMs();
+
+            if (r.status === 'playing') {
+                const now = nowMs();
+                let dropped = false;
+                r.players.forEach(p => { if (now - (p.lastPing || 0) > 30000) dropped = true; });
+
+                if (dropped) {
+                    r.status = 'abandoned';
+                    r.updatedAt = now;
+                    tx.update(colOnlinePisti().doc(roomId), r);
+                    setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 5000);
+                    return { status: 'abandoned', message: "Bir oyuncu bağlantıdan koptu. Oyun İptal Edildi." };
+                }
+            }
+
+            tx.update(colOnlinePisti().doc(roomId), r);
+            return { status: r.status };
+        });
+
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
+
 app.listen(PORT, () => console.log(`🚀 PlayMatrix Core Backend Started. Port: ${PORT}`));
