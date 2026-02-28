@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-<title>PlayMatrix - BlackJack - Casino</title>
+<title>PlayMatrix VIP BlackJack | Profesyonel Casino Deneyimi</title>
 <meta name="description" content="PlayMatrix VIP BlackJack ile gerçek casino ortamını yaşayın. %100 güvenli, donmasız, sunucu tabanlı profesyonel 21 oyunu. Hemen masaya oturun!">
 <meta name="keywords" content="blackjack, blackjack oyna, 21 oyunu, casino, playmatrix, vip casino, güvenli bahis, canlı blackjack, kart oyunu">
 <meta name="author" content="PlayMatrix Global">
@@ -31,11 +31,11 @@
         width: 100vw; height: 100vh; overflow: hidden; 
         overscroll-behavior: none; touch-action: manipulation; /* ÇİFT TIK ZOOM ENGELİ */
         font-family: 'Inter', -apple-system, sans-serif;
-        background: radial-gradient(circle at 50% 50%, #0c582c 0%, #053317 60%, #021a0a 100%);
+        background: radial-gradient(circle at 50% 10%, #0d381e 0%, #061c0e 60%, #030d06 100%);
         color: white;
     }
     
-    /* PROFESYONEL İNTRO (AÇILIŞ EKRANI) */
+    /* PROFESYONEL İNTRO (CRASH TARZI AÇILIŞ EKRANI) */
     #studioIntro {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070b10;
         z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -53,107 +53,134 @@
 
     @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-    /* ÜST BAR (TAŞMA KORUMALI & PROFESYONEL) */
+    /* ÜST BAR (TAŞMA KORUMALI & CRASH STİLİ GLASSMORPHISM) */
     .top-bar { 
         position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
         display: flex; align-items: center; justify-content: space-between; padding: 0 15px; 
-        background: linear-gradient(to bottom, #1a1a1a 0%, #0a0a0a 100%); 
-        border-bottom: 2px solid #d4af37; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.9); 
+        background: rgba(18, 26, 36, 0.95); backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.05); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); 
     }
     .tb-left { display: flex; align-items: center; gap: 15px; }
-    .tb-logo { font-family: 'Times New Roman', Times, serif; font-size: 18px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.8);}
+    .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;}
     .tb-logo span { color: #d4af37; }
     
-    .tb-right { display: flex; align-items: center; gap: 10px; }
+    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; overflow: hidden; }
     
-    /* BAKİYE TAŞMA ENGELİ (ELLIPSIS) */
-    .balance-box { display: flex; align-items: center; background: linear-gradient(145deg, #2a2a2a, #111); padding: 6px 12px; border-radius: 15px; border: 1px solid rgba(212,175,55,0.4); max-width: 140px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);}
-    .balance-box b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px; display: inline-block; vertical-align: middle; }
+    /* BAKİYE VE BAHİS TAŞMA ENGELİ (ELLIPSIS) */
+    .balance-box { display: flex; align-items: center; background: #0b1118; padding: 6px 10px; border-radius: 8px; border: 1px solid #1f2c3b; max-width: 130px; }
+    .balance-box b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; display: inline-block; vertical-align: middle; }
     
-    .bet-box { display: flex; align-items: center; background: linear-gradient(145deg, #332800, #1a1400); padding: 6px 12px; border-radius: 15px; border: 1px solid #d4af37; max-width: 120px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);}
-    .bet-box b { font-size: 13px; color: #f1c40f; font-family: 'Inter', monospace; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; display: inline-block; vertical-align: middle;}
+    .bet-box { display: flex; align-items: center; background: linear-gradient(145deg, #332800, #1a1400); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.5); max-width: 110px;}
+    .bet-box b { font-size: 13px; color: #f1c40f; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60px; display: inline-block; vertical-align: middle;}
     
-    .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 6px; border-radius: 50%; margin-left: 6px; box-shadow: 0 0 8px rgba(79, 209, 255, 0.4); border: 1px solid rgba(255,255,255,0.4); }
+    .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 6px; box-shadow: 0 0 10px rgba(79, 209, 255, 0.4); }
 
     .action-icon-btn { 
-        background: transparent; color: #d4af37; border: 1px solid #d4af37; width: 32px; height: 32px; 
+        background: #1f2c3b; color: #d4af37; border: none; width: 34px; height: 34px; flex-shrink: 0;
         border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
         display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
     }
-    .action-icon-btn:active { transform: scale(0.9); background: #d4af37; color: #000; }
-    .action-icon-btn.red { border-color: #ff4b4b; color: #ff4b4b; }
-    .action-icon-btn.red:active { background: #ff4b4b; color: #fff; }
+    .action-icon-btn:active { transform: scale(0.9); background: #2a3a4d; color: #f1c40f; }
+    .action-icon-btn.red { color: #ff4b4b; }
+    .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
-    /* GERÇEKÇİ OVAL MASA ÇİZGİSİ VE OYUN ALANI */
+    /* VIP MASA VE KART DAĞITICI (SHOE) */
     .game-container { 
         position: absolute; top: 65px; bottom: 0; width: 100vw;
         display: flex; flex-direction: column; justify-content: space-between; 
-        padding: 20px 0 20px 0; perspective: 1200px; 
-        overflow-y: auto; overflow-x: hidden;
+        padding: 10px 0 20px 0; perspective: 1200px; 
+        overflow-y: auto; overflow-x: hidden; touch-action: pan-y;
         z-index: 1;
     }
     
-    .table-border {
-        position: absolute; top: 20px; left: -10vw; right: -10vw; bottom: 80px;
-        border: 5px solid rgba(212,175,55,0.25); border-radius: 50% / 100px 100px 0 0;
-        pointer-events: none; z-index: 0; box-shadow: inset 0 20px 50px rgba(0,0,0,0.5);
+    /* Yarı saydam lüks masa çizgisi */
+    .table-line {
+        position: absolute; top: 20%; left: -10vw; right: -10vw; height: 60%;
+        border-top: 3px solid rgba(212,175,55,0.15); border-radius: 50%;
+        pointer-events: none; z-index: 0;
     }
 
-    /* 3D KART DESTESİ (SHOE) */
-    .card-shoe-container { position: absolute; top: 30px; right: 20px; z-index: 50; display: flex; flex-direction: column; align-items: center; }
+    /* KART KUTUSU (SHOE) SAĞ ÜSTTE */
+    .card-shoe-container { 
+        position: absolute; top: 20px; right: 20px; z-index: 50; 
+        display: flex; flex-direction: column; align-items: center; 
+        background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+    }
     .card-shoe {
-        width: 65px; height: 95px; background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
-        border-radius: 5px; box-shadow: -1px 1px 0 #fff, -2px 2px 0 #999, -3px 3px 0 #fff, -4px 4px 0 #999, -5px 5px 0 #fff, -6px 6px 0 #999, -10px 10px 20px rgba(0,0,0,0.8);
-        transform: rotate(15deg);
+        width: 45px; height: 65px; background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
+        border-radius: 4px; box-shadow: -1px 1px 0 #ddd, -2px 2px 0 #999, -3px 3px 0 #ddd, -4px 4px 0 #999, -8px 8px 15px rgba(0,0,0,0.8);
+        transform: rotate(-10deg);
     }
-    .shoe-label { color: #d4af37; font-size: 10px; font-weight: bold; margin-top: 15px; text-shadow: 0 1px 2px #000; letter-spacing: 2px; }
 
-    .area { width: 100%; text-align: center; margin-top: 10px; position: relative; z-index: 2; }
-    .dealer-title { font-size: 14px; letter-spacing: 4px; font-weight: 900; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Times New Roman', Times, serif; }
-    .score-badge { background: linear-gradient(to bottom, rgba(30,30,30,0.9), rgba(10,10,10,0.9)); color: #ffd700; padding: 4px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid #d4af37; display: inline-block; margin-bottom: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.7); font-family: 'Inter'; }
+    .area { width: 100%; text-align: center; margin-top: 20px; position: relative; z-index: 2; }
+    .dealer-title { font-size: 12px; letter-spacing: 5px; font-weight: 900; color: #d4af37; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.9); font-family: 'Orbitron', sans-serif; opacity: 0.8;}
+    .score-badge { background: rgba(0,0,0,0.7); color: #fff; padding: 4px 15px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid rgba(212,175,55,0.5); display: inline-block; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-family: 'Inter'; backdrop-filter: blur(5px);}
     
-    /* GERÇEK KART TASARIMLARI VE ANİMASYONLARI */
-    .cards-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 0; margin-left: -15px; min-height: 120px; padding: 0 10px; }
-    .card-3d { width: 75px; height: 110px; position: relative; margin-left: -35px; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out; }
+    /* GERÇEK KART TASARIMLARI VE 3D UÇUŞ ANİMASYONLARI */
+    .cards-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 0; margin-left: -15px; min-height: 120px; padding: 0 10px; perspective: 1000px; }
+    
+    .card-3d { 
+        width: 75px; height: 110px; position: relative; margin-left: -40px; 
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
+        transform-style: preserve-3d;
+    }
     .card-3d:first-child { margin-left: 0; }
-    .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -6px 6px 15px rgba(0,0,0,0.8); object-fit: cover; }
+    .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -4px 4px 10px rgba(0,0,0,0.6); object-fit: cover; backface-visibility: hidden;}
 
-    .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; margin-top: 20px; position: relative; z-index: 2;}
+    .hands-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; width: 100%; transition: 0.3s; margin-top: 10px; position: relative; z-index: 2;}
     .hand-box { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 10px; border: 2px solid transparent;}
-    .hand-box.active { border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); }
+    .hand-box.active { border: 2px solid #d4af37; background: radial-gradient(circle, rgba(212,175,55,0.15), transparent); box-shadow: 0 0 20px rgba(212,175,55,0.2); }
 
     /* AKSİYON ALANI (BUTONLAR VE ZAMANLAYICI) */
-    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85px; z-index: 10; margin-top: 10px;}
+    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90px; z-index: 10; margin-top: 5px;}
     
     #ui-timer { display: none; color: #ff4b4b; font-size: 16px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 2px 5px #000; letter-spacing: 1px; font-family: 'Orbitron'; }
     #ui-timer.warning { color: #ff0000; animation: blink 1s infinite; }
     @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.1); } }
 
-    #ui-message { font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8), transparent); padding: 5px 30px; border-radius: 5px; letter-spacing: 1px; transition: 0.3s; }
+    #ui-message { font-size: 13px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: rgba(0,0,0,0.6); padding: 6px 20px; border-radius: 8px; letter-spacing: 1px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1);}
     
-    .controls { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
-    .btn { padding: 12px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 900; font-size: 14px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: transform 0.1s; touch-action: manipulation; font-family: 'Inter'; letter-spacing: 1px;}
+    .controls { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
+    .btn { flex: 1; min-width: 80px; padding: 14px 10px; border-radius: 8px; border: none; font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 0 rgba(0,0,0,0.5); transition: transform 0.1s, box-shadow 0.1s; touch-action: manipulation; font-family: 'Inter'; letter-spacing: 1px;}
     
-    #dealBtn { background: linear-gradient(to bottom, #d4af37, #997a00); color: #000; width: 100%; max-width: 250px; display: none; font-size: 16px; padding: 15px; border-color: #f1c40f;}
-    #hitBtn { background: linear-gradient(to bottom, #2ecc71, #229954); }
-    #standBtn { background: linear-gradient(to bottom, #e74c3c, #c0392b); }
-    #doubleBtn { background: linear-gradient(to bottom, #f1c40f, #d4ac0d); color: #000; }
-    #splitBtn { background: linear-gradient(to bottom, #9b59b6, #8e44ad); }
+    #dealBtn { background: linear-gradient(180deg, #d4af37, #997a00); color: #000; box-shadow: 0 5px 0 #665200; width: 100%; max-width: 250px; display: none; font-size: 16px; padding: 15px; flex: none;}
+    #hitBtn { background: linear-gradient(180deg, #2ecc71, #229954); box-shadow: 0 5px 0 #145a32; }
+    #standBtn { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 5px 0 #78231c; }
+    #doubleBtn { background: linear-gradient(180deg, #f1c40f, #d4ac0d); color: #000; box-shadow: 0 5px 0 #947809; }
+    #splitBtn { background: linear-gradient(180deg, #9b59b6, #8e44ad); box-shadow: 0 5px 0 #5b2c6f; }
     
-    .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 5px rgba(0,0,0,0.6); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none !important;}
+    .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.5) !important;}
     
-    /* PROFESYONEL ÇİPLER */
-    .chips-area { display: flex; justify-content: center; gap: 8px; padding-bottom: 20px; align-items: center; flex-wrap: wrap; position: relative; z-index: 10;}
-    .chip { width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; cursor: pointer; border: 4px dashed rgba(255,255,255,0.8); box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 8px 15px rgba(0,0,0,0.6); transition: transform 0.1s; touch-action: manipulation; font-family: 'Inter'; text-shadow: 1px 1px 2px #000; }
-    .chip:active { transform: scale(0.9) translateY(4px); box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.6); }
+    /* YAN YANA BOZULMAYAN PROFESYONEL ÇİPLER */
+    .chips-wrapper { width: 100%; display: flex; justify-content: center; padding-bottom: 20px; z-index: 10; }
+    .chips-area { 
+        display: flex; justify-content: center; align-items: center; gap: 8px; 
+        background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 30px; 
+        border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px);
+        flex-wrap: nowrap; overflow-x: auto; max-width: 95%; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .chips-area::-webkit-scrollbar { display: none; }
+    
+    .chip { 
+        width: 13vw; max-width: 50px; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        font-weight: 900; font-size: 12px; cursor: pointer; border: 3px dashed rgba(255,255,255,0.7); 
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5); transition: transform 0.1s; 
+        touch-action: manipulation; font-family: 'Inter'; text-shadow: 1px 1px 2px #000; flex-shrink: 0;
+    }
+    .chip:active { transform: scale(0.9) translateY(4px); box-shadow: inset 0 0 5px rgba(0,0,0,0.8), 0 2px 3px rgba(0,0,0,0.5); }
     .c1k { background: radial-gradient(circle, #a0a0a0 30%, #555 90%); color: #fff;}
     .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; }
     .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; }
     .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; }
     .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; }
-    .c50k { background: radial-gradient(circle, #333 30%, #000 90%); color: #d4af37; border-color: #d4af37;}
-    .cancel-btn { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(to bottom, #555, #222); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; cursor: pointer; border: 2px solid #888; touch-action: manipulation; }
+    .c50k { background: radial-gradient(circle, #222 30%, #000 90%); color: #d4af37; border-color: #d4af37;}
+    .cancel-btn { 
+        width: 13vw; max-width: 50px; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(to bottom, #444, #111); 
+        color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; 
+        cursor: pointer; border: 2px solid #666; touch-action: manipulation; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    }
+    .cancel-btn:active { transform: scale(0.9); }
 
     /* ÖZEL ANİMASYONLU MODAL (POPUP) SİSTEMİ %100 TEMA UYUMLU */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
@@ -168,18 +195,17 @@
     
     .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
     .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing: 0.5px; }
-    .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; }
+    .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);}
     .modal-card p b { color: #d4af37; }
     .modal-close { background: linear-gradient(135deg, #f1c40f, #d4ac0d); color: #000; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(212,175,55,0.3); text-transform: uppercase;}
     .modal-close:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(212,175,55,0.5); }
     .modal-close:active { transform: translateY(2px); box-shadow: none; }
     
-    @media (max-width: 400px) { 
-        .chip { width: 45px; height: 45px; font-size: 11px; }
-        .cancel-btn { width: 40px; height: 40px; }
-        .card-3d { width: 65px; height: 95px; margin-left: -30px;}
+    @media (max-width: 380px) { 
+        .card-3d { width: 65px; height: 95px; margin-left: -35px;}
         .tb-logo { font-size: 14px; }
-        .balance-box b, .bet-box b { max-width: 60px; font-size: 11px; }
+        .balance-box b, .bet-box b { max-width: 55px; font-size: 11px; }
+        .btn { font-size: 11px; padding: 12px 5px; }
     }
 </style>
 </head>
@@ -191,7 +217,7 @@
         <h1>VIP<br><span>BLACKJACK</span></h1>
     </div>
     <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
-    <button id="btnEnterGame" class="btn-intro-start">BJ OYNA</button>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
 </div>
 
 <div id="matrixModal" class="modal-overlay">
@@ -220,7 +246,7 @@
 </header>
 
 <main class="game-container">
-    <div class="table-border"></div>
+    <div class="table-line"></div>
     
     <div class="card-shoe-container" id="shoeTarget">
         <div class="card-shoe"></div>
@@ -246,21 +272,23 @@
             <button id="splitBtn" class="btn">BÖL</button>
         </div>
         <div class="controls" id="controls-ins">
-            <button id="insYesBtn" class="btn" style="background: linear-gradient(to bottom, #2ecc71, #229954);">SİGORTA AL</button>
-            <button id="insNoBtn" class="btn" style="background: linear-gradient(to bottom, #e74c3c, #c0392b);">GEÇ</button>
+            <button id="insYesBtn" class="btn" style="background: linear-gradient(180deg, #2ecc71, #145a32);">SİGORTA AL</button>
+            <button id="insNoBtn" class="btn" style="background: linear-gradient(180deg, #e74c3c, #78231c);">GEÇ</button>
         </div>
     </div>
     
     <div class="hands-container" id="ui-playerHands"></div>
     
-    <div class="chips-area" id="ui-chipsArea">
-        <div class="cancel-btn" id="cancelBetBtn">SİL</div>
-        <div class="chip c1k" data-val="1000">1K</div>
-        <div class="chip c3k" data-val="3000">3K</div>
-        <div class="chip c5k" data-val="5000">5K</div>
-        <div class="chip c15k" data-val="15000">15K</div>
-        <div class="chip c20k" data-val="20000">20K</div>
-        <div class="chip c50k" data-val="50000">50K</div>
+    <div class="chips-wrapper" id="ui-chipsArea">
+        <div class="chips-area">
+            <div class="cancel-btn" id="cancelBetBtn">SİL</div>
+            <div class="chip c1k" data-val="1000">1K</div>
+            <div class="chip c3k" data-val="3000">3K</div>
+            <div class="chip c5k" data-val="5000">5K</div>
+            <div class="chip c15k" data-val="15000">15K</div>
+            <div class="chip c20k" data-val="20000">20K</div>
+            <div class="chip c50k" data-val="50000">50K</div>
+        </div>
     </div>
 </main>
 
@@ -315,21 +343,21 @@ window.closeMatrixModal = () => {
 window.showHowToPlay = () => {
     showMatrixModal(
         "Nasıl Oynanır?", 
-        "1. Ekrandaki çiplere tıklayarak bahsini belirle.\n2. <b>DAĞIT</b> butonuna basarak oyunu başlat.\n3. Karar vermek için <b>10 Saniyen</b> var. Süre biterse otomatik 'KAL'ırsın.\n4. Amacın 21'i geçmeden Kurupiyerden yüksek puan toplamaktır.\n5. Kurupiyer 17'ye ulaşana kadar kart çeker.", 
+        "🔹 Ekrandaki çiplere tıklayarak bahsini belirle.\n🔹 <b>DAĞIT</b> butonuna basarak oyunu başlat.\n🔹 Karar vermek için <b>10 Saniyen</b> var. Süre biterse otomatik 'KAL'ırsın.\n🔹 Amacın 21'i geçmeden Kurupiyerden yüksek puan toplamaktır.\n🔹 Kurupiyer 17'ye ulaşana kadar kart çeker.", 
         "info"
     );
 };
 
-// --- PROFESYONEL SES MOTORU (iOS İÇİN ÖZEL KİLİT AÇICI SİSTEM) ---
+// --- PROFESYONEL SES MOTORU (VIP CASINO SESLERİ & iOS KİLİT AÇICI) ---
 let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
 const sfxUrls = {
-    chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', 
-    deal: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Tok kart sesi
-    bust: 'https://freesound.org/data/previews/170/170144_2437358-lq.mp3', // Patlama sesi (Kaybetti)
+    chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Çip
+    deal: 'https://freesound.org/data/previews/434/434472_5121236-lq.mp3', // Profesyonel Kart Dağıtma/Sürtme
+    bust: 'https://freesound.org/data/previews/173/173859_2370154-lq.mp3', // Patlama (Soft bass)
     win:  'https://freesound.org/data/previews/270/270319_5123851-lq.mp3', // Kazanç
-    push: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3', // İade
+    push: 'https://freesound.org/data/previews/122/122255_1074082-lq.mp3', // İade (Soft bell)
     tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3'  // Sayaç
 };
 
@@ -338,6 +366,7 @@ function initAndUnlockAudio() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
+        // Sessiz buffer ile iOS kilidini aç
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
@@ -364,7 +393,7 @@ function playSfx(name) {
         const src = audioCtx.createBufferSource();
         src.buffer = sounds[name];
         const gainNode = audioCtx.createGain();
-        gainNode.gain.value = (name === 'tick') ? 0.3 : 0.8; 
+        gainNode.gain.value = (name === 'tick' || name === 'chip') ? 0.3 : 0.8; 
         src.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         src.start(0);
@@ -516,7 +545,9 @@ function handleStateSync(state) {
             if (!document.getElementById(cardId)) {
                 let div = document.createElement("div"); div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", card.value);
                 div.innerHTML = `<img src="${getCardImage(card)}" class="real-card">`;
-                div.style.opacity = "0"; div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
+                
+                // VIP Uçuş Animasyonu Başlangıç Noktası (Sağ Üst - Deste)
+                div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
                 cWrap.appendChild(div); queue.push({ el: div, id: cardId, isFlip: false });
             }
         });
@@ -530,7 +561,9 @@ function handleStateSync(state) {
         if (!div) {
             div = document.createElement("div"); div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", isHidden ? 0 : card.value);
             div.innerHTML = `<img src="${isHidden ? 'https://deckofcardsapi.com/static/img/back.png' : getCardImage(card)}" class="real-card">`;
-            div.style.opacity = "0"; div.style.transform = `translate(${window.innerWidth}px, -${window.innerHeight/2}px) rotate(75deg)`;
+            
+            // VIP Uçuş Animasyonu Başlangıç Noktası
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
             dArea.appendChild(div); queue.push({ el: div, id: cardId, isFlip: false });
         } else if (!isHidden && div.getAttribute("data-val") === "0") {
             div.setAttribute("data-val", card.value);
@@ -584,7 +617,7 @@ function processRevealQueue(queue, finalState) {
                 showMatrixModal("💥 KAYBETTİNİZ", finalState.message, "error");
             }
 
-            setTimeout(() => { if(oldSeq === finalState.seq) clearBoard(); }, 5000);
+            setTimeout(() => { if(oldSeq === finalState.seq) clearBoard(); }, 4000);
         } else {
             let totalTableBet = finalState.hands.reduce((sum, h) => sum + (h.bet || 0), 0);
             document.getElementById("ui-message").innerText = finalState.message || "SIRA SİZDE";
@@ -604,9 +637,11 @@ function processRevealQueue(queue, finalState) {
         item.el.style.transform = "rotateY(90deg) scale(1.1)";
         setTimeout(() => { item.el.innerHTML = `<img src="${item.img}" class="real-card">`; item.el.style.transform = "rotateY(0deg) scale(1)"; refreshScores(); }, 200);
     } else { 
-        item.el.style.opacity = "1"; item.el.style.transform = "translate(0, 0) rotate(0deg)"; refreshScores();
+        // Desteden uçarak gelme animasyonu
+        item.el.offsetHeight; // Reflow
+        item.el.style.opacity = "1"; item.el.style.transform = "translate(0, 0) rotate(0deg) scale(1)"; refreshScores();
     }
-    setTimeout(() => processRevealQueue(queue, finalState), 600); 
+    setTimeout(() => processRevealQueue(queue, finalState), 400); 
 }
 
 // ETKİLEŞİMLER
