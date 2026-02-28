@@ -505,61 +505,9 @@ app.post('/api/crash/cashout', verifyAuth, async (req, res) => {
     } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
-// ======================================================
-// 4. CYBER MOTORU
-// ======================================================
-
-const colCyber = () => db.collection('cyber_sessions');
-
-function generateCyberGrid(level) {
-    let gridSize = 3 + Math.floor((level - 1) / 5); if (gridSize > 10) gridSize = 10;
-    let tiles = [];
-    for (let i = 0; i < gridSize * gridSize; i++) {
-        const type = crypto.randomInt(0, 2); const scrambleTurns = crypto.randomInt(1, 4); 
-        tiles.push({ type, rotation: scrambleTurns * 90 });
-    }
-    return { gridSize, tiles };
-}
-
-app.get('/api/cyber/state', verifyAuth, async (req, res) => {
-    try {
-        const uid = req.user.uid; let snap = await colCyber().doc(uid).get(); let sessionData;
-        if (!snap.exists) {
-            const initialGrid = generateCyberGrid(1);
-            sessionData = { level: 1, bestLevel: 1, grid: initialGrid.tiles, gridSize: initialGrid.gridSize, updatedAt: nowMs() };
-            await colCyber().doc(uid).set(sessionData);
-        } else { sessionData = snap.data(); }
-        res.json({ ok: true, state: sessionData });
-    } catch (e) { res.json({ ok: false, error: e.message }); }
-});
-
-app.post('/api/cyber/verify', verifyAuth, async (req, res) => {
-    try {
-        const uid = req.user.uid; const clientRotations = req.body.rotations; 
-        if (!Array.isArray(clientRotations)) throw new Error('Geçersiz veri.');
-        const result = await db.runTransaction(async (tx) => {
-            const snap = await tx.get(colCyber().doc(uid));
-            if (!snap.exists) throw new Error('Oyun oturumu bulunamadı.');
-            const s = snap.data();
-            if (clientRotations.length !== s.grid.length) throw new Error('Harita boyutu uyuşmuyor.');
-            let isWin = true;
-            for (let i = 0; i < s.grid.length; i++) {
-                const rot = ((clientRotations[i] % 360) + 360) % 360; 
-                if (s.grid[i].type === 0) { if (rot !== 0 && rot !== 180) isWin = false; } 
-                else { if (rot !== 0) isWin = false; }
-            }
-            if (!isWin) throw new Error('Bulmaca henüz tamamlanmamış.');
-            const newLevel = s.level + 1; const newBest = Math.max(s.bestLevel, newLevel); const newGrid = generateCyberGrid(newLevel);
-            const updatedData = { level: newLevel, bestLevel: newBest, gridSize: newGrid.gridSize, grid: newGrid.tiles, updatedAt: nowMs() };
-            tx.update(colCyber().doc(uid), updatedData);
-            return updatedData;
-        });
-        res.json({ ok: true, state: result });
-    } catch (e) { res.json({ ok: false, error: e.message }); }
-});
 
 // ======================================================
-// 5. MINES MOTORU
+// 4. MINES MOTORU
 // ======================================================
 
 const colMines = () => db.collection('mines_sessions');
@@ -649,7 +597,7 @@ app.post('/api/mines/action', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 6. PİŞTİ MOTORU (TAMAMEN SIFIRDAN YAZILDI VE HATALAR GİDERİLDİ)
+// 5. PİŞTİ MOTORU 
 // ======================================================
 
 const colPisti = () => db.collection('pisti_sessions');
