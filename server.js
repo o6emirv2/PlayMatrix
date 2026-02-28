@@ -924,9 +924,8 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 7. ONLINE SATRANÇ MOTORU (GÜNCELLENDİ VS KARTLARI VE KUSURSUZ MOTOR)
+// 7. ONLINE SATRANÇ MOTORU (YENİ PING SİSTEMİ EKLENDİ)
 // ======================================================
-
 const colChess = () => db.collection('chess_rooms');
 
 app.get('/api/chess/lobby', verifyAuth, async (req, res) => {
@@ -941,7 +940,6 @@ app.get('/api/chess/lobby', verifyAuth, async (req, res) => {
         });
         snapPlay.forEach(doc => {
             let d = doc.data();
-            // VS Kartları için hem host hem de guest bilgisi gönderiliyor
             rooms.push({ id: doc.id, hostUid: d.host.uid, host: d.host.username, guest: d.guest ? d.guest.username : 'Bilinmeyen', status: d.status, createdAt: d.createdAt });
         });
 
@@ -963,7 +961,7 @@ app.post('/api/chess/create', verifyAuth, async (req, res) => {
 
             const newRoomRef = colChess().doc();
             const newRoom = {
-                host: { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null },
+                host: { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, lastPing: nowMs() },
                 guest: null,
                 status: 'waiting', 
                 fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
@@ -996,7 +994,7 @@ app.post('/api/chess/join', verifyAuth, async (req, res) => {
                 if (r.status !== 'waiting') throw new Error("Bu oda artık müsait değil.");
                 if (r.host.uid === uid) throw new Error("Kendi odanıza katılamazsınız.");
                 
-                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null };
+                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, lastPing: nowMs() };
                 r.status = 'playing';
                 r.updatedAt = nowMs();
                 tx.update(colChess().doc(roomId), r);
@@ -1011,7 +1009,7 @@ app.post('/api/chess/join', verifyAuth, async (req, res) => {
                 if (!docToJoin) throw new Error("Şu an sadece kendi kurduğunuz oda var. Başka bir oyuncunun gelmesini bekleyin.");
 
                 let r = docToJoin.data();
-                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null };
+                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, lastPing: nowMs() };
                 r.status = 'playing';
                 r.updatedAt = nowMs();
                 tx.update(docToJoin.ref, r);
@@ -1022,19 +1020,57 @@ app.post('/api/chess/join', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.get('/api/chess/state/:id', verifyAuth, async (req, res) => {
+// PING (HEARTBEAT) SİSTEMİ - Oyuncuların odada kalıp kalmadığını denetler
+app.post('/api/chess/ping', verifyAuth, async (req, res) => {
     try {
-        const roomId = cleanStr(req.params.id);
-        const snap = await colChess().doc(roomId).get();
-        if (!snap.exists) throw new Error("Oda bulunamadı.");
-        res.json({ ok: true, room: { id: roomId, ...snap.data() } });
+        const uid = req.user.uid;
+        const roomId = cleanStr(req.body.roomId);
+        if (!roomId) throw new Error("Room ID yok");
+
+        const result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(colChess().doc(roomId));
+            if (!snap.exists) throw new Error("Oda Yok");
+            let r = snap.data();
+
+            // Eğer oyun bitmişse veya iptal edildiyse hiçbir işlem yapma
+            if (r.status === 'finished' || r.status === 'abandoned') {
+                return { status: r.status, message: "Oyun zaten bitti veya iptal oldu." };
+            }
+
+            const isHost = r.host && r.host.uid === uid;
+            const isGuest = r.guest && r.guest.uid === uid;
+
+            if (isHost) r.host.lastPing = nowMs();
+            if (isGuest) r.guest.lastPing = nowMs();
+
+            // ÇIKMA KONTROLÜ (Eğer oynanıyorsa ve oyunculardan birinden 10 saniyedir haber yoksa)
+            if (r.status === 'playing') {
+                const hostDrop = nowMs() - (r.host.lastPing || 0) > 10000;
+                const guestDrop = nowMs() - (r.guest.lastPing || 0) > 10000;
+
+                if (hostDrop || guestDrop) {
+                    r.status = 'abandoned';
+                    r.winner = 'none'; // Kimse kazanmaz/kaybetmez
+                    r.updatedAt = nowMs();
+                    tx.update(colChess().doc(roomId), r);
+                    setTimeout(() => colChess().doc(roomId).delete().catch(()=>null), 5000);
+                    return { status: 'abandoned', message: "Rakibiniz odadan ayrıldığı için maç iptal edildi." };
+                }
+            }
+
+            tx.update(colChess().doc(roomId), r);
+            return { id: roomId, ...r };
+        });
+
+        res.json({ ok: true, room: result });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
-        const { roomId, from, to, promotion } = req.body;
+        // İstemciden gelen SAN (Kısa Hamle Notasyonu - e4, Nf3, O-O vb.) alınır.
+        const { roomId, moveSan } = req.body;
 
         const result = await db.runTransaction(async (tx) => {
             const rSnap = await tx.get(colChess().doc(roomId));
@@ -1050,9 +1086,9 @@ app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
             if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
 
             const chess = new Chess(r.fen);
-            // Hata fırlatan Move kontrolü (Sürükleme vb mantık hatalarını %100 çözer)
-            const move = chess.move({ from, to, promotion: promotion || 'q' });
-            if (!move) throw new Error("Geçersiz hamle! Kural hatası.");
+            // Sürükleme hatası burada giderildi. Sunucu sadece 'san' ile hamle kabul edecek.
+            const move = chess.move(moveSan);
+            if (move === null) throw new Error("Geçersiz hamle! Kural hatası veya hile girişimi.");
 
             r.fen = chess.fen();
             r.turn = chess.turn(); 
@@ -1077,7 +1113,6 @@ app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
             return { room: { id: roomId, ...r }, moveStr: move.san, winAmount, gameOverMessage };
         });
         
-        // Çöp Toplayıcıyı Buraya Ekle (Oyun bitince 5 saniye sonra odayı siler)
         if (result.room.status === 'finished') {
             setTimeout(() => colChess().doc(roomId).delete().catch(()=>null), 5000);
         }
@@ -1113,6 +1148,7 @@ app.post('/api/chess/resign', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ZATEN BEKLEYEN ODALAR İÇİN GENEL TEMİZLİK (30 DK)
 setInterval(async () => {
     try {
         const now = Date.now();
