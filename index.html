@@ -746,7 +746,7 @@ onAuthStateChanged(auth, async user => {
     const authBadges = document.querySelectorAll(".auth-badge");
     if(user) {
         document.getElementById("loginBtn").style.display="none"; document.getElementById("regBtn").style.display="none"; document.getElementById("userPill").style.display="flex";
-        authBadges.forEach(badge => { badge.innerText = "ARENAYA GİR"; badge.className = "badge auth-badge badge-success"; });
+        authBadges.forEach(badge => { badge.innerText = "OYUNU OYNA"; badge.className = "badge auth-badge badge-success"; });
         await loadUserData(); 
     } else {
         document.getElementById("loginBtn").style.display="block"; document.getElementById("regBtn").style.display="block"; document.getElementById("userPill").style.display="none";
