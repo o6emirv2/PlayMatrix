@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
-<title>PlayMatrix - VIP BlackJack</title>
+<title>PlayMatrix VIP BlackJack | Profesyonel Casino Deneyimi</title>
 <meta name="description" content="PlayMatrix VIP BlackJack ile gerçek casino ortamını yaşayın. %100 güvenli, donmasız, sunucu tabanlı profesyonel 21 oyunu. Hemen masaya oturun!">
 <meta name="keywords" content="blackjack, blackjack oyna, 21 oyunu, casino, playmatrix, vip casino, güvenli bahis, canlı blackjack, kart oyunu">
 <meta name="author" content="PlayMatrix Global">
@@ -31,7 +31,11 @@
         width: 100vw; height: 100vh; overflow: hidden; 
         overscroll-behavior: none; touch-action: manipulation; /* ÇİFT TIK ZOOM ENGELİ */
         font-family: 'Inter', -apple-system, sans-serif;
-        background: radial-gradient(circle at 50% 10%, #0d381e 0%, #061c0e 60%, #030d06 100%);
+        background-color: #062312;
+        /* PROFESYONEL SPOT IŞIKLI VIP ÇUHA ARKA PLANI */
+        background-image: 
+            radial-gradient(circle at 50% -20%, #0f5228 0%, transparent 65%),
+            radial-gradient(circle at 50% 100%, #020c06 0%, transparent 80%);
         color: white;
     }
     
@@ -93,11 +97,11 @@
         z-index: 1;
     }
     
-    /* Yarı saydam lüks masa çizgisi */
+    /* PROFESYONEL DERİN GÖLGELİ MASA ÇİZGİSİ */
     .table-line {
-        position: absolute; top: 20%; left: -10vw; right: -10vw; height: 60%;
-        border-top: 3px solid rgba(212,175,55,0.15); border-radius: 50%;
-        pointer-events: none; z-index: 0;
+        position: absolute; top: 15%; left: -20vw; right: -20vw; height: 70%;
+        border-top: 4px solid rgba(212,175,55,0.25); border-radius: 50%;
+        pointer-events: none; z-index: 0; box-shadow: inset 0 40px 60px rgba(0,0,0,0.3);
     }
 
     /* KART KUTUSU (SHOE) SAĞ ÜSTTE */
@@ -141,7 +145,7 @@
     #ui-message { font-size: 13px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: rgba(0,0,0,0.6); padding: 6px 20px; border-radius: 8px; letter-spacing: 1px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1);}
     
     .controls { display: none; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 400px; padding: 0 10px;}
-    .btn { flex: 1; min-width: 80px; padding: 14px 10px; border-radius: 8px; border: none; font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 0 rgba(0,0,0,0.5); transition: transform 0.1s, box-shadow 0.1s; touch-action: manipulation; font-family: 'Inter'; letter-spacing: 1px;}
+    .btn { flex: 1; min-width: 80px; padding: 14px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); font-weight: 900; font-size: 13px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: transform 0.1s, box-shadow 0.1s; touch-action: manipulation; font-family: 'Inter'; letter-spacing: 1px;}
     
     #dealBtn { background: linear-gradient(180deg, #d4af37, #997a00); color: #000; box-shadow: 0 5px 0 #665200; width: 100%; max-width: 250px; display: none; font-size: 16px; padding: 15px; flex: none;}
     #hitBtn { background: linear-gradient(180deg, #2ecc71, #229954); box-shadow: 0 5px 0 #145a32; }
@@ -352,13 +356,15 @@ window.showHowToPlay = () => {
 let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
+
+// TAMAMEN YENİ VE PROFESYONEL CASINO SESLERİ EKLENDİ
 const sfxUrls = {
-    chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Çip
-    deal: 'https://freesound.org/data/previews/434/434472_5121236-lq.mp3', // Profesyonel Kart Dağıtma/Sürtme
-    bust: 'https://freesound.org/data/previews/173/173859_2370154-lq.mp3', // Patlama (Soft bass)
-    win:  'https://freesound.org/data/previews/270/270319_5123851-lq.mp3', // Kazanç
-    push: 'https://freesound.org/data/previews/122/122255_1074082-lq.mp3', // İade (Soft bell)
-    tick: 'https://freesound.org/data/previews/256/256113_3263906-lq.mp3'  // Sayaç
+    chip: 'https://freesound.org/data/previews/240/240776_4107740-lq.mp3', // Çip sesine dokunulmadı
+    deal: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3', // Profesyonel Kart Çekme/Dağıtma (Sürtme/Tok)
+    bust: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', // Patlama (Bust - Ağır Thud Sesi)
+    win:  'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3', // Kazanç Şıkırtısı
+    push: 'https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3', // İade (Soft Bell)
+    tick: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'  // Sayaç Tiktak
 };
 
 function initAndUnlockAudio() {
@@ -366,7 +372,7 @@ function initAndUnlockAudio() {
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        // Sessiz buffer ile iOS kilidini aç
+        // Sessiz buffer ile iOS cihazların ses kilidi sonsuza dek açılır (0 gecikme)
         const buffer = audioCtx.createBuffer(1, 1, 22050);
         const source = audioCtx.createBufferSource();
         source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
@@ -393,15 +399,23 @@ function playSfx(name) {
         const src = audioCtx.createBufferSource();
         src.buffer = sounds[name];
         const gainNode = audioCtx.createGain();
-        gainNode.gain.value = (name === 'tick' || name === 'chip') ? 0.3 : 0.8; 
+        
+        // Ses dengelemesi (Tick zayıf, diğerleri tok duyulsun)
+        if (name === 'tick') gainNode.gain.value = 0.3; 
+        else if (name === 'chip') gainNode.gain.value = 0.5;
+        else if (name === 'deal') gainNode.gain.value = 0.7;
+        else gainNode.gain.value = 0.9;
+        
         src.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         src.start(0);
     } catch (e) {}
 }
 
-const unlockOnTouch = () => { initAndUnlockAudio(); document.removeEventListener('touchstart', unlockOnTouch); };
+// Ekranın neresine dokunulursa dokunulsun kilidi garanti aç.
+const unlockOnTouch = () => { initAndUnlockAudio(); document.removeEventListener('touchstart', unlockOnTouch); document.removeEventListener('click', unlockOnTouch);};
 document.addEventListener('touchstart', unlockOnTouch, { once: true, passive: true });
+document.addEventListener('click', unlockOnTouch, { once: true, passive: true });
 
 // --- INTRO LOGIC ---
 let loadProg = 0;
@@ -416,7 +430,8 @@ const loadInt = setInterval(() => {
 }, 100);
 
 document.getElementById('btnEnterGame').addEventListener('click', () => {
-    initAndUnlockAudio(); loadSoundFiles();     
+    initAndUnlockAudio(); // Tıklama anında Senkron kilit kırıcı
+    loadSoundFiles();     // Dosyaları arkada indir
     document.getElementById('studioIntro').style.opacity = '0';
     setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initGame(); }, 600);
 });
@@ -546,7 +561,7 @@ function handleStateSync(state) {
                 let div = document.createElement("div"); div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", card.value);
                 div.innerHTML = `<img src="${getCardImage(card)}" class="real-card">`;
                 
-                // VIP Uçuş Animasyonu Başlangıç Noktası (Sağ Üst - Deste)
+                // VIP Uçuş Animasyonu Başlangıç Noktası (Sağ Üst - Deste Kutusu)
                 div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
                 cWrap.appendChild(div); queue.push({ el: div, id: cardId, isFlip: false });
             }
@@ -562,7 +577,7 @@ function handleStateSync(state) {
             div = document.createElement("div"); div.className = "card-3d"; div.id = cardId; div.setAttribute("data-val", isHidden ? 0 : card.value);
             div.innerHTML = `<img src="${isHidden ? 'https://deckofcardsapi.com/static/img/back.png' : getCardImage(card)}" class="real-card">`;
             
-            // VIP Uçuş Animasyonu Başlangıç Noktası
+            // VIP Uçuş Animasyonu Başlangıç Noktası (Sağ Üst)
             div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
             dArea.appendChild(div); queue.push({ el: div, id: cardId, isFlip: false });
         } else if (!isHidden && div.getAttribute("data-val") === "0") {
@@ -637,8 +652,8 @@ function processRevealQueue(queue, finalState) {
         item.el.style.transform = "rotateY(90deg) scale(1.1)";
         setTimeout(() => { item.el.innerHTML = `<img src="${item.img}" class="real-card">`; item.el.style.transform = "rotateY(0deg) scale(1)"; refreshScores(); }, 200);
     } else { 
-        // Desteden uçarak gelme animasyonu
-        item.el.offsetHeight; // Reflow
+        // Desteden oyuncu önüne uçma animasyonu
+        item.el.offsetHeight; 
         item.el.style.opacity = "1"; item.el.style.transform = "translate(0, 0) rotate(0deg) scale(1)"; refreshScores();
     }
     setTimeout(() => processRevealQueue(queue, finalState), 400); 
