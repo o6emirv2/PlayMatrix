@@ -19,402 +19,126 @@
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="PlayMatrix VIP Satranç">
-<meta name="twitter:description" content="Tamamen hile korumalı, gerçek zamanlı online satranç arenası.">
+<meta name="twitter:description" content="Tamamen hile korumalı, online satranç deneyimi!">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
 <style>
-:root{
-    --bg:#0b1118;
-    --bg2:#0a1525;
-    --card:rgba(255,255,255,.06);
-    --card2:rgba(255,255,255,.04);
-    --stroke:rgba(255,255,255,.08);
-    --gold:#d4af37;
-    --gold2:#b9921d;
-    --txt:#e5e7eb;
-    --muted:#94a3b8;
-    --good:#00ffa3;
-    --warn:#f1c40f;
-    --bad:#ff3b30;
-}
+    /* RESET & ZOOM KORUMASI */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    html, body {
+        width: 100vw; height: 100vh; overflow: hidden; 
+        overscroll-behavior: none; touch-action: manipulation; 
+        font-family: 'Inter', sans-serif;
+        background-color: #1a1612;
+        background-image: radial-gradient(circle at 50% 50%, #3a2b1f 0%, #1a1612 80%);
+        color: white;
+    }
+    
+    /* PROFESYONEL İNTRO */
+    #studioIntro {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0c0907;
+        z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+    .intro-logo i { font-size: 65px; color: #d4af37; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(212,175,55,0.5)); }
+    .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+    .intro-logo h1 span { color: #d4af37; }
+    
+    .loader-track { width: 220px; height: 4px; background: #2a221b; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+    .loader-fill { height: 100%; width: 0%; background: #d4af37; transition: width 0.1s linear; box-shadow: 0 0 10px #d4af37; }
+    .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #d4af37, #997a00); color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(212,175,55,0.4); transition: 0.2s; letter-spacing: 1px; }
+    .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
 
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
-    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-    background:radial-gradient(circle at 50% 20%, #12233d 0%, var(--bg2) 35%, var(--bg) 100%);
-    color:var(--txt);
-    overflow:hidden;
-}
+    @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-/* --- Intro --- */
-#studioIntro{
-    position:fixed; inset:0;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 40%, rgba(212,175,55,.18) 0%, rgba(10,21,37,.95) 40%, rgba(11,17,24,1) 100%);
-    z-index:99999;
-    transition:opacity .55s ease;
-}
-.intro-logo{
-    display:flex; flex-direction:column; align-items:center; gap:12px;
-    padding:24px 22px;
-    border:1px solid rgba(212,175,55,.25);
-    border-radius:18px;
-    background:linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-    box-shadow:0 24px 60px rgba(0,0,0,.45);
-}
-.intro-logo i{
-    font-size:54px;
-    background:linear-gradient(135deg, var(--gold), #fceabb);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-    filter:drop-shadow(0 6px 14px rgba(212,175,55,.25));
-}
-.intro-logo h1{
-    font-weight:900; letter-spacing:2px; text-align:center;
-    line-height:1.02;
-    color:var(--txt);
-    text-transform:uppercase;
-}
-.intro-logo h1 span{ color:var(--gold); font-weight:900; }
-.loader-track{
-    width:min(420px, 84vw);
-    height:8px;
-    border-radius:999px;
-    background:rgba(255,255,255,.08);
-    margin-top:22px;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.06);
-}
-.loader-fill{
-    height:100%;
-    width:0%;
-    border-radius:999px;
-    background:linear-gradient(90deg, rgba(212,175,55,.9), rgba(255,255,255,.25));
-    transition:width .16s linear;
-}
-.btn-intro-start{
-    margin-top:22px;
-    width:min(420px,84vw);
-    padding:15px 16px;
-    border-radius:14px;
-    border:1px solid rgba(212,175,55,.35);
-    color:#0a1525;
-    font-weight:900;
-    letter-spacing:1px;
-    background:linear-gradient(180deg, var(--gold) 0%, var(--gold2) 100%);
-    box-shadow:0 16px 30px rgba(212,175,55,.15);
-    cursor:pointer;
-}
-.btn-intro-start:active{ transform:translateY(1px) }
+    /* ÜST BAR (GLASSMORPHISM) */
+    .top-bar { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
+        display: flex; align-items: center; justify-content: space-between; padding: 0 15px; 
+        background: rgba(12, 9, 7, 0.95); backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(212,175,55,0.2); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); 
+    }
+    .tb-left { display: flex; align-items: center; gap: 10px; }
+    .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;}
+    .tb-logo span { color: #d4af37; }
+    
+    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; overflow: hidden; }
+    
+    .balance-box { display: flex; align-items: center; background: #1a1612; padding: 6px 10px; border-radius: 8px; border: 1px solid #3a2b1f; max-width: 130px; }
+    .balance-box b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; display: inline-block; vertical-align: middle; }
+    .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 6px; box-shadow: 0 0 10px rgba(79, 209, 255, 0.4); }
 
-/* --- Modal --- */
-.modal-overlay{
-    position:fixed; inset:0;
-    display:none;
-    align-items:center; justify-content:center;
-    background:rgba(0,0,0,.55);
-    backdrop-filter:blur(10px);
-    z-index:9999;
-    padding:18px;
-}
-.modal-overlay.show{ display:flex; }
-.modal-card{
-    width:min(520px, 94vw);
-    border-radius:18px;
-    border:1px solid rgba(212,175,55,.35);
-    background:linear-gradient(145deg, rgba(19,36,58,.92), rgba(14,26,43,.92));
-    box-shadow:0 24px 70px rgba(0,0,0,.55);
-    padding:26px 22px;
-    transform:translateY(18px);
-    opacity:0;
-    transition:all .22s ease;
-}
-.modal-overlay.show .modal-card{ transform:translateY(0); opacity:1; }
-.modal-icon{
-    width:62px;height:62px;border-radius:16px;
-    display:grid;place-items:center;
-    margin:0 auto 12px;
-    background:rgba(255,255,255,.06);
-    border:1px solid rgba(255,255,255,.08);
-    font-size:26px;
-}
-.modal-card h3{
-    text-align:center;
-    font-weight:900;
-    letter-spacing:.8px;
-    margin-bottom:8px;
-}
-.modal-card p{
-    text-align:center;
-    color:var(--muted);
-    line-height:1.55;
-    margin-bottom:14px;
-}
-.modal-close{
-    width:100%;
-    padding:14px 16px;
-    border-radius:14px;
-    border:1px solid rgba(212,175,55,.35);
-    background:linear-gradient(180deg, var(--gold) 0%, var(--gold2) 100%);
-    font-weight:900;
-    cursor:pointer;
-    color:#0a1525;
-}
-.modal-close:active{ transform:translateY(1px) }
+    .action-icon-btn { 
+        background: #2a221b; color: #d4af37; border: 1px solid #3a2b1f; width: 34px; height: 34px; flex-shrink: 0;
+        border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
+        display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .action-icon-btn:active { transform: scale(0.9); background: #d4af37; color: #000; }
+    .action-icon-btn.red { color: #ff4b4b; border-color:#552222; }
+    .action-icon-btn.red:active { background: #ef4444; color: #fff; }
 
-/* --- Top Bar --- */
-.top-bar{
-    position:fixed;
-    top:0; left:0; right:0;
-    height:64px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:10px 12px;
-    z-index:50;
-    background:linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.05) 100%);
-    border-bottom:1px solid rgba(255,255,255,.06);
-    backdrop-filter: blur(10px);
-}
-.tb-left{display:flex;align-items:center;gap:10px}
-.tb-logo{
-    font-weight:900;
-    letter-spacing:1.2px;
-    padding:10px 12px;
-    border-radius:14px;
-    border:1px solid rgba(212,175,55,.28);
-    background:rgba(255,255,255,.05);
-}
-.tb-logo span{ color:var(--gold); }
-.tb-right{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    min-width:0;
-}
-.balance-box{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 12px;
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.04);
-    min-width:0;
-    max-width: 56vw;
-}
-.balance-box b{
-    font-weight:900;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    max-width:42vw;
-}
-.mc-icon{
-    padding:6px 10px;
-    border-radius:999px;
-    background:linear-gradient(180deg, rgba(212,175,55,.9), rgba(185,146,29,.95));
-    color:#0a1525;
-    font-weight:900;
-    font-size:12px;
-    white-space:nowrap;
-}
-.action-icon-btn{
-    width:44px;height:44px;
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.05);
-    color:var(--txt);
-    display:grid;place-items:center;
-    cursor:pointer;
-}
-.action-icon-btn.red{
-    border-color:rgba(255,59,48,.28);
-    background:rgba(255,59,48,.10);
-}
-.action-icon-btn:active{ transform:translateY(1px) }
+    /* LOBİ EKRANI */
+    #lobbyArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    
+    .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; gap: 10px;}
+    .btn-create { flex: 1; background: linear-gradient(180deg, #d4af37, #997a00); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #665200; cursor: pointer; transition: 0.1s;}
+    .btn-create:active { transform: translateY(4px); box-shadow: 0 1px 0 #665200; }
+    .btn-quick { flex: 1; background: linear-gradient(180deg, #2ecc71, #1e8449); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #145a32; cursor: pointer; transition: 0.1s; }
+    .btn-quick:active { transform: translateY(4px); box-shadow: 0 1px 0 #145a32; }
 
-/* --- Layout --- */
-#lobbyArea{
-    position:absolute;
-    top:64px; left:0; right:0; bottom:0;
-    display:flex;
-    flex-direction:column;
-    padding:16px 14px;
-    overflow:auto;
-    gap:14px;
-}
-.lobby-header{
-    display:flex;
-    gap:10px;
-    align-items:center;
-    justify-content:space-between;
-}
-.btn-create{
-    flex:1;
-    padding:14px 14px;
-    border-radius:16px;
-    border:1px solid rgba(212,175,55,.28);
-    background:rgba(255,255,255,.04);
-    color:var(--txt);
-    font-weight:900;
-    letter-spacing:.8px;
-    cursor:pointer;
-}
-.btn-create i{ color:var(--gold); margin-right:8px; }
-.room-list{
-    display:flex; flex-direction:column; gap:10px;
-}
-.room-item{
-    padding:14px 14px;
-    border-radius:18px;
-    border:1px solid rgba(255,255,255,.08);
-    background:linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-}
-.room-left{
-    display:flex; flex-direction:column; gap:6px;
-    min-width:0;
-}
-.room-left b{
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.room-left span{
-    color:var(--muted);
-    font-size:12px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.room-btn{
-    padding:12px 14px;
-    border-radius:14px;
-    border:1px solid rgba(212,175,55,.25);
-    background:linear-gradient(180deg, rgba(212,175,55,.9), rgba(185,146,29,.95));
-    color:#0a1525;
-    font-weight:900;
-    cursor:pointer;
-    white-space:nowrap;
-}
-.room-btn.disabled{
-    opacity:.55;
-    cursor:not-allowed;
-    filter:grayscale(.35);
-}
+    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+    
+    .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; align-items: center; backdrop-filter: blur(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.5);}
+    .room-vs-area { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+    .player-name { font-size: 15px; font-weight: 800; color: #fff; width: 40%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vs-badge { font-family: 'Orbitron'; font-size: 16px; font-weight: 900; color: #d4af37; text-shadow: 0 0 10px rgba(212,175,55,0.5); }
+    .room-footer { display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }
+    .room-status { font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;}
+    .btn-join { background: #d4af37; color: #000; border: none; padding: 8px 25px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s;}
+    .btn-join:active { transform: scale(0.9); }
+    .btn-disabled { background: #3a2b1f; color: #666; cursor: not-allowed; }
 
-/* --- Game Area --- */
-#gameArea{
-    position:absolute;
-    top:64px; left:0; right:0; bottom:0;
-    display:none;
-    padding:14px 14px 18px;
-    overflow:auto;
-}
-.game-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:12px;
-}
-.player-plate{
-    flex:1;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:10px 12px;
-    border-radius:18px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.04);
-    min-width:0;
-}
-.player-plate.active{
-    border-color:rgba(0,255,163,.22);
-    box-shadow:0 0 0 2px rgba(0,255,163,.06) inset;
-}
-.avatar{
-    width:36px;height:36px;border-radius:999px;
-    border:1px solid rgba(255,255,255,.10);
-    background:rgba(255,255,255,.06);
-    object-fit:cover;
-}
-.player-plate b{
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.status-box{
-    padding:10px 12px;
-    border-radius:16px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.03);
-    white-space:nowrap;
-    font-weight:900;
-    letter-spacing:.6px;
-    font-size:12px;
-}
+    /* OYUN ALANI */
+    #gameArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); display: none; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 10px; }
+    
+    .player-plate { width: 100%; max-width: 450px; background: rgba(0,0,0,0.6); border: 1px solid #3a2b1f; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
+    .player-plate.active { border-color: #d4af37; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+    .player-info { display: flex; align-items: center; gap: 10px; }
+    .p-avatar { width: 35px; height: 35px; border-radius: 5px; background: #333; object-fit: cover;}
+    .p-name { font-size: 14px; font-weight: 800; color: #fff; }
+    .p-color { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #fff; }
 
-/* Chessboard */
-.board-wrap{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin-top:8px;
-}
-#chessboard{
-    width:min(520px, 92vw);
-    aspect-ratio:1/1;
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    border-radius:22px;
-    overflow:hidden;
-    border:1px solid rgba(212,175,55,.22);
-    box-shadow:0 24px 70px rgba(0,0,0,.45);
-    background:rgba(255,255,255,.02);
-}
-.square{
-    display:grid;
-    place-items:center;
-    font-size:36px;
-    user-select:none;
-    -webkit-user-select:none;
-}
-.square.light{ background:rgba(255,255,255,.06); }
-.square.dark{ background:rgba(0,0,0,.18); }
-.square.sel{ outline:3px solid rgba(212,175,55,.7); outline-offset:-3px; }
-.square.move{ box-shadow: inset 0 0 0 4px rgba(0,255,163,.35); }
-.square.cap{ box-shadow: inset 0 0 0 4px rgba(255,59,48,.35); }
+    /* AHŞAP SATRANÇ TAHTASI (DOKUN-OYNA) */
+    .board-wrapper { width: 100%; max-width: 450px; aspect-ratio: 1; border: 8px solid #4a3424; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; }
+    #chessboard { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+    
+    .sq { display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+    .sq.light { background-color: #f0d9b5; }
+    .sq.dark { background-color: #b58863; }
+    .sq.highlight { box-shadow: inset 0 0 0 4px rgba(212,175,55,1); }
+    .sq.valid-move::after { content: ''; width: 25%; height: 25%; background: rgba(0,0,0,0.3); border-radius: 50%; position: absolute; }
+    .sq.valid-capture::after { content: ''; width: 85%; height: 85%; border: 5px solid rgba(0,0,0,0.3); border-radius: 50%; position: absolute; background: transparent; }
 
-/* controls */
-.game-controls{
-    display:flex; gap:10px;
-    width:min(520px, 92vw);
-    margin:12px auto 0;
-}
-.ctrl-btn{
-    flex:1;
-    padding:14px 14px;
-    border-radius:16px;
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.04);
-    color:var(--txt);
-    font-weight:900;
-    cursor:pointer;
-}
-.ctrl-btn.red{
-    border-color:rgba(255,59,48,.25);
-    background:rgba(255,59,48,.10);
-}
+    .piece { width: 85%; height: 85%; transition: transform 0.1s; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); pointer-events: none;}
+    
+    .status-text { font-family: 'Orbitron'; font-size: 14px; font-weight: 900; color: #d4af37; text-align: center; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px #000; }
+    .btn-resign { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 4px 0 #78231c; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 5px; transition: 0.1s; font-family: 'Inter'; font-size: 12px;}
+    .btn-resign:active { transform: translateY(4px); box-shadow: none; }
 
-/* Sırası olmayan oyuncu tıklayamaz */
-#chessboard.board-disabled{ pointer-events:none; filter: brightness(0.9); }
+    /* MODAL MİMARİSİ */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.show { opacity: 1; display: flex; }
+    .modal-card { background: linear-gradient(145deg, #1a1612, #0c0907); border: 1px solid #3a2b1f; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center; }
+    .modal-overlay.show .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+    .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(212,175,55,0.5)); color: #d4af37;}
+    .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; }
+    .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;}
+    .modal-close { background: linear-gradient(135deg, #d4af37, #997a00); color: #000; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(212,175,55,0.3); }
+    .modal-close:active { transform: translateY(2px); box-shadow: none; }
+
 </style>
 </head>
 <body>
@@ -446,128 +170,75 @@ body{
             <b id="ui-balance">Yükleniyor</b><div class="mc-icon">MC</div>
         </div>
         <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-info"></i></button>
-        <button class="action-icon-btn red" onclick="leaveGame()" aria-label="Lobiye Dön"><i class="fa-solid fa-right-from-bracket"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
     </div>
 </header>
 
 <div id="lobbyArea">
     <div class="lobby-header">
-        <button class="btn-create" onclick="createRoom()"><i class="fa-solid fa-plus"></i> YENİ ODA KUR</button>
-        <button class="btn-create" onclick="quickJoin()"><i class="fa-solid fa-bolt"></i> HIZLI KATIL</button>
+        <button class="btn-create" onclick="createRoom()">ODA KUR</button>
+        <button class="btn-quick" onclick="joinRoom(null)">HIZLI KATIL</button>
     </div>
-
-    <div class="room-list" id="roomList"></div>
+    <div class="room-list" id="roomList">
+        <div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:12px;">Odalar Yükleniyor...</div>
+    </div>
 </div>
 
 <div id="gameArea">
-    <div class="game-header">
-        <div id="myPlate" class="player-plate">
-            <img id="myAvatar" class="avatar" src="https://i.imgur.com/2yaf2wb.png" alt="Ben">
-            <b id="myName">Sen</b>
+    <div class="player-plate" id="oppPlate">
+        <div class="player-info">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s" id="oppAvatar" class="p-avatar">
+            <span class="p-name" id="oppName">Bekleniyor...</span>
         </div>
-        <div class="status-box" id="gameStatusTxt">Hazır</div>
-        <div id="oppPlate" class="player-plate">
-            <img id="oppAvatar" class="avatar" src="https://i.imgur.com/2yaf2wb.png" alt="Rakip">
-            <b id="oppName">Rakip</b>
-        </div>
+        <div class="p-color" id="oppColorBox" style="background:#000;"></div>
     </div>
 
-    <div class="board-wrap">
+    <div class="status-text" id="gameStatusTxt">RAKİP BEKLENİYOR...</div>
+
+    <div class="board-wrapper">
         <div id="chessboard"></div>
     </div>
 
-    <div class="game-controls">
-        <button class="ctrl-btn" onclick="resignGame()"><i class="fa-solid fa-flag"></i> TESLİM OL</button>
-        <button class="ctrl-btn red" onclick="leaveGame()"><i class="fa-solid fa-door-open"></i> LOBİYE DÖN</button>
+    <div class="player-plate" id="myPlate">
+        <div class="player-info">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s" id="myAvatar" class="p-avatar">
+            <span class="p-name" id="myName">Sen</span>
+        </div>
+        <div class="p-color" id="myColorBox" style="background:#fff;"></div>
     </div>
+
+    <button class="btn-resign" id="resignBtn" onclick="resignGame()">TESLİM OL</button>
 </div>
 
-<script>
-/* =========================
-   Firebase Init
-========================= */
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 const firebaseConfig = {
-    apiKey: "YOUR_FIREBASE_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID"
+    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain:"emirhan-site.firebaseapp.com",
+    projectId:"emirhan-site",
+    storageBucket:"emirhan-site.firebasestorage.app",
+    messagingSenderId:"668871888390",
+    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 
-/* =========================
-   API URL
-========================= */
-const API_URL = "";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-/* =========================
-   Helpers
-========================= */
-async function getIdToken(user){
-    return await user.getIdToken();
-}
+// --- ZOOM ENGELLEYİCİ ---
+document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+    lastTouchEnd = now;
+}, { passive: false });
 
-async function fetchAPI(endpoint, method = 'GET', body = null) {
-    if (!auth.currentUser) return null;
-    const token = await getIdToken(auth.currentUser);
-    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
-    if (body) options.body = JSON.stringify(body);
-    const res = await fetch(`${API_URL}${endpoint}`, options);
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
-    return data;
-}
-
-// chess.js kütüphanesi bazı ortamlarda (CSP, network) yüklenmeyebilir.
-// Bu fonksiyon Chess motorunu garantiler (fallback script-load).
-async function ensureChessLib() {
-    if (window.Chess) return;
-    await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = "https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js";
-        s.async = true;
-        s.onload = resolve;
-        s.onerror = () => reject(new Error("Chess motoru yüklenemedi (chess.js). İnternet/CSP kontrol edin."));
-        document.head.appendChild(s);
-    });
-    if (!window.Chess) throw new Error("Chess motoru başlatılamadı.");
-}
-
-/* =========================
-   Intro Loader
-========================= */
-let loadProg = 0;
-const loadTimer = setInterval(() => {
-    loadProg += 7;
-    if (loadProg >= 100) { loadProg = 100; clearInterval(loadTimer); }
-    document.getElementById('loaderFill').style.width = loadProg + '%';
-}, 100);
-
-document.getElementById('btnEnterGame').addEventListener('click', async () => {
-    try { await ensureChessLib(); if (!gameLogic) gameLogic = new window.Chess(); } catch(e) { showMatrixModal('Hata', e.message, 'error'); return; }
-    initAndUnlockAudio(); loadSoundFiles();     
-    document.getElementById('studioIntro').style.opacity = '0';
-    setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initApp(); }, 600);
-});
-
-/* =========================
-   Game Variables
-========================= */
-let userUid = null;
-let currentRoomId = null;
-let gameLogic = null;
-let roomSeq = 0;
-let myColor = 'w';
-let selectedSq = null;
-let validMovesForSelected = [];
-let pollingInterval = null;
-let pingInterval = null;
-let lastFen = "";
-let lastStatus = ""; 
-let isProcessingMove = false;
-
-/* =========================
-   Modal
-========================= */
+// --- MODAL SİSTEMİ (RELOAD YERİNE SOFT-RESET) ---
 window.showMatrixModal = (title, message, type = 'info', backToLobby = false) => {
     const icon = document.getElementById("matrixModalIcon");
     document.getElementById("matrixModalTitle").innerText = title;
@@ -598,32 +269,131 @@ window.closeMatrixModal = () => {
 };
 
 window.showHowToPlay = () => {
-    showMatrixModal("Nasıl Oynanır?", `
-        <div style="text-align:left; line-height:1.6; color:#cbd5e1;">
-        • Hamle sırası sizde değilken taşlara dokunamazsınız.<br>
-        • Hamleler sunucuda doğrulanır (hile/çift hamle engeli).<br>
-        • Rakip çıkarsa otomatik lobiye dönersiniz.<br>
-        </div>
-    `, "info");
+    showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Rakip odadan çıkarsa oyun iptal olur.", "info");
 };
 
-/* =========================
-   Auth
-========================= */
-auth.onAuthStateChanged((user) => {
-    if (!user) {
-        // Projende login nerede ise oraya yönlendir
-        window.location.href = "/";
-        return;
+function resetToLobby() {
+    clearInterval(pollingInterval);
+    clearInterval(pingInterval);
+    currentRoomId = null;
+    document.getElementById("gameArea").style.display = "none";
+    document.getElementById("lobbyArea").style.display = "flex";
+    fetchBalance();
+    startLobbyPolling();
+}
+
+// --- PROFESYONEL SES MOTORU ---
+let audioCtx = null;
+let audioUnlocked = false; 
+const sounds = {};
+const sfxUrls = {
+    move: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
+    capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
+    check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3',
+    start: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-start.mp3',
+    end: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3'
+};
+
+function initAndUnlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audioUnlocked = true;
+    } catch (e) {}
+}
+
+async function loadSoundFiles() {
+    if (!audioCtx) return;
+    for (let [key, url] of Object.entries(sfxUrls)) {
+        try {
+            const res = await fetch(url, { mode: 'cors' });
+            const buf = await res.arrayBuffer();
+            sounds[key] = await audioCtx.decodeAudioData(buf);
+        } catch(e) {}
     }
+}
+
+function playSfx(name) {
+    if(!audioCtx || !sounds[name] || !audioUnlocked) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 1.0;
+        src.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        src.start(0);
+    } catch (e) {}
+}
+
+const unlockEvents = ['touchstart', 'touchend', 'click'];
+const unlockOnTouch = () => { initAndUnlockAudio(); unlockEvents.forEach(e => document.removeEventListener(e, unlockOnTouch)); };
+unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: true, passive: true }));
+
+// --- İNTRO ---
+let loadProg = 0;
+const loadInt = setInterval(() => {
+    loadProg += Math.random() * 20;
+    if(loadProg >= 100) {
+        loadProg = 100; clearInterval(loadInt);
+        document.getElementById('loaderTrack').style.display = 'none';
+        document.getElementById('btnEnterGame').style.display = 'block';
+    }
+    document.getElementById('loaderFill').style.width = loadProg + '%';
+}, 100);
+
+document.getElementById('btnEnterGame').addEventListener('click', () => {
+    initAndUnlockAudio(); loadSoundFiles();     
+    document.getElementById('studioIntro').style.opacity = '0';
+    setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initApp(); }, 600);
 });
 
-/* =========================
-   App Init
-========================= */
+// --- OYUN DEĞİŞKENLERİ ---
+let userUid = null;
+let currentRoomId = null;
+let gameLogic = new Chess();
+let myColor = 'w';
+let selectedSq = null;
+let validMovesForSelected = [];
+let pollingInterval = null;
+let pingInterval = null;
+let lastFen = "";
+let lastStatus = ""; 
+let isProcessingMove = false; 
+
+const PIECE_IMGS = {
+    'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+    'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+    'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+    'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+    'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+    'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+    'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+    'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+    'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+    'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+    'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+    'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
+};
+
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) return null;
+    const token = await getIdToken(auth.currentUser);
+    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
+}
+
 function initApp() {
-    // Güvenli: Chess motoru hazır değilse tekrar dene
-    if (!gameLogic && window.Chess) gameLogic = new window.Chess();
     userUid = auth.currentUser.uid;
     fetchBalance();
     startLobbyPolling();
@@ -633,9 +403,7 @@ async function fetchBalance() {
     try { const res = await fetchAPI('/api/me'); if(res) document.getElementById("ui-balance").innerText = Math.floor(res.balance).toLocaleString('tr-TR'); } catch(e){} 
 }
 
-/* =========================
-   Lobby
-========================= */
+// --- LOBİ ---
 function startLobbyPolling() {
     fetchLobby();
     pollingInterval = setInterval(fetchLobby, 3000);
@@ -663,170 +431,86 @@ async function fetchLobby() {
             let btnHtml = '';
 
             if (r.status === 'waiting') {
-                statusText = 'Bekleniyor';
-                btnHtml = isMe
-                    ? `<button class="room-btn disabled">SENİN ODA</button>`
-                    : `<button class="room-btn" onclick="joinRoom('${r.id}')">KATIL</button>`;
-            } else {
-                statusText = 'Aktif';
-                btnHtml = `<button class="room-btn disabled">DOLU</button>`;
+                statusText = '<span style="color:#2ecc71"><i class="fa-solid fa-clock"></i> Rakip Bekleniyor</span>';
+                if(isMe) btnHtml = `<button class="btn-join btn-disabled" disabled>SENİN ODAN</button>`;
+                else btnHtml = `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>`;
+            } else if (r.status === 'playing') {
+                statusText = '<span style="color:#f1c40f"><i class="fa-solid fa-fire"></i> Maç Devam Ediyor</span>';
+                btnHtml = `<button class="btn-join btn-disabled" disabled>DOLU</button>`;
             }
 
             list.innerHTML += `
-                <div class="room-item">
-                    <div class="room-left">
-                        <b>${p1} vs ${p2}</b>
-                        <span>${statusText}</span>
+                <div class="room-card">
+                    <div class="room-vs-area">
+                        <div class="player-name">${p1}</div>
+                        <div class="vs-badge">VS</div>
+                        <div class="player-name">${p2}</div>
                     </div>
-                    ${btnHtml}
+                    <div class="room-footer">
+                        <div class="room-status">${statusText}</div>
+                        ${btnHtml}
+                    </div>
                 </div>
             `;
         });
-
-    } catch(e) {
-        // sessiz
-    }
+    } catch(e) {}
 }
 
 window.createRoom = async () => {
     try {
-        const res = await fetchAPI('/api/chess/create', 'POST', {});
+        const res = await fetchAPI('/api/chess/create', 'POST');
         enterGame(res.room);
     } catch(e) { showMatrixModal("Hata", e.message, "error"); }
 };
 
-window.quickJoin = async () => {
+window.joinRoom = async (id) => {
     try {
-        const res = await fetchAPI('/api/chess/join', 'POST', {});
+        const res = await fetchAPI('/api/chess/join', 'POST', id ? {roomId: id} : {});
         enterGame(res.room);
     } catch(e) { showMatrixModal("Hata", e.message, "error"); }
 };
 
-window.joinRoom = async (roomId) => {
-    try {
-        const res = await fetchAPI('/api/chess/join', 'POST', { roomId });
-        enterGame(res.room);
-    } catch(e) { showMatrixModal("Hata", e.message, "error"); }
-};
+function startGamePing() {
+    pingInterval = setInterval(async () => {
+        if (!currentRoomId) return;
+        try {
+            const res = await fetchAPI('/api/chess/ping', 'POST', { roomId: currentRoomId });
+            if (res && res.room && res.room.status === 'abandoned') {
+                showMatrixModal("OYUN İPTAL", res.room.message, "error", true);
+            }
+        } catch(e) {}
+    }, 5000); 
+}
 
-/* =========================
-   Game Enter / Polling
-========================= */
-function enterGame(room) {
+function enterGame(roomData) {
     clearInterval(pollingInterval);
-    currentRoomId = room.id;
-
+    currentRoomId = roomData.id;
     document.getElementById("lobbyArea").style.display = "none";
-    document.getElementById("gameArea").style.display = "block";
-
-    myColor = (room.host.uid === userUid) ? 'w' : 'b';
-    lastFen = "";
-    lastStatus = "";
-    selectedSq = null;
-    validMovesForSelected = [];
-    isProcessingMove = false;
-
-    syncBoardUI(room);
-
-    pollGameState();
+    document.getElementById("gameArea").style.display = "flex";
+    
+    myColor = roomData.host.uid === userUid ? 'w' : 'b';
+    
+    document.getElementById("myColorBox").style.background = myColor === 'w' ? '#fff' : '#000';
+    document.getElementById("oppColorBox").style.background = myColor === 'w' ? '#000' : '#fff';
+    
+    playSfx('start');
+    syncBoardUI(roomData);
     pollingInterval = setInterval(pollGameState, 1500);
-
-    pingServer();
-    pingInterval = setInterval(pingServer, 5000);
+    startGamePing();
 }
 
 async function pollGameState() {
+    if (!currentRoomId || isProcessingMove) return; 
     try {
-        if (!currentRoomId || isProcessingMove) return;
-        const res = await fetchAPI('/api/chess/state/' + currentRoomId + '?t=' + Date.now());
-        if(!res || !res.room) return;
-
-        if (res.room.status === 'abandoned') {
-            showMatrixModal("Oyun Sonlandı", "Rakip oyundan ayrıldı. Lobiye yönlendiriliyorsunuz.", "error", true);
+        const res = await fetchAPI(`/api/chess/state/${currentRoomId}?t=${Date.now()}`); 
+        if(res.room.status === 'abandoned') {
+            showMatrixModal("OYUN İPTAL", "Rakip odadan ayrıldı.", "error", true);
             return;
         }
-
         syncBoardUI(res.room);
-    } catch(e) {
-        // sessiz
-    }
-}
-
-async function pingServer() {
-    try {
-        if (!currentRoomId) return;
-        await fetchAPI('/api/chess/ping', 'POST', { roomId: currentRoomId });
     } catch(e) {}
 }
 
-function resetToLobby() {
-    clearInterval(pollingInterval);
-    clearInterval(pingInterval);
-    currentRoomId = null;
-    document.getElementById("gameArea").style.display = "none";
-    document.getElementById("lobbyArea").style.display = "flex";
-    fetchBalance();
-    startLobbyPolling();
-}
-
-function setBoardInteractable(can) {
-    const b = document.getElementById('chessboard');
-    if (!b) return;
-    if (can) b.classList.remove('board-disabled');
-    else b.classList.add('board-disabled');
-}
-
-/* =========================
-   Sound Engine
-========================= */
-let audioCtx = null;
-let audioUnlocked = false; 
-const sounds = {};
-const sfxUrls = {
-    move: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
-    capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
-    check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3',
-    win: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-win.mp3',
-    end: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3',
-};
-
-function initAndUnlockAudio(){
-    if(audioUnlocked) return;
-    try{
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        g.gain.value = 0.0001;
-        o.connect(g); g.connect(audioCtx.destination);
-        o.start(); o.stop(audioCtx.currentTime + 0.01);
-        audioUnlocked = true;
-    }catch(e){}
-}
-
-async function loadSoundFiles(){
-    if(!audioCtx) return;
-    for(const k of Object.keys(sfxUrls)){
-        try{
-            const r = await fetch(sfxUrls[k]);
-            const arr = await r.arrayBuffer();
-            sounds[k] = await audioCtx.decodeAudioData(arr);
-        }catch(e){}
-    }
-}
-
-function playSfx(name){
-    try{
-        if(!audioCtx || !audioUnlocked || !sounds[name]) return;
-        const src = audioCtx.createBufferSource();
-        src.buffer = sounds[name];
-        src.connect(audioCtx.destination);
-        src.start(0);
-    }catch(e){}
-}
-
-/* =========================
-   UI Sync & Board
-========================= */
 function syncBoardUI(r) {
     const isHost = r.host.uid === userUid;
     const me = isHost ? r.host : (r.guest || {username:'Sen'});
@@ -861,14 +545,6 @@ function syncBoardUI(r) {
         return;
     }
 
-    // Sunucu senkron (race-condition / çift hamle) koruması
-    if (typeof r.seq === 'number') roomSeq = r.seq;
-
-    const canInteract = (r.status === 'playing' && r.turn === myColor && !!r.guest);
-    setBoardInteractable(canInteract);
-
-    if (!canInteract) { selectedSq = null; validMovesForSelected = []; }
-
     if (r.fen !== lastFen || r.status !== lastStatus) {
         gameLogic.load(r.fen);
         drawBoard();
@@ -884,51 +560,50 @@ function syncBoardUI(r) {
 }
 
 function drawBoard() {
-    if (!gameLogic) return;
     const boardEl = document.getElementById("chessboard");
     boardEl.innerHTML = "";
     
     let board = gameLogic.board(); 
-    if (myColor === 'b') board = board.slice().reverse().map(row => row.slice().reverse());
+    if (myColor === 'b') {
+        board = board.slice().reverse();
+        board = board.map(row => row.slice().reverse());
+    }
 
     for (let r = 0; r < 8; r++) {
         for (let c = 0; c < 8; c++) {
-            const sq = (myColor === 'w')
-                ? String.fromCharCode(97 + c) + (8 - r)
-                : String.fromCharCode(97 + (7 - c)) + (r + 1);
+            const sqDiv = document.createElement("div");
+            
+            let rank = myColor === 'w' ? 8 - r : r + 1;
+            let fileStr = "abcdefgh";
+            let file = myColor === 'w' ? fileStr[c] : fileStr[7 - c];
+            let sqName = file + rank;
 
-            const isLight = (r + c) % 2 === 0;
+            sqDiv.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+            sqDiv.dataset.sq = sqName;
+
+            if (selectedSq === sqName) sqDiv.classList.add('highlight');
+            
+            const isMoveObj = validMovesForSelected.find(m => m.to === sqName);
+            if (isMoveObj) {
+                if(board[r][c] !== null) sqDiv.classList.add('valid-capture');
+                else sqDiv.classList.add('valid-move');
+            }
+
             const piece = board[r][c];
+            if (piece) {
+                const char = piece.color === 'w' ? piece.type.toUpperCase() : piece.type.toLowerCase();
+                const img = document.createElement("img");
+                img.src = PIECE_IMGS[char];
+                img.className = "piece";
+                sqDiv.appendChild(img);
+            }
 
-            const div = document.createElement("div");
-            div.className = "square " + (isLight ? "light" : "dark");
-            div.dataset.sq = sq;
-
-            if (selectedSq === sq) div.classList.add("sel");
-            if (validMovesForSelected.some(m => m.to === sq)) div.classList.add(piece ? "cap" : "move");
-
-            div.innerHTML = piece ? pieceToUnicode(piece) : "";
-            div.addEventListener("click", () => handleSquareClick(sq));
-            boardEl.appendChild(div);
+            sqDiv.onclick = () => handleSquareClick(sqName);
+            boardEl.appendChild(sqDiv);
         }
     }
 }
 
-function pieceToUnicode(p){
-    const map = {
-        pw:'♙', pb:'♟',
-        rw:'♖', rb:'♜',
-        nw:'♘', nb:'♞',
-        bw:'♗', bb:'♝',
-        qw:'♕', qb:'♛',
-        kw:'♔', kb:'♚'
-    };
-    return map[p.type + p.color] || '';
-}
-
-/* =========================
-   Moves
-========================= */
 async function handleSquareClick(sq) {
     // SIRA BİZDE DEĞİLSE TIKLAMALARI KESİNLİKLE ENGELLE
     if (isProcessingMove || gameLogic.turn() !== myColor) return;
@@ -949,10 +624,9 @@ async function handleSquareClick(sq) {
         else playSfx('move');
 
         try {
-            // HATA KÖKTEN ÇÖZÜMÜ: SADECE FROM VE TO + SEQ GÖNDERİLİR
-            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, seq: roomSeq, from: moveObj.from, to: moveObj.to, promotion: 'q' });
+            // HATA KÖKTEN ÇÖZÜMÜ: SADECE FROM VE TO GÖNDERİLİR
+            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
             lastFen = res.room.fen; 
-            if (typeof res.room.seq === 'number') roomSeq = res.room.seq;
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
             gameLogic.load(lastFen); 
@@ -976,34 +650,12 @@ async function handleSquareClick(sq) {
     }
 }
 
-window.leaveGame = async () => {
-    // Oyundan çık (sayfayı yenilemeden lobiye dön)
-    if (!currentRoomId) { resetToLobby(); return; }
-    try { await fetchAPI('/api/chess/leave', 'POST', { roomId: currentRoomId }); } catch(e) {}
-    resetToLobby();
-};
-
-// Sayfa yenilenirse / arkaplana giderse rakibi bekletme: keepalive ile odadan ayrıl
-async function tryLeaveRoomKeepalive() {
-    try {
-        if (!currentRoomId || !auth.currentUser) return;
-        const token = await getIdToken(auth.currentUser);
-        await fetch(`${API_URL}/api/chess/leave`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: currentRoomId }),
-            keepalive: true
-        });
-    } catch(e) {}
-}
-window.addEventListener('pagehide', tryLeaveRoomKeepalive);
-window.addEventListener('beforeunload', tryLeaveRoomKeepalive);
-
 window.resignGame = async () => {
     if(!confirm("Teslim olmak istediğinize emin misiniz?")) return;
     try { await fetchAPI('/api/chess/resign', 'POST', { roomId: currentRoomId }); } catch(e) {}
 };
-</script>
 
+onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
+</script>
 </body>
 </html>
