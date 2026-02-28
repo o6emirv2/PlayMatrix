@@ -73,9 +73,42 @@ const verifyAuth = async (req, res, next) => {
 
 const safeNum = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 const cleanStr = (v) => (typeof v === 'string' ? v.trim().replace(/[<>]/g, "") : '');
+
+const isDisposableEmail = (email) => {
+  const e = String(email || '').trim().toLowerCase();
+  const at = e.lastIndexOf('@');
+  if (at < 0) return false;
+  const domain = e.slice(at + 1);
+  const blocked = new Set([
+    'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+    '10minutemail.com','10minutemail.net','10minemail.com',
+    'tempmail.com','temp-mail.org','temp-mail.io','temp-mail.com',
+    'yopmail.com','yopmail.fr','yopmail.net',
+    'trashmail.com','getnada.com','dispostable.com','minuteinbox.com'
+  ]);
+  if (blocked.has(domain)) return true;
+  if (domain.endsWith('.mailinator.com')) return true;
+  if (domain.endsWith('.yopmail.com')) return true;
+  return false;
+};
+
 const nowMs = () => Date.now();
 const colUsers = () => db.collection('users');
 const colPromos = () => db.collection('promo_codes');
+
+async function findPromoDocIdByNormalized(codeUpper, maxScan = 500) {
+  // Admin tarafında yanlışlıkla sonuna boşluk konmuş docId gibi durumları tolere etmek için:
+  // docId'leri sınırlı sayıda tarayıp trim+upper eşleşmesi yapar.
+  const refs = await colPromos().listDocuments();
+  let c = 0;
+  for (const ref of refs) {
+    c++;
+    if (c > maxScan) break;
+    if (String(ref.id || '').trim().toUpperCase() === codeUpper) return ref.id;
+  }
+  return null;
+}
+
 const colBJ = () => db.collection('bj_sessions');
 const ALLOWED_AVATAR_DOMAIN = "https://encrypted-tbn0.gstatic.com/";
 
@@ -93,7 +126,7 @@ app.get('/api/me', verifyAuth, async (req, res) => {
 
       if (!snap.exists) { isUpdated = true; }
 
-      if (req.user.email_verified && !u.emailRewardClaimed) {
+      if (req.user.email_verified && !u.emailRewardClaimed && !isDisposableEmail(req.user.email)) {
           if (snap.exists) {
               updates.balance = admin.firestore.FieldValue.increment(50000);
           } else {
@@ -105,8 +138,37 @@ app.get('/api/me', verifyAuth, async (req, res) => {
           isUpdated = true;
       }
 
+      // Basit anti-suistimal: temp-mail domainlerinde e-posta ödülü verilmez (isteğe göre genişletilebilir)
+      if (req.user.email_verified && !u.emailRewardClaimed && isDisposableEmail(req.user.email)) {
+          updates.emailRewardBlocked = true;
+          u.emailRewardBlocked = true;
+          isUpdated = true;
+      }
+
       if (isUpdated) {
           tx.set(colUsers().doc(req.user.uid), snap.exists ? updates : { ...u, ...updates }, { merge: true });
+
+
+app.get('/api/check-username', async (req, res) => {
+  try {
+    const raw = cleanStr(req.query?.username);
+    const username = raw.trim().replace(/\s+/g, ' ');
+    if (!username) return res.status(400).json({ ok: false, error: 'Kullanıcı adı boş.' });
+
+    // 3-20 karakter: harf/sayı/._- (Unicode harfleri destekler)
+    if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(username)) {
+      return res.status(400).json({ ok: false, error: 'Kullanıcı adı geçersiz. (3-20 karakter, harf/sayı/._-)' });
+    }
+
+    const key = username.toLowerCase();
+    const snap = await db.collection('usernames').doc(key).get();
+    return res.json({ ok: true, available: !snap.exists });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'Kontrol hatası.' });
+  }
+});
+
+
       }
       return u;
     });
@@ -119,60 +181,63 @@ app.post('/api/profile/update', verifyAuth, profileLimiter, async (req, res) => 
   try {
     const { fullName, phone, username, avatar } = req.body || {};
     const uid = req.user.uid;
-    let phoneRewarded = false; 
-    
+    let phoneRewarded = false;
+
+    // Split-Brain önlemi: kullanıcı dökümanı *her koşulda* oluşsun.
     await db.runTransaction(async (tx) => {
-      const snap = await tx.get(colUsers().doc(uid));
-      let u = {};
-      let isNewUser = false;
-      
+      const uRef = colUsers().doc(uid);
+      const snap = await tx.get(uRef);
       if (!snap.exists) {
-          isNewUser = true;
-          u = { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
-      } else {
-          u = snap.data();
+        tx.set(uRef, { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 }, { merge: true });
       }
+    });
+
+    await db.runTransaction(async (tx) => {
+      const uRef = colUsers().doc(uid);
+      const snap = await tx.get(uRef);
+      const u = snap.exists ? (snap.data() || {}) : { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0 };
 
       const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) updates.fullName = cleanStr(fullName);
-      
+
       if (cleanStr(phone) && !cleanStr(u.phone)) {
-          updates.phone = cleanStr(phone);
-          if (!u.phoneRewardClaimed) {
-              updates.balance = admin.firestore.FieldValue.increment(100000);
-              updates.phoneRewardClaimed = true;
-              phoneRewarded = true;
-          }
+        updates.phone = cleanStr(phone);
+        if (!u.phoneRewardClaimed) {
+          updates.balance = admin.firestore.FieldValue.increment(100000);
+          updates.phoneRewardClaimed = true;
+          phoneRewarded = true;
+        }
       }
-      
+
       if (typeof avatar === 'string' && avatar.startsWith(ALLOWED_AVATAR_DOMAIN) && avatar.length < 250) updates.avatar = avatar;
 
       const wanted = cleanStr(username);
       if (wanted && wanted !== cleanStr(u.username)) {
-        if (!isNewUser && safeNum(u.userChangeCount, 0) >= 3) throw new Error("İsim hakkı doldu!");
-        
+        if (safeNum(u.userChangeCount, 0) >= 3) throw new Error("İsim hakkı doldu!");
+
         const wantedLower = wanted.toLowerCase();
         const usernameRef = db.collection('usernames').doc(wantedLower);
         const uDoc = await tx.get(usernameRef);
-        
+
         if (uDoc.exists && uDoc.data().uid !== uid) throw new Error("Bu isim kullanımda!");
-        
+
         if (cleanStr(u.username)) {
-            const oldLower = cleanStr(u.username).toLowerCase();
-            if (oldLower !== wantedLower) tx.delete(db.collection('usernames').doc(oldLower));
+          const oldLower = cleanStr(u.username).toLowerCase();
+          if (oldLower !== wantedLower) tx.delete(db.collection('usernames').doc(oldLower));
         }
 
-        tx.set(usernameRef, { uid: uid, createdAt: nowMs() });
-        updates.username = wanted; 
-        
-        if (!isNewUser) updates.userChangeCount = safeNum(u.userChangeCount, 0) + 1;
+        tx.set(usernameRef, { uid: uid, createdAt: nowMs() }, { merge: true });
+        updates.username = wanted;
+        updates.userChangeCount = safeNum(u.userChangeCount, 0) + 1;
       }
-      
-      tx.set(colUsers().doc(uid), { ...u, ...updates }, { merge: true });
+
+      tx.set(uRef, { ...u, ...updates }, { merge: true });
     });
+
     res.json({ ok: true, phoneRewarded });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 
 app.post('/api/wheel/spin', verifyAuth, async (req, res) => {
   try {
@@ -198,18 +263,39 @@ app.post('/api/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
 
     const code = cleanStr((req.body || {}).code).toUpperCase();
     if (!code) throw new Error("Kod boş.");
+
+    // Admin panelinde yanlışlıkla "KOD " (sonunda boşluk) gibi kaydedilen promo docId durumunu tolere et
+    let promoDocId = code;
+    const directSnap = await colPromos().doc(promoDocId).get();
+    if (!directSnap.exists) {
+      const alt = await findPromoDocIdByNormalized(code);
+      if (alt) promoDocId = alt;
+    }
+
     const out = await db.runTransaction(async (tx) => {
-      const [uSnap, pSnap] = await Promise.all([tx.get(colUsers().doc(req.user.uid)), tx.get(colPromos().doc(code))]);
+      const uRef = colUsers().doc(req.user.uid);
+      const pRef = colPromos().doc(promoDocId);
+
+      const [uSnap, pSnap] = await Promise.all([tx.get(uRef), tx.get(pRef)]);
       if (!uSnap.exists || !pSnap.exists) throw new Error("Geçersiz işlem.");
+
       const u = uSnap.data() || {}, p = pSnap.data() || {};
-      if (safeNum(p.amount, 0) <= 0 || (u.usedPromos || []).includes(code) || safeNum(p.limitLeft, -1) === 0) throw new Error("Kod geçersiz veya kullanılmış.");
-      tx.update(colUsers().doc(req.user.uid), { balance: admin.firestore.FieldValue.increment(p.amount), usedPromos: admin.firestore.FieldValue.arrayUnion(code) });
-      if (safeNum(p.limitLeft, -1) > 0) tx.update(colPromos().doc(code), { limitLeft: admin.firestore.FieldValue.increment(-1) });
+      if (safeNum(p.amount, 0) <= 0) throw new Error("Kod geçersiz veya kullanılmış.");
+
+      // Kullanıcı tarafında aynı kodun farklı yazımı (boşluk vs) olmasın diye normalize edilmiş kodu sakla
+      if ((u.usedPromos || []).includes(code)) throw new Error("Kod geçersiz veya kullanılmış.");
+      if (safeNum(p.limitLeft, -1) === 0) throw new Error("Kod tükenmiş.");
+
+      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(p.amount), usedPromos: admin.firestore.FieldValue.arrayUnion(code) });
+      if (safeNum(p.limitLeft, -1) > 0) tx.update(pRef, { limitLeft: admin.firestore.FieldValue.increment(-1) });
+
       return { amount: p.amount };
     });
+
     res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
+
 
 // ======================================================
 // 2. BLACKJACK MOTORU
@@ -260,8 +346,12 @@ app.post('/api/bj/start', verifyAuth, async (req, res) => {
     const session = await db.runTransaction(async (tx) => {
       const existing = await tx.get(colBJ().doc(uid));
       if (existing.exists && ['playing', 'resolving'].includes(existing.data().gameState)) {
-          if (nowMs() - safeNum(existing.data().lastActionAtMs, 0) > 300000) tx.delete(colBJ().doc(uid)); 
-          else throw new Error('Devam eden eliniz var.');
+          // Re-connect desteği: Aktif el varsa hata vermek yerine mevcut state'i döndür.
+          if (nowMs() - safeNum(existing.data().lastActionAtMs, 0) > 300000) {
+              tx.delete(colBJ().doc(uid));
+          } else {
+              return { ...existing.data(), _resumed: true };
+          }
       }
       const uSnap = await tx.get(colUsers().doc(uid));
       if (!uSnap.exists) throw new Error('Kayıt yok.');
