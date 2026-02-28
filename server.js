@@ -924,7 +924,7 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
 });
 
 // ======================================================
-// 7. ONLINE SATRANÇ MOTORU (HATA KÖKTEN ÇÖZÜLDÜ)
+// 7. ONLINE SATRANÇ MOTORU (SENKRONİZASYON VE HAMLE KUSURSUZLAŞTIRILDI)
 // ======================================================
 
 const colChess = () => db.collection('chess_rooms');
@@ -1042,7 +1042,7 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
             let r = snap.data();
 
             if (r.status === 'finished' || r.status === 'abandoned') {
-                return { status: r.status, message: "Oyun zaten bitti." };
+                return { status: r.status, message: "Oyun bitti." };
             }
 
             const isHost = r.host && r.host.uid === uid;
@@ -1061,7 +1061,7 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
                     r.updatedAt = nowMs();
                     tx.update(colChess().doc(roomId), r);
                     setTimeout(() => colChess().doc(roomId).delete().catch(()=>null), 5000);
-                    return { status: 'abandoned', message: "Rakibiniz odadan ayrıldığı için maç iptal edildi." };
+                    return { status: 'abandoned', message: "Rakip oyundan ayrıldı. Oyun İptal Edildi." };
                 }
             }
 
@@ -1073,88 +1073,85 @@ app.post('/api/chess/ping', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-app.post('/api/chess/move', verifyAuth, bjActionLimiter, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const { roomId, from, to, promotion, seq } = req.body;
+// BURADA ACTION LIMITER KALDIRILDI Kİ OYUNCU HIZLI HAMLE YAPINCA SENKRONİZASYON BOZULMASIN
+app.post('/api/chess/move', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const { roomId, from, to, promotion } = req.body;
 
-    if (!roomId || !from || !to)
-      throw new Error("Eksik hamle verisi.");
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colChess().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
 
-    const result = await db.runTransaction(async (tx) => {
-      const roomRef = colChess().doc(roomId);
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) throw new Error("Oda bulunamadı.");
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            
+            let isWhite = r.host.uid === uid;
+            let isBlack = r.guest.uid === uid;
+            
+            if (!isWhite && !isBlack) throw new Error("Bu odada oyuncu değilsiniz.");
+            if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
 
-      let r = snap.data();
+            const chess = new Chess(r.fen);
+            
+            // Satranç hamlesi sunucuda simüle edilir
+            const move = chess.move({ from: from, to: to, promotion: promotion || 'q' });
+            
+            if (move === null) throw new Error("Geçersiz hamle! Kural dışı oynanamaz.");
 
-      if (r.status !== "playing")
-        throw new Error("Oyun aktif değil.");
+            r.fen = chess.fen();
+            r.turn = chess.turn(); 
+            r.updatedAt = nowMs();
+            
+            let winAmount = 0;
+            let gameOverMessage = null;
 
-      const serverSeq = typeof r.seq === "number" ? r.seq : 0;
-      const clientSeq = Number(seq);
+            if (chess.in_checkmate()) {
+                r.status = 'finished';
+                r.winner = isWhite ? 'white' : 'black';
+                winAmount = 5000;
+                gameOverMessage = "ŞAH MAT!";
+                tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(winAmount) });
+            } else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) {
+                r.status = 'finished';
+                r.winner = 'draw';
+                gameOverMessage = "BERABERE!";
+            }
 
-      if (clientSeq !== serverSeq)
-        throw new Error("Senkronizasyon hatası.");
-
-      const isWhite = r.host?.uid === uid;
-      const isBlack = r.guest?.uid === uid;
-
-      if (!isWhite && !isBlack)
-        throw new Error("Bu odada oyuncu değilsiniz.");
-
-      if ((r.turn === "w" && !isWhite) || (r.turn === "b" && !isBlack))
-        throw new Error("Sıra sizde değil.");
-
-      const chess = new (require("chess.js").Chess)(r.fen);
-
-      const move = chess.move({
-        from,
-        to,
-        promotion: promotion || "q"
-      });
-
-      if (!move)
-        throw new Error("Geçersiz hamle.");
-
-      r.fen = chess.fen();
-      r.turn = chess.turn();
-      r.seq = serverSeq + 1;
-      r.lastMoveAt = Date.now();
-      r.updatedAt = Date.now();
-
-      let winAmount = 0;
-      let gameOverMessage = null;
-
-      if (chess.isCheckmate()) {
-        r.status = "finished";
-        r.winner = isWhite ? "white" : "black";
-        winAmount = 5000;
-        gameOverMessage = "ŞAH MAT!";
-        tx.update(colUsers().doc(uid), {
-          balance: admin.firestore.FieldValue.increment(winAmount)
+            tx.update(colChess().doc(roomId), r);
+            return { room: { id: roomId, ...r }, moveStr: move.san, winAmount, gameOverMessage };
         });
-      } else if (chess.isDraw()) {
-        r.status = "finished";
-        r.winner = "draw";
-        gameOverMessage = "BERABERE!";
-      }
+        
+        if (result.room.status === 'finished') {
+            setTimeout(() => colChess().doc(roomId).delete().catch(()=>null), 5000);
+        }
 
-      tx.update(roomRef, r);
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
+});
 
-      return {
-        room: { id: roomId, ...r },
-        moveStr: move.san,
-        winAmount,
-        gameOverMessage
-      };
-    });
+app.post('/api/chess/resign', verifyAuth, async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const { roomId } = req.body;
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colChess().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
 
-    res.json({ ok: true, ...result });
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            let isWhite = r.host.uid === uid; let isBlack = r.guest.uid === uid;
+            if (!isWhite && !isBlack) throw new Error("Yetkiniz yok.");
 
-  } catch (e) {
-    res.json({ ok: false, error: e.message });
-  }
+            r.status = 'finished'; r.winner = isWhite ? 'black' : 'white'; r.updatedAt = nowMs();
+            
+            tx.update(colChess().doc(roomId), r);
+            return { room: { id: roomId, ...r } };
+        });
+        
+        setTimeout(() => colChess().doc(roomId).delete().catch(()=>null), 5000);
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 setInterval(async () => {
