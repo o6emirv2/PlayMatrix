@@ -41,7 +41,7 @@
 
     @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-    /* ÜST BAR (GLASSMORPHISM) */
+    /* ÜST BAR */
     .top-bar { 
         position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
         display: flex; align-items: center; justify-content: space-between; padding: 0 15px; 
@@ -256,7 +256,7 @@ window.showHowToPlay = () => {
     showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Sürükleme yoktur! Önce kendi taşınıza, sonra gideceği kareye TIKLAYIN.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Rakip odadan çıkarsa oyun iptal olur.", "info");
 };
 
-// --- PROFESYONEL SES MOTORU (iOS DESTEKLİ) ---
+// --- PROFESYONEL SES MOTORU ---
 let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
@@ -338,6 +338,7 @@ let validMovesForSelected = [];
 let pollingInterval = null;
 let pingInterval = null;
 let lastFen = "";
+let lastStatus = ""; // Durum değişikliklerini yakalamak için
 let isProcessingMove = false; 
 
 const PIECE_IMGS = {
@@ -385,7 +386,7 @@ function startLobbyPolling() {
 async function fetchLobby() {
     if (currentRoomId) return; 
     try {
-        const res = await fetchAPI('/api/chess/lobby');
+        const res = await fetchAPI('/api/chess/lobby?t=' + Date.now()); // CACHE BUSTING
         const list = document.getElementById("roomList");
         list.innerHTML = "";
         
@@ -443,7 +444,7 @@ window.joinRoom = async (id) => {
     } catch(e) { showMatrixModal("Hata", e.message, "error"); }
 };
 
-// --- OYUN İÇİ PING SİSTEMİ ---
+// --- OYUN İÇİ PING SİSTEMİ (TERK EDİLEN ODALARI SİLMEK İÇİN) ---
 function startGamePing() {
     pingInterval = setInterval(async () => {
         if (!currentRoomId) return;
@@ -455,7 +456,7 @@ function startGamePing() {
                 showMatrixModal("OYUN İPTAL", res.room.message, "error", true);
             }
         } catch(e) {}
-    }, 3000); // 3 Saniyede bir ben buradayım der
+    }, 5000); // 5 Saniyede bir ben buradayım der
 }
 
 
@@ -480,7 +481,7 @@ function enterGame(roomData) {
 async function pollGameState() {
     if (!currentRoomId || isProcessingMove) return; 
     try {
-        const res = await fetchAPI(`/api/chess/state/${currentRoomId}`);
+        const res = await fetchAPI(`/api/chess/state/${currentRoomId}?t=${Date.now()}`); // CACHE BUSTING
         if(res.room.status === 'abandoned') {
             clearInterval(pollingInterval);
             clearInterval(pingInterval);
@@ -525,16 +526,18 @@ function syncBoardUI(r) {
         return;
     }
 
-    // Tahta Çizimi
-    if (r.fen !== lastFen) {
+    // Durum değiştiyse veya FEN değiştiyse tahtayı zorla yenile
+    if (r.fen !== lastFen || r.status !== lastStatus) {
         gameLogic.load(r.fen);
         drawBoard();
         
-        if (lastFen !== "") {
+        if (lastFen !== "" && r.fen !== lastFen) {
             if (gameLogic.in_check()) playSfx('check');
+            else if (r.fen.length < lastFen.length) playSfx('capture'); // Basit taş yeme kontrolü
             else playSfx('move'); 
         }
         lastFen = r.fen;
+        lastStatus = r.status;
     }
 }
 
@@ -587,8 +590,6 @@ function drawBoard() {
 async function handleSquareClick(sq) {
     if (isProcessingMove || document.getElementById("gameStatusTxt").innerText !== "SIRA SENDE") return;
 
-    const moves = gameLogic.moves({ verbose: true });
-    
     // Eğer seçili taşı geçerli bir noktaya tıkladıysa
     const moveObj = validMovesForSelected.find(m => m.to === sq);
     if (selectedSq && moveObj) {
@@ -607,8 +608,8 @@ async function handleSquareClick(sq) {
         else playSfx('move');
 
         try {
-            // Sunucunun kabul edeceği SAN notasyonunu yolla
-            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, moveSan: m.san });
+            // SUNUCU SÜRÜM HATASINI ÖNLEMEK İÇİN GÜVENLİ FORMAT KULLANILIYOR
+            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
             lastFen = res.room.fen; 
         } catch(e) {
             showMatrixModal("Hata", e.message, "error");
