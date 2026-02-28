@@ -1,1 +1,589 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
+<title>PlayMatrix VIP Satranç | Online Turnuva</title>
+<meta name="description" content="PlayMatrix VIP Satranç ile rakiplerine karşı zekanı konuştur. Hilesiz, %100 online, ödüllü profesyonel satranç arenası!">
+<meta name="theme-color" content="#0b1118">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+<style>
+    /* RESET & ZOOM KORUMASI */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    html, body {
+        width: 100vw; height: 100vh; overflow: hidden; 
+        overscroll-behavior: none; touch-action: manipulation; 
+        font-family: 'Inter', sans-serif;
+        background-color: #1a1612;
+        background-image: radial-gradient(circle at 50% 50%, #3a2b1f 0%, #1a1612 80%);
+        color: white;
+    }
+    
+    /* PROFESYONEL İNTRO */
+    #studioIntro {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0c0907;
+        z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+    .intro-logo i { font-size: 65px; color: #d4af37; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(212,175,55,0.5)); }
+    .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+    .intro-logo h1 span { color: #d4af37; }
+    
+    .loader-track { width: 220px; height: 4px; background: #2a221b; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+    .loader-fill { height: 100%; width: 0%; background: #d4af37; transition: width 0.1s linear; box-shadow: 0 0 10px #d4af37; }
+    .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #d4af37, #997a00); color: #000; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(212,175,55,0.4); transition: 0.2s; letter-spacing: 1px; }
+    .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
+
+    @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
+
+    /* ÜST BAR (GLASSMORPHISM) */
+    .top-bar { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 65px; 
+        display: flex; align-items: center; justify-content: space-between; padding: 0 15px; 
+        background: rgba(12, 9, 7, 0.95); backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(212,175,55,0.2); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); 
+    }
+    .tb-left { display: flex; align-items: center; gap: 10px; }
+    .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;}
+    .tb-logo span { color: #d4af37; }
+    
+    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; overflow: hidden; }
+    
+    .balance-box { display: flex; align-items: center; background: #1a1612; padding: 6px 10px; border-radius: 8px; border: 1px solid #3a2b1f; max-width: 130px; }
+    .balance-box b { font-size: 13px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px; display: inline-block; vertical-align: middle; }
+    .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 3px 6px; border-radius: 4px; margin-left: 6px; box-shadow: 0 0 10px rgba(79, 209, 255, 0.4); }
+
+    .action-icon-btn { 
+        background: #2a221b; color: #d4af37; border: 1px solid #3a2b1f; width: 34px; height: 34px; flex-shrink: 0;
+        border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s;
+        display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .action-icon-btn:active { transform: scale(0.9); background: #d4af37; color: #000; }
+    .action-icon-btn.red { color: #ff4b4b; border-color:#552222; }
+    .action-icon-btn.red:active { background: #ef4444; color: #fff; }
+
+    /* LOBİ EKRANI */
+    #lobbyArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    
+    .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; }
+    .btn-create { flex: 1; background: linear-gradient(180deg, #d4af37, #997a00); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #665200; cursor: pointer; transition: 0.1s; margin-right: 10px;}
+    .btn-create:active { transform: translateY(4px); box-shadow: 0 1px 0 #665200; }
+    .btn-quick { flex: 1; background: linear-gradient(180deg, #2ecc71, #1e8449); color: #fff; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 14px; font-family: 'Orbitron'; box-shadow: 0 5px 0 #145a32; cursor: pointer; transition: 0.1s; }
+    .btn-quick:active { transform: translateY(4px); box-shadow: 0 1px 0 #145a32; }
+
+    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px; }
+    .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 12px; padding: 15px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(5px); }
+    .room-info { display: flex; flex-direction: column; }
+    .room-info span { font-size: 14px; font-weight: 800; color: #fff; }
+    .room-info small { font-size: 11px; color: #94a3b8; margin-top: 5px; }
+    .btn-join { background: #d4af37; color: #000; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 12px; transition: 0.2s;}
+    .btn-join:active { transform: scale(0.9); }
+
+    /* OYUN ALANI */
+    #gameArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); display: none; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 10px; }
+    
+    .player-plate { width: 100%; max-width: 450px; background: rgba(0,0,0,0.6); border: 1px solid #3a2b1f; border-radius: 10px; padding: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .player-plate.active { border-color: #d4af37; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+    .player-info { display: flex; align-items: center; gap: 10px; }
+    .p-avatar { width: 35px; height: 35px; border-radius: 5px; background: #333; object-fit: cover;}
+    .p-name { font-size: 14px; font-weight: 800; color: #fff; }
+    .p-color { width: 15px; height: 15px; border-radius: 3px; border: 1px solid #fff; }
+
+    /* AHŞAP SATRANÇ TAHTASI */
+    .board-wrapper { width: 100%; max-width: 450px; aspect-ratio: 1; border: 8px solid #4a3424; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); position: relative; }
+    #chessboard { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+    
+    .sq { display: flex; align-items: center; justify-content: center; position: relative; }
+    .sq.light { background-color: #f0d9b5; }
+    .sq.dark { background-color: #b58863; }
+    .sq.highlight { box-shadow: inset 0 0 0 4px rgba(212,175,55,0.8); }
+    .sq.valid-move::after { content: ''; width: 25%; height: 25%; background: rgba(0,0,0,0.2); border-radius: 50%; position: absolute; }
+    .sq.valid-capture::after { content: ''; width: 80%; height: 80%; border: 4px solid rgba(0,0,0,0.2); border-radius: 50%; position: absolute; background: transparent; }
+
+    .piece { width: 85%; height: 85%; cursor: pointer; transition: transform 0.1s; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); z-index: 10;}
+    .piece:active { transform: scale(1.2) translateY(-10px); z-index: 20; }
+
+    .status-text { font-family: 'Orbitron'; font-size: 14px; font-weight: 900; color: #d4af37; text-align: center; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px #000; }
+    .btn-resign { background: linear-gradient(180deg, #e74c3c, #c0392b); box-shadow: 0 4px 0 #78231c; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 900; cursor: pointer; margin-top: 5px; transition: 0.1s; font-family: 'Inter'; font-size: 12px;}
+    .btn-resign:active { transform: translateY(4px); box-shadow: none; }
+
+    /* MODAL MİMARİSİ */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.show { opacity: 1; display: flex; }
+    .modal-card { background: linear-gradient(145deg, #1a1612, #0c0907); border: 1px solid #3a2b1f; width: 90%; max-width: 360px; border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center; }
+    .modal-overlay.show .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+    .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(212,175,55,0.5)); color: #d4af37;}
+    .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; }
+    .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;}
+    .modal-close { background: linear-gradient(135deg, #d4af37, #997a00); color: #000; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(212,175,55,0.3); }
+    .modal-close:active { transform: translateY(2px); box-shadow: none; }
+
+</style>
+</head>
+<body>
+
+<div id="studioIntro">
+    <div class="intro-logo">
+        <i class="fa-solid fa-chess-knight"></i>
+        <h1>VIP<br><span>SATRANÇ</span></h1>
+    </div>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME BAĞLAN</button>
+</div>
+
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"><i class="fa-solid fa-chess-king"></i></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj içeriği</p>
+        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
+    </div>
+</div>
+
+<header class="top-bar">
+    <div class="tb-left">
+        <div class="tb-logo">PM <span>CHESS</span></div>
+    </div>
+    <div class="tb-right">
+        <div class="balance-box">
+            <b id="ui-balance">Yükleniyor</b><div class="mc-icon">MC</div>
+        </div>
+        <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-info"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+</header>
+
+<div id="lobbyArea">
+    <div class="lobby-header">
+        <button class="btn-create" onclick="createRoom()">ODA KUR</button>
+        <button class="btn-quick" onclick="joinRoom(null)">HIZLI KATIL</button>
+    </div>
+    <div class="room-list" id="roomList">
+        <div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:12px;">Odalar Yükleniyor...</div>
+    </div>
+</div>
+
+<div id="gameArea">
+    <div class="player-plate" id="oppPlate">
+        <div class="player-info">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s" id="oppAvatar" class="p-avatar">
+            <span class="p-name" id="oppName">Bekleniyor...</span>
+        </div>
+        <div class="p-color" id="oppColorBox" style="background:#000;"></div>
+    </div>
+
+    <div class="status-text" id="gameStatusTxt">RAKİP BEKLENİYOR...</div>
+
+    <div class="board-wrapper">
+        <div id="chessboard"></div>
+    </div>
+
+    <div class="player-plate" id="myPlate">
+        <div class="player-info">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s" id="myAvatar" class="p-avatar">
+            <span class="p-name" id="myName">Sen</span>
+        </div>
+        <div class="p-color" id="myColorBox" style="background:#fff;"></div>
+    </div>
+
+    <button class="btn-resign" id="resignBtn" onclick="resignGame()">TESLİM OL</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, getIdToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA",
+    authDomain:"emirhan-site.firebaseapp.com",
+    projectId:"emirhan-site",
+    storageBucket:"emirhan-site.firebasestorage.app",
+    messagingSenderId:"668871888390",
+    appId:"1:668871888390:web:76568bda84cb1641f7bd87"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
+
+// --- ZOOM ENGELLEYİCİ ---
+document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+    lastTouchEnd = now;
+}, { passive: false });
+
+// --- MODAL SİSTEMİ ---
+window.showMatrixModal = (title, message, type = 'info') => {
+    const icon = document.getElementById("matrixModalIcon");
+    document.getElementById("matrixModalTitle").innerText = title;
+    document.getElementById("matrixModalDesc").innerHTML = message;
+    
+    if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; icon.style.color = '#ff3b30'; } 
+    else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-trophy"></i>'; icon.style.color = '#00ffa3'; } 
+    else { icon.innerHTML = '<i class="fa-solid fa-chess-knight"></i>'; icon.style.color = '#d4af37'; }
+    
+    const modal = document.getElementById('matrixModal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+window.closeMatrixModal = () => {
+    const modal = document.getElementById('matrixModal');
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+};
+
+window.showHowToPlay = () => {
+    showMatrixModal("Kurallar", "🔹 Oda kurun veya hazır bir odaya katılın.\n🔹 Beyaz başlar.\n🔹 Hamle yapmak için taşa, ardından gideceği kareye tıklayın.\n🔹 Şah Mat yapan kişi tam 5.000 MC ödül kazanır!\n🔹 Hile koruması aktiftir, illegal hamleler sunucudan reddedilir.", "info");
+};
+
+// --- PROFESYONEL SES MOTORU (iOS DESTEKLİ) ---
+let audioCtx = null;
+let audioUnlocked = false; 
+const sounds = {};
+const sfxUrls = {
+    move: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
+    capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
+    check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/check.mp3',
+    start: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-start.mp3',
+    end: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3'
+};
+
+function initAndUnlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audioUnlocked = true;
+    } catch (e) {}
+}
+
+async function loadSoundFiles() {
+    if (!audioCtx) return;
+    for (let [key, url] of Object.entries(sfxUrls)) {
+        try {
+            const res = await fetch(url, { mode: 'cors' });
+            const buf = await res.arrayBuffer();
+            sounds[key] = await audioCtx.decodeAudioData(buf);
+        } catch(e) {}
+    }
+}
+
+function playSfx(name) {
+    if(!audioCtx || !sounds[name] || !audioUnlocked) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 1.0;
+        src.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        src.start(0);
+    } catch (e) {}
+}
+
+const unlockEvents = ['touchstart', 'touchend', 'click'];
+const unlockOnTouch = () => { initAndUnlockAudio(); unlockEvents.forEach(e => document.removeEventListener(e, unlockOnTouch)); };
+unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: true, passive: true }));
+
+// --- İNTRO ---
+let loadProg = 0;
+const loadInt = setInterval(() => {
+    loadProg += Math.random() * 20;
+    if(loadProg >= 100) {
+        loadProg = 100; clearInterval(loadInt);
+        document.getElementById('loaderTrack').style.display = 'none';
+        document.getElementById('btnEnterGame').style.display = 'block';
+    }
+    document.getElementById('loaderFill').style.width = loadProg + '%';
+}, 100);
+
+document.getElementById('btnEnterGame').addEventListener('click', () => {
+    initAndUnlockAudio(); loadSoundFiles();     
+    document.getElementById('studioIntro').style.opacity = '0';
+    setTimeout(() => { document.getElementById('studioIntro').style.display = 'none'; initApp(); }, 600);
+});
+
+// --- OYUN DEĞİŞKENLERİ ---
+let userUid = null;
+let currentRoomId = null;
+let gameLogic = new Chess();
+let myColor = 'w';
+let selectedSq = null;
+let validMovesForSelected = [];
+let pollingInterval = null;
+let lastFen = "";
+
+const PIECE_IMGS = {
+    'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+    'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+    'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+    'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+    'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+    'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg',
+    'P': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+    'N': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+    'B': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+    'R': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+    'Q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+    'K': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
+};
+
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) return null;
+    const token = await getIdToken(auth.currentUser);
+    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
+}
+
+function initApp() {
+    userUid = auth.currentUser.uid;
+    fetchBalance();
+    startLobbyPolling();
+}
+
+async function fetchBalance() { 
+    try { const res = await fetchAPI('/api/me'); if(res) document.getElementById("ui-balance").innerText = Math.floor(res.balance).toLocaleString('tr-TR'); } catch(e){} 
+}
+
+// --- LOBİ ---
+function startLobbyPolling() {
+    fetchLobby();
+    pollingInterval = setInterval(fetchLobby, 3000);
+}
+
+async function fetchLobby() {
+    if (currentRoomId) return; // Oyundaysak lobi çekme
+    try {
+        const res = await fetchAPI('/api/chess/lobby');
+        const list = document.getElementById("roomList");
+        list.innerHTML = "";
+        if (res.rooms.length === 0) {
+            list.innerHTML = `<div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:13px;">Aktif oda bulunamadı. Yeni oda kurun!</div>`;
+            return;
+        }
+        res.rooms.forEach(r => {
+            const isMe = false; // logic
+            const statusTxt = r.status === 'waiting' ? '<span style="color:#2ecc71">Bekleniyor</span>' : '<span style="color:#f1c40f">Oynanıyor</span>';
+            const btnHtml = r.status === 'waiting' ? `<button class="btn-join" onclick="joinRoom('${r.id}')">KATIL</button>` : '';
+            
+            list.innerHTML += `
+                <div class="room-card">
+                    <div class="room-info">
+                        <span>${r.host} Odası</span>
+                        <small>Durum: ${statusTxt}</small>
+                    </div>
+                    ${btnHtml}
+                </div>
+            `;
+        });
+    } catch(e) {}
+}
+
+window.createRoom = async () => {
+    try {
+        const res = await fetchAPI('/api/chess/create', 'POST');
+        enterGame(res.room);
+    } catch(e) { showMatrixModal("Hata", e.message, "error"); }
+};
+
+window.joinRoom = async (id) => {
+    try {
+        const res = await fetchAPI('/api/chess/join', 'POST', id ? {roomId: id} : {});
+        enterGame(res.room);
+    } catch(e) { showMatrixModal("Hata", e.message, "error"); }
+};
+
+// --- OYUN ---
+function enterGame(roomData) {
+    clearInterval(pollingInterval);
+    currentRoomId = roomData.id;
+    document.getElementById("lobbyArea").style.display = "none";
+    document.getElementById("gameArea").style.display = "flex";
+    
+    myColor = roomData.host.uid === userUid ? 'w' : 'b';
+    
+    document.getElementById("myColorBox").style.background = myColor === 'w' ? '#fff' : '#000';
+    document.getElementById("oppColorBox").style.background = myColor === 'w' ? '#000' : '#fff';
+    
+    playSfx('start');
+    syncBoardUI(roomData);
+    pollingInterval = setInterval(pollGameState, 1500);
+}
+
+async function pollGameState() {
+    if (!currentRoomId) return;
+    try {
+        const res = await fetchAPI(`/api/chess/state/${currentRoomId}`);
+        syncBoardUI(res.room);
+    } catch(e) {}
+}
+
+function syncBoardUI(r) {
+    // Bilgi Güncelleme
+    const isHost = r.host.uid === userUid;
+    const me = isHost ? r.host : (r.guest || {username:'Sen'});
+    const opp = isHost ? (r.guest || {username:'Bekleniyor...'}) : r.host;
+
+    document.getElementById("myName").innerText = me.username;
+    if(me.avatar) document.getElementById("myAvatar").src = me.avatar;
+
+    document.getElementById("oppName").innerText = opp.username;
+    if(opp.avatar) document.getElementById("oppAvatar").src = opp.avatar;
+
+    // Durum
+    const statusTxt = document.getElementById("gameStatusTxt");
+    if (r.status === 'waiting') {
+        statusTxt.innerText = "RAKİP BEKLENİYOR...";
+        statusTxt.style.color = "#94a3b8";
+    } else if (r.status === 'playing') {
+        const myTurn = r.turn === myColor;
+        statusTxt.innerText = myTurn ? "SIRA SENDE" : "SIRA RAKİPTE";
+        statusTxt.style.color = myTurn ? "#00ffa3" : "#f1c40f";
+    } else if (r.status === 'finished') {
+        statusTxt.innerText = "OYUN BİTTİ";
+        statusTxt.style.color = "#ff3b30";
+        if(r.winner === 'draw') {
+            showMatrixModal("BERABERE", "Oyun berabere bitti.", "info");
+        } else {
+            const iWon = (r.winner === 'white' && myColor === 'w') || (r.winner === 'black' && myColor === 'b');
+            if (iWon) { playSfx('win'); showMatrixModal("KAZANDIN!", "Tebrikler! 5.000 MC Kazandın.", "success"); }
+            else { playSfx('end'); showMatrixModal("KAYBETTİN", "Rakip kazandı.", "error"); }
+        }
+        clearInterval(pollingInterval);
+        setTimeout(() => { location.reload(); }, 4000);
+        return;
+    }
+
+    // Tahta Çizimi (Sadece FEN değişirse)
+    if (r.fen !== lastFen) {
+        let oldLogic = new Chess(lastFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+        gameLogic.load(r.fen);
+        drawBoard();
+        
+        // Ses efekti (Eğer oyun başı değilse)
+        if (lastFen !== "") {
+            if (gameLogic.in_check()) playSfx('check');
+            // Basit capture kontrolü (fen uzunluğu vb.)
+            else playSfx('move'); 
+        }
+        lastFen = r.fen;
+    }
+}
+
+function drawBoard() {
+    const boardEl = document.getElementById("chessboard");
+    boardEl.innerHTML = "";
+    
+    let board = gameLogic.board(); 
+    // Eğer oyuncu Siyah ise tahtayı ters çevir
+    if (myColor === 'b') {
+        board = board.slice().reverse();
+        board = board.map(row => row.slice().reverse());
+    }
+
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const sqDiv = document.createElement("div");
+            
+            // Gerçek kare ismini bul (a1, e4 vb.)
+            let rank = myColor === 'w' ? 8 - r : r + 1;
+            let fileStr = "abcdefgh";
+            let file = myColor === 'w' ? fileStr[c] : fileStr[7 - c];
+            let sqName = file + rank;
+
+            sqDiv.className = `sq ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+            sqDiv.dataset.sq = sqName;
+
+            // Seçili kare vurgusu
+            if (selectedSq === sqName) sqDiv.classList.add('highlight');
+            
+            // Geçerli hamle noktası vurgusu
+            const isMoveObj = validMovesForSelected.find(m => m.to === sqName);
+            if (isMoveObj) {
+                if(board[r][c] !== null) sqDiv.classList.add('valid-capture');
+                else sqDiv.classList.add('valid-move');
+            }
+
+            // Taş varsa çiz
+            const piece = board[r][c];
+            if (piece) {
+                const char = piece.color === 'w' ? piece.type.toUpperCase() : piece.type.toLowerCase();
+                const img = document.createElement("img");
+                img.src = PIECE_IMGS[char];
+                img.className = "piece";
+                sqDiv.appendChild(img);
+            }
+
+            // Tıklama Eventi
+            sqDiv.onclick = () => handleSquareClick(sqName);
+            boardEl.appendChild(sqDiv);
+        }
+    }
+}
+
+async function handleSquareClick(sq) {
+    if (document.getElementById("gameStatusTxt").innerText !== "SIRA SENDE") return;
+
+    // Eğer seçili kareden başka bir geçerli kareye tıklanmışsa Hamle yap
+    const moveObj = validMovesForSelected.find(m => m.to === sq);
+    if (selectedSq && moveObj) {
+        // Hamleyi Sunucuya Gönder
+        document.getElementById("gameStatusTxt").innerText = "HAMLE İLETİLİYOR...";
+        selectedSq = null;
+        validMovesForSelected = [];
+        drawBoard(); // Vurguları temizle
+
+        try {
+            // Piyon terfisi (promotion) basitçe vezir ('q') varsayılır
+            const res = await fetchAPI('/api/chess/move', 'POST', { roomId: currentRoomId, from: moveObj.from, to: moveObj.to, promotion: 'q' });
+            // Sunucu dönünce poll zaten halledecek
+        } catch(e) {
+            showMatrixModal("Hata", e.message, "error");
+            pollGameState(); // Hata durumunda tahtayı sunucuya göre geri al
+        }
+        return;
+    }
+
+    // Taş seçimi
+    const pieceObj = gameLogic.get(sq);
+    if (pieceObj && pieceObj.color === myColor) {
+        selectedSq = sq;
+        validMovesForSelected = gameLogic.moves({ square: sq, verbose: true });
+        drawBoard();
+    } else {
+        selectedSq = null;
+        validMovesForSelected = [];
+        drawBoard();
+    }
+}
+
+window.resignGame = async () => {
+    if(!confirm("Teslim olmak istediğinize emin misiniz?")) return;
+    try {
+        await fetchAPI('/api/chess/resign', 'POST', { roomId: currentRoomId });
+    } catch(e) {}
+};
+
+onAuthStateChanged(auth, user => { if(!user) window.location.href = '/'; });
+</script>
+</body>
+</html>
