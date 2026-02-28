@@ -39,7 +39,24 @@ const auth = admin.auth();
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({
+  // PROD'da CSP açık: XSS etkisini ciddi düşürür.
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      mediaSrc: ["'self'", "https:"],
+      fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https:"],
+      scriptSrc: ["'self'", "https://www.gstatic.com", "https:"],
+      connectSrc: ["'self'", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com", "https://firestore.googleapis.com", "https://www.googleapis.com", "https:"]
+    }
+  }
+}));
 app.use(express.json({ limit: '1mb' }));
 
 // ======================================================
@@ -794,11 +811,12 @@ function checkPistiCapture(tableCards, playedCard) {
 
     if (isJack || isMatch) {
         const collected = [...tableCards, playedCard];
-        const isPisti = (tableCards.length === 1 && isMatch); 
+        const isPisti = (tableCards.length === 1 && (isMatch || isJack));
         let pistiPoints = 0;
-        
+
         if (isPisti) {
-            pistiPoints = isJack ? 20 : 10; 
+            // KURAL: Yerde tek kart varken Vale (J) ile yapılan pişti 20 puan, normal pişti 10 puan.
+            pistiPoints = isJack ? 20 : 10;
         }
         
         const cardPoints = calculateCardPoints(collected);
@@ -821,7 +839,7 @@ app.get('/api/pisti/state', verifyAuth, async (req, res) => {
         res.json({ ok: true, state: {
             status: data.status, bet: data.bet, playerHand: data.playerHand,
             botCardCount: data.botHand.length, tableCards: data.tableCards,
-            playerScore: data.playerScore, botScore: data.botScore, round: data.round
+            playerScore: data.playerScore, botScore: data.botScore, round: data.round, seq: safeNum(data.seq, 0)
         }, balance });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
@@ -853,7 +871,10 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
             const newSession = {
                 uid, status: 'playing', bet, deck, tableCards, playerHand, botHand,
                 playerScore: 0, botScore: 0, playerCardCount: 0, botCardCount: 0,
-                lastCapturer: null, round: 1, updatedAt: nowMs()
+                lastCapturer: null, round: 1,
+                 seq: 1,
+                 lastActionAtMs: nowMs(),
+                 updatedAt: nowMs()
             };
 
             tx.set(colPisti().doc(uid), newSession);
@@ -863,7 +884,7 @@ app.post('/api/pisti/start', verifyAuth, async (req, res) => {
         res.json({ ok: true, state: {
             status: session.status, bet: session.bet, playerHand: session.playerHand,
             botCardCount: session.botHand.length, tableCards: session.tableCards,
-            playerScore: session.playerScore, botScore: session.botScore, round: session.round
+            playerScore: session.playerScore, botScore: session.botScore, round: session.round, seq: safeNum(session.seq, 0)
         }, balance: balanceAfter });
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
@@ -872,6 +893,7 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
     try {
         const uid = req.user.uid;
         const cardIndex = safeNum(req.body.cardIndex, -1);
+        const clientSeq = safeNum(req.body.seq, 0);
 
         const result = await db.runTransaction(async (tx) => {
             const [sSnap, uSnap] = await Promise.all([
@@ -879,9 +901,17 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 tx.get(colUsers().doc(uid))
             ]);
             if (!sSnap.exists || sSnap.data().status !== 'playing') throw new Error('Aktif oyun yok.');
-            
+
             const s = sSnap.data();
             let balanceAfter = uSnap.exists ? safeNum(uSnap.data()?.balance, 0) : 0;
+
+            // 1) Senkronizasyon / yarış koşulu koruması (aynı turu iki kere oynatma engeli)
+            if (clientSeq !== safeNum(s.seq, 0)) throw new Error('Senkronizasyon hatası.');
+
+            // 2) Anti-makro / spam: transaction içinde de kes (client actionLock bypass edilse bile)
+            const lastAt = safeNum(s.lastActionAtMs, 0);
+            const now = nowMs();
+            if (lastAt && (now - lastAt) < 350) throw new Error('Spam engellendi.');
 
             if (cardIndex < 0 || cardIndex >= s.playerHand.length) throw new Error('Geçersiz kart.');
 
@@ -895,27 +925,46 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 s.playerScore += pCapture.points;
                 s.playerCardCount += pCapture.collected.length;
                 s.lastCapturer = 'player';
-                s.tableCards = []; 
+                s.tableCards = [];
             } else {
                 s.tableCards.push(playedCard);
             }
 
+            // Bot hamlesi (deterministik olmayan seçim: aynı şartlarda farklı kart oynayabilir)
             if (s.botHand.length > 0) {
-                let botCardIdx = -1;
+                let candidates = [];
+
                 if (s.tableCards.length > 0) {
                     const topCard = s.tableCards[s.tableCards.length - 1];
-                    botCardIdx = s.botHand.findIndex(c => c[0] === topCard[0]); 
-                    
-                    if (botCardIdx === -1 && s.tableCards.length >= 2) { 
-                        botCardIdx = s.botHand.findIndex(c => c[0] === 'J'); 
+
+                    // 1) eşleşme varsa onu tercih et (birden fazlaysa random)
+                    candidates = s.botHand
+                        .map((c, idx) => ({ c, idx }))
+                        .filter(x => x.c[0] === topCard[0])
+                        .map(x => x.idx);
+
+                    // 2) eşleşme yoksa ve yerde >=2 kart varsa J ile topla (birden fazlaysa random)
+                    if (candidates.length === 0 && s.tableCards.length >= 2) {
+                        candidates = s.botHand
+                            .map((c, idx) => ({ c, idx }))
+                            .filter(x => x.c[0] === 'J')
+                            .map(x => x.idx);
                     }
                 }
-                if (botCardIdx === -1) {
-                    botCardIdx = s.botHand.findIndex(c => c[0] !== 'J');
-                    if(botCardIdx === -1) botCardIdx = 0; 
+
+                // 3) yine yoksa J olmayanlardan random (hepsi J ise random)
+                if (candidates.length === 0) {
+                    candidates = s.botHand
+                        .map((c, idx) => ({ c, idx }))
+                        .filter(x => x.c[0] !== 'J')
+                        .map(x => x.idx);
+
+                    if (candidates.length === 0) candidates = s.botHand.map((_, idx) => idx);
                 }
 
-                const botCard = s.botHand.splice(botCardIdx, 1)[0];
+                const pickIdx = candidates[crypto.randomInt(0, candidates.length)];
+                const botCard = s.botHand.splice(pickIdx, 1)[0];
+
                 const bCapture = checkPistiCapture(s.tableCards, botCard);
                 actionLog.botAction = { card: botCard, isPisti: bCapture.isPisti, captured: bCapture.captured };
 
@@ -929,6 +978,7 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 }
             }
 
+            // Round bitti mi? (eller boşaldıysa yeni dağıt / oyun bitişi)
             if (s.playerHand.length === 0 && s.botHand.length === 0) {
                 if (s.deck.length >= 8) {
                     s.playerHand = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()];
@@ -936,30 +986,45 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                     s.round += 1;
                     actionLog.roundOver = true;
                 } else {
-                    s.status = 'finished';
-                    actionLog.gameOver = true;
-                    
+                    // Masada kalan kartlar son toplayana gider
                     if (s.tableCards.length > 0 && s.lastCapturer) {
-                        const finalPts = calculateCardPoints(s.tableCards);
-                        if(s.lastCapturer === 'player') { s.playerCardCount += s.tableCards.length; s.playerScore += finalPts; }
-                        else { s.botCardCount += s.tableCards.length; s.botScore += finalPts; }
+                        const leftover = s.tableCards.slice();
+                        const leftoverPts = calculateCardPoints(leftover);
+                        if (s.lastCapturer === 'player') {
+                            s.playerScore += leftoverPts;
+                            s.playerCardCount += leftover.length;
+                        } else {
+                            s.botScore += leftoverPts;
+                            s.botCardCount += leftover.length;
+                        }
+                        s.tableCards = [];
                     }
 
-                    if (s.playerCardCount > s.botCardCount) s.playerScore += 3;
-                    else if (s.botCardCount > s.playerCardCount) s.botScore += 3;
+                    // Kart fazlası 3 puan
+                    if (s.playerCardCount !== s.botCardCount) {
+                        if (s.playerCardCount > s.botCardCount) s.playerScore += 3;
+                        else s.botScore += 3;
+                    }
 
+                    s.status = 'finished';
+                    actionLog.gameOver = true;
+
+                    // Kazanç/iadeler
                     if (s.playerScore > s.botScore) {
                         actionLog.winAmount = s.bet * 2;
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                         balanceAfter += actionLog.winAmount;
                     } else if (s.playerScore === s.botScore) {
-                        actionLog.winAmount = s.bet; 
+                        actionLog.winAmount = s.bet;
                         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(actionLog.winAmount) });
                         balanceAfter += actionLog.winAmount;
                     }
                 }
             }
 
+            // 3) Seq + lastActionAt güncelle (transaction sonu)
+            s.seq = safeNum(s.seq, 0) + 1;
+            s.lastActionAtMs = nowMs();
             s.updatedAt = nowMs();
             tx.set(colPisti().doc(uid), s);
 
@@ -967,7 +1032,7 @@ app.post('/api/pisti/play', verifyAuth, bjActionLimiter, async (req, res) => {
                 state: {
                     status: s.status, bet: s.bet, playerHand: s.playerHand,
                     botCardCount: s.botHand.length, tableCards: s.tableCards,
-                    playerScore: s.playerScore, botScore: s.botScore, round: s.round
+                    playerScore: s.playerScore, botScore: s.botScore, round: s.round, seq: safeNum(s.seq, 0)
                 },
                 log: actionLog,
                 balance: balanceAfter
