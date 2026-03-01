@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
 <title>PlayMatrix VIP Online Pişti | Arena</title>
-<meta name="description" content="Gerçek oyuncularla hilesiz VIP Pişti oyna! Kazanana anında 5000 MC nakit ödül, bekleme yok.">
-<meta name="keywords" content="pişti, online pişti, vip pişti, playmatrix, multiplayer kart oyunu, mc ödülü, iskambil">
+<meta name="description" content="Gerçek oyuncularla hilesiz VIP Pişti oyna! Kazanana anında 5000 MC nakit ödül, bekleme yok. PlayMatrix ayrıcalığıyla online iskambil deneyimi.">
+<meta name="keywords" content="pişti, online pişti, vip pişti, playmatrix, multiplayer kart oyunu, mc ödülü, iskambil, canlı pişti oyna">
 <meta name="author" content="PlayMatrix Global">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#1a2e1d">
 <meta property="og:title" content="PlayMatrix VIP Online Pişti">
-<meta property="og:description" content="Masaya otur, kartını at ve anında 5.000 MC ödülü kazan!">
+<meta property="og:description" content="Masaya otur, kartını at ve anında 5.000 MC ödülü kazan! Hilesiz online iskambil heyecanı.">
+<meta property="og:type" content="website">
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -58,7 +59,7 @@
     .action-icon-btn { background: #2a221b; color: #e74c3c; border: 1px solid #3a2b1f; width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
     .action-icon-btn:active { transform: scale(0.9); background: #e74c3c; color: #fff; }
 
-    /* 2. MADDE: PROFİL ALANI LOBİ VE OYUN İÇİNDE SABİTLENDİ */
+    /* LOBİ PROFİL BARI */
     .profile-bar { height: 50px; width: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #3a2b1f; z-index: 999; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
     .prof-left { display: flex; align-items: center; gap: 10px; }
     .prof-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e74c3c; object-fit: cover; }
@@ -66,6 +67,24 @@
     .balance-box { display: flex; align-items: center; background: #1a1612; padding: 4px 10px; border-radius: 6px; border: 1px solid #3a2b1f; }
     .balance-box b { font-size: 12px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; }
     .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 2px 4px; border-radius: 4px; margin-left: 5px; }
+
+    /* 2. MADDE: OYUN İÇİ PROFİL VE SKOR BARI (Ekranda Karmaşayı Önler) */
+    .game-stats-bar {
+        height: 60px; width: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        border-bottom: 2px solid #3a2b1f; z-index: 999; flex-shrink: 0; box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+        padding: 0 10px; overflow-x: auto; scrollbar-width: none;
+    }
+    .game-stats-bar::-webkit-scrollbar { display: none; }
+    .gs-player {
+        display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05);
+        padding: 5px 10px; border-radius: 8px; border: 1px solid transparent; transition: 0.3s; flex-shrink: 0; min-width: 120px;
+    }
+    .gs-player.active { border-color: #00ffa3; box-shadow: 0 0 10px rgba(0,255,163,0.3); background: rgba(0,255,163,0.1); }
+    .gs-avatar { width: 32px; height: 32px; border-radius: 5px; object-fit: cover; border: 1px solid #fff; }
+    .gs-info { display: flex; flex-direction: column; justify-content: center; line-height: 1.2;}
+    .gs-name { font-size: 11px; font-weight: 900; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;}
+    .gs-score { font-size: 10px; color: #f1c40f; font-weight: 800; }
 
     /* ANA ALANLAR: TAŞMA / KAYMA ENGELLEYİCİ MİMARİ */
     main#mainContainer { width: 100%; flex: 1; position: relative; overflow: hidden; }
@@ -92,49 +111,40 @@
     /* OYUN ALANI */
     #gameArea { position: absolute; inset: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 5px; background: transparent; overflow: hidden; }
     
-    .status-box { background: rgba(0,0,0,0.7); border: 1px solid #e74c3c; padding: 8px 20px; border-radius: 20px; font-family: 'Orbitron'; font-size: 12px; font-weight: 900; color: #fff; letter-spacing: 1px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10; margin-top:5px;}
+    .status-box { background: rgba(0,0,0,0.8); border: 1px solid #e74c3c; padding: 8px 25px; border-radius: 20px; font-family: 'Orbitron'; font-size: 13px; font-weight: 900; color: #fff; letter-spacing: 1px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.7); z-index: 10; margin-top:5px;}
     
-    .other-players-container { display: flex; width: 100%; max-width: 500px; justify-content: space-around; z-index: 5;}
-    .player-mini { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 10px; border: 1px solid #3a2b1f; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
-    .player-mini.active { border-color: #00ffa3; box-shadow: 0 0 15px rgba(0,255,163,0.4); }
-    .player-mini img { width: 30px; height: 30px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #fff; object-fit:cover;}
-    .player-mini span { font-size: 11px; font-weight: 800; color: #fff; }
-    .player-mini .p-score { font-size: 10px; color: #f1c40f; font-weight:800;}
-
-    /* PROFESYONEL MASA TASARIMI */
+    /* PROFESYONEL MASA TASARIMI (Büyütüldü ve Temizlendi) */
     .table-area { 
-        width: 100%; max-width: 400px; height: 260px; 
+        width: 100%; max-width: 450px; height: 300px; 
         background: rgba(0,0,0,0.25); 
-        border: 6px solid #4a3424; 
-        border-radius: 120px; 
+        border: 8px solid #4a3424; 
+        border-radius: 150px; 
         position: relative; display: flex; align-items: center; justify-content: center; 
-        box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 20px 40px rgba(0,0,0,0.6);
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.9), 0 20px 40px rgba(0,0,0,0.8);
+        margin: auto 0; /* Ortalamak için */
     }
     
     /* SANAL DESTE ALANI */
     .virtual-deck {
-        position: absolute; top: 15px; right: 20px; 
-        width: 65px; height: 95px; 
+        position: absolute; top: 20px; right: 25px; 
+        width: 60px; height: 85px; 
         background: repeating-linear-gradient(45deg, #b33939, #b33939 4px, #800000 4px, #800000 8px); 
         border: 2px solid #fff; border-radius: 5px; 
         box-shadow: -1px 1px 0px #fff, -2px 2px 0px #ccc, -4px 4px 10px rgba(0,0,0,0.8);
         display: flex; align-items: center; justify-content: center;
-        transform: rotate(15deg);
+        transform: rotate(15deg); z-index: 10;
     }
-    .deck-info { position: absolute; bottom: -22px; right: -5px; font-size: 11px; font-weight: 900; color: #fff; background: rgba(0,0,0,0.9); padding: 3px 8px; border-radius: 5px; white-space: nowrap;}
+    .deck-info { position: absolute; bottom: -25px; right: -5px; font-size: 11px; font-weight: 900; color: #fff; background: rgba(0,0,0,0.9); padding: 3px 8px; border-radius: 5px; white-space: nowrap; border: 1px solid #3a2b1f;}
 
-    /* KENDİ ALANIM */
-    .my-hand-area { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; margin-bottom:5px;}
-    .my-info { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.8); padding: 8px 15px; border-radius: 10px; border: 1px solid #3a2b1f; width: 100%; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
-    .my-info.active { border-color: #00ffa3; box-shadow: 0 0 15px rgba(0,255,163,0.4); }
-    
-    .cards-container { display: flex; gap: 5px; justify-content: center; width: 100%; height: 105px; position: relative;}
+    /* KENDİ KARTLARIM */
+    .my-hand-area { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; z-index: 5; margin-bottom: 10px;}
+    .cards-container { display: flex; gap: 8px; justify-content: center; width: 100%; height: 110px; position: relative;}
     
     /* GERÇEK PROFESYONEL İSKAMBİL KAĞITLARI (RESİMLİ) */
     .card { 
         width: 75px; height: 105px; border-radius: 6px; 
-        box-shadow: 0 6px 12px rgba(0,0,0,0.7); 
-        cursor: pointer; transition: transform 0.2s; 
+        box-shadow: 0 6px 15px rgba(0,0,0,0.8); 
+        cursor: pointer; transition: transform 0.2s, opacity 0.2s; 
         background-size: cover; background-position: center;
         background-color: transparent; border: 1px solid rgba(255,255,255,0.2);
     }
@@ -148,7 +158,7 @@
         width: 75px; height: 105px; background-size: cover; background-position: center; border-radius: 6px;
     }
     .reveal-card {
-        animation: flipReveal 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        animation: flipReveal 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
         transform-origin: center; opacity: 0; display: inline-block;
     }
     @keyframes flipReveal {
@@ -264,6 +274,9 @@
     <div class="balance-box"><b id="ui-balance">...</b><div class="mc-icon">MC</div></div>
 </div>
 
+<div class="game-stats-bar" id="gameStatsBar" style="display:none;">
+    </div>
+
 <main id="mainContainer">
     <div id="lobbyArea">
         <div class="lobby-header">
@@ -276,12 +289,10 @@
     </div>
 
     <div id="gameArea">
-        <button class="action-icon-btn red" onclick="leaveGamePrompt()" style="position:absolute; top:10px; right:15px; z-index:99;"><i class="fa-solid fa-xmark"></i></button>
+        <button class="action-icon-btn red" onclick="leaveGamePrompt()" style="position:absolute; top:15px; right:15px; z-index:99;"><i class="fa-solid fa-xmark"></i></button>
         
         <div class="status-box" id="gameStatusTxt">RAKİPLER BEKLENİYOR...</div>
         
-        <div class="other-players-container" id="otherPlayersArea"></div>
-
         <div class="table-area">
             <div class="virtual-deck" id="virtualDeck">
                 <div class="deck-info" id="deckCountInfo">DESTE: 0</div>
@@ -290,13 +301,6 @@
         </div>
 
         <div class="my-hand-area">
-            <div class="my-info" id="myInfoBox">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="" id="myAvatar" style="width:30px; height:30px; border-radius:5px; background:#333; border:1px solid #fff; object-fit:cover;">
-                    <span style="font-size:13px; font-weight:800;" id="myName">Sen</span>
-                </div>
-                <div style="font-size:12px; color:#f1c40f; font-weight:800;">Puan: <span id="myScore">0</span></div>
-            </div>
             <div class="cards-container" id="myCardsArea"></div>
         </div>
     </div>
@@ -317,10 +321,10 @@ let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
 const sfxUrls = {
-    deal: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3', 
-    play: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3', 
-    win: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3', // Gerçekçi parlak kazanç sesi
-    lose: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/illegal.mp3' // tok bir kayıp sesi
+    deal: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/castle.mp3', // Daha dolgun dağıtma sesi
+    play: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3', 
+    win: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-start.mp3', // Gerçekçi pozitif kazanç sesi
+    lose: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3' // Tok kayıp sesi
 };
 
 function initAndUnlockAudio() {
@@ -364,8 +368,8 @@ const unlockOnTouch = () => { initAndUnlockAudio(); unlockEvents.forEach(e => do
 unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: true, passive: true }));
 
 
-let userUid = null; let currentRoomId = null; let pollingInterval = null; let isProcessing = false;
-let lastHandCount = 0; 
+let userUid = null; let currentRoomId = null; let pollingInterval = null; 
+let isProcessing = false; let lastHandCount = 0; let currentRoomState = null;
 
 // Kusursuz Modal Yöneticisi
 window.showMatrixModal = (title, message, type = 'info', backToLobby = false) => {
@@ -427,9 +431,11 @@ async function fetchProfile() {
 }
 
 function resetToLobby() {
-    clearInterval(pollingInterval); currentRoomId = null; isProcessing = false; lastHandCount = 0;
+    clearInterval(pollingInterval); currentRoomId = null; isProcessing = false; lastHandCount = 0; currentRoomState = null;
     document.getElementById("gameArea").style.display = "none"; 
+    document.getElementById("gameStatsBar").style.display = "none"; 
     document.getElementById("lobbyArea").style.display = "flex";
+    document.getElementById("profileBar").style.display = "flex";
     fetchProfile(); startLobbyPolling();
 }
 
@@ -472,12 +478,11 @@ window.submitCreateRoom = async () => {
     const roomName = document.getElementById('roomNameInput').value;
     const password = document.getElementById('roomPassInput').value;
     
-    // Açık oda dediyse Hızlı Katıl mantığı ile kontrol et (Madde 16)
     if (!isPrivate) {
         try {
             const qRes = await fetchAPI('/api/pisti-online/quick-join', 'POST');
             if (qRes && qRes.ok) { enterGame(qRes.room.id); return; }
-        } catch(e) { /* Bulamazsa aşağı inip kendi kursun */ }
+        } catch(e) {}
     }
 
     try {
@@ -514,16 +519,18 @@ async function joinRoom(id, password) {
 }
 
 function enterGame(id) {
-    clearInterval(pollingInterval); currentRoomId = id; isProcessing = false; lastHandCount = 0;
+    clearInterval(pollingInterval); currentRoomId = id; isProcessing = false; lastHandCount = 0; currentRoomState = null;
     document.getElementById("lobbyArea").style.display = "none"; 
+    document.getElementById("profileBar").style.display = "none";
+    document.getElementById("gameStatsBar").style.display = "flex"; 
     document.getElementById("gameArea").style.display = "flex";
     pollGameState(); pollingInterval = setInterval(pollGameState, 1500);
 }
 
-// Oyun İçi Çıkış Butonu (Madde 18, Lobiye Döner, Satranc.html Entegrasyonu)
+// Oyun İçi Çıkış Butonu (Satranç.html İle Uyumlu Kusursuz Çıkış)
 window.leaveGamePrompt = () => {
     document.getElementById("matrixModalTitle").innerText = "Oyundan Çık";
-    document.getElementById("matrixModalDesc").innerText = "Oyundan çıkarsanız hükmen mağlup sayılırsınız. Çıkmak istiyor musunuz?";
+    document.getElementById("matrixModalDesc").innerText = "Oyundan çıkarsanız maç iptal olur veya hükmen mağlup sayılırsınız. Çıkmak istiyor musunuz?";
     
     const modal = document.getElementById('matrixModal');
     modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10);
@@ -559,23 +566,23 @@ async function pollGameState() {
     }
 }
 
-// 13. MADDE: GERÇEK İSKAMBİL KAĞITLARI (DeckOfCardsAPI)
+// 13. MADDE: GERÇEK İSKAMBİL KAĞITLARI
 function getCardHTML(cardCode) {
     if(cardCode === 'BACK') return `<div class="card back"></div>`;
     const imgUrl = `https://deckofcardsapi.com/static/img/${cardCode}.png`;
     return `<div class="card" style="background-image: url('${imgUrl}');"></div>`;
 }
 
-// 10. MADDE: 2'ŞER SANİYE ARALIKLI KART DAĞITMA VE AÇILMA ANİMASYONU
+// 10 & 12. MADDE: 2'ŞER SANİYE ARALIKLI, HERKESE EŞİT KART DAĞITMA ANİMASYONU
 async function animateCardDeal(hand, callback) {
     const deckRect = document.getElementById("virtualDeck").getBoundingClientRect();
     const handArea = document.getElementById("myCardsArea");
     handArea.innerHTML = ''; 
     
+    // Her oyuncunun aynı deneyimi yaşaması için asenkron 2 saniyelik kilit.
     for(let i = 0; i < hand.length; i++) {
         playSfx('deal');
         
-        // 1. Kapalı Uçan Kart
         const fCard = document.createElement("div");
         fCard.className = "card back flying-card";
         fCard.style.top = deckRect.top + "px";
@@ -584,34 +591,34 @@ async function animateCardDeal(hand, callback) {
         
         void fCard.offsetWidth; // Reflow
         
-        const targetLeft = handArea.getBoundingClientRect().left + (i * 80); // 75px + 5px gap
-        const targetTop = handArea.getBoundingClientRect().top;
+        const wrap = document.createElement("div");
+        wrap.style.width = "75px"; wrap.style.height = "105px"; wrap.style.opacity = "0";
+        handArea.appendChild(wrap);
         
-        fCard.style.top = targetTop + "px";
-        fCard.style.left = targetLeft + "px";
+        const targetRect = wrap.getBoundingClientRect();
+        
+        fCard.style.top = targetRect.top + "px";
+        fCard.style.left = targetRect.left + "px";
         fCard.style.transform = "rotate(360deg) scale(1)";
         
         await new Promise(r => setTimeout(r, 400));
         fCard.remove();
         
-        // 2. Yerde Açılarak Gerçek Kartın Belirmesi
-        const wrap = document.createElement("div");
+        wrap.style.opacity = "1";
         wrap.className = "reveal-card";
         wrap.innerHTML = getCardHTML(hand[i]);
         wrap.onclick = () => playCard(i);
-        handArea.appendChild(wrap);
         
-        // 3. İki saniye bekleme (Son kart hariç)
         if(i < hand.length - 1) {
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 2000)); // Tam 2 saniye aralık (Madde 10)
         }
     }
     callback();
 }
 
 function syncUI(r) {
-    // 4. MADDE: EKRANA HATA DÜŞMESİNE KARŞI KORUMA (Spam tıklamalardaki undefined hatası biter)
     if (!r) return; 
+    currentRoomState = r; // Güvenlik Teyidi İçin
 
     if (r.status === 'finished') {
         clearInterval(pollingInterval);
@@ -635,6 +642,23 @@ function syncUI(r) {
 
     document.getElementById("deckCountInfo").innerText = `DESTE: ${r.deckCount}`;
 
+    // 2. MADDE: OYUN İÇİ PROFİL & SKOR BARI RENDER
+    const statsBar = document.getElementById("gameStatsBar");
+    let statsHTML = '';
+    r.players.forEach((p, idx) => {
+        const isActive = (r.status === 'playing' && r.turn === idx) ? 'active' : '';
+        const av = p.avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s';
+        statsHTML += `
+            <div class="gs-player ${isActive}">
+                <img src="${av}" class="gs-avatar">
+                <div class="gs-info">
+                    <span class="gs-name">${p.uid === userUid ? 'Sen' : p.username}</span>
+                    <span class="gs-score">Skor: ${p.score} | Kart: ${p.hand.length}</span>
+                </div>
+            </div>`;
+    });
+    statsBar.innerHTML = statsHTML;
+
     // Masa Kartları
     let tHTML = '';
     if(r.tableCards.length > 0) {
@@ -644,38 +668,27 @@ function syncUI(r) {
     }
     document.getElementById("tableCardsArea").innerHTML = tHTML;
 
-    // Oyuncular
     const me = r.players.find(p => p.uid === userUid);
-    const others = r.players.filter(p => p.uid !== userUid);
-
-    // Kendi Alanım
     if(me) {
-        document.getElementById("myName").innerText = me.username;
-        if(me.avatar) document.getElementById("myAvatar").src = me.avatar;
-        document.getElementById("myScore").innerText = `${me.score} (Toplanan: ${me.cardCount})`;
-        document.getElementById("myInfoBox").className = (r.status === 'playing' && r.players[r.turn].uid === userUid) ? "my-info active" : "my-info";
-
-        // ANİMASYON KONTROLÜ
+        // 10. MADDE ANİMASYON KONTROLÜ
         if (me.hand.length === 4 && lastHandCount === 0 && r.status === 'playing') {
             isProcessing = true;
+            document.getElementById("gameStatusTxt").innerText = "KARTLAR DAĞITILIYOR...";
+            document.getElementById("gameStatusTxt").style.color = "#f1c40f";
             document.getElementById("myCardsArea").innerHTML = ''; 
             animateCardDeal(me.hand, () => { 
                 renderMyHand(me.hand); 
                 isProcessing = false; 
+                // Status Update
+                const isMyTurn = r.players[r.turn].uid === userUid; 
+                stTxt.innerText = isMyTurn ? "SIRA SENDE!" : `SIRA: ${r.players[r.turn].username.toUpperCase()}`;
+                stTxt.style.color = isMyTurn ? "#00ffa3" : "#f1c40f"; 
             });
         } else if (!isProcessing) {
             renderMyHand(me.hand);
         }
         lastHandCount = me.hand.length;
     }
-
-    // Diğer Oyuncuların Alanı
-    let othHTML = '';
-    others.forEach(oth => {
-        const isActive = (r.status === 'playing' && r.players[r.turn].uid === oth.uid) ? 'active' : '';
-        othHTML += `<div class="player-mini ${isActive}"><img src="${oth.avatar||'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s'}"><span>${oth.username}</span><span class="p-score">Kart: ${oth.hand.length} | Puan: ${oth.score}</span></div>`;
-    });
-    document.getElementById("otherPlayersArea").innerHTML = othHTML;
 }
 
 function renderMyHand(hand) {
@@ -685,15 +698,24 @@ function renderMyHand(hand) {
 }
 
 window.playCard = async (idx) => {
-    // 7. MADDE: KART SPAM VE HATA KORUMASI 
-    if(isProcessing) return; 
+    // KART SPAM VE SIRA HATASI KORUMASI (11 & 13. Madde Optimizasyonu)
+    if(isProcessing || !currentRoomState) return; 
+
+    // OYUNCUNUN SIRASINI LOKALDE TEYİT ET (Sıra sende değil hatasını kökten engeller)
+    const myIndex = currentRoomState.players.findIndex(p => p.uid === userUid);
+    if (currentRoomState.turn !== myIndex) {
+        showMatrixModal("Uyarı", "Şu an sıra sizde değil!", "error");
+        return;
+    }
+
     isProcessing = true;
     playSfx('play');
     
-    // Optimizasyon: Tıklanan kartı anında gizle (Daha akıcı hissettirir)
-    if(document.getElementById("myCardsArea").children[idx]) {
-        document.getElementById("myCardsArea").children[idx].style.display = 'none';
-    }
+    // Optimistic Update: Kartın gecikmesini (Yere geç düşme) engeller. (13. Madde)
+    const cardEl = document.getElementById("myCardsArea").children[idx];
+    if(cardEl) cardEl.style.display = 'none'; 
+    const tempCardHTML = getCardHTML(currentRoomState.players[myIndex].hand[idx]);
+    document.getElementById("tableCardsArea").innerHTML += `<div style="z-index:9; transform: rotate(${Math.random() * 10 - 5}deg); box-shadow: 0 10px 20px rgba(0,0,0,0.8); position:absolute;">${tempCardHTML}</div>`;
 
     try {
         const res = await fetchAPI('/api/pisti-online/play', 'POST', { roomId: currentRoomId, cardIndex: idx });
@@ -701,7 +723,7 @@ window.playCard = async (idx) => {
         if(res.room) syncUI(res.room); 
     } catch(e) { 
         showMatrixModal("Uyarı", e.message, "error"); 
-        pollGameState(); // Hata olduysa ekranı orijinal haline getir
+        pollGameState(); 
     }
     isProcessing = false;
 };
