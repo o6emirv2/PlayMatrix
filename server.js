@@ -1257,7 +1257,6 @@ app.post('/api/pisti-online/quick-join', verifyAuth, async (req, res) => {
             if (!uSnap.exists) throw new Error("Kullanıcı yok.");
             const u = uSnap.data();
 
-            // Müsait, şifresiz, bekleyen odaları bul
             const snap = await tx.get(colOnlinePisti().where('status', '==', 'waiting').where('isPrivate', '==', false));
             let docToJoin = null;
             snap.forEach(doc => { 
@@ -1328,6 +1327,7 @@ app.post('/api/pisti-online/join', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
+// Satranç sistemindeki kusursuz odadan çıkış entegrasyonu (Madde 3 & 18)
 app.post('/api/pisti-online/leave', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
@@ -1344,6 +1344,7 @@ app.post('/api/pisti-online/leave', verifyAuth, async (req, res) => {
                     r.status = 'abandoned';
                     r.updatedAt = nowMs();
                     tx.update(colOnlinePisti().doc(roomId), r);
+                    // Odalar terk edildiğinde 5 saniye içinde silinir.
                     setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 5000);
                 }
             }
@@ -1427,7 +1428,7 @@ app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res)
 
                     r.winner = winnerUids;
                     
-                    // 11. MADDE: Kazanan Kişiye SADECE 5.000 MC Verilir. Havuz Yok.
+                    // 11. MADDE: Kazanan Kişiye SADECE 5.000 MC Verilir. (Havuz mantığı iptal edildi, sabit ödül)
                     const fixedReward = 5000;
                     for(let wUid of winnerUids) {
                         tx.update(colUsers().doc(wUid), { balance: admin.firestore.FieldValue.increment(fixedReward) });
@@ -1441,7 +1442,7 @@ app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res)
         });
 
         if (result.room.status === 'finished') {
-            setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 10000);
+            setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 10000); // 10 saniye sonra kazançları görüp silinir
         }
 
         res.json({ ok: true, room: result.room });
@@ -1455,7 +1456,7 @@ app.post('/api/pisti-online/ping', verifyAuth, async (req, res) => {
         if (!roomId) throw new Error("Oda ID yok");
 
         const result = await db.runTransaction(async (tx) => {
-            const snap = await tx.get(colOnlinePisti().doc(roomId));
+            const snap = await colOnlinePisti().doc(roomId).get();
             if (!snap.exists) throw new Error("Oda Yok");
             let r = snap.data();
 
@@ -1486,11 +1487,11 @@ app.post('/api/pisti-online/ping', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// Otomatik Temizlik (Maksimum 30 Dakika Açık Kalan Odalar Silinir)
+// 2-3. MADDELER: Otomatik Temizlik (Maksimum 30 Dakika Açık Kalan Odalar Silinir)
 setInterval(async () => {
     try {
         const now = Date.now();
-        const oldTime = now - 1800000; // 30 Dakika
+        const oldTime = now - 1800000; // 30 Dakika (Milisaniye)
         
         const chessSnap = await colChess().where('updatedAt', '<', oldTime).get();
         chessSnap.forEach(doc => { doc.ref.delete().catch(()=>null); });
