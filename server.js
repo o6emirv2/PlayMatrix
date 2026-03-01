@@ -1257,6 +1257,7 @@ app.post('/api/pisti-online/quick-join', verifyAuth, async (req, res) => {
             if (!uSnap.exists) throw new Error("Kullanıcı yok.");
             const u = uSnap.data();
 
+            // Müsait, şifresiz, bekleyen odaları bul
             const snap = await tx.get(colOnlinePisti().where('status', '==', 'waiting').where('isPrivate', '==', false));
             let docToJoin = null;
             snap.forEach(doc => { 
@@ -1327,7 +1328,7 @@ app.post('/api/pisti-online/join', verifyAuth, async (req, res) => {
     } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
-// Satranç sistemindeki kusursuz odadan çıkış entegrasyonu (Madde 3 & 18)
+// Satranç sistemindeki kusursuz odadan çıkış entegrasyonu (Madde 3)
 app.post('/api/pisti-online/leave', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid;
@@ -1344,7 +1345,7 @@ app.post('/api/pisti-online/leave', verifyAuth, async (req, res) => {
                     r.status = 'abandoned';
                     r.updatedAt = nowMs();
                     tx.update(colOnlinePisti().doc(roomId), r);
-                    // Odalar terk edildiğinde 5 saniye içinde silinir.
+                    // Odalar terk edildiğinde 5 saniye içinde tamamen silinir.
                     setTimeout(() => colOnlinePisti().doc(roomId).delete().catch(()=>null), 5000);
                 }
             }
@@ -1383,7 +1384,9 @@ app.post('/api/pisti-online/play', verifyAuth, bjActionLimiter, async (req, res)
             
             const playerIdx = r.players.findIndex(p => p.uid === uid);
             if(playerIdx === -1) throw new Error("Oyuncu değilsiniz.");
-            if(r.turn !== playerIdx) throw new Error("Sıra sizde değil.");
+            
+            // Sıra kontrolü backend tarafında da teyit edildi
+            if(r.turn !== playerIdx) throw new Error("Şu an sıra sizde değil.");
             
             let p = r.players[playerIdx];
             if(cardIndex < 0 || cardIndex >= p.hand.length) throw new Error("Geçersiz kart.");
