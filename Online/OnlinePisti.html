@@ -3,14 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
 <title>PlayMatrix VIP Online Pişti | Arena</title>
+<meta name="description" content="Gerçek oyuncularla hilesiz VIP Pişti oyna! Kazanana anında 5000 MC nakit ödül, bekleme yok.">
+<meta name="keywords" content="pişti, online pişti, vip pişti, playmatrix, multiplayer kart oyunu, mc ödülü, iskambil">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
 <meta name="theme-color" content="#1a2e1d">
+<meta property="og:title" content="PlayMatrix VIP Online Pişti">
+<meta property="og:description" content="Masaya otur, kartını at ve anında 5.000 MC ödülü kazan!">
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
 <style>
-    /* ZOOM VE YAZI SEÇİMİ ENGELLEYİCİ - iOS UYUMLU */
+    /* 1. MADDE & iOS HATALARINI ÇÖZEN KÖKTEN CSS */
     * { 
         margin:0; padding:0; box-sizing:border-box; 
         -webkit-tap-highlight-color:transparent; 
@@ -19,11 +26,13 @@
     }
     
     html, body { 
-        width: 100vw; height: 100vh; overflow: hidden; 
-        overscroll-behavior: none; font-family: 'Inter', sans-serif; 
+        width: 100vw; height: 100dvh; /* dvh Mobil Safari alt barları için hayati önem taşır, ekran taşmasını çözer */
+        overflow: hidden; overscroll-behavior: none; 
+        font-family: 'Inter', sans-serif; 
         background-color: #1a2e1d; 
         background-image: radial-gradient(circle at 50% 50%, #294d33 0%, #101c12 100%); 
         color: white; 
+        display: flex; flex-direction: column;
     }
     
     #studioIntro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0c0907; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s ease, visibility 0.6s ease; }
@@ -39,34 +48,37 @@
 
     @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
 
-    /* ÜST BAR VE YENİ PROFİL ALANI */
-    .top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 65px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(12, 9, 7, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(231,76,60,0.2); z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+    /* ÜST BAR */
+    .top-bar { height: 65px; width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: rgba(12, 9, 7, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(231,76,60,0.2); z-index: 1000; flex-shrink: 0;}
     .tb-left { display: flex; align-items: center; gap: 10px; }
     .tb-logo { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px; white-space: nowrap;}
     .tb-logo span { color: #e74c3c; }
     
-    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; overflow: hidden; }
+    .tb-right { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
     .action-icon-btn { background: #2a221b; color: #e74c3c; border: 1px solid #3a2b1f; width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
     .action-icon-btn:active { transform: scale(0.9); background: #e74c3c; color: #fff; }
 
-    /* YENİ PROFİL ALANI - 14. MADDE */
-    .profile-bar { position: fixed; top: 65px; left: 0; width: 100%; height: 50px; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #3a2b1f; z-index: 999; backdrop-filter: blur(5px); }
+    /* 2. MADDE: PROFİL ALANI LOBİ VE OYUN İÇİNDE SABİTLENDİ */
+    .profile-bar { height: 50px; width: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #3a2b1f; z-index: 999; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
     .prof-left { display: flex; align-items: center; gap: 10px; }
-    .prof-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #d4af37; object-fit: cover; }
+    .prof-avatar { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #e74c3c; object-fit: cover; }
     .prof-name { font-size: 13px; font-weight: 800; color: #fff; }
     .balance-box { display: flex; align-items: center; background: #1a1612; padding: 4px 10px; border-radius: 6px; border: 1px solid #3a2b1f; }
     .balance-box b { font-size: 12px; color: #00ffa3; font-family: 'Inter', monospace; font-weight: 800; }
     .mc-icon { background: radial-gradient(circle at 30% 30%, #4fd1ff, #0055ff); color: #fff; font-size: 8px; font-weight: 900; padding: 2px 4px; border-radius: 4px; margin-left: 5px; }
 
+    /* ANA ALANLAR: TAŞMA / KAYMA ENGELLEYİCİ MİMARİ */
+    main#mainContainer { width: 100%; flex: 1; position: relative; overflow: hidden; }
+
     /* LOBİ */
-    #lobbyArea { position: absolute; top: 115px; left: 0; width: 100vw; height: calc(100vh - 115px); padding: 15px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #1a1612; }
+    #lobbyArea { position: absolute; inset: 0; width: 100%; height: 100%; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: #1a1612; }
     .lobby-header { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-bottom: 20px; gap: 10px;}
     .btn-create { flex: 1; background: linear-gradient(180deg, #e74c3c, #c0392b); color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 13px; font-family: 'Orbitron'; box-shadow: 0 4px 0 #78231c; cursor: pointer; transition: 0.1s;}
     .btn-create:active { transform: translateY(4px); box-shadow: 0 1px 0 #78231c; }
     .btn-quick { flex: 1; background: linear-gradient(180deg, #2ecc71, #1e8449); color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 13px; font-family: 'Orbitron'; box-shadow: 0 4px 0 #145a32; cursor: pointer; transition: 0.1s; }
     .btn-quick:active { transform: translateY(4px); box-shadow: 0 1px 0 #145a32; }
 
-    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; }
+    .room-list { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px;}
     .room-card { background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
     .room-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;}
     .room-host { font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 5px; }
@@ -78,28 +90,28 @@
     .btn-disabled { background: #3a2b1f; color: #666; cursor: not-allowed; }
 
     /* OYUN ALANI */
-    #gameArea { position: absolute; top: 65px; left: 0; width: 100vw; height: calc(100vh - 65px); display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 5px; z-index: 10; background: radial-gradient(circle, #294d33 0%, #101c12 100%); }
+    #gameArea { position: absolute; inset: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 5px; background: transparent; overflow: hidden; }
     
-    .status-box { background: rgba(0,0,0,0.7); border: 1px solid #e74c3c; padding: 8px 20px; border-radius: 20px; font-family: 'Orbitron'; font-size: 12px; font-weight: 900; color: #fff; letter-spacing: 1px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10;}
+    .status-box { background: rgba(0,0,0,0.7); border: 1px solid #e74c3c; padding: 8px 20px; border-radius: 20px; font-family: 'Orbitron'; font-size: 12px; font-weight: 900; color: #fff; letter-spacing: 1px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10; margin-top:5px;}
     
     .other-players-container { display: flex; width: 100%; max-width: 500px; justify-content: space-around; z-index: 5;}
-    .player-mini { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 10px; border: 1px solid #3a2b1f; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
+    .player-mini { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 10px; border: 1px solid #3a2b1f; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
     .player-mini.active { border-color: #00ffa3; box-shadow: 0 0 15px rgba(0,255,163,0.4); }
-    .player-mini img { width: 30px; height: 30px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #fff;}
+    .player-mini img { width: 30px; height: 30px; border-radius: 5px; margin-bottom: 5px; border: 1px solid #fff; object-fit:cover;}
     .player-mini span { font-size: 11px; font-weight: 800; color: #fff; }
-    .player-mini .p-score { font-size: 10px; color: #f1c40f; }
+    .player-mini .p-score { font-size: 10px; color: #f1c40f; font-weight:800;}
 
     /* PROFESYONEL MASA TASARIMI */
     .table-area { 
         width: 100%; max-width: 400px; height: 260px; 
-        background: rgba(0,0,0,0.1); 
-        border: 5px solid #4a3424; 
+        background: rgba(0,0,0,0.25); 
+        border: 6px solid #4a3424; 
         border-radius: 120px; 
         position: relative; display: flex; align-items: center; justify-content: center; 
-        box-shadow: inset 0 0 50px rgba(0,0,0,0.6), 0 15px 30px rgba(0,0,0,0.6);
+        box-shadow: inset 0 0 60px rgba(0,0,0,0.8), 0 20px 40px rgba(0,0,0,0.6);
     }
     
-    /* SANAL DESTE ALANI - ANİMASYON KAYNAĞI */
+    /* SANAL DESTE ALANI */
     .virtual-deck {
         position: absolute; top: 15px; right: 20px; 
         width: 65px; height: 95px; 
@@ -109,18 +121,19 @@
         display: flex; align-items: center; justify-content: center;
         transform: rotate(15deg);
     }
-    .deck-info { position: absolute; bottom: -20px; right: -5px; font-size: 10px; font-weight: 800; color: #fff; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 5px; white-space: nowrap;}
+    .deck-info { position: absolute; bottom: -22px; right: -5px; font-size: 11px; font-weight: 900; color: #fff; background: rgba(0,0,0,0.9); padding: 3px 8px; border-radius: 5px; white-space: nowrap;}
 
-    .my-hand-area { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5;}
+    /* KENDİ ALANIM */
+    .my-hand-area { width: 100%; max-width: 500px; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; margin-bottom:5px;}
     .my-info { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.8); padding: 8px 15px; border-radius: 10px; border: 1px solid #3a2b1f; width: 100%; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.5);}
     .my-info.active { border-color: #00ffa3; box-shadow: 0 0 15px rgba(0,255,163,0.4); }
     
-    .cards-container { display: flex; gap: 5px; justify-content: center; width: 100%; height: 100px; position: relative;}
+    .cards-container { display: flex; gap: 5px; justify-content: center; width: 100%; height: 105px; position: relative;}
     
     /* GERÇEK PROFESYONEL İSKAMBİL KAĞITLARI (RESİMLİ) */
     .card { 
-        width: 70px; height: 100px; border-radius: 5px; 
-        box-shadow: 0 5px 10px rgba(0,0,0,0.6); 
+        width: 75px; height: 105px; border-radius: 6px; 
+        box-shadow: 0 6px 12px rgba(0,0,0,0.7); 
         cursor: pointer; transition: transform 0.2s; 
         background-size: cover; background-position: center;
         background-color: transparent; border: 1px solid rgba(255,255,255,0.2);
@@ -128,33 +141,41 @@
     .card:active { transform: scale(0.9) translateY(-10px); }
     .card.back { background-image: url('https://deckofcardsapi.com/static/img/back.png'); cursor: default; }
 
-    /* KART FIRLATMA ANİMASYONU */
+    /* ANİMASYON SINIFLARI (10. Madde) */
     .flying-card {
         position: fixed; z-index: 9999; pointer-events: none;
         transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-        width: 70px; height: 100px; background-size: cover; background-position: center; border-radius: 5px;
+        width: 75px; height: 105px; background-size: cover; background-position: center; border-radius: 6px;
+    }
+    .reveal-card {
+        animation: flipReveal 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        transform-origin: center; opacity: 0; display: inline-block;
+    }
+    @keyframes flipReveal {
+        0% { transform: perspective(400px) rotateY(90deg); opacity: 0; }
+        100% { transform: perspective(400px) rotateY(0deg); opacity: 1; }
     }
     
-    /* MODALLAR */
+    /* KUSURSUZ MODAL MİMARİSİ (6. Madde) */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s; }
     .modal-overlay.show { opacity: 1; display: flex; }
-    .modal-card { background: linear-gradient(145deg, #1a1612, #0c0907); border: 1px solid #3a2b1f; width: 90%; max-width: 340px; border-radius: 20px; padding: 25px 20px; transform: scale(0.8); opacity: 0; transition: all 0.4s; box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center; }
+    .modal-card { background: linear-gradient(145deg, #1a1612, #0c0907); border: 1px solid #3a2b1f; width: 90%; max-width: 340px; border-radius: 20px; padding: 25px 20px; transform: scale(0.8); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center; }
     .modal-overlay.show .modal-card { transform: scale(1); opacity: 1; }
-    .modal-icon { font-size: 40px; margin-bottom: 10px; color: #e74c3c;}
+    .modal-icon { font-size: 45px; margin-bottom: 12px; color: #e74c3c; filter: drop-shadow(0 0 10px rgba(231,76,60,0.5));}
     .modal-card h3 { color: #fff; font-size: 18px; font-weight: 900; margin-bottom: 15px; }
     .modal-card p { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 20px; white-space: pre-line; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;}
-    .modal-card select, .modal-card input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; color: #fff; font-weight: 700; outline: none; }
+    .modal-card select, .modal-card input { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #3a2b1f; color: #fff; font-weight: 700; outline: none; }
     
-    .modal-close { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 5px 15px rgba(231,76,60,0.3); }
+    .modal-close { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 5px 15px rgba(231,76,60,0.3); transition: 0.2s;}
     .modal-close:active { transform: translateY(2px); box-shadow: none; }
     
     .btn-dual { display: flex; gap: 10px; }
-    .btn-yes { flex: 1; background: #2ecc71; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; cursor: pointer; }
-    .btn-no { flex: 1; background: #3a2b1f; color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; cursor: pointer; }
+    .btn-yes { flex: 1; background: linear-gradient(135deg, #2ecc71, #1e8449); color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(46,204,113,0.3);}
+    .btn-no { flex: 1; background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(231,76,60,0.3);}
 
-    /* Switch - Özel Toggle */
-    .switch-wrapper { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; }
-    .switch-wrapper span { font-size: 13px; font-weight: 700; color: #fff; }
+    /* Özel Oda Switch */
+    .switch-wrapper { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #3a2b1f;}
+    .switch-wrapper span { font-size: 13px; font-weight: 800; color: #fff; }
     .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a2b1f; transition: .4s; border-radius: 24px; }
@@ -199,7 +220,7 @@
 
         <div id="privateFields" style="display:none;">
             <input type="text" id="roomNameInput" placeholder="Oda İsmi" maxlength="15">
-            <input type="number" id="roomPassInput" placeholder="Şifre (Min 5 Haneli)" minlength="5">
+            <input type="number" id="roomPassInput" placeholder="Şifre (Min 5 Haneli)">
         </div>
 
         <select id="roomModeSelect">
@@ -243,41 +264,43 @@
     <div class="balance-box"><b id="ui-balance">...</b><div class="mc-icon">MC</div></div>
 </div>
 
-<div id="lobbyArea">
-    <div class="lobby-header">
-        <button class="btn-create" onclick="openCreateModal()">YENİ ODA KUR</button>
-        <button class="btn-quick" onclick="quickJoin()">HIZLI KATIL</button>
-    </div>
-    <div class="room-list" id="roomList">
-        <div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:12px;">Odalar Yükleniyor...</div>
-    </div>
-</div>
-
-<div id="gameArea">
-    <button class="action-icon-btn red" onclick="leaveGamePrompt()" style="position:absolute; top:15px; right:15px; z-index:99;"><i class="fa-solid fa-xmark"></i></button>
-    
-    <div class="status-box" id="gameStatusTxt">RAKİPLER BEKLENİYOR...</div>
-    
-    <div class="other-players-container" id="otherPlayersArea"></div>
-
-    <div class="table-area">
-        <div class="virtual-deck" id="virtualDeck">
-            <div class="deck-info" id="deckCountInfo">DESTE: 0</div>
+<main id="mainContainer">
+    <div id="lobbyArea">
+        <div class="lobby-header">
+            <button class="btn-create" onclick="openCreateModal()">YENİ ODA KUR</button>
+            <button class="btn-quick" onclick="quickJoin()">HIZLI KATIL</button>
         </div>
-        <div class="cards-container" id="tableCardsArea" style="align-items:center;"></div>
+        <div class="room-list" id="roomList">
+            <div style="color:#94a3b8; text-align:center; margin-top:20px; font-size:12px;">Odalar Yükleniyor...</div>
+        </div>
     </div>
 
-    <div class="my-hand-area">
-        <div class="my-info" id="myInfoBox">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <img src="" id="myAvatar" style="width:30px; height:30px; border-radius:5px; background:#333; border:1px solid #fff; object-fit:cover;">
-                <span style="font-size:13px; font-weight:800;" id="myName">Sen</span>
+    <div id="gameArea">
+        <button class="action-icon-btn red" onclick="leaveGamePrompt()" style="position:absolute; top:10px; right:15px; z-index:99;"><i class="fa-solid fa-xmark"></i></button>
+        
+        <div class="status-box" id="gameStatusTxt">RAKİPLER BEKLENİYOR...</div>
+        
+        <div class="other-players-container" id="otherPlayersArea"></div>
+
+        <div class="table-area">
+            <div class="virtual-deck" id="virtualDeck">
+                <div class="deck-info" id="deckCountInfo">DESTE: 0</div>
             </div>
-            <div style="font-size:12px; color:#f1c40f; font-weight:800;">Puan: <span id="myScore">0</span></div>
+            <div class="cards-container" id="tableCardsArea" style="align-items:center;"></div>
         </div>
-        <div class="cards-container" id="myCardsArea"></div>
+
+        <div class="my-hand-area">
+            <div class="my-info" id="myInfoBox">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="" id="myAvatar" style="width:30px; height:30px; border-radius:5px; background:#333; border:1px solid #fff; object-fit:cover;">
+                    <span style="font-size:13px; font-weight:800;" id="myName">Sen</span>
+                </div>
+                <div style="font-size:12px; color:#f1c40f; font-weight:800;">Puan: <span id="myScore">0</span></div>
+            </div>
+            <div class="cards-container" id="myCardsArea"></div>
+        </div>
     </div>
-</div>
+</main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -287,15 +310,17 @@ const firebaseConfig = { apiKey:"AIzaSyBykwXCOJpX6rG0pUx93HmALjVcCQWVMYA", authD
 const app = initializeApp(firebaseConfig); const auth = getAuth(app);
 const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "http://localhost:3000" : "https://emirhan-siye.onrender.com";
 
-// SES MOTORU VE iOS UYUMU (Madde 9 & 10)
+// ==========================================
+// SES MOTORU VE iOS UYUMU (Madde 8, 9 & 10)
+// ==========================================
 let audioCtx = null;
 let audioUnlocked = false; 
 const sounds = {};
 const sfxUrls = {
     deal: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3', 
     play: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3', 
-    win: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/game-end.mp3', 
-    lose: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/illegal.mp3' 
+    win: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/promote.mp3', // Gerçekçi parlak kazanç sesi
+    lose: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/illegal.mp3' // tok bir kayıp sesi
 };
 
 function initAndUnlockAudio() {
@@ -342,14 +367,22 @@ unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: tr
 let userUid = null; let currentRoomId = null; let pollingInterval = null; let isProcessing = false;
 let lastHandCount = 0; 
 
+// Kusursuz Modal Yöneticisi
 window.showMatrixModal = (title, message, type = 'info', backToLobby = false) => {
     document.getElementById("matrixModalTitle").innerText = title;
     document.getElementById("matrixModalDesc").innerText = message;
+    
+    const icon = document.getElementById("matrixModalIcon");
+    if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; icon.style.color = '#e74c3c'; } 
+    else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-trophy"></i>'; icon.style.color = '#00ffa3'; } 
+    else { icon.innerHTML = '<i class="fa-solid fa-bell"></i>'; icon.style.color = '#f1c40f'; }
+
     const modal = document.getElementById('matrixModal');
     modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10);
 
     const closeBtn = document.getElementById('matrixModalCloseBtn');
     const newBtn = closeBtn.cloneNode(true); closeBtn.parentNode.replaceChild(newBtn, closeBtn);
+    newBtn.innerText = "TAMAM";
     newBtn.onclick = () => {
         modal.classList.remove('show'); setTimeout(() => modal.style.display = 'none', 300);
         if(backToLobby) resetToLobby();
@@ -361,7 +394,7 @@ window.closeCreateModal = () => { document.getElementById('createModal').classLi
 window.togglePrivateFields = () => { const isP = document.getElementById('isPrivateToggle').checked; document.getElementById('privateFields').style.display = isP ? 'block' : 'none'; }
 window.closePassModal = () => { document.getElementById('passModal').classList.remove('show'); setTimeout(() => document.getElementById('passModal').style.display = 'none', 300); }
 
-window.showHowToPlay = () => { showMatrixModal("Nasıl Oynanır?", "🔹 Pişti (Pişti Olmak): Yerdeki tek kartın üstüne aynısını atmaktır.\n\n🔹 Puanlama:\nPişti: 10 Puan (J ile 20 Puan)\n10♢: 3 Puan\n2♣: 2 Puan\nAs ve J: 1 Puan\nKart Fazlalığı: 3 Puan\n\n🔹 Kazanana anında 5.000 MC nakit aktarılır!", "info"); };
+window.showHowToPlay = () => { showMatrixModal("Nasıl Oynanır?", "🔹 Pişti Olmak: Yerdeki tek kartın üstüne aynısını atmaktır.\n\n🔹 Puanlama:\nPişti: 10 Puan (J ile 20 Puan)\n10♢: 3 Puan\n2♣: 2 Puan\nAs ve J: 1 Puan\nKart Çoğunluğu: 3 Puan\n\n🔹 Kazanana anında 5.000 MC nakit aktarılır!", "info"); };
 
 // Intro
 let loadProg = 0;
@@ -384,7 +417,7 @@ function initApp() { userUid = auth.currentUser.uid; fetchProfile(); startLobbyP
 async function fetchProfile() { 
     try { 
         const res = await fetchAPI('/api/me'); 
-        if(res.ok) {
+        if(res && res.ok) {
             document.getElementById("ui-balance").innerText = Math.floor(res.balance).toLocaleString('tr-TR'); 
             document.getElementById("ui-username").innerText = res.user.username || 'Oyuncu';
             if(res.user.avatar) document.getElementById("ui-avatar").src = res.user.avatar;
@@ -397,7 +430,6 @@ function resetToLobby() {
     clearInterval(pollingInterval); currentRoomId = null; isProcessing = false; lastHandCount = 0;
     document.getElementById("gameArea").style.display = "none"; 
     document.getElementById("lobbyArea").style.display = "flex";
-    document.getElementById("profileBar").style.display = "flex"; // Lobideyken Profili Göster
     fetchProfile(); startLobbyPolling();
 }
 
@@ -407,9 +439,9 @@ async function fetchLobby() {
     if (currentRoomId) return; 
     try {
         const res = await fetchAPI('/api/pisti-online/lobby');
-        if(!res.ok) return;
+        if(!res || !res.ok) return;
         const list = document.getElementById("roomList"); list.innerHTML = "";
-        if (res.rooms.length === 0) { list.innerHTML = `<div style="color:#94a3b8; text-align:center;">Aktif oda yok. Yeni Oda Kur veya Hızlı Katıl'a bas!</div>`; return; }
+        if (res.rooms.length === 0) { list.innerHTML = `<div style="color:#94a3b8; text-align:center;">Aktif oda yok. Yeni Oda Kur veya Hızlı Katıl!</div>`; return; }
         
         res.rooms.forEach(r => {
             const isMe = r.hostUid === userUid;
@@ -440,11 +472,11 @@ window.submitCreateRoom = async () => {
     const roomName = document.getElementById('roomNameInput').value;
     const password = document.getElementById('roomPassInput').value;
     
-    // Açık oda dediyse önce boş yer var mı diye bak (Hızlı Katıl mantığı) - Madde 16
+    // Açık oda dediyse Hızlı Katıl mantığı ile kontrol et (Madde 16)
     if (!isPrivate) {
         try {
             const qRes = await fetchAPI('/api/pisti-online/quick-join', 'POST');
-            if (qRes.ok) { enterGame(qRes.room.id); return; }
+            if (qRes && qRes.ok) { enterGame(qRes.room.id); return; }
         } catch(e) { /* Bulamazsa aşağı inip kendi kursun */ }
     }
 
@@ -484,12 +516,11 @@ async function joinRoom(id, password) {
 function enterGame(id) {
     clearInterval(pollingInterval); currentRoomId = id; isProcessing = false; lastHandCount = 0;
     document.getElementById("lobbyArea").style.display = "none"; 
-    document.getElementById("profileBar").style.display = "none"; // Oyun içinde profili gizle
     document.getElementById("gameArea").style.display = "flex";
     pollGameState(); pollingInterval = setInterval(pollGameState, 1500);
 }
 
-// Oyun İçi Çıkış Butonu
+// Oyun İçi Çıkış Butonu (Madde 18, Lobiye Döner, Satranc.html Entegrasyonu)
 window.leaveGamePrompt = () => {
     document.getElementById("matrixModalTitle").innerText = "Oyundan Çık";
     document.getElementById("matrixModalDesc").innerText = "Oyundan çıkarsanız hükmen mağlup sayılırsınız. Çıkmak istiyor musunuz?";
@@ -511,55 +542,76 @@ async function pollGameState() {
     if (!currentRoomId || isProcessing) return;
     try {
         const pingRes = await fetchAPI('/api/pisti-online/ping', 'POST', { roomId: currentRoomId });
-        if (pingRes && pingRes.status === 'abandoned') { showMatrixModal("İPTAL", "Bağlantı koptuğu için oyun iptal edildi.", "error", true); return; }
+        if (pingRes && pingRes.status === 'abandoned') { 
+            clearInterval(pollingInterval);
+            showMatrixModal("İPTAL", "Bağlantı koptuğu için oyun iptal edildi.", "error", true); 
+            return; 
+        }
 
         const res = await fetchAPI(`/api/pisti-online/state/${currentRoomId}`);
-        if(!res.ok) throw new Error(res.error);
-        syncUI(res.room);
+        if(res && !res.ok) throw new Error(res.error);
+        if(res && res.room) syncUI(res.room);
     } catch(e) {
-        if(e.message === "Oda bulunamadı.") showMatrixModal("BİLGİ", "Oda kapandı veya bitti.", "info", true);
+        if(e.message === "Oda bulunamadı.") {
+            clearInterval(pollingInterval);
+            showMatrixModal("BİLGİ", "Oda kapandı veya oyun sona erdi.", "info", true);
+        }
     }
 }
 
 // 13. MADDE: GERÇEK İSKAMBİL KAĞITLARI (DeckOfCardsAPI)
 function getCardHTML(cardCode) {
     if(cardCode === 'BACK') return `<div class="card back"></div>`;
-    // deckofcardsapi.com formatına dönüştür. (Örn: "0D", "2C", "AS", "KH")
-    // Zaten server.js bu formatta veriyor (A,2..9,0,J,Q,K + H,D,C,S). Sadece AS, KH olarak birleştiriliyor.
     const imgUrl = `https://deckofcardsapi.com/static/img/${cardCode}.png`;
     return `<div class="card" style="background-image: url('${imgUrl}');"></div>`;
 }
 
-// 7. MADDE: Animatör (Gerçekçi Kart Dağıtma Efekti)
-function animateCardDeal(callback) {
+// 10. MADDE: 2'ŞER SANİYE ARALIKLI KART DAĞITMA VE AÇILMA ANİMASYONU
+async function animateCardDeal(hand, callback) {
     const deckRect = document.getElementById("virtualDeck").getBoundingClientRect();
-    const handRect = document.getElementById("myCardsArea").getBoundingClientRect();
+    const handArea = document.getElementById("myCardsArea");
+    handArea.innerHTML = ''; 
     
-    let delays = [0, 300, 600, 900]; // Toplam 1 saniye sürer
-    
-    for(let i = 0; i < 4; i++) {
-        setTimeout(() => {
-            playSfx('deal');
-            const flyingCard = document.createElement("div");
-            flyingCard.className = "card back flying-card";
-            flyingCard.style.top = deckRect.top + "px";
-            flyingCard.style.left = deckRect.left + "px";
-            document.body.appendChild(flyingCard);
-            
-            // Reflow
-            void flyingCard.offsetWidth;
-            
-            flyingCard.style.top = handRect.top + "px";
-            flyingCard.style.left = (handRect.left + (i * 75)) + "px";
-            flyingCard.style.transform = "rotate(360deg) scale(1.1)";
-            
-            setTimeout(() => { flyingCard.remove(); if(i===3) callback(); }, 400);
-        }, delays[i]);
+    for(let i = 0; i < hand.length; i++) {
+        playSfx('deal');
+        
+        // 1. Kapalı Uçan Kart
+        const fCard = document.createElement("div");
+        fCard.className = "card back flying-card";
+        fCard.style.top = deckRect.top + "px";
+        fCard.style.left = deckRect.left + "px";
+        document.body.appendChild(fCard);
+        
+        void fCard.offsetWidth; // Reflow
+        
+        const targetLeft = handArea.getBoundingClientRect().left + (i * 80); // 75px + 5px gap
+        const targetTop = handArea.getBoundingClientRect().top;
+        
+        fCard.style.top = targetTop + "px";
+        fCard.style.left = targetLeft + "px";
+        fCard.style.transform = "rotate(360deg) scale(1)";
+        
+        await new Promise(r => setTimeout(r, 400));
+        fCard.remove();
+        
+        // 2. Yerde Açılarak Gerçek Kartın Belirmesi
+        const wrap = document.createElement("div");
+        wrap.className = "reveal-card";
+        wrap.innerHTML = getCardHTML(hand[i]);
+        wrap.onclick = () => playCard(i);
+        handArea.appendChild(wrap);
+        
+        // 3. İki saniye bekleme (Son kart hariç)
+        if(i < hand.length - 1) {
+            await new Promise(r => setTimeout(r, 2000));
+        }
     }
+    callback();
 }
 
 function syncUI(r) {
-    if (!r) return; // SPAM HATASINA KARŞI KORUMA (Madde 4)
+    // 4. MADDE: EKRANA HATA DÜŞMESİNE KARŞI KORUMA (Spam tıklamalardaki undefined hatası biter)
+    if (!r) return; 
 
     if (r.status === 'finished') {
         clearInterval(pollingInterval);
@@ -568,7 +620,7 @@ function syncUI(r) {
             showMatrixModal("KAZANDIN!", "Tebrikler, oyunu kazandın!\n\n5.000 MC ödül hesabına eklendi!", "success", true);
         } else {
             playSfx('lose');
-            showMatrixModal("OYUN BİTTİ", "Maalesef kaybettin.", "error", true);
+            showMatrixModal("OYUN BİTTİ", "Maalesef kaybettin. Ödülü rakip kazandı.", "error", true);
         }
         return;
     }
@@ -603,18 +655,21 @@ function syncUI(r) {
         document.getElementById("myScore").innerText = `${me.score} (Toplanan: ${me.cardCount})`;
         document.getElementById("myInfoBox").className = (r.status === 'playing' && r.players[r.turn].uid === userUid) ? "my-info active" : "my-info";
 
-        // ANİMASYON KONTROLÜ (Eğer kart sayısı 4 olduysa ve henüz ekranda çizilmediyse)
+        // ANİMASYON KONTROLÜ
         if (me.hand.length === 4 && lastHandCount === 0 && r.status === 'playing') {
             isProcessing = true;
             document.getElementById("myCardsArea").innerHTML = ''; 
-            animateCardDeal(() => { renderMyHand(me.hand); isProcessing = false; });
+            animateCardDeal(me.hand, () => { 
+                renderMyHand(me.hand); 
+                isProcessing = false; 
+            });
         } else if (!isProcessing) {
             renderMyHand(me.hand);
         }
         lastHandCount = me.hand.length;
     }
 
-    // Diğerleri
+    // Diğer Oyuncuların Alanı
     let othHTML = '';
     others.forEach(oth => {
         const isActive = (r.status === 'playing' && r.players[r.turn].uid === oth.uid) ? 'active' : '';
@@ -625,22 +680,24 @@ function syncUI(r) {
 
 function renderMyHand(hand) {
     let myH = '';
-    hand.forEach((c, idx) => { myH += `<div onclick="playCard(${idx})">${getCardHTML(c)}</div>`; });
+    hand.forEach((c, idx) => { myH += `<div class="reveal-card" style="animation:none; opacity:1; transform:none;" onclick="playCard(${idx})">${getCardHTML(c)}</div>`; });
     document.getElementById("myCardsArea").innerHTML = myH;
 }
 
 window.playCard = async (idx) => {
-    // 4. MADDE: KART SPAM VE HATA KORUMASI BURADA!
+    // 7. MADDE: KART SPAM VE HATA KORUMASI 
     if(isProcessing) return; 
     isProcessing = true;
     playSfx('play');
     
     // Optimizasyon: Tıklanan kartı anında gizle (Daha akıcı hissettirir)
-    document.getElementById("myCardsArea").children[idx].style.display = 'none';
+    if(document.getElementById("myCardsArea").children[idx]) {
+        document.getElementById("myCardsArea").children[idx].style.display = 'none';
+    }
 
     try {
         const res = await fetchAPI('/api/pisti-online/play', 'POST', { roomId: currentRoomId, cardIndex: idx });
-        if(!res.ok) throw new Error(res.error);
+        if(!res || !res.ok) throw new Error(res ? res.error : 'Sunucu yanıt vermedi.');
         if(res.room) syncUI(res.room); 
     } catch(e) { 
         showMatrixModal("Uyarı", e.message, "error"); 
