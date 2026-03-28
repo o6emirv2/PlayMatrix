@@ -1,1 +1,29 @@
-
+{
+  "releaseId": "playmatrix-phase23-controlled-rollout-2026-03-28",
+  "phase": "PHASE23_CONTROLLED_ROLLOUT",
+  "channel": "canary",
+  "createdAt": "2026-03-28T21:55:00+03:00",
+  "sourceArchive": "PLAYMATRİX FİNAL SÜRÜM.zip",
+  "packageVersion": "1.0.27",
+  "rollbackTag": "rollback-playmatrix-pre-phase0",
+  "rollbackReady": true,
+  "secretsSanitized": true,
+  "envPolicy": {
+    "runtimeEnvFiles": [
+      ".env",
+      ".env.env",
+      "env.env"
+    ],
+    "shipSecretsInsideArchive": false,
+    "secretSource": "deploy secret store"
+  },
+  "notes": [
+    "FAZ 20 ile cihaz ve tarayıcı smoke test matrisi, canlı gözlem sinyalleriyle ilişkilendirildi.",
+    "FAZ 21 ile Matrix 2048, Memory Flip ve TicTac Arena oyunları portföye eklendi.",
+    "FAZ 22 ile smoke matrisi, canlı gözlem ve operasyon health üzerinde regresyon kilidi tanımlandı.",
+    "FAZ 23 ile controlled rollout yapılandırması ve canary odaklı canlı geçiş kontrol yüzeyi eklendi.",
+    "Admin health dashboard artık smoke matrisi, release gate ve rollout özetini tek ekranda gösteriyor.",
+    "Mobil stabilite için yeni oyun sayfalarında zoom, layout break ve çift tık büyütme sertleştirmesi uygulandı."
+  ],
+  "version": "1.0.27"
+}
