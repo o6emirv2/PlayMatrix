@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>PlayMatrix - TicTac Arena</title>
+  <meta name="description" content="Akıcı ve stabil XOX oyunu." />
+  <meta name="theme-color" content="#081221" />
+  <style>
+    :root { --bg:#07111d; --panel:rgba(255,255,255,.05); --line:rgba(255,255,255,.08); --text:#eef6ff; --muted:rgba(238,246,255,.72); --accent:#67a8ff; --accent2:#8a7dff; --ok:#42d392; --danger:#fb7185; --radius:24px; --shadow:0 28px 56px rgba(0,0,0,.34); }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { margin:0; min-height:100%; width:100%; overflow:hidden; overscroll-behavior:none; background:radial-gradient(circle at top, #102642 0%, #07111d 48%, #060d17 100%); color:var(--text); font-family:Inter,system-ui,-apple-system,sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; touch-action:manipulation; }
+    body { display:flex; align-items:stretch; justify-content:center; padding:16px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    button, a { touch-action:manipulation; }
+    .app { width:min(720px, 100%); display:grid; gap:16px; align-content:start; }
+    .top, .hud, .board-shell, .memory-grid, .arena { background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .top { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:18px; }
+    .back, .ghost, .controls button { border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); border-radius:18px; min-height:46px; padding:0 16px; text-decoration:none; font-weight:800; cursor:pointer; }
+    .title-block h1 { margin:0; font-size:clamp(28px, 5vw, 42px); line-height:1.02; letter-spacing:-.03em; }
+    .title-block p { margin:6px 0 0; color:var(--muted); }
+    .hud { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; padding:14px; }
+    .stat { border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.04); padding:14px; display:grid; gap:8px; }
+    .stat span { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .stat strong { font-size:clamp(22px, 4vw, 30px); }
+    .wide { grid-column:span 1; }
+    .board-shell { padding:16px; }
+    .board { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+    .tile { aspect-ratio:1/1; border-radius:20px; display:grid; place-items:center; font-size:clamp(26px, 6vw, 42px); font-weight:900; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.05); }
+    .tile-0 { color:transparent; } .tile-2 { background:rgba(103,168,255,.14); } .tile-4 { background:rgba(138,125,255,.14); } .tile-8 { background:rgba(66,211,146,.16); } .tile-16,.tile-32,.tile-64 { background:rgba(255,172,61,.16); } .tile-128,.tile-256,.tile-512,.tile-1024,.tile-2048 { background:rgba(251,113,133,.18); }
+    .controls { display:grid; gap:10px; } .controls>.mid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; } .controls>button { width:100%; }
+    .memory-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; padding:16px; }
+    .memory-card, .cell { aspect-ratio:1/1; border-radius:20px; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); font-size:clamp(28px, 7vw, 44px); font-weight:900; cursor:pointer; }
+    .memory-card.is-open { background:linear-gradient(180deg, rgba(103,168,255,.22), rgba(138,125,255,.18)); }
+    .memory-card.is-matched { background:linear-gradient(180deg, rgba(66,211,146,.22), rgba(103,168,255,.14)); }
+    .arena { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; padding:16px; }
+    @media (max-width: 720px) { .top { grid-template-columns:1fr; } .hud { grid-template-columns:1fr; } .memory-grid { grid-template-columns:repeat(4, minmax(0,1fr)); } body { overflow-y:auto; } }
+  </style>
+  <script>
+    (() => {
+      let lastTouchEnd = 0;
+      document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('gesturechange', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('gestureend', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('dblclick', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if ((now - lastTouchEnd) < 320) event.preventDefault();
+        lastTouchEnd = now;
+      }, { passive:false });
+    })();
+  </script>
+</head>
+<body>
+
+  <main class="app">
+    <header class="top">
+      <a class="back" href="/">← PlayMatrix</a>
+      <div class="title-block"><h1>TicTac Arena</h1><p>Hızlı XOX düellosu. Tek cihaz, temiz akış.</p></div>
+      <button id="newBtn" class="ghost">Yeni Oyun</button>
+    </header>
+    <section class="hud">
+      <div class="stat"><span>Sıra</span><strong id="turn">X</strong></div>
+      <div class="stat"><span>X / O</span><strong id="score">0 / 0</strong></div>
+      <div class="stat wide"><span>Durum</span><strong id="status">Hazır</strong></div>
+    </section>
+    <section id="arena" class="arena"></section>
+  </main>
+  <script>
+    (() => {
+      const arena = document.getElementById('arena');
+      const turnEl = document.getElementById('turn');
+      const scoreEl = document.getElementById('score');
+      const statusEl = document.getElementById('status');
+      let board = Array(9).fill(''); let turn = 'X'; let score = { X:0, O:0 }; let locked = false;
+      const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      function render() {
+        turnEl.textContent = turn; scoreEl.textContent = `${score.X} / ${score.O}`;
+        arena.innerHTML = board.map((value, index) => `<button class="cell" data-index="${index}">${value}</button>`).join('');
+        arena.querySelectorAll('[data-index]').forEach((btn) => btn.addEventListener('click', () => play(Number(btn.dataset.index))));
+      }
+      function winner() { return lines.find(([a,b,c]) => board[a] && board[a] === board[b] && board[a] === board[c]); }
+      function play(index) {
+        if (locked || board[index]) return;
+        board[index] = turn;
+        const win = winner();
+        if (win) { locked = true; score[turn] += 1; statusEl.textContent = `${turn} kazandı`; render(); return; }
+        if (board.every(Boolean)) { locked = true; statusEl.textContent = 'Berabere'; render(); return; }
+        turn = turn === 'X' ? 'O' : 'X';
+        statusEl.textContent = `${turn} hamlesi`; render();
+      }
+      function reset(full = false) { board = Array(9).fill(''); turn = 'X'; locked = false; if (full) score = { X:0, O:0 }; statusEl.textContent = 'Hazır'; render(); }
+      document.getElementById('newBtn').addEventListener('click', () => reset(false));
+      reset(true);
+    })();
+  </script>
+
+</body>
+</html>

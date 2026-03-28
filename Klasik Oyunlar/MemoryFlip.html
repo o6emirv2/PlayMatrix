@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>PlayMatrix - Memory Flip</title>
+  <meta name="description" content="Mobil uyumlu hafıza eşleştirme oyunu." />
+  <meta name="theme-color" content="#081221" />
+  <style>
+    :root { --bg:#07111d; --panel:rgba(255,255,255,.05); --line:rgba(255,255,255,.08); --text:#eef6ff; --muted:rgba(238,246,255,.72); --accent:#67a8ff; --accent2:#8a7dff; --ok:#42d392; --danger:#fb7185; --radius:24px; --shadow:0 28px 56px rgba(0,0,0,.34); }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { margin:0; min-height:100%; width:100%; overflow:hidden; overscroll-behavior:none; background:radial-gradient(circle at top, #102642 0%, #07111d 48%, #060d17 100%); color:var(--text); font-family:Inter,system-ui,-apple-system,sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; touch-action:manipulation; }
+    body { display:flex; align-items:stretch; justify-content:center; padding:16px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    button, a { touch-action:manipulation; }
+    .app { width:min(720px, 100%); display:grid; gap:16px; align-content:start; }
+    .top, .hud, .board-shell, .memory-grid, .arena { background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .top { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:18px; }
+    .back, .ghost, .controls button { border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); border-radius:18px; min-height:46px; padding:0 16px; text-decoration:none; font-weight:800; cursor:pointer; }
+    .title-block h1 { margin:0; font-size:clamp(28px, 5vw, 42px); line-height:1.02; letter-spacing:-.03em; }
+    .title-block p { margin:6px 0 0; color:var(--muted); }
+    .hud { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; padding:14px; }
+    .stat { border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.04); padding:14px; display:grid; gap:8px; }
+    .stat span { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .stat strong { font-size:clamp(22px, 4vw, 30px); }
+    .wide { grid-column:span 1; }
+    .board-shell { padding:16px; }
+    .board { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+    .tile { aspect-ratio:1/1; border-radius:20px; display:grid; place-items:center; font-size:clamp(26px, 6vw, 42px); font-weight:900; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.05); }
+    .tile-0 { color:transparent; } .tile-2 { background:rgba(103,168,255,.14); } .tile-4 { background:rgba(138,125,255,.14); } .tile-8 { background:rgba(66,211,146,.16); } .tile-16,.tile-32,.tile-64 { background:rgba(255,172,61,.16); } .tile-128,.tile-256,.tile-512,.tile-1024,.tile-2048 { background:rgba(251,113,133,.18); }
+    .controls { display:grid; gap:10px; } .controls>.mid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; } .controls>button { width:100%; }
+    .memory-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; padding:16px; }
+    .memory-card, .cell { aspect-ratio:1/1; border-radius:20px; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); font-size:clamp(28px, 7vw, 44px); font-weight:900; cursor:pointer; }
+    .memory-card.is-open { background:linear-gradient(180deg, rgba(103,168,255,.22), rgba(138,125,255,.18)); }
+    .memory-card.is-matched { background:linear-gradient(180deg, rgba(66,211,146,.22), rgba(103,168,255,.14)); }
+    .arena { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; padding:16px; }
+    @media (max-width: 720px) { .top { grid-template-columns:1fr; } .hud { grid-template-columns:1fr; } .memory-grid { grid-template-columns:repeat(4, minmax(0,1fr)); } body { overflow-y:auto; } }
+  </style>
+  <script>
+    (() => {
+      let lastTouchEnd = 0;
+      document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('gesturechange', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('gestureend', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('dblclick', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if ((now - lastTouchEnd) < 320) event.preventDefault();
+        lastTouchEnd = now;
+      }, { passive:false });
+    })();
+  </script>
+</head>
+<body>
+
+  <main class="app">
+    <header class="top">
+      <a class="back" href="/">← PlayMatrix</a>
+      <div class="title-block"><h1>Memory Flip</h1><p>Kartları eşleştir, seriyi bozmadan bitir.</p></div>
+      <button id="shuffleBtn" class="ghost">Karıştır</button>
+    </header>
+    <section class="hud">
+      <div class="stat"><span>Hamle</span><strong id="moves">0</strong></div>
+      <div class="stat"><span>Eşleşme</span><strong id="matches">0 / 8</strong></div>
+      <div class="stat wide"><span>Durum</span><strong id="status">Hazır</strong></div>
+    </section>
+    <section id="grid" class="memory-grid"></section>
+  </main>
+  <script>
+    (() => {
+      const icons = ['▲','◆','●','■','☀','✦','✿','⬢'];
+      const grid = document.getElementById('grid');
+      const movesEl = document.getElementById('moves');
+      const matchesEl = document.getElementById('matches');
+      const statusEl = document.getElementById('status');
+      let deck = []; let open = []; let moves = 0; let matches = 0; let busy = false;
+      function shuffle(list) { return list.map((value) => ({ value, sort: Math.random() })).sort((a, b) => a.sort - b.sort).map((item) => item.value); }
+      function reset() {
+        deck = shuffle([...icons, ...icons]).map((icon, index) => ({ id: index + 1, icon, matched: false }));
+        open = []; moves = 0; matches = 0; busy = false; render(); statusEl.textContent = 'Hazır';
+      }
+      function render() {
+        movesEl.textContent = String(moves);
+        matchesEl.textContent = `${matches} / 8`;
+        grid.innerHTML = deck.map((card, index) => {
+          const visible = card.matched || open.includes(index);
+          return `<button class="memory-card ${visible ? 'is-open' : ''} ${card.matched ? 'is-matched' : ''}" data-index="${index}" aria-label="kart ${index + 1}"><span>${visible ? card.icon : '•'}</span></button>`;
+        }).join('');
+        grid.querySelectorAll('[data-index]').forEach((button) => button.addEventListener('click', () => reveal(Number(button.dataset.index))));
+      }
+      function reveal(index) {
+        if (busy || open.includes(index) || deck[index].matched) return;
+        open.push(index); render();
+        if (open.length < 2) { statusEl.textContent = 'Bir kart daha seç'; return; }
+        moves += 1;
+        const [a, b] = open;
+        if (deck[a].icon === deck[b].icon) {
+          deck[a].matched = true; deck[b].matched = true; matches += 1; open = []; render();
+          statusEl.textContent = matches === 8 ? 'Temiz bitiş!' : 'Eşleşme bulundu';
+          return;
+        }
+        statusEl.textContent = 'Tekrar dene'; busy = true;
+        setTimeout(() => { open = []; busy = false; render(); }, 560);
+      }
+      document.getElementById('shuffleBtn').addEventListener('click', reset);
+      reset();
+    })();
+  </script>
+
+</body>
+</html>

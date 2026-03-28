@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>PlayMatrix - Matrix 2048</title>
+  <meta name="description" content="Kayma, takılma ve zoom bozulması olmadan 2048 oyna." />
+  <meta name="theme-color" content="#081221" />
+  <style>
+    :root { --bg:#07111d; --panel:rgba(255,255,255,.05); --line:rgba(255,255,255,.08); --text:#eef6ff; --muted:rgba(238,246,255,.72); --accent:#67a8ff; --accent2:#8a7dff; --ok:#42d392; --danger:#fb7185; --radius:24px; --shadow:0 28px 56px rgba(0,0,0,.34); }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { margin:0; min-height:100%; width:100%; overflow:hidden; overscroll-behavior:none; background:radial-gradient(circle at top, #102642 0%, #07111d 48%, #060d17 100%); color:var(--text); font-family:Inter,system-ui,-apple-system,sans-serif; -webkit-text-size-adjust:100%; text-size-adjust:100%; touch-action:manipulation; }
+    body { display:flex; align-items:stretch; justify-content:center; padding:16px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    button, a { touch-action:manipulation; }
+    .app { width:min(720px, 100%); display:grid; gap:16px; align-content:start; }
+    .top, .hud, .board-shell, .memory-grid, .arena { background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .top { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:18px; }
+    .back, .ghost, .controls button { border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); border-radius:18px; min-height:46px; padding:0 16px; text-decoration:none; font-weight:800; cursor:pointer; }
+    .title-block h1 { margin:0; font-size:clamp(28px, 5vw, 42px); line-height:1.02; letter-spacing:-.03em; }
+    .title-block p { margin:6px 0 0; color:var(--muted); }
+    .hud { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; padding:14px; }
+    .stat { border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,.04); padding:14px; display:grid; gap:8px; }
+    .stat span { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .stat strong { font-size:clamp(22px, 4vw, 30px); }
+    .wide { grid-column:span 1; }
+    .board-shell { padding:16px; }
+    .board { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+    .tile { aspect-ratio:1/1; border-radius:20px; display:grid; place-items:center; font-size:clamp(26px, 6vw, 42px); font-weight:900; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.05); }
+    .tile-0 { color:transparent; } .tile-2 { background:rgba(103,168,255,.14); } .tile-4 { background:rgba(138,125,255,.14); } .tile-8 { background:rgba(66,211,146,.16); } .tile-16,.tile-32,.tile-64 { background:rgba(255,172,61,.16); } .tile-128,.tile-256,.tile-512,.tile-1024,.tile-2048 { background:rgba(251,113,133,.18); }
+    .controls { display:grid; gap:10px; } .controls>.mid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; } .controls>button { width:100%; }
+    .memory-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; padding:16px; }
+    .memory-card, .cell { aspect-ratio:1/1; border-radius:20px; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--text); font-size:clamp(28px, 7vw, 44px); font-weight:900; cursor:pointer; }
+    .memory-card.is-open { background:linear-gradient(180deg, rgba(103,168,255,.22), rgba(138,125,255,.18)); }
+    .memory-card.is-matched { background:linear-gradient(180deg, rgba(66,211,146,.22), rgba(103,168,255,.14)); }
+    .arena { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; padding:16px; }
+    @media (max-width: 720px) { .top { grid-template-columns:1fr; } .hud { grid-template-columns:1fr; } .memory-grid { grid-template-columns:repeat(4, minmax(0,1fr)); } body { overflow-y:auto; } }
+  </style>
+  <script>
+    (() => {
+      let lastTouchEnd = 0;
+      document.addEventListener('gesturestart', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('gesturechange', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('gestureend', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('dblclick', (event) => event.preventDefault(), { passive:false });
+      document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if ((now - lastTouchEnd) < 320) event.preventDefault();
+        lastTouchEnd = now;
+      }, { passive:false });
+    })();
+  </script>
+</head>
+<body>
+
+  <main class="app">
+    <header class="top">
+      <a class="back" href="/">← PlayMatrix</a>
+      <div class="title-block"><h1>Matrix 2048</h1><p>Kaydır, birleştir, 2048’e ulaş.</p></div>
+      <button id="resetBtn" class="ghost">Yeniden Başlat</button>
+    </header>
+    <section class="hud">
+      <div class="stat"><span>Skor</span><strong id="score">0</strong></div>
+      <div class="stat"><span>En Yüksek</span><strong id="best">0</strong></div>
+      <div class="stat wide"><span>Durum</span><strong id="status">Hazır</strong></div>
+    </section>
+    <section class="board-shell">
+      <div id="board" class="board" aria-label="Matrix 2048 oyun tahtası"></div>
+    </section>
+    <section class="controls">
+      <button data-dir="up">Yukarı</button>
+      <div class="mid"><button data-dir="left">Sol</button><button data-dir="down">Aşağı</button><button data-dir="right">Sağ</button></div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const key = 'pm_matrix2048_best';
+      const boardEl = document.getElementById('board');
+      const scoreEl = document.getElementById('score');
+      const bestEl = document.getElementById('best');
+      const statusEl = document.getElementById('status');
+      const size = 4;
+      let cells = Array.from({ length: size * size }, () => 0);
+      let score = 0;
+      let best = Number(localStorage.getItem(key) || 0) || 0;
+      bestEl.textContent = String(best);
+      const dirs = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+
+      function randomEmptyIndex() {
+        const empties = cells.map((v, i) => v === 0 ? i : -1).filter((i) => i >= 0);
+        if (!empties.length) return -1;
+        return empties[Math.floor(Math.random() * empties.length)];
+      }
+      function spawn(times = 1) {
+        for (let i = 0; i < times; i += 1) {
+          const index = randomEmptyIndex();
+          if (index < 0) return;
+          cells[index] = Math.random() < 0.9 ? 2 : 4;
+        }
+      }
+      function line(dir, index) {
+        const out = [];
+        for (let i = 0; i < size; i += 1) {
+          if (dir === 'left' || dir === 'right') out.push(index * size + (dir === 'left' ? i : (size - 1 - i)));
+          else out.push((dir === 'up' ? i : (size - 1 - i)) * size + index);
+        }
+        return out;
+      }
+      function compact(values) {
+        const list = values.filter(Boolean);
+        for (let i = 0; i < list.length - 1; i += 1) {
+          if (list[i] === list[i + 1]) {
+            list[i] *= 2;
+            score += list[i];
+            list.splice(i + 1, 1);
+          }
+        }
+        while (list.length < size) list.push(0);
+        return list;
+      }
+      function move(dir) {
+        let changed = false;
+        for (let i = 0; i < size; i += 1) {
+          const indexes = line(dir, i);
+          const values = indexes.map((idx) => cells[idx]);
+          const next = compact(values);
+          indexes.forEach((idx, pos) => {
+            if (cells[idx] !== next[pos]) changed = true;
+            cells[idx] = next[pos];
+          });
+        }
+        if (changed) {
+          spawn(1);
+          if (score > best) {
+            best = score;
+            localStorage.setItem(key, String(best));
+            bestEl.textContent = String(best);
+          }
+          statusEl.textContent = cells.includes(2048) ? '2048 hazır!' : (cells.includes(0) ? 'Devam ediyor' : 'Yoğun baskı');
+        }
+        render();
+      }
+      function render() {
+        boardEl.innerHTML = cells.map((value) => `<div class="tile tile-${value || 0}">${value || ''}</div>`).join('');
+        scoreEl.textContent = String(score);
+      }
+      function reset() {
+        cells = Array.from({ length: size * size }, () => 0);
+        score = 0;
+        spawn(2);
+        statusEl.textContent = 'Hazır';
+        render();
+      }
+      document.getElementById('resetBtn').addEventListener('click', reset);
+      document.querySelectorAll('[data-dir]').forEach((btn) => btn.addEventListener('click', () => move(btn.dataset.dir)));
+      document.addEventListener('keydown', (event) => { const dir = dirs[event.key]; if (dir) { event.preventDefault(); move(dir); } }, { passive:false });
+      let sx = 0; let sy = 0;
+      boardEl.addEventListener('touchstart', (event) => { const t = event.changedTouches[0]; sx = t.clientX; sy = t.clientY; }, { passive:true });
+      boardEl.addEventListener('touchend', (event) => {
+        const t = event.changedTouches[0];
+        const dx = t.clientX - sx; const dy = t.clientY - sy;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+        move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+      }, { passive:true });
+      reset();
+    })();
+  </script>
+
+</body>
+</html>
