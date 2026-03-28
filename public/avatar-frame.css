@@ -1,1 +1,302 @@
+/* FAZ 3 shared avatar + mobile stability overrides */
+html,
+body {
+  overscroll-behavior-x: none !important;
+  overscroll-behavior-y: contain;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
+body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+a,
+button,
+input,
+textarea,
+select,
+label,
+[role="button"],
+.btn,
+.ghost-btn,
+.pill-btn,
+.mobile-tab,
+.drop-item,
+.pm-premium-avatar,
+.pm-game-avatar-shell,
+.t-avatar-wrap {
+  touch-action: manipulation;
+}
+
+img,
+.pm-premium-img,
+.pm-avatar-shell__img,
+.pm-avatar-image,
+.p-avatar,
+.t-avatar,
+.gts-opp-avatar,
+.pm-frame-image,
+.pm-avatar-shell__frame,
+.pm-game-frame,
+.t-frame {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+[data-pm-avatar="true"],
+.pm-premium-avatar,
+.pm-avatar-shell,
+.pm-game-avatar-shell,
+.t-avatar-wrap {
+  --pm-avatar-scale: 1;
+  --pm-avatar-fit: .86;
+  --pm-frame-scale: 1.28;
+  --pm-frame-shift-x: 0px;
+  --pm-frame-shift-y: 0px;
+  position: relative !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible !important;
+  isolation: isolate;
+  contain: layout paint style;
+  flex-shrink: 0;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.t-avatar-wrap {
+  inline-size: 40px;
+  block-size: 40px;
+}
+
+.t-avatar-wrap > [data-pm-avatar="true"],
+.t-avatar-wrap > .pm-premium-avatar,
+.pm-game-avatar-shell > [data-pm-avatar="true"],
+.pm-game-avatar-shell > .pm-premium-avatar {
+  inline-size: 100% !important;
+  block-size: 100% !important;
+}
+
+[data-pm-avatar="true"].has-frame,
+.pm-premium-avatar.has-frame,
+.pm-premium-avatar--picker.has-frame,
+.pm-premium-avatar--profile.has-frame,
+.pm-premium-avatar--leaderboard.has-frame,
+.pm-premium-avatar--header.has-frame,
+.pm-premium-avatar--social-card.has-frame,
+.pm-premium-avatar--social-list.has-frame,
+.pm-premium-avatar--chat.has-frame,
+.pm-premium-avatar--topbar.has-frame,
+.pm-game-avatar-shell.has-frame,
+.t-avatar-wrap.has-frame {
+  --pm-avatar-scale: .84;
+}
+
+.pm-premium-avatar--picker.has-frame,
+.pm-premium-avatar--profile.has-frame {
+  --pm-avatar-scale: .82;
+}
+
+.pm-premium-avatar--topbar.has-frame,
+.pm-premium-avatar--header.has-frame {
+  --pm-avatar-scale: .80;
+}
+
+.pm-premium-img,
+.pm-avatar-shell__img,
+.pm-avatar-image,
+.p-avatar,
+.t-avatar,
+.gts-opp-avatar,
+[data-pm-avatar="true"] > img:not(.pm-frame-image):not(.pm-avatar-shell__frame):not(.pm-game-frame):not(.t-frame) {
+  position: absolute !important;
+  inset: 0 !important;
+  inline-size: 100% !important;
+  block-size: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  border-radius: 50% !important;
+  z-index: 2 !important;
+  display: block !important;
+  transform: translateZ(0) scale(var(--pm-avatar-scale)) !important;
+  transform-origin: center center !important;
+  background: transparent !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  backface-visibility: hidden;
+}
+
+.pm-frame-image,
+.pm-avatar-shell__frame,
+.pm-game-frame,
+.t-frame,
+.avatar-frame .pm-frame-image,
+.avatar-frame img[class*="frame-"] {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: calc(100% * var(--pm-frame-scale)) !important;
+  height: calc(100% * var(--pm-frame-scale)) !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  z-index: 4 !important;
+  pointer-events: none !important;
+  transform: translate3d(calc(-50% + var(--pm-frame-shift-x)), calc(-50% + var(--pm-frame-shift-y)), 0) !important;
+  transform-origin: center center !important;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,.24));
+  backface-visibility: hidden;
+}
+
+[data-pm-avatar-size="mini"] {
+  --pm-avatar-scale: .86;
+}
+
+[data-pm-avatar-size="mini"].has-frame,
+.pm-game-avatar-shell--mini.has-frame {
+  --pm-avatar-scale: .82;
+}
+
+[data-pm-avatar="true"][data-frame-index="0"] .pm-frame-image,
+[data-pm-avatar="true"][data-frame-index="0"] .pm-avatar-shell__frame {
+  display: none !important;
+}
+
+.pm-frame-image.frame-1,
+.pm-avatar-shell__frame.frame-1,
+.pm-game-frame.frame-1,
+.t-frame.frame-1 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-2,
+.pm-avatar-shell__frame.frame-2,
+.pm-game-frame.frame-2,
+.t-frame.frame-2 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-3,
+.pm-avatar-shell__frame.frame-3,
+.pm-game-frame.frame-3,
+.t-frame.frame-3 { --pm-frame-scale: 1.26; }
+.pm-frame-image.frame-4,
+.pm-avatar-shell__frame.frame-4,
+.pm-game-frame.frame-4,
+.t-frame.frame-4 { --pm-frame-scale: 1.27; }
+.pm-frame-image.frame-5,
+.pm-avatar-shell__frame.frame-5,
+.pm-game-frame.frame-5,
+.t-frame.frame-5 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-6,
+.pm-avatar-shell__frame.frame-6,
+.pm-game-frame.frame-6,
+.t-frame.frame-6 { --pm-frame-scale: 1.29; }
+.pm-frame-image.frame-7,
+.pm-avatar-shell__frame.frame-7,
+.pm-game-frame.frame-7,
+.t-frame.frame-7 { --pm-frame-scale: 1.30; }
+.pm-frame-image.frame-8,
+.pm-avatar-shell__frame.frame-8,
+.pm-game-frame.frame-8,
+.t-frame.frame-8 { --pm-frame-scale: 1.31; }
+.pm-frame-image.frame-9,
+.pm-avatar-shell__frame.frame-9,
+.pm-game-frame.frame-9,
+.t-frame.frame-9 { --pm-frame-scale: 1.31; }
+.pm-frame-image.frame-10,
+.pm-avatar-shell__frame.frame-10,
+.pm-game-frame.frame-10,
+.t-frame.frame-10 { --pm-frame-scale: 1.32; }
+.pm-frame-image.frame-11,
+.pm-avatar-shell__frame.frame-11,
+.pm-game-frame.frame-11,
+.t-frame.frame-11 { --pm-frame-scale: 1.33; }
+.pm-frame-image.frame-12,
+.pm-avatar-shell__frame.frame-12,
+.pm-game-frame.frame-12,
+.t-frame.frame-12 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-13,
+.pm-avatar-shell__frame.frame-13,
+.pm-game-frame.frame-13,
+.t-frame.frame-13 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-14,
+.pm-avatar-shell__frame.frame-14,
+.pm-game-frame.frame-14,
+.t-frame.frame-14 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-15,
+.pm-avatar-shell__frame.frame-15,
+.pm-game-frame.frame-15,
+.t-frame.frame-15 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-16,
+.pm-avatar-shell__frame.frame-16,
+.pm-game-frame.frame-16,
+.t-frame.frame-16 {
+  --pm-frame-scale: 1.36;
+  --pm-frame-shift-x: 1px;
+  --pm-frame-shift-y: -2px;
+}
+.pm-frame-image.frame-17,
+.pm-avatar-shell__frame.frame-17,
+.pm-game-frame.frame-17,
+.t-frame.frame-17 {
+  --pm-frame-scale: 1.37;
+  --pm-frame-shift-y: 1px;
+}
+.pm-frame-image.frame-18,
+.pm-avatar-shell__frame.frame-18,
+.pm-game-frame.frame-18,
+.t-frame.frame-18 {
+  --pm-frame-scale: 1.33;
+  --pm-frame-shift-y: 1px;
+}
+.pm-frame-image.frame-19,
+.pm-avatar-shell__frame.frame-19,
+.pm-game-frame.frame-19,
+.t-frame.frame-19 { --pm-frame-scale: 1.39; }
+.pm-frame-image.frame-20,
+.pm-avatar-shell__frame.frame-20,
+.pm-game-frame.frame-20,
+.t-frame.frame-20 { --pm-frame-scale: 1.35; }
+
+
+.pm-premium-avatar > img:not(.pm-frame-image):not(.pm-avatar-shell__frame):not(.pm-game-frame):not(.t-frame),
+.pm-game-avatar-shell > img:not(.pm-frame-image):not(.pm-avatar-shell__frame):not(.pm-game-frame):not(.t-frame),
+.t-avatar-wrap > img:not(.pm-frame-image):not(.pm-avatar-shell__frame):not(.pm-game-frame):not(.t-frame) {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+
+/* FAZ 6 legacy avatar compatibility lock */
+.avatar-frame,
+.frame-base {
+  position: absolute !important;
+  inset: 0 !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+.avatar-frame::before,
+.avatar-frame::after,
+.frame-base::before,
+.frame-base::after {
+  content: none !important;
+}
+
+.avatar-frame img[class*='frame-'],
+.frame-base img[class*='frame-'] {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
