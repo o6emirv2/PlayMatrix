@@ -1,1 +1,13 @@
-
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const read = (p) => fs.readFileSync(path.join(__dirname, '..', p), 'utf8');
+const script = read('script.js');
+const style = read('style.css');
+const avatarJs = read('public/avatar-frame.js');
+const avatarCss = read('public/avatar-frame.css');
+if (/className\s*=\s*`avatar-frame frame-lvl-/.test(script)) throw new Error('legacy class writer still present');
+if (/\.frame-lvl-1\s*\{/.test(style)) throw new Error('legacy frame-lvl css still present');
+if (!/reconcileLegacyAvatarTree/.test(avatarJs)) throw new Error('legacy reconcile helper missing');
+if (!/legacy avatar compatibility lock/i.test(avatarCss)) throw new Error('legacy compatibility lock missing');
+console.log('verify-avatar-system: ok');

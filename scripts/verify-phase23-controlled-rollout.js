@@ -1,0 +1,10 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const root = path.join(__dirname, '..');
+if (!fs.existsSync(path.join(root, 'utils/controlledRollout.js'))) throw new Error('VERIFY_FAIL:controlled-rollout-util');
+const adminRoutes = fs.readFileSync(path.join(root, 'routes/admin.routes.js'), 'utf8');
+if (!adminRoutes.includes('/admin/ops/controlled-rollout')) throw new Error('VERIFY_FAIL:controlled-rollout-route');
+const ui = fs.readFileSync(path.join(root, 'public/admin/health.html'), 'utf8');
+if (!ui.includes('FAZ 23 · Canlıya Kontrollü Geçiş')) throw new Error('VERIFY_FAIL:controlled-rollout-ui');
+console.log('verify-phase23-controlled-rollout: ok');

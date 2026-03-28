@@ -1,0 +1,13 @@
+const fs = require('fs');
+const path = require('path');
+const root = path.join(__dirname, '..');
+const adminHtml = fs.readFileSync(path.join(root, 'public/admin/index.html'), 'utf8');
+const adminRoutes = fs.readFileSync(path.join(root, 'routes/admin.routes.js'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+if (!adminRoutes.includes("/admin/ops/panel")) throw new Error('ops panel route missing');
+if (!adminHtml.includes('Operasyon Paneli Özeti')) throw new Error('ops panel section missing');
+if (!adminHtml.includes('renderOpsPanel')) throw new Error('renderOpsPanel missing');
+if (!style.includes('PHASE 16 OPERATIONS / BAR BRANDING SYSTEM')) throw new Error('phase16 branding css missing');
+if (!fs.existsSync(path.join(root, 'assets/branding/pm-topbar-mark.png'))) throw new Error('topbar asset missing');
+if (!fs.existsSync(path.join(root, 'assets/branding/pm-bottombar-art.png'))) throw new Error('bottombar asset missing');
+console.log('phase16 admin ops verify: ok');

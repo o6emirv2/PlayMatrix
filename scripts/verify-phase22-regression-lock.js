@@ -1,0 +1,10 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const root = path.join(__dirname, '..');
+if (!fs.existsSync(path.join(root, 'utils/releaseGate.js'))) throw new Error('VERIFY_FAIL:release-gate-util');
+const adminRoutes = fs.readFileSync(path.join(root, 'routes/admin.routes.js'), 'utf8');
+if (!adminRoutes.includes('/admin/ops/release-gate')) throw new Error('VERIFY_FAIL:release-gate-route');
+const ui = fs.readFileSync(path.join(root, 'public/admin/health.html'), 'utf8');
+if (!ui.includes('FAZ 22 · Son Kalite Geçişi / Regresyon Kilidi')) throw new Error('VERIFY_FAIL:release-gate-ui');
+console.log('verify-phase22-regression-lock: ok');
