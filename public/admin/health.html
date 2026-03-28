@@ -1,1 +1,652 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.80, maximum-scale=0.80, minimum-scale=0.80, user-scalable=no, viewport-fit=cover" />
+  <title>PlayMatrix Health Pro</title>
+  <style>
+    :root{--bg:#07111f;--panel:rgba(255,255,255,.05);--line:rgba(255,255,255,.08);--text:#edf4ff;--muted:rgba(237,244,255,.7);--accent:#3b82f6;--accent2:#60a5fa;--ok:#34d399;--warn:#fbbf24;--danger:#fb7185;--radius:24px;--shadow:0 28px 60px rgba(0,0,0,.34);--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:radial-gradient(circle at top,#0f2343 0%, #07111f 42%, #07111f 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,sans-serif;overflow-x:hidden}
+    body{padding:22px 16px 34px;touch-action:manipulation}
+    .wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.035));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+    .title{margin:0;font-size:clamp(32px,6vw,56px);line-height:1.02;font-weight:900;letter-spacing:-.03em}
+    .subtitle{margin-top:8px;color:var(--muted);font-size:clamp(16px,2.2vw,24px)}
+    .badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .badge{display:inline-flex;align-items:center;gap:12px;min-height:50px;padding:0 16px;border-radius:999px;border:1px solid var(--line);font-size:18px;font-weight:900;background:rgba(255,255,255,.03)}
+    .badge::before{content:"";width:15px;height:15px;border-radius:999px;background:rgba(255,255,255,.35)}
+    .badge.ok{color:var(--ok)} .badge.ok::before{background:var(--ok)}
+    .badge.warn{color:var(--warn)} .badge.warn::before{background:var(--warn)}
+    .badge.error{color:var(--danger)} .badge.error::before{background:var(--danger)}
+    .grid{display:grid;gap:16px}.g-2{grid-template-columns:1.1fr .9fr}.g-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .field{display:flex;flex-direction:column;gap:8px}.field label{font-size:14px;font-weight:800;color:var(--muted)}
+    input,button{font:inherit} input{font-size:16px}
+    .input{width:100%;border-radius:18px;padding:16px 18px;border:1px solid var(--line);background:#06101d;color:var(--text);outline:none}
+    .input:focus{border-color:rgba(96,165,250,.75);box-shadow:0 0 0 4px rgba(59,130,246,.14)}
+    .buttons{display:flex;flex-wrap:wrap;gap:12px}.buttons button{border:0;border-radius:18px;padding:16px 22px;font-weight:900;color:#fff;cursor:pointer;background:linear-gradient(180deg,var(--accent2),var(--accent))}.buttons .secondary{background:rgba(37,99,235,.18);border:1px solid rgba(96,165,250,.18)}
+    .status{padding:16px 18px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.03);line-height:1.6;word-break:break-word}.status.ok{border-color:rgba(52,211,153,.28)}.status.warn{border-color:rgba(251,191,36,.24)}.status.error{border-color:rgba(251,113,133,.26)}
+    .metric{padding:18px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.03)}.metric .k{font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}.metric .v{margin-top:10px;font-size:clamp(24px,4vw,42px);font-weight:900}
+    .mono{font-family:var(--mono)}
+    pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:13px;line-height:1.6}
+    .json{max-height:520px;overflow:auto;background:#05101c;border:1px solid var(--line);border-radius:18px;padding:16px}
+    .section-title{font-size:14px;color:var(--muted);margin-bottom:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+    .issue-list{display:grid;gap:12px}.issue-item{padding:16px;border-radius:18px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+    .issue-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}.issue-msg{font-weight:900;line-height:1.4}.issue-meta{font-size:13px;color:var(--muted);line-height:1.55;word-break:break-word}
+    .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+    .pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.error{color:var(--danger)}
+    @media (max-width:980px){.g-2{grid-template-columns:1fr}.g-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:640px){body{padding:18px 12px 26px}.card{padding:18px}.g-4{grid-template-columns:1fr}.buttons button{width:100%}}
+  
+    .hero::after{content:'';position:absolute;right:18px;top:18px;width:min(150px,26vw);aspect-ratio:1/1;background:url('/assets/branding/pm-topbar-mark.png') center/contain no-repeat;opacity:.08;pointer-events:none;z-index:0}.hero>*{position:relative;z-index:1}
+  </style>
+  <link rel="stylesheet" href="/premium-phase5.css" />
+  <link rel="stylesheet" href="/design-system.css" />
+  <script src="/premium-phase5.js" defer></script>
+</head>
+<body data-pm-design="phase14">
+  <div class="wrap">
+    <section class="card">
+      <h1 class="title">PlayMatrix Health Dashboard</h1>
+      <div class="subtitle">Canlı deployment, bellek, uptime, proses sağlığı ve FAZ 19 canlı hata gözlem katmanını profesyonel görünümle izle</div>
+      <div class="badges">
+        <div class="badge warn" id="authBadge">Oturum aranıyor...</div>
+        <div class="badge warn" id="healthBadge">Health bekleniyor...</div>
+      </div>
+    </section>
 
+    <section class="card">
+      <div class="grid g-2">
+        <div class="field">
+          <label for="baseInput">API tabanı</label>
+          <input id="baseInput" class="input mono" placeholder="/api veya tam backend URL" />
+        </div>
+        <div class="field">
+          <label for="manualToken">Yedek Bearer token</label>
+          <input id="manualToken" class="input" type="password" placeholder="Otomatik giriş yoksa token gir" />
+        </div>
+      </div>
+      <div class="buttons" style="margin-top:14px">
+        <button id="saveBtn" type="button">Bağlantıyı Kaydet</button>
+        <button id="reloadBtn" class="secondary" type="button">Health Yenile</button>
+      </div>
+      <div class="status" id="statusBox" style="margin-top:14px">Health sistemi hazırlanıyor...</div>
+    </section>
+
+    <section class="grid g-4" id="metricGrid"></section>
+
+    <section class="card">
+      <div class="section-title">FAZ 19 · Canlı Gözlem Özeti</div>
+      <div class="grid g-4" id="liveMetricGrid"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">Canlı Hata ve Gözlem Kuyruğu</div>
+      <div class="issue-list" id="liveIssueList"></div>
+    </section>
+
+    
+
+<section class="card">
+  <div class="section-title">FAZ 20 · Device / Browser Smoke Matrix</div>
+  <div class="grid g-4" id="smokeMetricGrid"></div>
+  <div class="issue-list" id="smokeCaseList" style="margin-top:14px"></div>
+</section>
+
+<section class="grid g-2">
+  <section class="card">
+    <div class="section-title">FAZ 22 · Son Kalite Geçişi / Regresyon Kilidi</div>
+    <div class="status warn" id="releaseGateBox">Regresyon kilidi verisi hazırlanıyor...</div>
+  </section>
+  <section class="card">
+    <div class="section-title">FAZ 23 · Canlıya Kontrollü Geçiş</div>
+    <div class="status warn" id="rolloutBox">Controlled rollout verisi hazırlanıyor...</div>
+  </section>
+</section>
+
+    <section class="card">
+      <div style="font-size:14px;color:var(--muted);margin-bottom:10px">Ham JSON</div>
+      <div class="json"><pre id="rawOutput">Hazır.</pre></div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, browserSessionPersistence, setPersistence, onIdTokenChanged, getIdToken } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyAIOd4DG1jxn4wAV6bz80SJHprNWqBYSS4',
+      authDomain: 'playmatrixdestek.firebaseapp.com',
+      projectId: 'playmatrixdestek',
+      storageBucket: 'playmatrixdestek.firebasestorage.app',
+      messagingSenderId: '819006977863',
+      appId: '1:819006977863:web:6602ccf4e381008ff3fe62',
+      measurementId: 'G-11DLXBM6D8'
+    };
+    const PLAYMATRIX_REMOTE_API_META = (document.querySelector('meta[name="playmatrix-remote-api-url"]')?.content || '').trim();
+    const REMOTE_FALLBACKS = ['https://emirhan-siye.onrender.com'];
+    const DEFAULT_API_BASE = `${window.location.origin.replace(/\/+$/, '')}/api`;
+
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    setPersistence(auth, browserSessionPersistence).catch(() => {});
+
+    const state = { apiBase:'/api', activeBase:'/api', autoToken:'', manualToken:'', authReady:false, user:null };
+    const ADMIN_SESSION_KEYS = Object.freeze({ apiBase: 'pm_admin_api_session' });
+    const adminSessionStore = (() => {
+      const memory = Object.create(null);
+      const store = (() => {
+        try {
+          const target = window.sessionStorage;
+          const probeKey = '__pm_admin_health_probe__';
+          target.setItem(probeKey, '1');
+          target.removeItem(probeKey);
+          return target;
+        } catch (_) {
+          return null;
+        }
+      })();
+      return {
+        get(key) {
+          if (!key) return '';
+          if (store) return String(store.getItem(key) || '');
+          return String(memory[key] || '');
+        },
+        set(key, value) {
+          if (!key) return;
+          const safeValue = String(value || '');
+          if (!safeValue) {
+            this.remove(key);
+            return;
+          }
+          if (store) store.setItem(key, safeValue);
+          else memory[key] = safeValue;
+        },
+        remove(key) {
+          if (!key) return;
+          if (store) store.removeItem(key);
+          delete memory[key];
+        },
+        clearLegacy() {
+          try {
+            window.localStorage.removeItem('pm_admin_api');
+            window.localStorage.removeItem('pm_admin_manual_token');
+          } catch (_) {}
+        }
+      };
+    })();
+
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const fmt = (value) => Number(value || 0).toLocaleString('tr-TR');
+
+    function normalizeApiBase(rawInput='') {
+      let raw = String(rawInput || '').trim();
+      if (!raw) return '/api';
+      raw = raw.replace(/^ttps:\/\//i,'https://').replace(/^htps:\/\//i,'https://').replace(/^tps:\/\//i,'https://');
+      if (/^\/?ap$/i.test(raw) || /^\/?api$/i.test(raw)) return '/api';
+      if (raw.startsWith('/')) {
+        const path = raw.replace(/\/+$/, '');
+        if (!path || path === '/' || path === '/admin') return '/api';
+        return /\/api(?:$|\/)/i.test(path) ? path : `${path}/api`.replace(/\/\/+/, '/');
+      }
+      if (!/^https?:\/\//i.test(raw)) raw = raw.includes('.') ? `https://${raw}` : `/${raw}`;
+      if (raw.startsWith('/')) return normalizeApiBase(raw);
+      const url = new URL(raw);
+      let pathname = (url.pathname || '').replace(/\/+$/, '');
+      if (!pathname || pathname === '/' || pathname === '/admin' || pathname === '/ap') pathname = '/api';
+      else if (!/\/api(?:$|\/)/i.test(pathname)) pathname = `${pathname}/api`;
+      return `${url.origin}${pathname}`;
+    }
+
+    function joinApiUrl(base, path) {
+      const normalized = normalizeApiBase(base);
+      let cleanPath = String(path || '').startsWith('/') ? String(path) : `/${String(path || '')}`;
+      if ((normalized === '/api' || /\/api$/i.test(normalized)) && /^\/api\//i.test(cleanPath)) {
+        cleanPath = cleanPath.replace(/^\/api/i, '');
+      }
+      return `${normalized.replace(/\/$/, '')}${cleanPath}`;
+    }
+
+    function baseRootVariant(base = '') {
+      const normalized = normalizeApiBase(base);
+      if (!normalized) return '';
+      if (normalized === '/api') return '';
+      return normalized.replace(/\/api$/i, '');
+    }
+
+    function buildRequestUrls(base, path) {
+      const cleanPath = String(path || '').startsWith('/') ? String(path) : `/${String(path || '')}`;
+      const urls = [];
+      const push = (value) => {
+        const clean = String(value || '').trim();
+        if (!clean || urls.includes(clean)) return;
+        urls.push(clean);
+      };
+
+      const normalized = normalizeApiBase(base);
+      const rootBase = baseRootVariant(normalized);
+      push(joinApiUrl(normalized, cleanPath));
+      if (rootBase !== normalized) {
+        push(joinApiUrl(rootBase || '', cleanPath));
+      }
+      if (/^\/api\//i.test(cleanPath)) {
+        const rootPath = cleanPath.replace(/^\/api/i, '');
+        push(joinApiUrl(rootBase || '', rootPath));
+      } else {
+        push(joinApiUrl(normalized, `/api${cleanPath}`));
+        if (rootBase !== normalized) push(joinApiUrl(rootBase || '', `/api${cleanPath}`));
+      }
+      return urls;
+    }
+
+    function currentToken() { return state.autoToken || state.manualToken || ''; }
+
+    function setBadge(id, text, tone='warn') {
+      const el = $(id); el.className = `badge ${tone}`; el.textContent = text;
+    }
+
+    function setStatus(text, tone='warn') {
+      const el = $('statusBox'); el.className = `status ${tone}`; el.innerHTML = text;
+    }
+
+    async function readJsonSafe(response) {
+      const text = await response.text().catch(() => '');
+      if (!text) return {};
+      try { return JSON.parse(text); } catch (_) { return { raw: text }; }
+    }
+
+    async function readRuntimeRemoteFallbacks() {
+      const discovered = [];
+      const push = (value) => {
+        const normalized = String(value || '').trim().replace(/\/+$/, '');
+        if (!normalized || discovered.includes(normalized) || normalized === window.location.origin.replace(/\/+$/, '')) return;
+        discovered.push(normalized);
+      };
+      const probeUrls = [
+        `${window.location.origin.replace(/\/+$/, '')}/api/deployment-healthz`,
+        `${window.location.origin.replace(/\/+$/, '')}/deployment-healthz`,
+        `${window.location.origin.replace(/\/+$/, '')}/api/route-manifest`,
+        `${window.location.origin.replace(/\/+$/, '')}/route-manifest`
+      ];
+      for (const url of probeUrls) {
+        try {
+          const response = await fetch(url, { method: 'GET', credentials: 'include' });
+          if (!response.ok) continue;
+          const payload = await readJsonSafe(response);
+          push(payload?.publicBackendOrigin);
+          push(payload?.backendOrigin);
+          push(payload?.remoteApiBase);
+          push(payload?.release?.publicBackendOrigin);
+        } catch (_) {}
+      }
+      if (!discovered.length) {
+        push(window.__PLAYMATRIX_REMOTE_API_URL__);
+        push(PLAYMATRIX_REMOTE_API_META);
+      }
+      return discovered;
+    }
+
+    async function probeBase(base) {
+      const normalized = normalizeApiBase(base);
+      const probeUrls = buildRequestUrls(normalized, '/healthz').concat(buildRequestUrls(normalized, '/api/healthz'));
+      for (const url of probeUrls) {
+        try {
+          const response = await fetch(url, { credentials:'omit' });
+          if (response.ok) return normalized;
+        } catch (_) {}
+      }
+      return null;
+    }
+
+    async function probeAdminCapability(base, token, preferredPath) {
+      const normalized = normalizeApiBase(base);
+      const probePaths = [preferredPath, '/admin/ping', '/admin/deployment-health', '/admin/overview']
+        .filter(Boolean)
+        .filter((item, idx, arr) => arr.indexOf(item) === idx);
+      for (const probePath of probePaths) {
+        const urls = buildRequestUrls(normalized, probePath);
+        for (const url of urls) {
+          try {
+            const response = await fetch(url, {
+              method: 'GET',
+              headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+              credentials:'omit'
+            });
+            const payload = await readJsonSafe(response);
+            if (response.ok && payload?.ok !== false) return { ok: true, base: normalized, path: probePath };
+            if (response.status === 401 || response.status === 403) return { ok: false, base: normalized, authError: true, error: payload?.error || `HTTP ${response.status}` };
+          } catch (_) {}
+        }
+      }
+      return { ok: false, base: normalized, missing: true, error: 'ADMIN_CAPABILITY_MISSING' };
+    }
+
+    async function chooseBase(preferred='') {
+      const token = currentToken();
+      const runtimeFallbacks = await readRuntimeRemoteFallbacks();
+      const candidates = [preferred || state.apiBase, DEFAULT_API_BASE, '/api', ...runtimeFallbacks, ...REMOTE_FALLBACKS].map(normalizeApiBase).filter((item, idx, arr) => item && arr.indexOf(item) === idx);
+      let firstHealthy = '';
+      let firstAuthError = '';
+      for (const candidate of candidates) {
+        const okBase = await probeBase(candidate);
+        if (!okBase) continue;
+        firstHealthy = firstHealthy || okBase;
+        const capability = await probeAdminCapability(okBase, token, '/admin/deployment-health');
+        if (capability.ok) { state.activeBase = capability.base; return capability.base; }
+        if (capability.authError && !firstAuthError) firstAuthError = capability.error || 'Yönetici yetkisi gerekli.';
+      }
+      state.activeBase = normalizeApiBase(firstHealthy || preferred || state.apiBase || '/api');
+      if (firstAuthError) {
+        setStatus(`Admin endpoint bulundu ama yetki reddedildi: <strong>${escapeHtml(firstAuthError)}</strong>`, 'error');
+      } else {
+        setStatus(`Health endpoint bulundu ama admin health endpoint bulunamadı. Aktif taban: <span class="mono">${escapeHtml(state.activeBase)}</span>`, 'error');
+      }
+      return state.activeBase;
+    }
+
+    async function healthApi() {
+
+      const token = currentToken();
+      if (!token) throw new Error('Admin token bulunamadı.');
+      const urls = buildRequestUrls(state.activeBase, '/admin/ops/health');
+      let lastError = null;
+      for (let index = 0; index < urls.length; index += 1) {
+        const url = urls[index];
+        try {
+          const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            credentials:'omit'
+          });
+          const payload = await readJsonSafe(response);
+          if (!response.ok || payload?.ok === false) {
+            const err = new Error(payload?.error || `HTTP ${response.status}`);
+            if (response.status === 404 && index < urls.length - 1) {
+              lastError = err;
+              continue;
+            }
+            throw err;
+          }
+          return payload;
+        } catch (error) {
+          lastError = error;
+          if (index >= urls.length - 1) throw error;
+        }
+      }
+      throw lastError || new Error('Health yüklenemedi.');
+    }
+
+    function renderMetrics(data={}) {
+      const deployment = data.deployment || data.health?.process || {};
+      const counters = data.health?.counters || {};
+      const memory = deployment.memory || data.health?.process?.memory || {};
+      const items = [
+        ['Node', deployment.node || '-'],
+        ['Uptime', `${fmt(deployment.uptimeSec)} sn`],
+        ['PID', fmt(deployment.pid)],
+        ['Kullanıcı', fmt(deployment.userCount || counters.userCount)],
+        ['Ticket', fmt(deployment.ticketCount || counters.ticketCount)],
+        ['Audit', fmt(deployment.auditCount || counters.auditCount)],
+        ['RSS', fmt(memory.rss)],
+        ['Heap Used', fmt(memory.heapUsed)]
+      ];
+      $('metricGrid').innerHTML = items.map(([k,v]) => `<div class="metric"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`).join('');
+    }
+
+    async function liveObservationApi() {
+      const token = currentToken();
+      if (!token) throw new Error('Admin token bulunamadı.');
+      const urls = buildRequestUrls(state.activeBase, '/admin/ops/live-observation?hours=6&limit=120&recentLimit=18');
+      let lastError = null;
+      for (let index = 0; index < urls.length; index += 1) {
+        const url = urls[index];
+        try {
+          const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }, credentials:'omit' });
+          const payload = await readJsonSafe(response);
+          if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `HTTP ${response.status}`);
+          return payload;
+        } catch (error) {
+          lastError = error;
+          if (index >= urls.length - 1) throw error;
+        }
+      }
+      throw lastError || new Error('Canlı gözlem verisi yüklenemedi.');
+    }
+
+    function renderLiveObservation(payload={}) {
+      const observation = payload.observation || {};
+      const statusTone = observation.status?.tone || 'warn';
+      const severity = observation.severity || {};
+      const vitals = observation.vitals || {};
+      const byType = observation.byType || {};
+      const items = [
+        ['Durum', observation.status?.label || '-'],
+        ['Toplam Olay', fmt(observation.count)],
+        ['Error/Fatal', fmt((severity.error || 0) + (severity.fatal || 0))],
+        ['Warn', fmt(severity.warn || 0)],
+        ['CLS Toplam', Number(vitals.cumulativeLayoutShift || 0).toFixed(4)],
+        ['En Kötü Long Task', `${fmt(vitals.worstLongTaskMs || 0)} ms`],
+        ['Frame Stall', `${fmt(vitals.worstFrameGapMs || 0)} ms`],
+        ['Zoom Olayı', fmt(vitals.viewportZoomEvents || byType.viewport_zoom || 0)]
+      ];
+      $('liveMetricGrid').innerHTML = items.map(([k,v], index) => `<div class="metric"><div class="k">${escapeHtml(k)}</div><div class="v ${index === 0 ? statusTone : ''}">${escapeHtml(v)}</div></div>`).join('');
+
+      const issues = Array.isArray(observation.issues) ? observation.issues : [];
+      $('liveIssueList').innerHTML = issues.length
+        ? issues.map((issue) => {
+            const tone = escapeHtml(issue.severity || 'warn');
+            const page = escapeHtml(issue.page || '-');
+            const source = escapeHtml(issue.source || '-');
+            const selector = escapeHtml(issue.selector || '-');
+            const message = escapeHtml(issue.message || 'Mesaj yok');
+            return `<article class="issue-item"><div class="issue-head"><div class="issue-msg">${message}</div><span class="pill ${tone}">${tone.toUpperCase()} · ${fmt(issue.count || 0)}</span></div><div class="issue-meta">Tür: ${escapeHtml(issue.type || '-')}<br/>Sayfa: <span class="mono">${page}</span><br/>Kaynak: <span class="mono">${source}</span><br/>Selector: <span class="mono">${selector}</span></div></article>`;
+          }).join('')
+        : '<div class="issue-item"><div class="issue-msg">Son 6 saatte kritik canlı gözlem kaydı görünmüyor.</div><div class="issue-meta">Sistem izleniyor.</div></div>';
+    }
+
+
+
+async function smokeMatrixApi() {
+  const token = currentToken();
+  if (!token) throw new Error('Admin token bulunamadı.');
+  const urls = buildRequestUrls(state.activeBase, '/admin/ops/smoke-matrix?hours=12');
+  let lastError = null;
+  for (let index = 0; index < urls.length; index += 1) {
+    const url = urls[index];
+    try {
+      const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }, credentials:'omit' });
+      const payload = await readJsonSafe(response);
+      if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `HTTP ${response.status}`);
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (index >= urls.length - 1) throw error;
+    }
+  }
+  throw lastError || new Error('Smoke matrisi yüklenemedi.');
+}
+
+async function releaseGateApi() {
+  const token = currentToken();
+  if (!token) throw new Error('Admin token bulunamadı.');
+  const urls = buildRequestUrls(state.activeBase, '/admin/ops/release-gate');
+  let lastError = null;
+  for (let index = 0; index < urls.length; index += 1) {
+    const url = urls[index];
+    try {
+      const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }, credentials:'omit' });
+      const payload = await readJsonSafe(response);
+      if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `HTTP ${response.status}`);
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (index >= urls.length - 1) throw error;
+    }
+  }
+  throw lastError || new Error('Release gate yüklenemedi.');
+}
+
+async function controlledRolloutApi() {
+  const token = currentToken();
+  if (!token) throw new Error('Admin token bulunamadı.');
+  const urls = buildRequestUrls(state.activeBase, '/admin/ops/controlled-rollout');
+  let lastError = null;
+  for (let index = 0; index < urls.length; index += 1) {
+    const url = urls[index];
+    try {
+      const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }, credentials:'omit' });
+      const payload = await readJsonSafe(response);
+      if (!response.ok || payload?.ok === false) throw new Error(payload?.error || `HTTP ${response.status}`);
+      return payload;
+    } catch (error) {
+      lastError = error;
+      if (index >= urls.length - 1) throw error;
+    }
+  }
+  throw lastError || new Error('Controlled rollout verisi yüklenemedi.');
+}
+
+function renderSmokeMatrix(payload={}) {
+  const matrix = payload.matrix || {};
+  const summary = matrix.summary || {};
+  const items = [
+    ['Durum', summary.label || '-'],
+    ['Toplam Case', fmt(summary.total || 0)],
+    ['Pass', fmt(summary.pass || 0)],
+    ['Warn', fmt(summary.warn || 0)],
+    ['Fail', fmt(summary.fail || 0)],
+    ['Pending', fmt(summary.pending || 0)],
+    ['Coverage', `%${fmt(summary.coveragePct || 0)}`],
+    ['Critical Coverage', `%${fmt(summary.criticalCoveragePct || 0)}`]
+  ];
+  $('smokeMetricGrid').innerHTML = items.map(([k,v]) => `<div class="metric"><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(v)}</div></div>`).join('');
+  const cases = Array.isArray(matrix.cases) ? matrix.cases.slice(0, 10) : [];
+  $('smokeCaseList').innerHTML = cases.length
+    ? cases.map((item) => `<article class="issue-item"><div class="issue-head"><div class="issue-msg">${escapeHtml(item.profileLabel || '-')} · ${escapeHtml(item.surfaceLabel || '-')}</div><span class="pill ${escapeHtml(item.status || 'pending')}">${escapeHtml(String(item.status || 'pending').toUpperCase())}</span></div><div class="issue-meta">Path: <span class="mono">${escapeHtml(item.path || '-')}</span><br/>Öncelik: ${escapeHtml(item.priority || '-')}<br/>Kontroller: ${escapeHtml((item.checks || []).join(', '))}</div></article>`).join('')
+    : '<div class="issue-item"><div class="issue-msg">Smoke case görünmüyor.</div><div class="issue-meta">Matriste kayıt bekleniyor.</div></div>';
+}
+
+function renderReleaseGate(payload={}) {
+  const gate = payload.gate || {};
+  const tone = gate.locked ? 'error' : (String(gate.verdict || '').includes('canary') ? 'warn' : 'ok');
+  const blockerHtml = Array.isArray(gate.blockers) && gate.blockers.length
+    ? gate.blockers.map((item) => `• ${escapeHtml(item)}`).join('<br/>')
+    : 'Bloklayıcı görünmüyor.';
+  const warningHtml = Array.isArray(gate.warnings) && gate.warnings.length
+    ? gate.warnings.map((item) => `• ${escapeHtml(item)}`).join('<br/>')
+    : 'Uyarı görünmüyor.';
+  $('releaseGateBox').className = `status ${tone}`;
+  $('releaseGateBox').innerHTML = `<strong>${escapeHtml(gate.label || '-')}</strong><br/>Skor: ${fmt(gate.score || 0)} / 100<br/>Release: <span class="mono">${escapeHtml(gate.releaseId || '-')}</span><br/><br/><strong>Bloklayıcılar</strong><br/>${blockerHtml}<br/><br/><strong>Uyarılar</strong><br/>${warningHtml}<br/><br/>${escapeHtml(gate.recommendation || '')}`;
+}
+
+function renderControlledRollout(payload={}) {
+  const rollout = payload.rollout || {};
+  const tone = rollout.locked ? 'error' : (rollout.mode === 'canary' ? 'warn' : 'ok');
+  $('rolloutBox').className = `status ${tone}`;
+  $('rolloutBox').innerHTML = `<strong>${escapeHtml(rollout.modeLabel || '-')}</strong><br/>${escapeHtml(rollout.stageLabel || '-')}<br/>Trafik: ${escapeHtml(rollout.exposureLabel || '-')}<br/>Regresyon kilidi: <strong>${rollout.locked ? 'Aktif' : 'Temiz'}</strong><br/>VIP: ${rollout.cohorts?.vip ? 'Açık' : 'Kapalı'} · Beta: ${rollout.cohorts?.beta ? 'Açık' : 'Kapalı'} · İç: ${rollout.cohorts?.internal ? 'Açık' : 'Kapalı'}<br/><br/>${escapeHtml(rollout.summaryLabel || '')}`;
+}
+
+    async function refreshAutoToken(force=false) {
+      const user = auth.currentUser;
+      if (!user) {
+        state.autoToken = ''; state.user = null; state.authReady = true; updateAuthUi(); return false;
+      }
+      try {
+        state.autoToken = await getIdToken(user, force);
+        state.user = { uid:user.uid, email:user.email || '' };
+        state.authReady = true;
+        updateAuthUi();
+        return true;
+      } catch (_) {
+        state.autoToken = ''; state.user = null; state.authReady = true; updateAuthUi(); return false;
+      }
+    }
+
+    function updateAuthUi() {
+      if (state.autoToken) setBadge('authBadge', `Otomatik giriş aktif · ${state.user?.email || state.user?.uid || 'admin'}`, 'ok');
+      else if (state.manualToken) setBadge('authBadge', 'Manuel token hazır', 'warn');
+      else if (state.authReady) setBadge('authBadge', 'Oturum bulunamadı', 'error');
+      else setBadge('authBadge', 'Oturum aranıyor...', 'warn');
+    }
+
+    async function loadHealth(forceToken=false) {
+      if (forceToken && auth.currentUser) await refreshAutoToken(true);
+      if (!currentToken()) {
+        setBadge('healthBadge', 'Token bekleniyor', 'warn');
+        setStatus('Health yüklemek için admin oturumu ya da yedek bearer token gerekli.', 'warn');
+        return;
+      }
+
+      state.apiBase = normalizeApiBase($('baseInput').value.trim() || state.apiBase);
+      state.manualToken = $('manualToken').value.trim();
+      adminSessionStore.set(ADMIN_SESSION_KEYS.apiBase, state.apiBase);
+
+      setBadge('healthBadge', 'Health yükleniyor...', 'warn');
+      setStatus('Health verisi yükleniyor...', 'warn');
+      await chooseBase(state.apiBase);
+
+      try {
+        const payload = await healthApi();
+        const livePayload = await liveObservationApi().catch(() => ({ observation: { status: { tone: 'warn', label: 'Veri alınamadı' }, count: 0, severity: {}, vitals: {}, issues: [] } }));
+        const smokePayload = await smokeMatrixApi().catch(() => ({ matrix: { summary: {}, cases: [] } }));
+        const gatePayload = await releaseGateApi().catch(() => ({ gate: { label: 'Veri alınamadı', score: 0, blockers: [], warnings: [] } }));
+        const rolloutPayload = await controlledRolloutApi().catch(() => ({ rollout: { modeLabel: 'Veri alınamadı', exposureLabel: '-', cohorts: {} } }));
+        renderMetrics(payload);
+        renderLiveObservation(livePayload);
+        renderSmokeMatrix(smokePayload);
+        renderReleaseGate(gatePayload);
+        renderControlledRollout(rolloutPayload);
+        $('rawOutput').textContent = JSON.stringify({ health: payload, liveObservation: livePayload, smokeMatrix: smokePayload, releaseGate: gatePayload, rollout: rolloutPayload }, null, 2);
+        setBadge('healthBadge', 'Health hazır', 'ok');
+        setStatus(`Aktif backend: <span class="mono">${escapeHtml(state.activeBase)}</span><br/>Sistem sağlığı, smoke matrisi, regresyon kilidi ve rollout özeti başarıyla alındı.`, 'ok');
+      } catch (error) {
+        $('rawOutput').textContent = error.message || 'Health yüklenemedi.';
+        setBadge('healthBadge', 'Health hatası', 'error');
+        setStatus(`Health isteği başarısız: <strong>${escapeHtml(error.message || 'Bilinmeyen hata')}</strong>`, 'error');
+      }
+    }
+
+    function hydrate() {
+      adminSessionStore.clearLegacy();
+      state.apiBase = normalizeApiBase(adminSessionStore.get(ADMIN_SESSION_KEYS.apiBase) || '/api');
+      state.manualToken = '';
+      $('baseInput').value = state.apiBase;
+      $('manualToken').value = state.manualToken;
+      $('metricGrid').innerHTML = '<div class="metric"><div class="k">Durum</div><div class="v">Bekleniyor</div></div>';
+      $('liveMetricGrid').innerHTML = '<div class="metric"><div class="k">Durum</div><div class="v">İzleniyor</div></div>';
+      $('smokeMetricGrid').innerHTML = '<div class="metric"><div class="k">Durum</div><div class="v">Smoke bekleniyor</div></div>';
+      $('liveIssueList').innerHTML = '<div class="issue-item"><div class="issue-msg">Canlı gözlem merkezi hazırlanıyor.</div><div class="issue-meta">Admin token geldikten sonra akış yüklenecek.</div></div>';
+      $('smokeCaseList').innerHTML = '<div class="issue-item"><div class="issue-msg">Smoke matrisi hazırlanıyor.</div><div class="issue-meta">FAZ 20 doğrulama case’leri token sonrası yüklenecek.</div></div>';
+      $('releaseGateBox').className = 'status warn';
+      $('releaseGateBox').textContent = 'Regresyon kilidi verisi hazırlanıyor...';
+      $('rolloutBox').className = 'status warn';
+      $('rolloutBox').textContent = 'Controlled rollout verisi hazırlanıyor...';
+      updateAuthUi();
+    }
+
+    function bind() {
+      $('saveBtn').addEventListener('click', () => loadHealth(true));
+      $('reloadBtn').addEventListener('click', () => loadHealth(true));
+      $('baseInput').addEventListener('blur', () => { $('baseInput').value = normalizeApiBase($('baseInput').value); });
+      $('manualToken').addEventListener('input', () => { state.manualToken = $('manualToken').value.trim(); updateAuthUi(); });
+    }
+
+    onIdTokenChanged(auth, async (user) => {
+      state.authReady = true;
+      if (!user) {
+        state.user = null; state.autoToken = ''; updateAuthUi();
+        if (state.manualToken) loadHealth();
+        return;
+      }
+      state.user = { uid:user.uid, email:user.email || '' };
+      state.autoToken = await getIdToken(user, true).catch(() => '');
+      updateAuthUi();
+      loadHealth();
+    });
+
+    hydrate();
+    bind();
+    if (state.manualToken) loadHealth();
+  </script>
+</body>
+</html>
