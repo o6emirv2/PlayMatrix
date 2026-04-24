@@ -11,52 +11,6 @@ function normalizeNotificationType(value = '') {
   return safe || 'system';
 }
 
-function deriveNotificationSource(item = {}) {
-  const directDataSource = cleanStr(item?.data?.source || item?.source || '', 80).toLowerCase();
-  if (directDataSource) return directDataSource;
-  const type = normalizeNotificationType(item?.type || 'system');
-  return type;
-}
-
-function deriveNotificationCategory(source = '', type = '') {
-  const safeSource = cleanStr(source || '', 80).toLowerCase();
-  const safeType = normalizeNotificationType(type || 'system');
-  if (safeType === 'reward' || safeSource.includes('reward') || safeSource.includes('promo') || safeSource.includes('spin')) return 'economy';
-  if (safeType === 'invite' || safeSource.includes('invite')) return 'social';
-  if (safeType === 'moderation' || safeSource.includes('mute') || safeSource.includes('ban') || safeSource.includes('report')) return 'moderation';
-  if (safeType === 'dm' || safeSource.includes('dm') || safeSource.includes('chat')) return 'chat';
-  return 'system';
-}
-
-function deriveNotificationActionUrl(item = {}) {
-  const explicit = cleanStr(item?.data?.actionUrl || item?.actionUrl || '', 280);
-  if (explicit) return explicit;
-  const source = deriveNotificationSource(item);
-  if (source.includes('invite')) return '/#social';
-  if (source.includes('reward') || source.includes('promo') || source.includes('spin') || source.includes('activity_pass')) return '/#social';
-  if (source.includes('chat') || source.includes('dm')) return '/#social';
-  return '';
-}
-
-function shapeNotificationItem(item = {}, id = '') {
-  const source = deriveNotificationSource(item);
-  const type = normalizeNotificationType(item?.type || 'system');
-  return {
-    id: cleanStr(id || item?.id || '', 180),
-    uid: cleanStr(item?.uid || '', 160),
-    type,
-    category: deriveNotificationCategory(source, type),
-    source,
-    title: cleanStr(item?.title || '', 140),
-    body: cleanStr(item?.body || '', 600),
-    read: !!item?.read,
-    createdAt: safeNum(item?.createdAt || item?.timestamp?.toMillis?.() || item?.timestamp, 0),
-    readAt: safeNum(item?.readAt, 0),
-    actionUrl: deriveNotificationActionUrl(item),
-    data: item?.data && typeof item.data === 'object' ? item.data : {}
-  };
-}
-
 function buildNotificationDocId({ uid = '', type = 'system', title = '', body = '', idempotencyKey = '' } = {}) {
   const safeIdempotencyKey = cleanStr(idempotencyKey || '', 220);
   if (safeIdempotencyKey) return `idem_${safeIdempotencyKey}`;
@@ -73,7 +27,6 @@ async function createNotification({ uid = '', type = 'system', title = '', body 
     title: cleanStr(title, 140),
     body: cleanStr(body, 600),
     data: data && typeof data === 'object' ? data : {},
-    source: deriveNotificationSource({ type, data }),
     read: !!read,
     createdAt: nowMs(),
     readAt: 0,
@@ -87,7 +40,7 @@ async function createNotification({ uid = '', type = 'system', title = '', body 
     tx.set(ref, payload, { merge: false });
     return { exists: false, data: payload };
   });
-  return shapeNotificationItem(result.data || payload, ref.id);
+  return { id: ref.id, duplicated: !!result.exists, ...(result.data || payload) };
 }
 
 async function markNotificationsRead(uid = '', ids = []) {
@@ -126,30 +79,8 @@ async function listNotifications(uid = '', limit = 30) {
   const safeUid = cleanStr(uid, 160);
   const safeLimit = Math.max(1, Math.min(100, Math.floor(safeNum(limit, 30))));
   if (!safeUid) return [];
-
-  const shapeAndSort = (snap) => snap.docs
-    .map((doc) => shapeNotificationItem(doc.data() || {}, doc.id))
-    .sort((a, b) => safeNum(b.createdAt, 0) - safeNum(a.createdAt, 0))
-    .slice(0, safeLimit);
-
-  try {
-    const snap = await colNotifications()
-      .where('uid', '==', safeUid)
-      .orderBy('createdAt', 'desc')
-      .limit(safeLimit)
-      .get();
-    return snap.docs.map((doc) => shapeNotificationItem(doc.data() || {}, doc.id));
-  } catch (error) {
-    const message = String(error?.message || error || '');
-    const code = String(error?.code || '');
-    const indexMissing = code.includes('failed-precondition') || /index|requires an index|FAILED_PRECONDITION/i.test(message);
-    if (!indexMissing) throw error;
-    const fallbackSnap = await colNotifications()
-      .where('uid', '==', safeUid)
-      .limit(Math.max(safeLimit, 50))
-      .get();
-    return shapeAndSort(fallbackSnap);
-  }
+  const snap = await colNotifications().where('uid', '==', safeUid).orderBy('createdAt', 'desc').limit(safeLimit).get();
+  return snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }));
 }
 
 module.exports = {
@@ -158,9 +89,5 @@ module.exports = {
   markAllNotificationsRead,
   listNotifications,
   normalizeNotificationType,
-  buildNotificationDocId,
-  shapeNotificationItem,
-  deriveNotificationSource,
-  deriveNotificationCategory,
-  deriveNotificationActionUrl
+  buildNotificationDocId
 };

@@ -55,6 +55,8 @@ function normalizeMatchHistoryItem(doc, perspectiveUid = '') {
     chess: 'Satranç',
     pisti: 'Online Pişti',
     crash: 'Crash',
+    blackjack: 'Blackjack',
+    mines: 'Mines'
   };
 
   return {

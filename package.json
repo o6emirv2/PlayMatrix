@@ -1,7 +1,7 @@
 {
   "name": "playmatrix-backend",
   "version": "1.0.0",
-  "description": "PlayMatrix Games Backend",
+  "description": "PlayMatrix VIP Casino & Games Backend",
   "main": "server.js",
   "type": "commonjs",
   "engines": {
@@ -9,23 +9,11 @@
   },
   "scripts": {
     "start": "node server.js",
-    "check:server": "node --check server.js",
-    "check:routes": "node tools/check-routes.js",
-    "check:html": "node tools/check-html-inline-scripts.js",
-    "audit:repo": "node tools/repo-audit.js",
-    "check:avatars": "node tools/check-avatar-catalog.js",
-    "check:frames": "node tools/check-frame-picker.js",
-    "check:progression": "node tools/check-progression.js",
-    "check:bootstrap": "node tools/check-bootstrap-rewards.js",
-    "check:errors": "node tools/check-error-visibility.js",
-    "check:maintenance": "node tools/check-maintenance-route.js",
-    "check:legacy-phase9": "node tools/check-legacy-clean-phase9.js",
-    "check:home-phase10": "node tools/check-home-phase10.js",
-    "check:chat-phase11": "node tools/check-chat-retention-phase11.js",
-    "check:security-phase0": "node tools/check-security-phase0.js",
-    "check:economy-phase1": "node tools/check-economy-phase1.js"
+    "test": "node --test tests/*.test.js",
+    "test:smoke": "node --test tests/helpers.test.js tests/admin.middleware.test.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.3",
     "firebase-admin": "^12.7.0",
     "helmet": "^7.1.0",

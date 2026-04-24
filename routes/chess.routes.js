@@ -1,3 +1,4 @@
+// routes/chess.routes.js
 'use strict';
 
 const express = require('express');
@@ -8,23 +9,21 @@ const { db, admin } = require('../config/firebase');
 const { verifyAuth } = require('../middlewares/auth.middleware');
 const { safeNum, cleanStr, nowMs } = require('../utils/helpers');
 const { getIstanbulDateKey } = require('../utils/activity');
-const { applyRewardGrantInTransaction, createRewardNotificationForGrant } = require('../utils/rewardService');
+const { recordRewardLedger } = require('../utils/rewardLedger');
+const { createNotification } = require('../utils/notifications');
 const { assertNoOtherActiveGame } = require('../utils/gameSession');
+const { getTierIndex, applyRpDelta } = require('../utils/rpSystem');
+const { applyMatchEloUpdate } = require('../utils/eloSystem');
 const { saveMatchHistory } = require('../utils/matchHistory');
-const { normalizeUserRankState, getAccountXp, buildProgressionSnapshot } = require('../utils/progression');
-const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
-const { assertGamesAllowed } = require('../utils/userRestrictions');
-const { buildTimelineEvent, appendTimelineEntry, bumpStateVersion, applySettlement, isRecordSettled } = require('../utils/gameFlow');
-const { recordGameAudit } = require('../utils/gameAudit');
-const {
-  CHESS_DISCONNECT_GRACE_MS,
-  CHESS_RESULT_RETENTION_MS,
-  GAME_SETTLEMENT_STATUS,
-  GAME_RESULT_CODES
-} = require('../config/constants');
+const { normalizeUserRankState } = require('../utils/progression');
+const { buildTimelineEvent, appendTimelineEntry, bumpStateVersion } = require('../utils/gameFlow');
 
 const colUsers = () => db.collection('users');
 const colChess = () => db.collection('chess_rooms');
+
+
+const CHESS_DISCONNECT_GRACE_MS = 90 * 1000;
+const CHESS_RESULT_RETENTION_MS = 2 * 60 * 1000;
 
 function applyChessCloseWindow(room = {}, delayMs = CHESS_RESULT_RETENTION_MS) {
   const cleanupAt = nowMs() + Math.max(CHESS_DISCONNECT_GRACE_MS, safeNum(delayMs, CHESS_RESULT_RETENTION_MS));
@@ -39,651 +38,486 @@ function scheduleChessRoomRemoval(roomId = '', delayMs = CHESS_RESULT_RETENTION_
   setTimeout(() => colChess().doc(safeRoomId).delete().catch(() => null), Math.max(CHESS_DISCONNECT_GRACE_MS, safeNum(delayMs, CHESS_RESULT_RETENTION_MS)));
 }
 
+
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+  if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+  const numericSelected = Number(user?.selectedFrame);
+  if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+  if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+  const numericActive = Number(user?.activeFrame);
+  if (Number.isFinite(numericActive) && numericActive > 0) return Math.floor(numericActive);
+  return 0;
 }
 
-function resolveWinnerUid(room = {}) {
-  if (cleanStr(room.winner || '', 16) === 'white') return cleanStr(room.host?.uid || '', 160);
-  if (cleanStr(room.winner || '', 16) === 'black') return cleanStr(room.guest?.uid || '', 160);
-  return '';
-}
+// ---------------------------------------------------------
+// SATRANÇ ÖZEL ÖDÜL VE RP MANTIĞI
+// ---------------------------------------------------------
+async function rewardChessWinner(tx, winnerUid) {
+    const uSnap = await tx.get(colUsers().doc(winnerUid));
+    if (!uSnap.exists) return { amount: 0, limitReached: false };
 
-function resolveLoserUid(room = {}) {
-  const winnerUid = resolveWinnerUid(room);
-  if (!winnerUid) return '';
-  return winnerUid === cleanStr(room.host?.uid || '', 160)
-    ? cleanStr(room.guest?.uid || '', 160)
-    : cleanStr(room.host?.uid || '', 160);
-}
+    const u = uSnap.data() || {};
+    const todayStr = getIstanbulDateKey();
 
+    let currentWins = safeNum(u.chessWinCount, 0);
+    const lastWinDate = cleanStr(u.chessWinDate || '', 32);
 
+    if (lastWinDate !== todayStr) currentWins = 0;
 
-function applyChessProgression(tx, uidA, uidB, outcome) {
-  const aRef = colUsers().doc(uidA);
-  const bRef = colUsers().doc(uidB);
-  return Promise.all([tx.get(aRef), tx.get(bRef)]).then(([aSnap, bSnap]) => {
-    if (!aSnap.exists || !bSnap.exists) return { applied: false, reason: 'USER_NOT_FOUND' };
-
-    const a = aSnap.data() || {};
-    const b = bSnap.data() || {};
-    const aLast = cleanStr(a.chessLastOppUid || '');
-    const aStreak = safeNum(a.chessOppStreak, 0);
-    const bLast = cleanStr(b.chessLastOppUid || '');
-    const bStreak = safeNum(b.chessOppStreak, 0);
-    const aNextStreak = (aLast === uidB) ? (aStreak + 1) : 1;
-    const bNextStreak = (bLast === uidA) ? (bStreak + 1) : 1;
-    const boostBlocked = (aNextStreak > 3) || (bNextStreak > 3);
-
-    const scoring = outcome === 'A_WIN'
-      ? { aXp: 180, bXp: 60, aActivity: 16, bActivity: 8 }
-      : (outcome === 'B_WIN'
-        ? { aXp: 60, bXp: 180, aActivity: 8, bActivity: 16 }
-        : { aXp: 110, bXp: 110, aActivity: 10, bActivity: 10 });
-
-    const applyUserState = (ref, current, opponentUid, nextStreak, xpGain, activityGain) => {
-      const nextActivity = Math.max(0, safeNum(current.monthlyActiveScore, 0) + (boostBlocked ? 0 : activityGain));
-      const nextRounds = Math.max(0, safeNum(current.totalRounds, 0) + 1);
-      const nextXp = Math.max(0, getAccountXp(current) + (boostBlocked ? 0 : xpGain));
-      const nextUser = { ...current, accountXp: nextXp, monthlyActiveScore: nextActivity, totalRounds: nextRounds };
-      const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-      const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextActivity });
-      tx.set(ref, {
-        ...canonical,
-        ...normalized,
-        totalRounds: nextRounds,
-        monthlyActiveScore: nextActivity,
-        activityUpdatedAt: nowMs(),
-        chessLastOppUid: opponentUid,
-        chessOppStreak: nextStreak,
-        lastGameProgressSource: 'CHESS_MATCH',
-        lastGameXpEarned: boostBlocked ? 0 : xpGain
-      }, { merge: true });
-    };
-
-    applyUserState(aRef, a, uidB, aNextStreak, scoring.aXp, scoring.aActivity);
-    applyUserState(bRef, b, uidA, bNextStreak, scoring.bXp, scoring.bActivity);
-    return {
-      applied: true,
-      boostBlocked,
-      aXpEarned: boostBlocked ? 0 : scoring.aXp,
-      bXpEarned: boostBlocked ? 0 : scoring.bXp,
-      aActivityEarned: boostBlocked ? 0 : scoring.aActivity,
-      bActivityEarned: boostBlocked ? 0 : scoring.bActivity
-    };
-  });
-}
-
-function serializeChessRoom(roomId = '', room = {}) {
-  const cleanupAt = safeNum(room.cleanupAt, 0);
-  const resumeAvailableUntil = safeNum(room.resumeAvailableUntil, cleanupAt);
-  const status = cleanStr(room.status || '', 24);
-  return {
-    id: cleanStr(roomId || room.id || '', 160),
-    ...room,
-    cleanupAt,
-    resumeAvailableUntil,
-    resultCode: cleanStr(room.resultCode || '', 64),
-    resultReason: cleanStr(room.resultReason || '', 48),
-    settlementStatus: cleanStr(room.settlementStatus || '', 24),
-    settledAt: safeNum(room.settledAt, 0),
-    canResume: ['waiting', 'playing'].includes(status),
-    canReview: ['finished', 'abandoned'].includes(status) && resumeAvailableUntil > Date.now()
-  };
-}
-
-function finalizeChessRoom(room = {}, { actorUid = '', winner = 'draw', resultCode = '', reason = '', status = 'finished', meta = {} } = {}) {
-  const safeActorUid = cleanStr(actorUid || '', 160);
-  const now = nowMs();
-  room.status = cleanStr(status || 'finished', 24) || 'finished';
-  room.winner = winner;
-  room.updatedAt = now;
-  room.lastActivityAt = now;
-  applyChessCloseWindow(room);
-  const winnerUid = winner === 'white' ? cleanStr(room.host?.uid || '', 160) : winner === 'black' ? cleanStr(room.guest?.uid || '', 160) : '';
-  const loserUid = winnerUid ? (winnerUid === cleanStr(room.host?.uid || '', 160) ? cleanStr(room.guest?.uid || '', 160) : cleanStr(room.host?.uid || '', 160)) : '';
-  applySettlement(room, {
-    status: room.status === 'abandoned' ? GAME_SETTLEMENT_STATUS.ABANDONED : GAME_SETTLEMENT_STATUS.SETTLED,
-    resultCode,
-    reason,
-    settledAt: now,
-    actorUid: safeActorUid,
-    winnerUid,
-    loserUid,
-    meta
-  });
-  appendTimelineEntry(room, buildTimelineEvent(
-    room.status === 'abandoned' ? 'match_abandoned' : 'match_finished',
-    {
-      actorUid: safeActorUid,
-      roomId: cleanStr(room.id || '', 160),
-      gameKey: 'chess',
-      reason,
-      status: room.status,
-      participantUids: [cleanStr(room.host?.uid || '', 160), cleanStr(room.guest?.uid || '', 160)],
-      meta: { ...meta, winner: cleanStr(room.winner || '', 16), resultCode: cleanStr(resultCode || '', 64) }
+    if (currentWins < 10) {
+        tx.update(colUsers().doc(winnerUid), {
+            balance: admin.firestore.FieldValue.increment(5000),
+            chessWinCount: currentWins + 1,
+            chessWinDate: todayStr
+        });
+        return { amount: 5000, limitReached: false, dateKey: todayStr };
     }
-  ));
-  bumpStateVersion(room);
-  return room;
+    return { amount: 0, limitReached: true, dateKey: todayStr };
 }
 
-function buildChessHistoryEntry({ roomId = '', room = {}, resultCode = '', winAmount = 0, createdAt = 0 } = {}) {
-  const winnerUid = resolveWinnerUid(room);
-  const loserUid = resolveLoserUid(room);
-  return {
-    id: `chess_${roomId}_${safeNum(createdAt || room.settledAt || room.updatedAt, nowMs())}`,
-    gameType: 'chess',
-    roomId,
-    status: cleanStr(room.status || 'finished', 24),
-    result: cleanStr(resultCode || '', 64) === GAME_RESULT_CODES.CHESS_DRAW ? 'draw' : cleanStr(resultCode || '', 64).replace(/^chess_/, ''),
-    winnerUid,
-    loserUid,
-    participants: [cleanStr(room.host?.uid || '', 160), cleanStr(room.guest?.uid || '', 160)].filter(Boolean),
-    rewards: { mc: safeNum(winAmount, 0) },
-    meta: {
-      resultCode: cleanStr(resultCode || '', 64),
-      reason: cleanStr(room.resultReason || '', 48),
-      winner: cleanStr(room.winner || '', 16)
-    },
-    createdAt: safeNum(createdAt || room.settledAt || room.updatedAt, nowMs())
-  };
-}
+async function applyChessRp(tx, uidA, uidB, outcome) {
+  const aRef = colUsers().doc(uidA); const bRef = colUsers().doc(uidB);
+  const [aSnap, bSnap] = await Promise.all([tx.get(aRef), tx.get(bRef)]);
+  if (!aSnap.exists || !bSnap.exists) return { applied: false, reason: 'USER_NOT_FOUND' };
 
-async function persistChessSettlementArtifacts({ roomId = '', room = {}, resultCode = '', winAmount = 0 } = {}) {
-  const winnerUid = resolveWinnerUid(room);
-  const loserUid = resolveLoserUid(room);
-  const reason = cleanStr(room.resultReason || '', 48);
-  const tasks = [
-    saveMatchHistory(buildChessHistoryEntry({ roomId, room, resultCode, winAmount, createdAt: safeNum(room.settledAt || room.updatedAt, nowMs()) })),
-    recordGameAudit({
-      gameType: 'chess',
-      entityType: 'match',
-      entityId: cleanStr(roomId || '', 160),
-      roomId,
-      eventType: 'match_settled',
-      resultCode,
-      reason,
-      status: cleanStr(room.settlementStatus || GAME_SETTLEMENT_STATUS.SETTLED, 24),
-      actorUid: cleanStr(room.settledByUid || '', 160),
-      subjectUid: winnerUid || loserUid,
-      amount: safeNum(winAmount, 0),
-      payout: safeNum(winAmount, 0),
-      meta: { winnerUid, loserUid, status: cleanStr(room.status || '', 24) },
-      idempotencyKey: `chess:${roomId}:settlement:${cleanStr(resultCode || '', 64)}`
-    })
-  ];
+  const a = aSnap.data() || {}; const b = bSnap.data() || {};
 
+  const aLast = cleanStr(a.chessLastOppUid || ''); const aStreak = safeNum(a.chessOppStreak, 0);
+  const bLast = cleanStr(b.chessLastOppUid || ''); const bStreak = safeNum(b.chessOppStreak, 0);
 
-  await Promise.allSettled(tasks);
+  const aNextStreak = (aLast === uidB) ? (aStreak + 1) : 1;
+  const bNextStreak = (bLast === uidA) ? (bStreak + 1) : 1;
+  const boostBlocked = (aNextStreak > 3) || (bNextStreak > 3);
 
-  return { winnerUid, loserUid };
-}
+  const aTier = getTierIndex(a.rp); const bTier = getTierIndex(b.rp);
+  let aDelta = 0, bDelta = 0;
 
-async function rewardChessWinner(tx, winnerUid, options = {}) {
-  const safeWinnerUid = cleanStr(winnerUid || '', 160);
-  if (!safeWinnerUid) return { amount: 0, limitReached: false, grant: null };
-  const uRef = colUsers().doc(safeWinnerUid);
-  const uSnap = await tx.get(uRef);
-  if (!uSnap.exists) return { amount: 0, limitReached: false, grant: null };
-
-  const u = uSnap.data() || {};
-  const todayStr = getIstanbulDateKey();
-
-  let currentWins = safeNum(u.chessWinCount, 0);
-  const lastWinDate = cleanStr(u.chessWinDate || '', 32);
-
-  if (lastWinDate !== todayStr) currentWins = 0;
-  if (currentWins >= 10) return { amount: 0, limitReached: true, dateKey: todayStr, grant: null };
-
-  const reason = cleanStr(options.reason || 'win', 48) || 'win';
-  const resultCode = cleanStr(options.resultCode || '', 64);
-  const roomId = cleanStr(options.roomId || '', 160);
-  const amount = 5000;
-  const grant = await applyRewardGrantInTransaction(tx, {
-    uid: safeWinnerUid,
-    amount,
-    source: 'chess_win',
-    referenceId: roomId || todayStr,
-    idempotencyKey: `chess:${roomId || todayStr}:win:${safeWinnerUid}:${reason || resultCode || 'normal'}`,
-    meta: { roomId, reason, resultCode, dateKey: todayStr },
-    userRef: uRef
-  });
-
-  if (!grant.duplicated) {
-    tx.update(uRef, {
-      chessWinCount: currentWins + 1,
-      chessWinDate: todayStr
-    });
+  if (!boostBlocked) {
+    if (outcome === 'A_WIN') { aDelta = (bTier > aTier) ? 35 : 25; bDelta = (bTier === 0) ? 0 : -15; } 
+    else if (outcome === 'B_WIN') { bDelta = (aTier > bTier) ? 35 : 25; aDelta = (aTier === 0) ? 0 : -15; } 
+    else if (outcome === 'DRAW') { aDelta = 5; bDelta = 5; }
   }
 
-  return { amount: grant.duplicated ? 0 : amount, limitReached: false, dateKey: todayStr, duplicated: !!grant.duplicated, grant };
+  const nextARp = applyRpDelta(a.rp, aDelta); const nextBRp = applyRpDelta(b.rp, bDelta);
+  const nextASeasonRp = applyRpDelta(a.seasonRp, aDelta); const nextBSeasonRp = applyRpDelta(b.seasonRp, bDelta);
+
+  tx.set(aRef, { ...normalizeUserRankState({ rp: nextARp, seasonRp: nextASeasonRp }), chessLastOppUid: uidB, chessOppStreak: aNextStreak, rpUpdatedAt: nowMs() }, { merge: true });
+  tx.set(bRef, { ...normalizeUserRankState({ rp: nextBRp, seasonRp: nextBSeasonRp }), chessLastOppUid: uidA, chessOppStreak: bNextStreak, rpUpdatedAt: nowMs() }, { merge: true });
+
+  return { applied: true, boostBlocked, aDelta, bDelta, nextARp, nextBRp, nextASeasonRp, nextBSeasonRp };
 }
 
-router.get('/lobby', verifyAuth, async (_req, res) => {
-  try {
-    const [snapWait, snapPlay] = await Promise.all([
-      colChess().where('status', '==', 'waiting').orderBy('createdAt', 'desc').limit(20).get(),
-      colChess().where('status', '==', 'playing').orderBy('createdAt', 'desc').limit(20).get()
-    ]);
+// ---------------------------------------------------------
+// API UÇ NOKTALARI
+// ---------------------------------------------------------
+router.get('/lobby', verifyAuth, async (req, res) => {
+    try {
+        const [snapWait, snapPlay] = await Promise.all([
+          colChess().where('status', '==', 'waiting').orderBy('createdAt', 'desc').limit(20).get(),
+          colChess().where('status', '==', 'playing').orderBy('createdAt', 'desc').limit(20).get()
+        ]);
 
-    const rooms = [];
-    snapWait.forEach((doc) => {
-      const d = doc.data() || {};
-      rooms.push({ id: doc.id, hostUid: d.host?.uid || '', host: d.host?.username || 'Oyuncu', guest: null, status: d.status, createdAt: safeNum(d.createdAt, 0) });
-    });
-    snapPlay.forEach((doc) => {
-      const d = doc.data() || {};
-      rooms.push({ id: doc.id, hostUid: d.host?.uid || '', host: d.host?.username || 'Oyuncu', guest: d.guest ? d.guest.username : 'Bilinmeyen', status: d.status, createdAt: safeNum(d.createdAt, 0) });
-    });
+        const rooms = [];
+        snapWait.forEach((doc) => {
+          const d = doc.data() || {};
+          rooms.push({ id: doc.id, hostUid: d.host?.uid || '', host: d.host?.username || 'Oyuncu', guest: null, status: d.status, createdAt: safeNum(d.createdAt, 0) });
+        });
+        snapPlay.forEach((doc) => {
+          const d = doc.data() || {};
+          rooms.push({ id: doc.id, hostUid: d.host?.uid || '', host: d.host?.username || 'Oyuncu', guest: d.guest ? d.guest.username : 'Bilinmeyen', status: d.status, createdAt: safeNum(d.createdAt, 0) });
+        });
 
-    rooms.sort((a, b) => safeNum(b.createdAt, 0) - safeNum(a.createdAt, 0));
-    res.json({ ok: true, rooms: rooms.slice(0, 20) });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+        rooms.sort((a, b) => safeNum(b.createdAt, 0) - safeNum(a.createdAt, 0));
+        res.json({ ok: true, rooms: rooms.slice(0, 20) });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/create', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    await assertNoOtherActiveGame(uid, { allowGameType: 'chess' });
-    const roomData = await db.runTransaction(async (tx) => {
-      const uSnap = await tx.get(colUsers().doc(uid));
-      if (!uSnap.exists) throw new Error('Kullanıcı bulunamadı.');
-      const u = uSnap.data() || {};
+    try {
+        const uid = req.user.uid;
+        await assertNoOtherActiveGame(uid, { allowGameType: 'chess' });
+        const roomData = await db.runTransaction(async (tx) => {
+            const uSnap = await tx.get(colUsers().doc(uid));
+            if (!uSnap.exists) throw new Error("Kullanıcı bulunamadı.");
+            const u = uSnap.data();
 
-      const activeRooms = await tx.get(colChess().where('host.uid', '==', uid).where('status', '==', 'waiting'));
-      if (!activeRooms.empty) throw new Error('Zaten bekleyen bir odanız var.');
+            const activeRooms = await tx.get(colChess().where('host.uid', '==', uid).where('status', '==', 'waiting'));
+            if (!activeRooms.empty) throw new Error("Zaten bekleyen bir odanız var.");
 
-      const createdAt = nowMs();
-      const newRoomRef = colChess().doc();
-      const newRoom = {
-        id: newRoomRef.id,
-        host: { uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: createdAt },
-        guest: null,
-        status: 'waiting',
-        bet: 0,
-        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-        turn: 'w',
-        winner: null,
-        cleanupAt: 0,
-        resumeAvailableUntil: 0,
-        createdAt,
-        updatedAt: createdAt,
-        lastActivityAt: createdAt,
-        stateVersion: 1,
-        settlementStatus: GAME_SETTLEMENT_STATUS.ACTIVE,
-        resultCode: '',
-        resultReason: '',
-        settledAt: 0,
-        timeline: [buildTimelineEvent('room_created', { actorUid: uid, roomId: newRoomRef.id, gameKey: 'chess', status: 'waiting', participantUids: [uid] })]
-      };
-      tx.set(newRoomRef, newRoom);
-      return serializeChessRoom(newRoomRef.id, newRoom);
-    });
-    res.json({ ok: true, room: roomData });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+            const newRoomRef = colChess().doc();
+            const newRoom = { host: { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: nowMs() }, guest: null, status: 'waiting', bet: 0, fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', turn: 'w', winner: null, cleanupAt: 0, resumeAvailableUntil: 0, createdAt: nowMs(), updatedAt: nowMs(), stateVersion: 1, timeline: [buildTimelineEvent('room_created', { actorUid: uid, roomId: newRoomRef.id, gameKey: 'chess', status: 'waiting', participantUids: [uid] })] };
+            
+            tx.set(newRoomRef, newRoom); return { id: newRoomRef.id, ...newRoom };
+        });
+        res.json({ ok: true, room: roomData });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/join', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const roomId = req.body.roomId ? cleanStr(req.body.roomId) : null;
-    await assertNoOtherActiveGame(uid, { allowGameType: 'chess', allowRoomId: roomId || '' });
+    try {
+        const uid = req.user.uid; const roomId = req.body.roomId ? cleanStr(req.body.roomId) : null;
+        await assertNoOtherActiveGame(uid, { allowGameType: 'chess', allowRoomId: roomId || '' });
 
-    const roomData = await db.runTransaction(async (tx) => {
-      const uSnap = await tx.get(colUsers().doc(uid));
-      if (!uSnap.exists) throw new Error('Kullanıcı bulunamadı.');
-      const u = uSnap.data() || {};
-      const now = nowMs();
-      if (roomId) {
-        const roomRef = colChess().doc(roomId);
-        const rSnap = await tx.get(roomRef);
-        if (!rSnap.exists) throw new Error('Oda bulunamadı.');
-        const r = rSnap.data() || {};
+        const roomData = await db.runTransaction(async (tx) => {
+            const uSnap = await tx.get(colUsers().doc(uid)); const u = uSnap.data();
+            if (roomId) {
+                const rSnap = await tx.get(colChess().doc(roomId));
+                if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+                let r = rSnap.data();
 
-        const isHost = cleanStr(r.host?.uid || '', 160) === uid;
-        const isGuest = cleanStr(r.guest?.uid || '', 160) === uid;
+                const isHost = r.host && r.host.uid === uid; const isGuest = r.guest && r.guest.uid === uid;
 
-        if (isHost || isGuest) {
-          if (isHost) r.host = { ...r.host, username: u.username || r.host?.username || 'Oyuncu', avatar: u.avatar || r.host?.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: now };
-          if (isGuest) r.guest = { ...r.guest, username: u.username || r.guest?.username || 'Oyuncu', avatar: u.avatar || r.guest?.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: now };
-          r.updatedAt = now;
-          r.lastActivityAt = now;
-          r.resumeAvailableUntil = Math.max(safeNum(r.resumeAvailableUntil, 0), now + CHESS_DISCONNECT_GRACE_MS);
-          bumpStateVersion(r);
-          tx.update(roomRef, r);
-          return serializeChessRoom(roomId, r);
-        }
+                if (isHost || isGuest) {
+                    if (isHost) r.host = { ...r.host, username: u.username || r.host?.username || 'Oyuncu', avatar: u.avatar || r.host?.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: nowMs() };
+                    if (isGuest) r.guest = { ...r.guest, username: u.username || r.guest?.username || 'Oyuncu', avatar: u.avatar || r.guest?.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: nowMs() };
+                    r.updatedAt = nowMs(); bumpStateVersion(r); tx.update(colChess().doc(roomId), r); return { id: roomId, ...r };
+                }
 
-        if (cleanStr(r.status || '', 24) !== 'waiting') throw new Error('Bu oda artık müsait değil.');
-        r.guest = { uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: now };
-        r.status = 'playing';
-        r.updatedAt = now;
-        r.lastActivityAt = now;
-        r.resumeAvailableUntil = now + CHESS_DISCONNECT_GRACE_MS;
-        appendTimelineEntry(r, buildTimelineEvent('match_started', { actorUid: uid, targetUid: cleanStr(r.host?.uid || '', 160), roomId, gameKey: 'chess', status: 'playing', participantUids: [cleanStr(r.host?.uid || '', 160), uid] }));
-        bumpStateVersion(r);
-        tx.update(roomRef, r);
-        return serializeChessRoom(roomId, r);
-      }
+                if (r.status !== 'waiting') throw new Error("Bu oda artık müsait değil.");
+                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: nowMs() };
+                r.status = 'playing'; r.updatedAt = nowMs(); appendTimelineEntry(r, buildTimelineEvent('match_started', { actorUid: uid, targetUid: cleanStr(r.host?.uid || '', 160), roomId, gameKey: 'chess', status: 'playing', participantUids: [cleanStr(r.host?.uid || '', 160), uid] })); bumpStateVersion(r); tx.update(colChess().doc(roomId), r); return { id: roomId, ...r };
+            } else {
+                const snap = await tx.get(colChess().where('status', '==', 'waiting'));
+                if (snap.empty) throw new Error("Müsait oda bulunamadı. Lütfen yeni oda kurun.");
+                
+                let docToJoin = null; snap.forEach(doc => { if (doc.data().host.uid !== uid && !docToJoin) docToJoin = doc; });
+                if (!docToJoin) throw new Error("Şu an sadece kendi kurduğunuz oda var.");
 
-      const snap = await tx.get(colChess().where('status', '==', 'waiting'));
-      if (snap.empty) throw new Error('Müsait oda bulunamadı. Lütfen yeni oda kurun.');
-      let docToJoin = null;
-      snap.forEach((doc) => {
-        if (cleanStr(doc.data()?.host?.uid || '', 160) !== uid && !docToJoin) docToJoin = doc;
-      });
-      if (!docToJoin) throw new Error('Şu an sadece kendi kurduğunuz oda var.');
-
-      const r = docToJoin.data() || {};
-      r.guest = { uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: now };
-      r.status = 'playing';
-      r.updatedAt = now;
-      r.lastActivityAt = now;
-      r.resumeAvailableUntil = now + CHESS_DISCONNECT_GRACE_MS;
-      appendTimelineEntry(r, buildTimelineEvent('match_started', { actorUid: uid, targetUid: cleanStr(r.host?.uid || '', 160), roomId: docToJoin.id, gameKey: 'chess', status: 'playing', participantUids: [cleanStr(r.host?.uid || '', 160), uid] }));
-      bumpStateVersion(r);
-      tx.update(docToJoin.ref, r);
-      return serializeChessRoom(docToJoin.id, r);
-    });
-    res.json({ ok: true, room: roomData });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+                let r = docToJoin.data();
+                r.guest = { uid: uid, username: u.username || 'Oyuncu', avatar: u.avatar || null, selectedFrame: pickUserSelectedFrame(u), lastPing: nowMs() };
+                r.status = 'playing'; r.updatedAt = nowMs(); appendTimelineEntry(r, buildTimelineEvent('match_started', { actorUid: uid, targetUid: cleanStr(r.host?.uid || '', 160), roomId: docToJoin.id, gameKey: 'chess', status: 'playing', participantUids: [cleanStr(r.host?.uid || '', 160), uid] })); bumpStateVersion(r); tx.update(docToJoin.ref, r); return { id: docToJoin.id, ...r };
+            }
+        });
+        res.json({ ok: true, room: roomData });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.get('/state/:id', verifyAuth, async (req, res) => {
-  try {
-    const roomId = cleanStr(req.params.id);
-    const snap = await colChess().doc(roomId).get();
-    if (!snap.exists) throw new Error('Oda bulunamadı.');
-    const room = snap.data() || {};
-    const isPlayer = cleanStr(room.host?.uid || '', 160) === req.user.uid || cleanStr(room.guest?.uid || '', 160) === req.user.uid;
-    if (!isPlayer) return res.status(403).json({ ok: false, error: 'Bu odanın durumunu görüntüleme yetkiniz yok.' });
-    res.json({ ok: true, room: serializeChessRoom(roomId, room) });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+    try {
+        const roomId = cleanStr(req.params.id); const snap = await colChess().doc(roomId).get();
+        if (!snap.exists) throw new Error("Oda bulunamadı.");
+        const room = snap.data() || {};
+        const isPlayer = cleanStr(room.host?.uid || '', 160) === req.user.uid || cleanStr(room.guest?.uid || '', 160) === req.user.uid;
+        if (!isPlayer) return res.status(403).json({ ok: false, error: 'Bu odanın durumunu görüntüleme yetkiniz yok.' });
+        res.json({ ok: true, room: { id: roomId, ...room } });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/ping', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const roomId = cleanStr(req.body.roomId);
-    if (!roomId) throw new Error('Oda ID yok');
+    try {
+        const uid = req.user.uid; const roomId = cleanStr(req.body.roomId);
+        if (!roomId) throw new Error("Oda ID yok");
 
-    const result = await db.runTransaction(async (tx) => {
-      const roomRef = colChess().doc(roomId);
-      const snap = await tx.get(roomRef);
-      if (!snap.exists) throw new Error('Oda Yok');
-      const r = snap.data() || {};
-      if (cleanStr(r.status || '', 24) === 'finished' || cleanStr(r.status || '', 24) === 'abandoned') {
-        return { room: serializeChessRoom(roomId, r), status: r.status, message: 'Oyun bitti.', resultCode: cleanStr(r.resultCode || '', 64) };
-      }
+        const result = await db.runTransaction(async (tx) => {
+            const snap = await tx.get(colChess().doc(roomId));
+            if (!snap.exists) throw new Error("Oda Yok");
+            let r = snap.data();
 
-      const now = nowMs();
-      const isHost = cleanStr(r.host?.uid || '', 160) === uid;
-      const isGuest = cleanStr(r.guest?.uid || '', 160) === uid;
-      if (isHost) r.host.lastPing = now;
-      if (isGuest) r.guest.lastPing = now;
-      r.updatedAt = now;
-      r.lastActivityAt = now;
+            if (r.status === 'finished' || r.status === 'abandoned') return { status: r.status, message: "Oyun bitti." };
 
-      if (cleanStr(r.status || '', 24) === 'playing') {
-        const hostDrop = now - safeNum(r.host?.lastPing, 0) > CHESS_DISCONNECT_GRACE_MS;
-        const guestDrop = now - safeNum(r.guest?.lastPing, 0) > CHESS_DISCONNECT_GRACE_MS;
+            const isHost = r.host && r.host.uid === uid; const isGuest = r.guest && r.guest.uid === uid;
+            if (isHost) r.host.lastPing = nowMs(); if (isGuest) r.guest.lastPing = nowMs();
 
-        if (hostDrop || guestDrop) {
-          if (isRecordSettled(r)) {
-            return { room: serializeChessRoom(roomId, r), status: r.status, message: 'Oyun zaten sonuçlandı.', resultCode: cleanStr(r.resultCode || '', 64) };
-          }
-          if (hostDrop && guestDrop) {
-            finalizeChessRoom(r, { actorUid: uid, winner: 'none', status: 'abandoned', resultCode: GAME_RESULT_CODES.CHESS_ABANDONED_DOUBLE_DISCONNECT, reason: 'double_disconnect' });
-            tx.update(roomRef, r);
-            return { room: serializeChessRoom(roomId, r), status: 'abandoned', message: 'Her iki oyuncunun bağlantısı koptu. Oyun iptal edildi.', resultCode: GAME_RESULT_CODES.CHESS_ABANDONED_DOUBLE_DISCONNECT };
-          }
+            if (r.status === 'playing') {
+                const hostDrop = nowMs() - (r.host.lastPing || 0) > CHESS_DISCONNECT_GRACE_MS;
+                const guestDrop = nowMs() - (r.guest.lastPing || 0) > CHESS_DISCONNECT_GRACE_MS;
 
-          const loserIsHost = hostDrop;
-          const winnerUid = loserIsHost ? cleanStr(r.guest?.uid || '', 160) : cleanStr(r.host?.uid || '', 160);
-          const loserUid = loserIsHost ? cleanStr(r.host?.uid || '', 160) : cleanStr(r.guest?.uid || '', 160);
-          finalizeChessRoom(r, {
-            actorUid: uid,
-            winner: loserIsHost ? 'black' : 'white',
-            resultCode: GAME_RESULT_CODES.CHESS_DISCONNECT_WIN,
-            reason: 'disconnect'
-          });
+                if (hostDrop || guestDrop) {
+                    if (hostDrop && guestDrop) {
+                        r.status = 'abandoned'; r.winner = 'none'; r.updatedAt = nowMs(); applyChessCloseWindow(r); appendTimelineEntry(r, buildTimelineEvent('match_abandoned', { actorUid: uid, roomId, gameKey: 'chess', reason: 'double_disconnect', status: 'abandoned', participantUids: [cleanStr(r.host?.uid || '', 160), cleanStr(r.guest?.uid || '', 160)] })); bumpStateVersion(r); tx.update(colChess().doc(roomId), r);
+                        scheduleChessRoomRemoval(roomId);
+                        return { room: { id: roomId, ...r }, status: 'abandoned', message: "Her iki oyuncunun bağlantısı koptu. Oyun iptal edildi." };
+                    }
 
-          let reward = { amount: 0, limitReached: false };
-          if (winnerUid) {
-            reward = await rewardChessWinner(tx, winnerUid, { roomId, resultCode: GAME_RESULT_CODES.CHESS_DISCONNECT_WIN, reason: 'disconnect' });
-            if (loserUid) {
-              await applyChessProgression(tx, winnerUid, loserUid, 'A_WIN');
+                    const loserIsHost = hostDrop;
+                    const winnerUid = loserIsHost ? r.guest?.uid : r.host?.uid;
+                    const loserUid = loserIsHost ? r.host?.uid : r.guest?.uid;
+                    r.status = 'finished';
+                    r.winner = loserIsHost ? 'black' : 'white';
+                    r.updatedAt = nowMs();
+                    applyChessCloseWindow(r);
+                    appendTimelineEntry(r, buildTimelineEvent('match_finished', { actorUid: uid, roomId, gameKey: 'chess', reason: 'disconnect', status: 'finished', participantUids: [cleanStr(r.host?.uid || '', 160), cleanStr(r.guest?.uid || '', 160)], meta: { winner: loserIsHost ? cleanStr(r.guest?.uid || '', 160) : cleanStr(r.host?.uid || '', 160) } }));
+                    bumpStateVersion(r);
+
+                    let reward = { amount: 0, limitReached: false };
+                    let eloSummary = null;
+                    if (winnerUid) {
+                        reward = await rewardChessWinner(tx, winnerUid);
+                        if (loserUid) {
+                            await applyChessRp(tx, winnerUid, loserUid, 'A_WIN');
+                            eloSummary = await applyMatchEloUpdate(tx, winnerUid, loserUid, 'chess', 1, 0);
+                        }
+                    }
+
+                    tx.update(colChess().doc(roomId), r);
+                    return {
+                        room: { id: roomId, ...r },
+                        status: 'finished',
+                        message: reward.limitReached ? "Rakibin bağlantısı koptu. Günlük ödül limitin dolu." : "Rakibin bağlantısı koptu. Galibiyet işlendi.",
+                        disconnectWin: true,
+                        winAmount: reward.amount,
+                        eloSummary
+                    };
+                }
             }
-          }
-          tx.update(roomRef, r);
-          return {
-            room: serializeChessRoom(roomId, r),
-            status: r.status,
-            message: reward.limitReached ? 'Rakibin bağlantısı koptu. Günlük ödül limitin dolu.' : 'Rakibin bağlantısı koptu. Galibiyet işlendi.',
-            resultCode: GAME_RESULT_CODES.CHESS_DISCONNECT_WIN,
-            winAmount: reward.amount,
-            rewardGrant: reward.grant || null
-          };
+            tx.update(colChess().doc(roomId), r); return { room: { id: roomId, ...r }, status: r.status, message: "" };
+        });
+        const io = req.app.get('io');
+        if (result?.disconnectWin && result?.room) {
+            const winnerUid = result.room.winner === 'white' ? result.room.host?.uid : result.room.guest?.uid;
+            const loserUid = winnerUid ? (winnerUid === result.room.host?.uid ? result.room.guest?.uid : result.room.host?.uid) : '';
+            saveMatchHistory({
+                id: `chess_${roomId}_${result.room.updatedAt || nowMs()}`,
+                gameType: 'chess',
+                roomId,
+                status: result.room.status,
+                result: 'disconnect_win',
+                winnerUid,
+                loserUid,
+                participants: [result.room.host?.uid, result.room.guest?.uid],
+                rewards: { mc: safeNum(result.winAmount, 0) },
+                meta: { reason: 'disconnect' },
+                createdAt: result.room.updatedAt || nowMs()
+            }).catch(() => null);
+
+            if (result.eloSummary?.applied && io) {
+                const { buildEloSocketPayload } = require('../utils/eloSystem');
+                [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+                    const payload = buildEloSocketPayload(result.eloSummary, u);
+                    if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+                });
+            }
+            if (result.winAmount > 0 && winnerUid) {
+                Promise.allSettled([
+                    recordRewardLedger({ uid: winnerUid, amount: result.winAmount, source: 'chess_win', referenceId: roomId, meta: { reason: 'disconnect' }, idempotencyKey: `chess:${roomId}:win:${winnerUid}:disconnect` }),
+                    createNotification({ uid: winnerUid, type: 'reward', title: 'Satranç galibiyet ödülü', body: `${result.winAmount} MC hesabına eklendi.`, data: { source: 'chess_win', roomId, amount: result.winAmount, reason: 'disconnect' } })
+                ]).catch(() => null);
+            }
+            scheduleChessRoomRemoval(roomId);
         }
-      }
-
-      tx.update(roomRef, r);
-      return { room: serializeChessRoom(roomId, r), status: r.status, message: '', resultCode: cleanStr(r.resultCode || '', 64) };
-    });
-
-    const io = req.app.get('io');
-    if (cleanStr(result?.resultCode || '', 64) === GAME_RESULT_CODES.CHESS_DISCONNECT_WIN && result?.room) {
-      await persistChessSettlementArtifacts({ roomId, room: result.room, resultCode: GAME_RESULT_CODES.CHESS_DISCONNECT_WIN, winAmount: safeNum(result.winAmount, 0) });
-      createRewardNotificationForGrant(result.rewardGrant, { data: { source: 'chess_win', roomId, amount: safeNum(result.winAmount, 0), reason: 'disconnect' } }).catch(() => null);
-      scheduleChessRoomRemoval(roomId);
-    } else if (cleanStr(result?.resultCode || '', 64) === GAME_RESULT_CODES.CHESS_ABANDONED_DOUBLE_DISCONNECT) {
-      await persistChessSettlementArtifacts({ roomId, room: result.room, resultCode: GAME_RESULT_CODES.CHESS_ABANDONED_DOUBLE_DISCONNECT, winAmount: 0 });
-      scheduleChessRoomRemoval(roomId);
-    }
-
-    res.json({ ok: true, room: result?.room || result, status: result?.status, message: result?.message || '', resultCode: result?.resultCode || '' });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+        res.json({ ok: true, room: result?.room || result, status: result?.status, message: result?.message || "" });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/move', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const { roomId, from, to, promotion } = req.body;
+    try {
+        const uid = req.user.uid; const { roomId, from, to, promotion } = req.body;
 
-    const result = await db.runTransaction(async (tx) => {
-      const roomRef = colChess().doc(roomId);
-      const rSnap = await tx.get(roomRef);
-      if (!rSnap.exists) throw new Error('Oda bulunamadı.');
-      const r = rSnap.data() || {};
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colChess().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
 
-      if (cleanStr(r.status || '', 24) !== 'playing') throw new Error('Oyun aktif değil.');
-      if (isRecordSettled(r)) throw new Error('Bu maç zaten sonuçlandı.');
-      const isWhite = cleanStr(r.host?.uid || '', 160) === uid;
-      const isBlack = cleanStr(r.guest?.uid || '', 160) === uid;
-      if (!isWhite && !isBlack) throw new Error('Bu odada oyuncu değilsiniz.');
-      if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error('Sıra sizde değil.');
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            let isWhite = r.host.uid === uid; let isBlack = r.guest.uid === uid;
+            if (!isWhite && !isBlack) throw new Error("Bu odada oyuncu değilsiniz.");
+            if ((r.turn === 'w' && !isWhite) || (r.turn === 'b' && !isBlack)) throw new Error("Sıra sizde değil.");
 
-      const chess = new Chess(r.fen);
-      const move = chess.move({ from, to, promotion: promotion || 'q' });
-      if (move === null) throw new Error('Geçersiz hamle! Kural dışı oynanamaz.');
+            const chess = new Chess(r.fen); 
+            const move = chess.move({ from: from, to: to, promotion: promotion || 'q' });
+            if (move === null) throw new Error("Geçersiz hamle! Kural dışı oynanamaz.");
 
-      const now = nowMs();
-      r.fen = chess.fen();
-      r.turn = chess.turn();
-      r.updatedAt = now;
-      r.lastActivityAt = now;
-      if (isWhite) r.host.lastPing = now;
-      if (isBlack) r.guest.lastPing = now;
-      bumpStateVersion(r);
-      let winAmount = 0;
-      let gameOverMessage = null;
-      let resultCode = '';
-      let rewardGrant = null;
+            r.fen = chess.fen(); r.turn = chess.turn(); r.updatedAt = nowMs(); bumpStateVersion(r);
+            let winAmount = 0; let gameOverMessage = null; let eloSummary = null;
 
-      if (chess.in_checkmate()) {
-        const winnerUid = isWhite ? cleanStr(r.host?.uid || '', 160) : cleanStr(r.guest?.uid || '', 160);
-        const loserUid = isWhite ? cleanStr(r.guest?.uid || '', 160) : cleanStr(r.host?.uid || '', 160);
-        finalizeChessRoom(r, {
-          actorUid: uid,
-          winner: isWhite ? 'white' : 'black',
-          resultCode: GAME_RESULT_CODES.CHESS_CHECKMATE_WIN,
-          reason: 'checkmate',
-          meta: { move: move.san }
+            if (chess.in_checkmate()) {
+                r.status = 'finished'; r.winner = isWhite ? 'white' : 'black'; applyChessCloseWindow(r);
+                const winnerUid = isWhite ? r.host.uid : r.guest.uid;
+                const loserUid = isWhite ? r.guest.uid : r.host.uid;
+
+                const reward = await rewardChessWinner(tx, winnerUid);
+                winAmount = reward.amount;
+
+                const rpOut = await applyChessRp(tx, winnerUid, loserUid, 'A_WIN');
+                eloSummary = await applyMatchEloUpdate(tx, winnerUid, loserUid, 'chess', 1, 0);
+
+                if (rpOut?.boostBlocked) gameOverMessage = "ŞAH MAT! (Boost Engeli: Aynı rakiple 3 maç limiti aşıldı, RP işlenmedi)";
+                else if (reward.limitReached) gameOverMessage = "ŞAH MAT! (Günlük Kredi Kazanma Limitiniz Doldu)";
+                else gameOverMessage = "ŞAH MAT! 5000 MC KAZANDINIZ!";
+            } else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) {
+                r.status = 'finished'; r.winner = 'draw'; applyChessCloseWindow(r);
+                const aUid = r.host.uid; const bUid = r.guest.uid;
+                const rpOut = await applyChessRp(tx, aUid, bUid, 'DRAW');
+                eloSummary = await applyMatchEloUpdate(tx, aUid, bUid, 'chess', 0.5, 0.5);
+                gameOverMessage = rpOut?.boostBlocked ? "BERABERE! (Boost Engeli: RP işlenmedi)" : "BERABERE!";
+            }
+
+            if (r.status === 'finished') {
+                appendTimelineEntry(r, buildTimelineEvent('match_finished', { actorUid: uid, roomId, gameKey: 'chess', reason: r.winner === 'draw' ? 'draw' : 'checkmate', status: 'finished', participantUids: [cleanStr(r.host?.uid || '', 160), cleanStr(r.guest?.uid || '', 160)], meta: { winner: cleanStr(r.winner || '', 16) } }));
+            }
+
+            tx.update(colChess().doc(roomId), r);
+            return { room: { id: roomId, ...r }, moveStr: move.san, winAmount, gameOverMessage, eloSummary };
         });
-        const reward = await rewardChessWinner(tx, winnerUid, { roomId, resultCode: GAME_RESULT_CODES.CHESS_CHECKMATE_WIN, reason: 'checkmate' });
-        winAmount = reward.amount;
-        rewardGrant = reward.grant || null;
-        const progressOut = await applyChessProgression(tx, winnerUid, loserUid, 'A_WIN');
-        resultCode = GAME_RESULT_CODES.CHESS_CHECKMATE_WIN;
-        if (progressOut?.boostBlocked) gameOverMessage = 'ŞAH MAT! (Aynı rakiple üst üste eşleşme sınırı nedeniyle ilerleme puanı işlenmedi)';
-        else if (reward.limitReached) gameOverMessage = 'ŞAH MAT! (Günlük Kredi Kazanma Limitiniz Doldu)';
-        else gameOverMessage = 'ŞAH MAT! 5000 MC KAZANDINIZ!';
-      } else if (chess.in_draw() || chess.in_stalemate() || chess.in_threefold_repetition()) {
-        const aUid = cleanStr(r.host?.uid || '', 160);
-        const bUid = cleanStr(r.guest?.uid || '', 160);
-        finalizeChessRoom(r, {
-          actorUid: uid,
-          winner: 'draw',
-          resultCode: GAME_RESULT_CODES.CHESS_DRAW,
-          reason: 'draw',
-          meta: { move: move.san }
-        });
-        const progressOut = await applyChessProgression(tx, aUid, bUid, 'DRAW');
-        resultCode = GAME_RESULT_CODES.CHESS_DRAW;
-        gameOverMessage = progressOut?.boostBlocked ? 'BERABERE! (İlerleme puanı bu eşleşmede işlenmedi)' : 'BERABERE!';
-      }
 
-      tx.update(roomRef, r);
-      return { room: serializeChessRoom(roomId, r), moveStr: move.san, winAmount, gameOverMessage, resultCode, rewardGrant };
-    });
+        if (result.room.status === 'finished') {
+            const winnerUid = result.room.winner === 'white' ? result.room.host?.uid : result.room.winner === 'black' ? result.room.guest?.uid : '';
+            const loserUid = winnerUid ? (winnerUid === result.room.host?.uid ? result.room.guest?.uid : result.room.host?.uid) : '';
+            saveMatchHistory({
+                id: `chess_${roomId}_${result.room.updatedAt || nowMs()}` ,
+                gameType: 'chess',
+                roomId,
+                status: result.room.status,
+                result: result.room.winner === 'draw' ? 'draw' : 'win',
+                winnerUid,
+                loserUid,
+                participants: [result.room.host?.uid, result.room.guest?.uid],
+                rewards: { mc: safeNum(result.winAmount, 0) },
+                meta: { winner: result.room.winner, move: result.moveStr || '' },
+                createdAt: result.room.updatedAt || nowMs()
+            }).catch(() => null);
+        }
 
-    const io = req.app.get('io');
-    if (result.room.status === 'finished' || result.room.status === 'abandoned') {
-      await persistChessSettlementArtifacts({ roomId, room: result.room, resultCode: result.resultCode, winAmount: result.winAmount });
-      createRewardNotificationForGrant(result.rewardGrant, { data: { source: 'chess_win', roomId, amount: safeNum(result.winAmount, 0), reason: cleanStr(result.room?.resultReason || '', 48) } }).catch(() => null);
-      scheduleChessRoomRemoval(roomId);
-    }
-    res.json({ ok: true, ...result });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+        const io = req.app.get('io');
+        if (result.eloSummary?.applied && io) {
+             const { buildEloSocketPayload } = require('../utils/eloSystem');
+             [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+                 const payload = buildEloSocketPayload(result.eloSummary, u);
+                 if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+             });
+        }
+        if (result.winAmount > 0) {
+            const winnerUid = result.room.winner === 'white' ? result.room.host?.uid : result.room.winner === 'black' ? result.room.guest?.uid : '';
+            Promise.allSettled([
+                winnerUid ? recordRewardLedger({ uid: winnerUid, amount: result.winAmount, source: 'chess_win', referenceId: roomId, meta: { reason: 'normal' }, idempotencyKey: `chess:${roomId}:win:${winnerUid}:normal` }) : Promise.resolve(null),
+                winnerUid ? createNotification({ uid: winnerUid, type: 'reward', title: 'Satranç galibiyet ödülü', body: `${result.winAmount} MC hesabına eklendi.`, data: { source: 'chess_win', roomId, amount: result.winAmount, reason: 'normal' } }) : Promise.resolve(null)
+            ]).catch(() => null);
+        }
+        if (result.room.status === 'finished') scheduleChessRoomRemoval(roomId);
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/leave', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const guardSnap = await colUsers().doc(uid).get();
-    assertGamesAllowed(guardSnap.data() || {});
-    const roomId = cleanStr(req.body?.roomId || '');
-    if (!roomId) throw new Error('Oda ID gerekli.');
+    try {
+        const uid = req.user.uid; const roomId = cleanStr(req.body?.roomId || '');
+        if (!roomId) throw new Error("Oda ID gerekli.");
 
-    const result = await db.runTransaction(async (tx) => {
-      const roomRef = colChess().doc(roomId);
-      const roomSnap = await tx.get(roomRef);
-      if (!roomSnap.exists) return { deleted: true };
+        const result = await db.runTransaction(async (tx) => {
+            const roomRef = colChess().doc(roomId); const roomSnap = await tx.get(roomRef);
+            if (!roomSnap.exists) return { deleted: true };
 
-      const room = roomSnap.data() || {};
-      const isHost = cleanStr(room.host?.uid || '', 160) === uid;
-      const isGuest = cleanStr(room.guest?.uid || '', 160) === uid;
-      if (!isHost && !isGuest) throw new Error('Bu odada yetkiniz yok.');
+            const room = roomSnap.data() || {};
+            const isHost = room.host?.uid === uid; const isGuest = room.guest?.uid === uid;
+            if (!isHost && !isGuest) throw new Error("Bu odada yetkiniz yok.");
 
-      if (cleanStr(room.status || '', 24) === 'waiting') {
-        tx.delete(roomRef);
-        return { deleted: true, waiting: true, resultCode: GAME_RESULT_CODES.CHESS_WAITING_CANCELLED };
-      }
-      if (cleanStr(room.status || '', 24) === 'finished' || cleanStr(room.status || '', 24) === 'abandoned' || isRecordSettled(room)) {
-        return { room: serializeChessRoom(roomId, room), alreadyClosed: true, resultCode: cleanStr(room.resultCode || '', 64) };
-      }
+            if (room.status === 'waiting') { tx.delete(roomRef); return { deleted: true, waiting: true }; }
+            if (room.status === 'finished' || room.status === 'abandoned') return { room: { id: roomId, ...room }, alreadyClosed: true };
 
-      const winnerUid = isHost ? cleanStr(room.guest?.uid || '', 160) : cleanStr(room.host?.uid || '', 160);
-      const loserUid = isHost ? cleanStr(room.host?.uid || '', 160) : cleanStr(room.guest?.uid || '', 160);
-      finalizeChessRoom(room, {
-        actorUid: uid,
-        winner: isHost ? 'black' : 'white',
-        resultCode: GAME_RESULT_CODES.CHESS_LEAVE_WIN,
-        reason: 'leave'
-      });
-      let reward = { amount: 0, limitReached: false };
-      if (winnerUid) {
-        reward = await rewardChessWinner(tx, winnerUid, { roomId, resultCode: GAME_RESULT_CODES.CHESS_LEAVE_WIN, reason: 'leave' });
-        if (loserUid) {
-          await applyChessProgression(tx, winnerUid, loserUid, 'A_WIN');
+            room.status = 'finished'; room.winner = isHost ? 'black' : 'white'; room.updatedAt = nowMs(); applyChessCloseWindow(room); appendTimelineEntry(room, buildTimelineEvent('match_finished', { actorUid: uid, roomId, gameKey: 'chess', reason: 'leave', status: 'finished', participantUids: [cleanStr(room.host?.uid || '', 160), cleanStr(room.guest?.uid || '', 160)] })); bumpStateVersion(room);
+
+            const winnerUid = isHost ? room.guest?.uid : room.host?.uid;
+            const loserUid = isHost ? room.host?.uid : room.guest?.uid;
+            let reward = { amount: 0, limitReached: false }; let eloSummary = null;
+
+            if (winnerUid) {
+                reward = await rewardChessWinner(tx, winnerUid);
+                if (loserUid) {
+                    await applyChessRp(tx, winnerUid, loserUid, 'A_WIN');
+                    eloSummary = await applyMatchEloUpdate(tx, winnerUid, loserUid, 'chess', 1, 0);
+                }
+            }
+            tx.update(roomRef, room);
+            return { room: { id: roomId, ...room }, winAmount: reward.amount, gameOverMessage: reward.limitReached ? "Rakip masadan ayrıldı. (Günlük limit dolu)" : "Rakip masadan ayrıldı. 5000 MC KAZANDINIZ!", eloSummary };
+        });
+
+        if (result?.room && !result.waiting && !result.alreadyClosed) {
+            const winnerUid = result.room.winner === 'white' ? result.room.host?.uid : result.room.winner === 'black' ? result.room.guest?.uid : '';
+            const loserUid = winnerUid ? (winnerUid === result.room.host?.uid ? result.room.guest?.uid : result.room.host?.uid) : '';
+            saveMatchHistory({
+                id: `chess_${roomId}_${result.room.updatedAt || nowMs()}` ,
+                gameType: 'chess',
+                roomId,
+                status: result.room.status,
+                result: 'leave_win',
+                winnerUid,
+                loserUid,
+                participants: [result.room.host?.uid, result.room.guest?.uid],
+                rewards: { mc: safeNum(result.winAmount, 0) },
+                meta: { reason: 'leave' },
+                createdAt: result.room.updatedAt || nowMs()
+            }).catch(() => null);
         }
-      }
-      tx.update(roomRef, room);
-      return {
-        room: serializeChessRoom(roomId, room),
-        winAmount: reward.amount,
-        gameOverMessage: reward.limitReached ? 'Rakip masadan ayrıldı. (Günlük limit dolu)' : 'Rakip masadan ayrıldı. 5000 MC KAZANDINIZ!',
-        resultCode: GAME_RESULT_CODES.CHESS_LEAVE_WIN,
-        rewardGrant: reward.grant || null
-      };
-    });
 
-    if (result.waiting) {
-      await recordGameAudit({
-        gameType: 'chess',
-        entityType: 'match',
-        entityId: roomId,
-        roomId,
-        eventType: 'waiting_room_cancelled',
-        resultCode: GAME_RESULT_CODES.CHESS_WAITING_CANCELLED,
-        reason: 'leave',
-        status: GAME_SETTLEMENT_STATUS.CANCELLED,
-        actorUid: uid,
-        subjectUid: uid,
-        idempotencyKey: `chess:${roomId}:waiting_cancelled`
-      }).catch(() => null);
-    } else if (result?.room && !result.alreadyClosed) {
-      await persistChessSettlementArtifacts({ roomId, room: result.room, resultCode: GAME_RESULT_CODES.CHESS_LEAVE_WIN, winAmount: result.winAmount });
-      createRewardNotificationForGrant(result.rewardGrant, { data: { source: 'chess_win', roomId, amount: safeNum(result.winAmount, 0), reason: 'leave' } }).catch(() => null);
-      scheduleChessRoomRemoval(roomId);
-    }
-    res.json({ ok: true, ...result });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+        const io = req.app.get('io');
+        if (result?.eloSummary?.applied && io) {
+             const { buildEloSocketPayload } = require('../utils/eloSystem');
+             [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+                 const payload = buildEloSocketPayload(result.eloSummary, u);
+                 if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+             });
+        }
+        if (result?.winAmount > 0) {
+            const winnerUid = result.room.winner === 'white' ? result.room.host?.uid : result.room.winner === 'black' ? result.room.guest?.uid : '';
+            Promise.allSettled([
+                winnerUid ? recordRewardLedger({ uid: winnerUid, amount: result.winAmount, source: 'chess_win', referenceId: roomId, meta: { reason: 'leave' }, idempotencyKey: `chess:${roomId}:win:${winnerUid}:leave` }) : Promise.resolve(null),
+                winnerUid ? createNotification({ uid: winnerUid, type: 'reward', title: 'Satranç galibiyet ödülü', body: `${result.winAmount} MC hesabına eklendi.`, data: { source: 'chess_win', roomId, amount: result.winAmount, reason: 'leave' } }) : Promise.resolve(null)
+            ]).catch(() => null);
+        }
+        if (result?.room) scheduleChessRoomRemoval(roomId);
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/resign', verifyAuth, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const roomId = cleanStr(req.body?.roomId || '');
-    if (!roomId) throw new Error('Oda ID gerekli.');
-    const result = await db.runTransaction(async (tx) => {
-      const roomRef = colChess().doc(roomId);
-      const rSnap = await tx.get(roomRef);
-      if (!rSnap.exists) throw new Error('Oda bulunamadı.');
-      const r = rSnap.data() || {};
+    try {
+        const uid = req.user.uid; const { roomId } = req.body;
+        const result = await db.runTransaction(async (tx) => {
+            const rSnap = await tx.get(colChess().doc(roomId));
+            if (!rSnap.exists) throw new Error("Oda bulunamadı.");
+            let r = rSnap.data();
 
-      if (cleanStr(r.status || '', 24) !== 'playing') throw new Error('Oyun aktif değil.');
-      if (isRecordSettled(r)) throw new Error('Bu maç zaten sonuçlandı.');
-      const isWhite = cleanStr(r.host?.uid || '', 160) === uid;
-      const isBlack = cleanStr(r.guest?.uid || '', 160) === uid;
-      if (!isWhite && !isBlack) throw new Error('Yetkiniz yok.');
+            if (r.status !== 'playing') throw new Error("Oyun aktif değil.");
+            let isWhite = r.host.uid === uid; let isBlack = r.guest.uid === uid;
+            if (!isWhite && !isBlack) throw new Error("Yetkiniz yok.");
 
-      const winnerUid = isWhite ? cleanStr(r.guest?.uid || '', 160) : cleanStr(r.host?.uid || '', 160);
-      const loserUid = isWhite ? cleanStr(r.host?.uid || '', 160) : cleanStr(r.guest?.uid || '', 160);
-      finalizeChessRoom(r, {
-        actorUid: uid,
-        winner: isWhite ? 'black' : 'white',
-        resultCode: GAME_RESULT_CODES.CHESS_RESIGN_WIN,
-        reason: 'resign'
-      });
-      const reward = await rewardChessWinner(tx, winnerUid, { roomId, resultCode: GAME_RESULT_CODES.CHESS_RESIGN_WIN, reason: 'resign' });
-      await applyChessProgression(tx, winnerUid, loserUid, 'A_WIN');
-      tx.update(roomRef, r);
-      return {
-        room: serializeChessRoom(roomId, r),
-        winAmount: reward.amount,
-        gameOverMessage: reward.limitReached ? 'Rakip Pes Etti. (Günlük Limitiniz Doldu)' : 'Rakip Pes Etti. 5000 MC KAZANDINIZ!',
-        resultCode: GAME_RESULT_CODES.CHESS_RESIGN_WIN,
-        rewardGrant: reward.grant || null
-      };
-    });
+            r.status = 'finished'; r.winner = isWhite ? 'black' : 'white'; r.updatedAt = nowMs(); applyChessCloseWindow(r); appendTimelineEntry(r, buildTimelineEvent('match_finished', { actorUid: uid, roomId, gameKey: 'chess', reason: 'resign', status: 'finished', participantUids: [cleanStr(r.host?.uid || '', 160), cleanStr(r.guest?.uid || '', 160)] })); bumpStateVersion(r);
+            const winnerUid = isWhite ? r.guest.uid : r.host.uid;
+            const loserUid = isWhite ? r.host.uid : r.guest.uid;
 
-    await persistChessSettlementArtifacts({ roomId, room: result.room, resultCode: GAME_RESULT_CODES.CHESS_RESIGN_WIN, winAmount: result.winAmount });
-    createRewardNotificationForGrant(result.rewardGrant, { data: { source: 'chess_win', roomId, amount: safeNum(result.winAmount, 0), reason: 'resign' } }).catch(() => null);
-    scheduleChessRoomRemoval(roomId);
-    res.json({ ok: true, ...result });
-  } catch (e) { res.json({ ok: false, error: e.message }); }
+            const reward = await rewardChessWinner(tx, winnerUid);
+            const eloSummary = await applyMatchEloUpdate(tx, winnerUid, loserUid, 'chess', 1, 0);
+            await applyChessRp(tx, winnerUid, loserUid, 'A_WIN');
+
+            let winAmount = reward.amount;
+            let gameOverMessage = reward.limitReached ? "Rakip Pes Etti. (Günlük Limitiniz Doldu)" : "Rakip Pes Etti. 5000 MC KAZANDINIZ!";
+
+            tx.update(colChess().doc(roomId), r);
+            return { room: { id: roomId, ...r }, winAmount, gameOverMessage, eloSummary };
+        });
+
+        saveMatchHistory({
+            id: `chess_${roomId}_${result.room.updatedAt || nowMs()}`,
+            gameType: 'chess',
+            roomId,
+            status: result.room.status,
+            result: 'resign_win',
+            winnerUid: result.room.winner === 'white' ? result.room.host?.uid : result.room.guest?.uid,
+            loserUid: result.room.winner === 'white' ? result.room.guest?.uid : result.room.host?.uid,
+            participants: [result.room.host?.uid, result.room.guest?.uid],
+            rewards: { mc: safeNum(result.winAmount, 0) },
+            meta: { reason: 'resign' },
+            createdAt: result.room.updatedAt || nowMs()
+        }).catch(() => null);
+
+        const io = req.app.get('io');
+        if (result?.eloSummary?.applied && io) {
+             const { buildEloSocketPayload } = require('../utils/eloSystem');
+             [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+                 const payload = buildEloSocketPayload(result.eloSummary, u);
+                 if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+             });
+        }
+        if (result.winAmount > 0) {
+            const winnerUid = result.room.winner === 'white' ? result.room.host?.uid : result.room.guest?.uid;
+            Promise.allSettled([
+                winnerUid ? recordRewardLedger({ uid: winnerUid, amount: result.winAmount, source: 'chess_win', referenceId: roomId, meta: { reason: 'resign' }, idempotencyKey: `chess:${roomId}:win:${winnerUid}:resign` }) : Promise.resolve(null),
+                winnerUid ? createNotification({ uid: winnerUid, type: 'reward', title: 'Satranç galibiyet ödülü', body: `${result.winAmount} MC hesabına eklendi.`, data: { source: 'chess_win', roomId, amount: result.winAmount, reason: 'resign' } }) : Promise.resolve(null)
+            ]).catch(() => null);
+        }
+        scheduleChessRoomRemoval(roomId);
+        res.json({ ok: true, ...result });
+    } catch(e) { res.json({ ok: false, error: e.message }); }
 });
 
 module.exports = router;

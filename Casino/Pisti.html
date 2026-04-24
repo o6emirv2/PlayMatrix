@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+<title>PlayMatrix - Pişti | Casino Oyunu</title>
+<meta name="description" content="PlayMatrix VIP Pişti ile gerçek casino ortamını yaşayın. %100 güvenli, donmasız, sunucu tabanlı profesyonel kart oyunu. Hemen masaya oturun!">
+<meta name="keywords" content="pişti, pişti oyna, casino, playmatrix, vip casino, güvenli bahis, canlı pişti, kart oyunu">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#1a1c24">
+
+<meta property="og:locale" content="tr_TR">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PlayMatrix VIP Pişti">
+<meta property="og:description" content="Gerçek kurallar, yüksek kazançlar ve kesintisiz VIP Pişti heyecanı.">
+<meta property="og:site_name" content="PlayMatrix">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix VIP Pişti">
+<meta name="twitter:description" content="Gerçek casino standartlarında pişti oyna. Şansını hemen dene!">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    if (window.history.replaceState) {
+      const hasQueryOrHash = !!(location.search || location.hash);
+      if (!hasQueryOrHash && location.pathname !== "/") {
+        window.history.replaceState(null, null, "/");
+      }
+    }
+  </script>
+    
+<style>
+    :root {
+        --topbar-bg: #1a1c24;
+        --topbar-border: #2a2d3a;
+        --vip-orange: #F59E0B;
+        --vip-orange-light: #FBBF24;
+        --text-muted: #8E8E93;
+        --gold-main: #D4AF37;
+        --neon-red: #FF3366;
+    }
+
+    /* SIFIR KAYMA, %100 RESPONSIVE VE ZOOM KORUMASI RESET */
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+    html, body {
+        width: 100vw; height: 100vh; overflow: hidden; 
+        overscroll-behavior: none; touch-action: manipulation; 
+        font-family: 'Inter', -apple-system, sans-serif;
+        background-color: #1a0505;
+        /* PROFESYONEL PİŞTİ ÇUHASI (KOYU BORDO/KIRMIZI LÜKS ARKA PLAN) */
+        background-image: 
+            radial-gradient(circle at 50% -20%, #4a0f0f 0%, transparent 65%),
+            radial-gradient(circle at 50% 100%, #0a0202 0%, transparent 80%);
+        color: white;
+    }
+    
+    /* PROFESYONEL İNTRO */
+    #studioIntro {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #070b10;
+        z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .intro-logo { transform: scale(1.1); animation: breathe 2s infinite alternate; text-align: center; }
+    .intro-suits { font-size: 40px; color: #ff3b30; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(255,59,48,0.5)); letter-spacing: 10px; }
+    .intro-suits span { color: #fff; }
+    .intro-logo h1 { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 0 5px 15px rgba(0,0,0,0.8); }
+    .intro-logo h1 span { color: #ff3b30; }
+    
+    .loader-track { width: 220px; height: 4px; background: #1a2430; margin-top: 40px; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+    .loader-fill { height: 100%; width: 0%; background: #ff3b30; transition: width 0.1s linear; box-shadow: 0 0 10px #ff3b30; }
+    .btn-intro-start { display: none; margin-top: 30px; padding: 15px 40px; background: linear-gradient(to bottom, #ff4b4b, #cc0000); color: #fff; border: none; border-radius: 12px; font-weight: 900; font-size: 15px; cursor: pointer; text-transform: uppercase; font-family: 'Orbitron'; box-shadow: 0 5px 20px rgba(255,75,75,0.4); transition: 0.2s; letter-spacing: 1px; }
+    .btn-intro-start:active { transform: scale(0.95); box-shadow: none; }
+
+    @keyframes breathe { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.2); } }
+
+    /* YENİ TAM GENİŞLİK ÜST BAR (Crash'ten Alınan VIP Bar) */
+    .top-bar-full {
+        position: absolute; top: 0; left: 0; width: 100%;
+        height: calc(75px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top);
+        background: var(--topbar-bg);
+        border-bottom: 1px solid var(--topbar-border);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 16px; z-index: 1000; box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+        gap: 15px;
+    }
+
+    .vip-section { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; max-width: 600px; }
+    .vip-shield-wrap { position: relative; width: 44px; height: 44px; background: #2b2e38; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.4); flex-shrink: 0; }
+    .vip-shield-wrap i { color: var(--vip-orange); font-size: 20px; }
+    .vip-shield-badge { position: absolute; top: -2px; right: -4px; background: #111; color: #fff; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); }
+    
+    .vip-stats-area { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+    .stat-row-top { display: flex; justify-content: space-between; align-items: center; }
+    .stat-label { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+    .stat-balance { color: #fff; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stat-balance span { color: #A0A5B5; font-size: 11px; margin-right: 4px; font-family: 'Inter', sans-serif;}
+    
+    .stat-row-bottom { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .stat-lvl-text { color: #E2E8F0; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .stat-bar-bg { flex: 1; height: 12px; background: #fff; border-radius: 12px; overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+    .stat-bar-fill { height: 100%; width: 0%; background: repeating-linear-gradient(-45deg, var(--vip-orange-light), var(--vip-orange-light) 8px, var(--vip-orange) 8px, var(--vip-orange) 16px); border-radius: 12px; transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+    .stat-pct { color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; font-family: 'Inter', sans-serif; }
+    
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .action-icon-btn { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: pointer; text-decoration: none; flex-shrink: 0; transition: all 0.2s;}
+    .action-icon-btn:hover { background: rgba(212,175,55,0.1); color: var(--gold-main); border-color: rgba(212,175,55,0.3);}
+    .action-icon-btn.red:hover { background: rgba(255,51,102,0.1); color: var(--neon-red); border-color: rgba(255,51,102,0.3);}
+
+    @media (max-width: 480px) {
+        .top-bar-full { padding: 0 10px; gap: 10px;}
+        .vip-shield-wrap { width: 38px; height: 38px; }
+        .vip-shield-wrap i { font-size: 16px; }
+        .stat-balance { font-size: 13px; }
+        .stat-lvl-text { font-size: 10px; }
+        .stat-pct { font-size: 10px; }
+        .action-icon-btn { width: 34px; height: 34px; font-size: 14px; }
+    }
+
+    /* VIP MASA VE KART DAĞITICI (SHOE) */
+    .game-container { 
+        position: absolute; top: calc(75px + env(safe-area-inset-top)); bottom: 0; width: 100vw;
+        display: flex; flex-direction: column; justify-content: space-between; 
+        padding: 10px 0 20px 0; perspective: 1200px; 
+        overflow-y: auto; overflow-x: hidden; touch-action: pan-y;
+        z-index: 1;
+    }
+    
+    .table-line {
+        position: absolute; top: 15%; left: -20vw; right: -20vw; height: 70%;
+        border-top: 4px solid rgba(255, 59, 48, 0.2); border-radius: 50%;
+        pointer-events: none; z-index: 0; box-shadow: inset 0 40px 60px rgba(0,0,0,0.4);
+    }
+
+    /* KART KUTUSU (SHOE) */
+    .card-shoe-container { 
+        position: absolute; top: 20px; right: 20px; z-index: 50; 
+        display: flex; flex-direction: column; align-items: center; 
+        background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);
+    }
+    .card-shoe {
+        width: 45px; height: 65px; background: url('https://deckofcardsapi.com/static/img/back.png') center/cover;
+        border-radius: 4px; box-shadow: -1px 1px 0 #ddd, -2px 2px 0 #999, -3px 3px 0 #ddd, -4px 4px 0 #999, -8px 8px 15px rgba(0,0,0,0.8);
+        transform: rotate(-10deg);
+    }
+
+    .area { width: 100%; text-align: center; position: relative; z-index: 2; margin-top: 5px; }
+    
+    .score-board {
+        display: flex; justify-content: space-between; padding: 0 20px; font-family: 'Orbitron'; font-size: 11px; font-weight: 900; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase;
+    }
+    .score-board span { color: #ff3b30; font-size: 14px; }
+    .score-board div { background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+
+    /* GERÇEK KART TASARIMLARI VE 3D UÇUŞ ANİMASYONLARI */
+    .cards-wrapper { display: flex; justify-content: center; gap: 5px; min-height: 100px; padding: 0 10px; perspective: 1000px; }
+    
+    .card-3d { 
+        width: 65px; height: 95px; position: relative; 
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; 
+        transform-style: preserve-3d; cursor: pointer;
+    }
+    .real-card { width: 100%; height: 100%; border-radius: 6px; box-shadow: -4px 4px 10px rgba(0,0,0,0.6); object-fit: cover; backface-visibility: hidden;}
+    .card-3d:hover { transform: translateY(-10px); }
+
+    /* Yerdeki Kartlar (Üst üste binme efekti) */
+    .table-cards { position: relative; display: flex; justify-content: center; align-items: center; min-height: 120px; margin: 15px 0; }
+    .table-card { position: absolute; width: 70px; height: 100px; transition: 0.3s; }
+    
+    .table-card:nth-last-child(1) { transform: rotate(5deg) translate(0, 0); z-index: 4; }
+    .table-card:nth-last-child(2) { transform: rotate(-8deg) translate(-5px, -5px); z-index: 3; }
+    .table-card:nth-last-child(3) { transform: rotate(12deg) translate(5px, -8px); z-index: 2; }
+    .table-card:nth-last-child(4) { transform: rotate(-15deg) translate(-8px, -12px); z-index: 1; }
+
+    /* Yeni atılan kart animasyonu (Ortaya fırlatma) */
+    .new-card-anim {
+        animation: throwCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes throwCard {
+        0% { transform: scale(1.5) translateY(-50px) rotate(-20deg); opacity: 0; }
+        100% { transform: scale(1) translateY(0) rotate(5deg); opacity: 1; }
+    }
+
+    /* AKSİYON VE BİLGİ ALANI */
+    .action-area { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60px; z-index: 10; margin-top: 5px;}
+    
+    #ui-message { font-size: 13px; font-weight: 900; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,1); margin-bottom: 10px; text-transform: uppercase; background: rgba(0,0,0,0.6); padding: 6px 20px; border-radius: 8px; letter-spacing: 1px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1);}
+    
+    .btn { padding: 14px 40px; border-radius: 12px; border: none; font-weight: 900; font-size: 16px; color: white; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: transform 0.1s, box-shadow 0.1s; touch-action: manipulation; font-family: 'Orbitron'; letter-spacing: 1px;}
+    
+    #startBtn { background: linear-gradient(180deg, #ff4b4b, #990000); box-shadow: 0 5px 0 #550000; width: 100%; max-width: 250px;}
+    #startBtn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); }
+    #startBtn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none !important; box-shadow: 0 5px 0 rgba(0,0,0,0.5) !important;}
+    
+    /* YAN YANA BOZULMAYAN PROFESYONEL ÇİPLER */
+    .chips-wrapper { width: 100%; display: flex; justify-content: center; padding-bottom: 10px; z-index: 10; }
+    .chips-area { 
+        display: flex; justify-content: flex-start; align-items: center; gap: 8px; 
+        background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 30px; 
+        border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px);
+        flex-wrap: nowrap; overflow-x: auto; max-width: 95%; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    }
+    .chips-area::-webkit-scrollbar { display: none; }
+    
+    .chip { 
+        width: 13vw; max-width: 50px; aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        font-weight: 900; font-size: 12px; cursor: pointer; border: 3px dashed rgba(255,255,255,0.7); 
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5); transition: transform 0.1s; 
+        touch-action: manipulation; font-family: 'Inter'; text-shadow: 1px 1px 2px #000; flex-shrink: 0;
+    }
+    .chip:active { transform: scale(0.9) translateY(4px); box-shadow: inset 0 0 5px rgba(0,0,0,0.8), 0 2px 3px rgba(0,0,0,0.5); }
+    .c1k { background: radial-gradient(circle, #a0a0a0 30%, #555 90%); color: #fff;}
+    .c3k { background: radial-gradient(circle, #2ecc71 30%, #176634 90%); color: #fff; }
+    .c5k { background: radial-gradient(circle, #e74c3c 30%, #7a160d 90%); color: #fff; }
+    .c15k { background: radial-gradient(circle, #3498db 30%, #154360 90%); color: #fff; }
+    .c20k { background: radial-gradient(circle, #9b59b6 30%, #4a235a 90%); color: #fff; }
+    .c50k { background: radial-gradient(circle, #222 30%, #000 90%); color: #ff3b30; border-color: #ff3b30;}
+    .cancel-btn { 
+        width: 13vw; max-width: 50px; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(to bottom, #444, #111); 
+        color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 11px; 
+        cursor: pointer; border: 2px solid #666; touch-action: manipulation; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    }
+    .cancel-btn:active { transform: scale(0.9); }
+
+    /* ÖZEL ANİMASYONLU MODAL (POPUP) SİSTEMİ %100 TEMA UYUMLU */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.show { opacity: 1; display: flex; }
+    
+    .modal-card { 
+        background: linear-gradient(145deg, #111827, #0a0f1a); border: 1px solid #1f2937; width: 90%; max-width: 360px; 
+        border-radius: 20px; padding: 30px 25px; transform: scale(0.8) translateY(30px); opacity: 0; 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 25px 50px rgba(0,0,0,0.9); text-align: center;
+    }
+    .modal-overlay.show .modal-card { transform: scale(1) translateY(0); opacity: 1; }
+    
+    .modal-icon { font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.5)); }
+    .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 20px; font-weight: 900; margin-bottom: 10px; letter-spacing: 0.5px; }
+    .modal-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 25px; font-weight: 500; white-space: pre-line; text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);}
+    .modal-card p b { color: #ff3b30; }
+    .modal-close { background: linear-gradient(135deg, #ff4b4b, #990000); color: #fff; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 15px; letter-spacing: 1px; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 15px rgba(255,75,75,0.3); text-transform: uppercase;}
+    .modal-close:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,75,75,0.5); }
+    .modal-close:active { transform: translateY(2px); box-shadow: none; }
+    
+    @media (max-width: 400px) { 
+        .card-3d { width: 55px; height: 85px; }
+        .table-card { width: 60px; height: 90px; }
+        .btn { font-size: 14px; padding: 12px; }
+        .score-board { padding: 0 5px; }
+    }
+
+    /* PİŞTİ EFEKTİ */
+    .pisti-flash { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; font-weight: 900; color: #ff3b30; text-shadow: 0 0 30px #fff; z-index: 100; opacity: 0; pointer-events: none; font-family: 'Orbitron'; letter-spacing: 5px; }
+    @keyframes flashPisti { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+</style>
+  <link rel="stylesheet" href="/premium-phase5.css" />
+  <script src="/premium-phase5.js" defer></script>
+</head>
+<body>
+
+<div id="studioIntro">
+    <div class="intro-logo">
+        <div class="intro-suits">♦<span>♣</span>♥<span>♠</span></div>
+        <h1>VIP<br><span>PİŞTİ</span></h1>
+    </div>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">PİŞTİ OYNA</button>
+</div>
+
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj içeriği</p>
+        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
+    </div>
+</div>
+
+<header class="top-bar-full">
+    <div class="vip-section">
+        <div class="vip-shield-wrap">
+            <i class="fa-solid fa-crown"></i>
+            <div class="vip-shield-badge" id="uiVipBadge">1</div>
+        </div>
+        
+        <div class="vip-stats-area">
+            <div class="stat-row-top">
+                <div class="stat-label">(MC) BAKİYE</div>
+                <div class="stat-balance"><span>MC</span> <span id="ui-balance">0.00</span></div>
+            </div>
+            <div class="stat-row-bottom">
+                <div class="stat-lvl-text">Vip Seviyeniz</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" id="uiVipBar"></div>
+                </div>
+                <div class="stat-pct" id="uiVipPct">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="top-actions">
+        <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-question"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-power-off"></i></a>
+    </div>
+</header>
+
+<main class="game-container">
+    <div class="table-line"></div>
+    
+    <div class="card-shoe-container" id="shoeTarget">
+        <div class="card-shoe"></div>
+    </div>
+
+    <div class="area">
+        <div class="score-board">
+            <div>Bot Puan: <span id="botScore">0</span></div>
+            <div>Kartlar: <span id="botCardCount">0</span></div>
+        </div>
+        <div id="botHand" class="cards-wrapper"></div>
+    </div>
+    
+    <div class="area">
+        <div class="table-cards" id="tableCards"></div>
+    </div>
+
+    <div class="pisti-flash" id="pistiAnim">PİŞTİ!</div>
+    
+    <div class="area" style="margin-bottom: 10px;">
+        <div class="score-board">
+            <div>Sizin Puan: <span id="playerScore">0</span></div>
+            <div>Kartlar: <span id="playerCardCount">0</span></div>
+        </div>
+        <div id="playerHand" class="cards-wrapper"></div>
+    </div>
+    
+    <div class="action-area">
+        <div id="ui-message">MC KULLAN (MİN: 100)</div>
+        <button id="startBtn" class="btn" disabled>OYNA (<span id="ui-betAmount">0</span> MC)</button>
+    </div>
+    
+    <div class="chips-wrapper" id="ui-chipsArea">
+        <div class="chips-area">
+            <div class="cancel-btn" id="cancelBetBtn">SİL</div>
+            <div class="chip c1k" data-val="100">100</div>
+            <div class="chip c3k" data-val="500">500</div>
+            <div class="chip c5k" data-val="1000">1K</div>
+            <div class="chip c15k" data-val="5000">5K</div>
+            <div class="chip c20k" data-val="10000">10K</div>
+            <div class="chip c50k" data-val="50000">50K</div>
+            <div class="chip c200k" data-val="200000">200K</div>
+            <div class="chip c500k" data-val="500000">500K</div>
+            <div class="chip c1m" data-val="1000000">1M</div>
+            <div class="chip c10m" data-val="10000000">10M</div>
+            <div class="chip c100m" data-val="100000000">100M</div>
+        </div>
+    </div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, getIdToken, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey:"AIzaSyC81Ah46_F2his90zedODoCk07vqsd3vVs",
+    authDomain:"playmatrix-b7df9.firebaseapp.com",
+    projectId:"playmatrix-b7df9",
+    storageBucket:"playmatrix-b7df9.firebasestorage.app",
+    messagingSenderId:"689686425310",
+    appId:"1:689686425310:web:01c9f797b437a770e19c4f",
+    measurementId: "G-BL9ZP43VVW"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+window.__PM_RUNTIME = window.__PM_RUNTIME || {};
+window.__PM_RUNTIME.auth = auth;
+window.__PM_RUNTIME.signOut = signOut;
+window.__PM_RUNTIME.getIdToken = async (forceRefresh = false) => { if (!auth.currentUser) throw new Error('NO_USER'); return getIdToken(auth.currentUser, forceRefresh); };
+const API_URL = (() => {
+    const normalize = (value) => String(value || '').trim().replace(/\/+$/, '');
+    const runtimeBase = normalize(window.__PM_RUNTIME?.apiBase || window.__PLAYMATRIX_API_URL__ || '');
+    if (runtimeBase) return runtimeBase;
+    const metaBase = normalize(document.querySelector('meta[name="playmatrix-api-url"]')?.content || '');
+    if (metaBase) return metaBase;
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return "http://localhost:3000";
+    return normalize('https://emirhan-siye.onrender.com') || window.location.origin.replace(/\/+$/, '');
+})();
+window.__PM_RUNTIME = window.__PM_RUNTIME || {};
+window.__PM_RUNTIME.apiBase = API_URL;
+window.__PLAYMATRIX_API_URL__ = API_URL;
+
+// VIP Hesaplama Fonksiyonu
+const VIP_RP_TIERS = [
+    { level: 1, start: 0, end: 1000 },
+    { level: 2, start: 1000, end: 2500 },
+    { level: 3, start: 2500, end: 5000 },
+    { level: 4, start: 5000, end: 10000 },
+    { level: 5, start: 10000, end: 20000 },
+    { level: 6, start: 20000, end: 35000 },
+    { level: 7, start: 35000, end: 60000 },
+    { level: 8, start: 60000, end: 100000 },
+    { level: 9, start: 100000, end: 175000 },
+    { level: 10, start: 175000, end: 300000 },
+    { level: 11, start: 300000, end: Number.POSITIVE_INFINITY }
+];
+
+function calcVipPercentage(rp) {
+    const val = Math.max(0, Number(rp) || 0);
+    const tier = VIP_RP_TIERS.find((item) => val < item.end) || VIP_RP_TIERS[VIP_RP_TIERS.length - 1];
+    if (!Number.isFinite(tier.end)) return { pct: 100, level: tier.level };
+    const span = Math.max(1, tier.end - tier.start);
+    const pct = ((val - tier.start) / span) * 100;
+    return { pct: Math.min(Math.max(pct, 0), 100), level: tier.level };
+}
+
+// --- KÖKLÜ ÇÖZÜM: ZOOM (ÇİFT TIKLAMA) ENGELLEYİCİ ---
+document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (event) {
+    let now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+    lastTouchEnd = now;
+}, { passive: false });
+
+const elMatrixModal = document.getElementById('matrixModal');
+const elMatrixModalIcon = document.getElementById("matrixModalIcon");
+const elMatrixModalTitle = document.getElementById("matrixModalTitle");
+const elMatrixModalDesc = document.getElementById("matrixModalDesc");
+const elBtnEnterGame = document.getElementById('btnEnterGame');
+const elStudioIntro = document.getElementById('studioIntro');
+const elLoaderFill = document.getElementById('loaderFill');
+const elUiBalance = document.getElementById("ui-balance");
+const elUiMessage = document.getElementById("ui-message");
+const elStartBtn = document.getElementById("startBtn");
+const elUiChipsArea = document.getElementById("ui-chipsArea");
+const elPlayerScore = document.getElementById("playerScore");
+const elBotScore = document.getElementById("botScore");
+const elBotHand = document.getElementById("botHand");
+const elPlayerHand = document.getElementById("playerHand");
+const elTableCards = document.getElementById("tableCards");
+
+// --- PROFESYONEL MODAL YÖNETİCİSİ ---
+window.showMatrixModal = (title, message, type = 'info') => {
+    const icon = elMatrixModalIcon;
+    elMatrixModalTitle.innerText = title;
+    elMatrixModalDesc.innerHTML = message;
+    
+    if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30"></i>'; elMatrixModalTitle.style.color = '#ff3b30'; } 
+    else if(type === 'success') { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#00ffa3"></i>'; elMatrixModalTitle.style.color = '#00ffa3'; } 
+    else if(type === 'push') { icon.innerHTML = '<i class="fa-solid fa-handshake" style="color:#f1c40f"></i>'; elMatrixModalTitle.style.color = '#f1c40f'; }
+    else { icon.innerHTML = '<i class="fa-solid fa-clone" style="color:#ff3b30"></i>'; elMatrixModalTitle.style.color = '#ff3b30'; }
+    
+    const modal = elMatrixModal;
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+};
+
+window.closeMatrixModal = () => {
+    const modal = elMatrixModal;
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 300);
+};
+
+window.showHowToPlay = () => {
+    showMatrixModal(
+        "Pişti Nasıl Oynanır?", 
+        "🔹 Çiplerle bahsini seç ve <b>OYNA</b> butonuna bas.\n🔹 Sıra sana geldiğinde elindeki kartlardan birine tıkla.\n🔹 Yerdeki kartla <b>aynı numarayı</b> veya <b>Vale (J)</b> atarsan yerdeki tüm kartları alırsın.\n🔹 Yerde tek kart varken aynı kartı veya Vale'yi atarsan <b>PİŞTİ</b> yaparsın (+10 veya +20 Puan).\n🔹 Oyun sonunda en çok puanı toplayan kazanır.", 
+        "info"
+    );
+};
+
+// --- PROFESYONEL SES MOTORU (VIP CASINO SESLERİ & iOS KİLİT AÇICI) ---
+let audioCtx = null;
+let audioUnlocked = false; 
+const sounds = {};
+
+const sfxUrls = {
+    chip: 'https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3', 
+    deal: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', 
+    play: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', 
+    capture: 'https://assets.mixkit.co/active_storage/sfx/2058/2058-preview.mp3', 
+    bust: 'https://assets.mixkit.co/active_storage/sfx/3148/3148-preview.mp3', 
+    win:  'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3', 
+    push: 'https://assets.mixkit.co/active_storage/sfx/2025/2025-preview.mp3', 
+    pisti: 'https://assets.mixkit.co/active_storage/sfx/2004/2004-preview.mp3' 
+};
+
+function initAndUnlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer; source.connect(audioCtx.destination); 
+        if (source.start) source.start(0); else source.noteOn(0);
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audioUnlocked = true;
+    } catch (e) {}
+}
+
+async function loadSoundFiles() {
+    if (!audioCtx) return;
+    for (let [key, url] of Object.entries(sfxUrls)) {
+        try {
+            const res = await fetch(url, { mode: 'cors' });
+            const buf = await res.arrayBuffer();
+            sounds[key] = await audioCtx.decodeAudioData(buf);
+        } catch(e) {}
+    }
+}
+
+function playSfx(name) {
+    if(!audioCtx || !sounds[name] || !audioUnlocked) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
+        const gainNode = audioCtx.createGain();
+        
+        if (name === 'chip') gainNode.gain.value = 0.5;
+        else if (name === 'play') gainNode.gain.value = 0.9;
+        else gainNode.gain.value = 1.0;
+        
+        src.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        src.start(0);
+    } catch (e) {}
+}
+
+const unlockEvents = ['touchstart', 'touchend', 'click'];
+const unlockOnTouch = () => { 
+    initAndUnlockAudio(); 
+    unlockEvents.forEach(e => document.removeEventListener(e, unlockOnTouch)); 
+};
+unlockEvents.forEach(e => document.addEventListener(e, unlockOnTouch, { once: true, passive: true }));
+
+let loadProg = 0;
+const loadInt = setInterval(() => {
+    loadProg += Math.random() * 20;
+    if(loadProg >= 100) {
+        loadProg = 100; clearInterval(loadInt);
+        document.getElementById('loaderTrack').style.display = 'none';
+        elBtnEnterGame.style.display = 'block';
+    }
+    elLoaderFill.style.width = loadProg + '%';
+}, 100);
+
+elBtnEnterGame.addEventListener('click', () => {
+    initAndUnlockAudio(); loadSoundFiles();     
+    elStudioIntro.style.opacity = '0';
+    setTimeout(() => { elStudioIntro.style.display = 'none'; initGame(); }, 600);
+});
+
+// --- OYUN DEĞİŞKENLERİ VE BEKLEME (SLEEP) FONKSİYONU ---
+let userBalance = 0; 
+let currentBet = 0; 
+let gameState = null;
+let actionLock = false;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// API İSTEKLERİ
+async function fetchAPI(endpoint, method = 'GET', body = null) {
+    if (!auth.currentUser) return null;
+    const token = await getIdToken(auth.currentUser);
+    const options = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${API_URL}${endpoint}`, options);
+    const data = await res.json();
+    if (data.redirect || res.status === 401 || res.status === 403) { window.location.href = '/'; throw new Error("Yönlendiriliyorsunuz."); }
+    if (!data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
+}
+
+function updateBal() {
+    fetchAPI('/api/me').then(d => { 
+        if(d) { 
+            userBalance = d.balance; 
+            document.getElementById('ui-balance').innerText = Math.floor(userBalance).toLocaleString('tr-TR'); 
+            if(d.user) {
+                let rp = d.user.rp || 0;
+                let vipData = calcVipPercentage(rp);
+                document.getElementById('uiVipBar').style.width = vipData.pct + '%';
+                document.getElementById('uiVipPct').innerText = vipData.pct.toFixed(1) + '%';
+                document.getElementById('uiVipBadge').innerText = vipData.level;
+            }
+        } 
+    }).catch(()=>{});
+}
+
+function initGame() {
+    updateBal();
+    apiState();
+    updateBetUI();
+}
+
+async function apiState() {
+    try {
+        const res = await fetchAPI('/api/pisti/state');
+        if(res) {
+            if(res.state && res.state.status === 'playing') {
+                gameState = res.state;
+                currentBet = res.state.bet;
+                elUiChipsArea.style.display = "none";
+                elStartBtn.style.display = "none";
+                elUiMessage.innerText = "SIRA SİZDE";
+                renderBoard(false);
+            }
+        }
+    } catch(e) {}
+}
+
+function getCardImage(cardStr) {
+    if(!cardStr) return 'https://deckofcardsapi.com/static/img/back.png';
+    return `https://deckofcardsapi.com/static/img/${cardStr}.png`;
+}
+
+function updateBetUI() {
+    const btn = elStartBtn;
+    document.getElementById("ui-betAmount").innerText = currentBet.toLocaleString('tr-TR');
+    if(currentBet >= 100) {
+        btn.disabled = false; btn.style.filter = "none";
+    } else {
+        btn.disabled = true; btn.style.filter = "grayscale(1)";
+    }
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        if(actionLock || (gameState && gameState.status === 'playing')) return;
+        const val = parseInt(chip.getAttribute('data-val')); if (currentBet + val > userBalance) return;
+        playSfx('chip'); currentBet += val; 
+        elUiBalance.innerText = Math.floor(userBalance - currentBet).toLocaleString('tr-TR');
+        updateBetUI();
+    });
+});
+
+document.getElementById("cancelBetBtn").addEventListener('click', () => { 
+    if(actionLock || (gameState && gameState.status === 'playing')) return;
+    playSfx('chip'); currentBet = 0; 
+    elUiBalance.innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+    updateBetUI();
+});
+
+elStartBtn.addEventListener("click", async () => {
+    if (currentBet < 100) return;
+    actionLock = true;
+    elUiChipsArea.style.display = "none";
+    elStartBtn.style.display = "none";
+    elUiMessage.innerText = "KARTLAR DAĞITILIYOR...";
+    
+    try {
+        const res = await fetchAPI('/api/pisti/start', 'POST', { bet: currentBet });
+        userBalance = res.balance;
+        elUiBalance.innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+        gameState = res.state;
+        renderBoard(true); 
+    } catch(e) {
+        showMatrixModal("Hata", e.message, "error");
+        elUiChipsArea.style.display = "flex";
+        elStartBtn.style.display = "block";
+    }
+    actionLock = false;
+});
+
+// PROFESYONEL VE GECİKMELİ KART ANİMASYONLARI
+function renderBoard(animate = false) {
+    if (!gameState) return;
+
+    elPlayerScore.innerText = gameState.playerScore;
+    elBotScore.innerText = gameState.botScore;
+    document.getElementById("playerCardCount").innerText = gameState.playerCardCount;
+    document.getElementById("botCardCount").innerText = gameState.botCardCount;
+
+    const bHand = elBotHand;
+    const pHand = elPlayerHand;
+    const tArea = elTableCards;
+
+    bHand.innerHTML = ""; pHand.innerHTML = ""; tArea.innerHTML = "";
+
+    // BOT KARTLARI
+    for (let i = 0; i < gameState.botCardCount; i++) {
+        let div = document.createElement("div"); div.className = "card-3d";
+        div.innerHTML = `<img src="https://deckofcardsapi.com/static/img/back.png" class="real-card">`;
+        if (animate) {
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
+            setTimeout(() => { playSfx('deal'); div.style.opacity = "1"; div.style.transform = `translate(0, 0) rotate(0deg) scale(1)`; }, i * 150);
+        }
+        bHand.appendChild(div);
+    }
+
+    // YERDEKİ KARTLAR
+    gameState.tableCards.forEach((c, i) => {
+        let div = document.createElement("div"); div.className = "table-card";
+        div.innerHTML = `<img src="${getCardImage(c)}" class="real-card">`;
+        if (animate && gameState.round === 1 && i < 4) {
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
+            setTimeout(() => { playSfx('deal'); div.style.opacity = "1"; div.style.transform = ""; }, 600 + (i * 150));
+        }
+        tArea.appendChild(div);
+    });
+
+    // OYUNCU KARTLARI
+    gameState.playerHand.forEach((c, i) => {
+        let div = document.createElement("div"); div.className = "card-3d";
+        
+        if (animate) {
+            div.innerHTML = `<img src="https://deckofcardsapi.com/static/img/back.png" class="real-card">`;
+            div.style.opacity = "0"; div.style.transform = `translate(100vw, -100vh) rotate(-180deg) scale(0.2)`;
+            setTimeout(() => { 
+                playSfx('deal'); 
+                div.style.opacity = "1"; 
+                div.style.transform = "rotateY(90deg) scale(1.1)";
+                setTimeout(() => {
+                    div.innerHTML = `<img src="${getCardImage(c)}" class="real-card">`;
+                    div.style.transform = "rotateY(0deg) scale(1)";
+                }, 150);
+            }, 1200 + (i * 150));
+        } else {
+            div.innerHTML = `<img src="${getCardImage(c)}" class="real-card">`;
+        }
+
+        div.onclick = () => playCard(i);
+        pHand.appendChild(div);
+    });
+
+    if (animate) {
+        actionLock = true;
+        setTimeout(() => { actionLock = false; elUiMessage.innerText = "SIRA SİZDE"; }, 1800);
+    } else {
+        elUiMessage.innerText = "SIRA SİZDE";
+    }
+}
+
+// BİREBİR CASINO YAVAŞLIĞINDA SIRA BAZLI KART ATMA MANTIĞI
+async function playCard(idx) {
+    if (actionLock || !gameState || gameState.status !== 'playing') return;
+    actionLock = true;
+    elUiMessage.innerText = "BEKLENİYOR...";
+
+    try {
+        const res = await fetchAPI('/api/pisti/play', 'POST', { cardIndex: idx });
+        const log = res.log;
+        
+        // 1. OYUNCU HAMLESİ ANİMASYONU
+        const pHandDiv = elPlayerHand;
+        if(pHandDiv.children[idx]) pHandDiv.children[idx].style.opacity = "0"; 
+        
+        playSfx('play');
+        let tArea = elTableCards;
+        let pCardDiv = document.createElement("div"); 
+        pCardDiv.className = "table-card new-card-anim";
+        pCardDiv.innerHTML = `<img src="${getCardImage(log.playerAction.card)}" class="real-card">`;
+        tArea.appendChild(pCardDiv);
+        
+        await sleep(800); 
+
+        if (log.playerAction.captured) {
+            playSfx(log.playerAction.isPisti ? 'pisti' : 'capture');
+            if(log.playerAction.isPisti) triggerPistiAnim();
+            tArea.innerHTML = ""; 
+            elPlayerScore.innerText = parseInt(elPlayerScore.innerText) + (log.playerAction.isPisti ? (log.playerAction.card[0]==='J'?20:10) : 0);
+            await sleep(600);
+        }
+
+        // 2. BOT HAMLESİ ANİMASYONU
+        if (log.botAction) {
+            elUiMessage.innerText = "KRUPİYER OYNUYOR...";
+            await sleep(500); 
+            
+            const bHandDiv = elBotHand;
+            if(bHandDiv.children.length > 0) bHandDiv.removeChild(bHandDiv.lastChild); 
+            
+            playSfx('play');
+            let bCardDiv = document.createElement("div"); 
+            bCardDiv.className = "table-card new-card-anim";
+            bCardDiv.innerHTML = `<img src="${getCardImage(log.botAction.card)}" class="real-card">`;
+            tArea.appendChild(bCardDiv);
+            
+            await sleep(800);
+
+            if (log.botAction.captured) {
+                playSfx(log.botAction.isPisti ? 'pisti' : 'capture');
+                if(log.botAction.isPisti) triggerPistiAnim();
+                tArea.innerHTML = ""; 
+                await sleep(600);
+            }
+        }
+
+        // 3. SUNUCU VERİLERİNİ EŞİTLE VE DURUMA GÖRE İŞLEM YAP
+        gameState = res.state;
+        userBalance = res.balance;
+        elUiBalance.innerText = Math.floor(userBalance).toLocaleString('tr-TR');
+
+        if (log.gameOver) {
+            renderBoard(false); 
+            handleGameOver(log);
+        } else if (log.roundOver) {
+            elUiMessage.innerText = "YENİ KARTLAR DAĞITILIYOR...";
+            renderBoard(false); 
+            await sleep(500);
+            renderBoard(true); 
+        } else {
+            renderBoard(false); 
+            actionLock = false;
+        }
+
+    } catch(e) {
+        showMatrixModal("Hata", e.message, "error");
+        actionLock = false;
+    }
+}
+
+function triggerPistiAnim() {
+    const el = document.getElementById("pistiAnim");
+    el.style.animation = 'none';
+    el.offsetHeight; 
+    el.style.animation = 'flashPisti 1.5s ease-out forwards';
+}
+
+function handleGameOver(log) {
+    gameState = null;
+    let title, desc, type;
+    
+    if(log.winAmount > currentBet) {
+        playSfx('win');
+        title = "🏆 TEBRİKLER!"; type = "success";
+        desc = `Krupiyeyi mağlup ettiniz.\n\nKazanılan: ${log.winAmount.toLocaleString('tr-TR')} MC`;
+    } else if(log.winAmount === currentBet) {
+        playSfx('push');
+        title = "🤝 BERABERE"; type = "push";
+        desc = "Oyun berabere bitti.\nBahsiniz iade edildi.";
+    } else {
+        playSfx('bust');
+        title = "💥 KAYBETTİNİZ"; type = "error";
+        desc = "Krupiye daha yüksek puan topladı.\nŞansınızı tekrar deneyin.";
+    }
+
+    currentBet = 0;
+    
+    setTimeout(() => {
+        elUiChipsArea.style.display = "flex";
+        elStartBtn.style.display = "block";
+        updateBetUI();
+        showMatrixModal(title, desc, type);
+        actionLock = false;
+    }, 1000);
+}
+
+
+const PM_REALTIME_PAGE_KEY = "normalpisti";
+let pmRealtimeSocket = null;
+let pmRealtimeBootPromise = null;
+const pmRealtimeMeta = { friendCounts: { incoming: 0, accepted: 0, outgoing: 0 } };
+
+function pmRtEscape(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>'"]/g, (match) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
+}
+
+function pmRtNormalizeGameKey(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return '';
+    if (raw === 'chess' || raw.includes('sat')) return 'chess';
+    if (raw === 'pisti' || raw.includes('pist')) return 'pisti';
+    return '';
+}
+
+function pmRtGameHref(gameKey, roomId) {
+    const safeRoomId = encodeURIComponent(String(roomId || '').trim());
+    return gameKey === 'chess'
+        ? `/Online Oyunlar/Satranc.html?joinRoom=${safeRoomId}`
+        : `/Online Oyunlar/Pisti.html?joinRoom=${safeRoomId}`;
+}
+
+function pmRtSetPendingJoin(gameKey, roomId) {
+    sessionStorage.setItem('pm_auto_join_room', String(roomId || '').trim());
+    sessionStorage.setItem('pm_auto_join_game', pmRtNormalizeGameKey(gameKey));
+    sessionStorage.setItem('pm_auto_join_at', String(Date.now()));
+}
+
+function pmRtEnsureShell() {
+    let styleEl = document.getElementById('pmGameRealtimeStyle');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'pmGameRealtimeStyle';
+        styleEl.textContent = `
+            .pmg-rt-stack{position:fixed;top:calc(env(safe-area-inset-top) + 86px);right:14px;display:flex;flex-direction:column;gap:12px;width:min(360px,calc(100vw - 24px));z-index:2147482500;pointer-events:none}
+            .pmg-rt-toast{pointer-events:auto;position:relative;overflow:hidden;padding:14px 14px 13px 14px;border-radius:18px;background:linear-gradient(180deg,rgba(14,18,27,.96),rgba(8,12,18,.94));border:1px solid rgba(255,255,255,.09);box-shadow:0 20px 48px rgba(0,0,0,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transform:translate3d(0,-10px,0);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+            .pmg-rt-toast.show{transform:translate3d(0,0,0);opacity:1}
+            .pmg-rt-toast.is-success{border-color:rgba(0,255,163,.28)}
+            .pmg-rt-toast.is-error{border-color:rgba(255,59,48,.34)}
+            .pmg-rt-toast.is-info{border-color:rgba(212,175,55,.24)}
+            .pmg-rt-head{display:flex;align-items:flex-start;gap:12px}
+            .pmg-rt-icon{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.06);color:#d4af37;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+            .pmg-rt-toast.is-success .pmg-rt-icon{color:#00ffa3}
+            .pmg-rt-toast.is-error .pmg-rt-icon{color:#ff6b6b}
+            .pmg-rt-copy{min-width:0;flex:1}
+            .pmg-rt-title{font-family:'Orbitron','Inter',sans-serif;font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:#f8fafc;margin-bottom:6px}
+            .pmg-rt-msg{font-size:13px;line-height:1.5;color:rgba(229,231,235,.88);word-break:break-word}
+            .pmg-rt-close{width:34px;height:34px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#cbd5e1;cursor:pointer;flex:0 0 auto;touch-action:manipulation}
+            .pmg-rt-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+            .pmg-rt-btn{min-height:42px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);color:#f8fafc;font-weight:800;cursor:pointer;touch-action:manipulation}
+            .pmg-rt-btn.primary{background:linear-gradient(180deg,#ffe9a9,#d4af37);color:#111827;border-color:transparent}
+            .pmg-rt-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,rgba(255,255,255,.02),rgba(212,175,55,.65),rgba(0,255,163,.6));transform-origin:left center;animation:pmRtToastProgress var(--pmg-toast-duration,5200ms) linear forwards}
+            .pmg-rt-modal{position:fixed;inset:0;z-index:2147482600;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,7,12,.64);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+            .pmg-rt-modal.show{display:flex}
+            .pmg-rt-card{width:min(420px,100%);border-radius:26px;background:linear-gradient(180deg,rgba(19,25,37,.98),rgba(10,14,22,.98));border:1px solid rgba(255,255,255,.1);box-shadow:0 28px 70px rgba(0,0,0,.52);padding:20px;transform:translateY(10px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+            .pmg-rt-modal.show .pmg-rt-card{transform:translateY(0) scale(1);opacity:1}
+            .pmg-rt-badge{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.24);color:#d4af37;font-size:22px;margin-bottom:14px}
+            .pmg-rt-card h3{margin:0 0 8px;font-family:'Orbitron','Inter',sans-serif;font-size:18px;letter-spacing:1px}
+            .pmg-rt-card p{margin:0;color:rgba(226,232,240,.84);line-height:1.65;font-size:14px}
+            @keyframes pmRtToastProgress{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+            @media (max-width:640px){.pmg-rt-stack{left:12px;right:12px;width:auto;top:calc(env(safe-area-inset-top) + 78px)}}
+        `;
+        document.head.appendChild(styleEl);
+    }
+
+    let stack = document.getElementById('pmGameRealtimeStack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'pmGameRealtimeStack';
+        stack.className = 'pmg-rt-stack';
+        document.body.appendChild(stack);
+    }
+
+    let modal = document.getElementById('pmGameRealtimeModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pmGameRealtimeModal';
+        modal.className = 'pmg-rt-modal';
+        modal.innerHTML = '<div class="pmg-rt-card"></div>';
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) pmRtCloseModal();
+        });
+        document.body.appendChild(modal);
+    }
+
+    return { stack, modal, card: modal.querySelector('.pmg-rt-card') };
+}
+
+function pmRtToast(title, message, tone = 'info', options = {}) {
+    const { stack } = pmRtEnsureShell();
+    const toast = document.createElement('div');
+    toast.className = `pmg-rt-toast is-${tone}`;
+    toast.style.setProperty('--pmg-toast-duration', `${Math.max(1800, Number(options.duration) || 5200)}ms`);
+    toast.innerHTML = `
+        <div class="pmg-rt-head">
+            <div class="pmg-rt-icon"><i class="fa-solid ${options.iconClass || (tone === 'success' ? 'fa-circle-check' : tone === 'error' ? 'fa-triangle-exclamation' : 'fa-bell')}"></i></div>
+            <div class="pmg-rt-copy">
+                <div class="pmg-rt-title">${pmRtEscape(title || 'Bildirim')}</div>
+                <div class="pmg-rt-msg">${pmRtEscape(message || '')}</div>
+            </div>
+            <button class="pmg-rt-close" type="button" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="pmg-rt-progress"></div>
+    `;
+    const remove = () => {
+        toast.classList.remove('show');
+        window.setTimeout(() => toast.remove(), 180);
+    };
+    toast.querySelector('.pmg-rt-close').addEventListener('click', remove, { passive: true });
+    stack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    window.setTimeout(remove, Math.max(1800, Number(options.duration) || 5200));
+    return toast;
+}
+
+function pmRtCloseModal() {
+    const modal = document.getElementById('pmGameRealtimeModal');
+    if (modal) modal.classList.remove('show');
+}
+
+function pmRtPrompt(opts = {}) {
+    const { modal, card } = pmRtEnsureShell();
+    return new Promise((resolve) => {
+        const cleanup = (result) => {
+            pmRtCloseModal();
+            window.setTimeout(() => resolve(result), 120);
+        };
+
+        card.innerHTML = `
+            <div class="pmg-rt-badge"><i class="fa-solid ${opts.iconClass || 'fa-bell'}"></i></div>
+            <h3>${pmRtEscape(opts.title || 'Bildirim')}</h3>
+            <p>${pmRtEscape(opts.message || '')}</p>
+            <div class="pmg-rt-actions">
+                <button class="pmg-rt-btn" type="button" data-action="cancel">${pmRtEscape(opts.cancelText || 'Vazgeç')}</button>
+                <button class="pmg-rt-btn primary" type="button" data-action="confirm">${pmRtEscape(opts.confirmText || 'Tamam')}</button>
+            </div>
+        `;
+        card.querySelector('[data-action="cancel"]').addEventListener('click', () => cleanup(false), { passive: true });
+        card.querySelector('[data-action="confirm"]').addEventListener('click', () => cleanup(true), { passive: true });
+        modal.classList.add('show');
+    });
+}
+
+async function pmRtLoadSocketScript() {
+    if (window.io) return;
+    await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-pm-socket-loader="1"]');
+        if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = `${API_URL}/socket.io/socket.io.js`;
+        script.async = true;
+        script.dataset.pmSocketLoader = '1';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Socket istemcisi yüklenemedi.'));
+        document.head.appendChild(script);
+    });
+}
+
+async function pmRtRequest(endpoint, method = 'GET', body = null) {
+    let payload = null;
+
+    if (typeof fetchAPI === 'function') {
+        payload = await fetchAPI(endpoint, method, body);
+    } else if (typeof api === 'function') {
+        payload = await api(endpoint, method, body);
+    } else {
+        if (!auth.currentUser) throw new Error('Oturum bulunamadı.');
+        const token = await getIdToken(auth.currentUser);
+        const options = {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        };
+        if (body) options.body = JSON.stringify(body);
+        const res = await fetch(`${API_URL}${endpoint}`, options);
+        payload = await res.json();
+        if (!res.ok && (payload?.ok === false || payload?.error)) {
+            throw new Error(payload?.error || 'Sunucu isteği başarısız.');
+        }
+    }
+
+    if (!payload) throw new Error('Sunucu yanıt vermedi.');
+    if (payload.ok === false) throw new Error(payload.error || 'İstek başarısız.');
+    return payload;
+}
+
+async function pmRtRefreshFriendCounts(silent = true) {
+    if (!auth.currentUser) return;
+    try {
+        const payload = await pmRtRequest('/api/friends/list');
+        const counts = payload?.counts || {};
+        const nextIncoming = Number(counts.incoming || 0);
+        if (!silent && nextIncoming > Number(pmRealtimeMeta.friendCounts.incoming || 0)) {
+            pmRtToast('Yeni arkadaşlık isteği', 'Sosyal merkezde bekleyen yeni bir istek oluştu.', 'info', { iconClass: 'fa-user-plus' });
+        }
+        pmRealtimeMeta.friendCounts = {
+            incoming: nextIncoming,
+            accepted: Number(counts.accepted || 0),
+            outgoing: Number(counts.outgoing || 0)
+        };
+    } catch (_) {}
+}
+
+async function pmRtMaybeConfirmExit() {
+    if (PM_REALTIME_PAGE_KEY !== 'crash') return true;
+    try {
+        const payload = await pmRtRequest('/api/crash/active-bets');
+        if (!payload?.hasActiveBet) return true;
+        return await pmRtPrompt({
+            title: 'Aktif Crash Bahsi',
+            message: payload.hasRiskyBet
+                ? 'Şu an auto cashout tanımı olmayan aktif Crash bahsin var. Davete geçersen tur arka planda devam eder ve patlama riski sana ait olur. Yine de devam etmek istiyor musun?'
+                : 'Şu an aktif bir Crash bahsin bulunuyor. Davete geçersen tur arka planda devam eder. Devam etmek istiyor musun?',
+            confirmText: 'Yine de Geç',
+            cancelText: 'Kal',
+            iconClass: 'fa-bolt'
+        });
+    } catch (_) {
+        return true;
+    }
+}
+
+async function pmRtBeforeRedirect() {
+    if (PM_REALTIME_PAGE_KEY === 'blackjack') {
+        try {
+            if (typeof bjSocket !== 'undefined' && bjSocket) {
+                bjSocket.emit('bj:leave');
+                window.setTimeout(() => { try { bjSocket.close(); } catch (_) {} }, 60);
+            }
+        } catch (_) {}
+    }
+}
+
+async function pmRtHandleInviteResponse(data, response) {
+    try {
+        if (!data?.inviteId) return;
+        const gameKey = pmRtNormalizeGameKey(data.gameKey);
+        const roomId = String(data.roomId || '').trim();
+        if (!gameKey || !roomId) throw new Error('Davet verisi eksik.');
+
+        if (response === 'accepted') {
+            const canContinue = await pmRtMaybeConfirmExit();
+            if (!canContinue) return;
+            await pmRtRequest(gameKey === 'chess' ? '/api/chess/join' : '/api/pisti-online/join', 'POST', { roomId });
+        }
+
+        if (pmRealtimeSocket) {
+            pmRealtimeSocket.emit('game:invite_response', {
+                inviteId: data.inviteId,
+                hostUid: data.hostUid,
+                roomId,
+                gameKey,
+                response
+            });
+        }
+
+        pmRtCloseModal();
+
+        if (response === 'accepted') {
+            await pmRtBeforeRedirect();
+            pmRtSetPendingJoin(gameKey, roomId);
+            pmRtToast('Oyuna geçiliyor', `${data.hostName || 'Arkadaşın'} ile ${gameKey === 'chess' ? 'satranç' : 'pişti'} masasına bağlanıyorsun.`, 'success', { iconClass: 'fa-arrow-right' });
+            window.setTimeout(() => window.location.replace(pmRtGameHref(gameKey, roomId)), 220);
+        } else {
+            pmRtToast('Davet kapatıldı', `${data.hostName || 'Arkadaşın'} için gönderilen davet reddedildi.`, 'info', { iconClass: 'fa-xmark' });
+        }
+    } catch (error) {
+        pmRtToast('Davet başarısız', error?.message || 'Odaya katılım sağlanamadı.', 'error');
+    }
+}
+
+function pmRtShowInviteModal(payload) {
+    if (!payload?.inviteId) return;
+    const { modal, card } = pmRtEnsureShell();
+    card.innerHTML = `
+        <div class="pmg-rt-badge"><i class="fa-solid fa-gamepad"></i></div>
+        <h3>Canlı Oyun Daveti</h3>
+        <p><strong>${pmRtEscape(payload.hostName || 'Arkadaşın')}</strong> seni <strong>${pmRtEscape(payload.gameName || 'oyuna')}</strong> çağırıyor. Kabul edersen lobiye uğramadan doğrudan oyun masasına geçeceksin.</p>
+        <div class="pmg-rt-actions">
+            <button class="pmg-rt-btn" type="button" data-action="decline">Reddet</button>
+            <button class="pmg-rt-btn primary" type="button" data-action="accept">Kabul Et</button>
+        </div>
+    `;
+    card.querySelector('[data-action="decline"]').addEventListener('click', () => pmRtHandleInviteResponse(payload, 'declined'), { passive: true });
+    card.querySelector('[data-action="accept"]').addEventListener('click', () => pmRtHandleInviteResponse(payload, 'accepted'), { passive: true });
+    modal.classList.add('show');
+}
+
+function pmRtBindSocketEvents(sock) {
+    if (!sock || sock.__pmRealtimeBound) return sock;
+    sock.__pmRealtimeBound = true;
+    pmRealtimeSocket = sock;
+
+    sock.on('chat:direct_receive', (payload) => {
+        pmRtToast(payload?.username || 'Yeni özel mesaj', payload?.message || 'Bir özel mesaj aldın.', 'info', { iconClass: 'fa-envelope' });
+    });
+
+    sock.on('friends:updated', () => {
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_received', () => {
+        pmRtToast('Arkadaşlık isteği', 'Yeni bir arkadaşlık isteği geldi.', 'info', { iconClass: 'fa-user-plus' });
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_result', (payload) => {
+        pmRtToast(
+            'Arkadaşlık güncellendi',
+            payload?.accepted ? 'Gönderdiğin istek kabul edildi.' : 'Gönderdiğin istek reddedildi.',
+            payload?.accepted ? 'success' : 'info',
+            { iconClass: payload?.accepted ? 'fa-user-check' : 'fa-user-xmark' }
+        );
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_auto_accepted', () => {
+        pmRtToast('Arkadaş eklendi', 'Karşılıklı istek bulundu ve arkadaşlık anında kuruldu.', 'success', { iconClass: 'fa-user-group' });
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('game:invite_receive', (payload) => {
+        pmRtToast('Oyun daveti', `${payload?.hostName || 'Arkadaşın'} seni ${payload?.gameName || 'oyuna'} çağırıyor.`, 'info', { iconClass: 'fa-gamepad', duration: 4200 });
+        pmRtShowInviteModal(payload);
+    });
+
+    sock.on('game:invite_error', (payload) => {
+        pmRtToast('Davet hatası', payload?.message || 'Davet işlenemedi.', 'error');
+    });
+
+    sock.on('game:invite_response', (payload) => {
+        const guestName = payload?.guestName || 'Arkadaşın';
+        pmRtToast(
+            payload?.response === 'accepted' ? 'Davet kabul edildi' : 'Davet reddedildi',
+            payload?.response === 'accepted' ? `${guestName} daveti kabul etti.` : `${guestName} daveti şu an kabul etmedi.`,
+            payload?.response === 'accepted' ? 'success' : 'info',
+            { iconClass: payload?.response === 'accepted' ? 'fa-circle-check' : 'fa-circle-minus' }
+        );
+    });
+
+    sock.on('connect_error', (error) => {
+        if (error?.message === 'xhr poll error') return;
+        pmRtToast('Canlı bağlantı', 'Bildirim hattı geçici olarak yeniden bağlanıyor.', 'info', { iconClass: 'fa-wifi', duration: 2600 });
+    });
+
+
+    const setMyPresence = () => {
+        sock.emit('social:set_presence', { status: 'IN_GAME', activity: 'Normal Pişti Oynuyor' });
+    };
+
+    if (sock.connected) {
+        setMyPresence();
+    }
+    sock.on('connect', setMyPresence);
+
+    return sock;
+}
+
+async function initPlayMatrixRealtime() {
+    if (!auth.currentUser) {
+        disposePlayMatrixRealtime();
+        return null;
+    }
+    if (pmRealtimeBootPromise) return pmRealtimeBootPromise;
+
+    pmRealtimeBootPromise = (async () => {
+        pmRtEnsureShell();
+        await pmRtRefreshFriendCounts(true);
+        await pmRtLoadSocketScript();
+        const token = await getIdToken(auth.currentUser);
+        const sock = window.io(API_URL, {
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
+        });
+        return pmRtBindSocketEvents(sock);
+    })();
+
+    try {
+        return await pmRealtimeBootPromise;
+    } catch (error) {
+        pmRealtimeBootPromise = null;
+        throw error;
+    }
+}
+
+function disposePlayMatrixRealtime() {
+    pmRtCloseModal();
+    if (pmRealtimeSocket) {
+        try { pmRealtimeSocket.close(); } catch (_) {}
+    }
+    pmRealtimeSocket = null;
+    pmRealtimeBootPromise = null;
+}
+
+window.addEventListener('beforeunload', () => {
+    if (pmRealtimeSocket) {
+        try { pmRealtimeSocket.close(); } catch (_) {}
+    }
+});
+
+
+onAuthStateChanged(auth, user => {
+    if(!user) {
+        disposePlayMatrixRealtime();
+        window.location.href = '/';
+        return;
+    }
+    initPlayMatrixRealtime().catch(() => null);
+});
+</script>
+  <script src="/playmatrix-runtime.js" defer></script>
+</body>
+</html>

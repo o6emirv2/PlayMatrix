@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    
+    <title>PlayMatrix - VIP Mines | Mayın Oyunu</title>
+    <meta name="description" content="PlayMatrix VIP Mines Arena - %100 Provably Fair şifreleme, anında ödeme ve lüks kripto casino deneyimiyle elmasları bul, kazancını katla!">
+    <meta name="keywords" content="mines oyunu, mayın tarlası casino, playmatrix, canlı casino, VIP bahis, kripto kumar, online casino, provably fair">
+    <meta name="author" content="PlayMatrix Gaming">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="language" content="Turkish">
+    <link rel="canonical" href="https://playmatrix.com.tr/mines">
+    
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PlayMatrix VIP Mines | Premium Crypto Casino">
+    <meta property="og:description" content="Kutuları aç, elmasları topla, mayınlardan kaç. Gerçek casino standartlarında eşsiz Mines heyecanını PlayMatrix'te yaşa.">
+    <meta property="og:url" content="https://playmatrix.com.tr/mines">
+    <meta property="og:site_name" content="PlayMatrix VIP">
+    <meta property="og:image" content="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix VIP Mines | Elmasları Bul">
+    <meta name="twitter:description" content="En lüks mayın tarlası deneyimi. Patlamadan paranı çek, kazancını anında katla!">
+    <meta name="twitter:image" content="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s">
+    
+    <meta name="theme-color" content="#0b1118">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VIP Mines">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script>
+    if (window.history.replaceState) {
+      const hasQueryOrHash = !!(location.search || location.hash);
+      if (!hasQueryOrHash && location.pathname !== "/") {
+        window.history.replaceState(null, null, "/");
+      }
+    }
+  </script>
+
+    <style>
+        :root {
+            --topbar-bg: #1a1c24;
+            --topbar-border: #2a2d3a;
+            --vip-orange: #F59E0B;
+            --vip-orange-light: #FBBF24;
+            --text-muted: #8E8E93;
+            --gold-main: #D4AF37;
+            --neon-red: #FF3366;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        
+        html, body { 
+            background: #0A0F1A; 
+            color: #ffffff; 
+            width: 100vw; 
+            height: 100dvh; 
+            overflow: hidden; 
+            overscroll-behavior: none; 
+            font-family: 'Inter', sans-serif;
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        #studioIntro { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0D1627 0%, #05080F 100%); transition: opacity .8s ease, visibility .8s ease; }
+        .intro-logo { text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .intro-badge { display: inline-flex; gap: 8px; align-items: center; padding: 8px 18px; border-radius: 50px; background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 12px; color: #00F0FF; margin-bottom: 25px; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);}
+        .intro-title { font-family: 'Orbitron', sans-serif; font-weight: 900; letter-spacing: 8px; font-size: clamp(40px, 8vw, 60px); margin-bottom: 10px; background: linear-gradient(180deg, #FFFFFF, #8BA4D5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 10px 30px rgba(0,0,0,0.8); line-height: 1;}
+        .intro-sub { color: #64748B; font-family: 'Inter', sans-serif; font-size: 14px; letter-spacing: 1px; margin-bottom: 40px; font-weight: 600; text-transform: uppercase;}
+        
+        .loader-track { width: 240px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin-bottom: 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);}
+        .loader-fill { height: 100%; width: 0%; background: linear-gradient(90deg, transparent, #00F0FF, #00FFA3); box-shadow: 0 0 15px #00FFA3; transition: width .1s linear; }
+        
+        .btn-intro-start { display: none; width: 240px; margin-top: 10px; padding: 18px; border: 0; border-radius: 12px; font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #000; background: linear-gradient(135deg, #00F0FF, #00FFA3); cursor: pointer; box-shadow: 0 10px 30px rgba(0, 255, 163, 0.3); transition: all 0.2s; text-transform: uppercase;}
+        .btn-intro-start:hover { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(0, 255, 163, 0.4); }
+        .btn-intro-start:active { transform: scale(0.96); box-shadow: none; }
+
+        /* YENİ TAM GENİŞLİK ÜST BAR (Crash'ten Alınan) */
+        .top-bar-full {
+            flex-shrink: 0; width: 100%;
+            height: calc(75px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top);
+            background: var(--topbar-bg);
+            border-bottom: 1px solid var(--topbar-border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; z-index: 1000; box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+            gap: 15px;
+        }
+
+        .vip-section { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; max-width: 600px; }
+        .vip-shield-wrap { position: relative; width: 44px; height: 44px; background: #2b2e38; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.4); flex-shrink: 0; }
+        .vip-shield-wrap i { color: var(--vip-orange); font-size: 20px; }
+        .vip-shield-badge { position: absolute; top: -2px; right: -4px; background: #111; color: #fff; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); }
+        
+        .vip-stats-area { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+        .stat-row-top { display: flex; justify-content: space-between; align-items: center; }
+        .stat-label { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+        .stat-balance { color: #fff; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stat-balance span { color: #A0A5B5; font-size: 11px; margin-right: 4px; font-family: 'Inter', sans-serif;}
+        
+        .stat-row-bottom { display: flex; align-items: center; gap: 10px; width: 100%; }
+        .stat-lvl-text { color: #E2E8F0; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .stat-bar-bg { flex: 1; height: 12px; background: #fff; border-radius: 12px; overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+        .stat-bar-fill { height: 100%; width: 0%; background: repeating-linear-gradient(-45deg, var(--vip-orange-light), var(--vip-orange-light) 8px, var(--vip-orange) 8px, var(--vip-orange) 16px); border-radius: 12px; transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .stat-pct { color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; font-family: 'Inter', sans-serif; }
+        
+        .top-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .action-icon-btn { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: var(--text-muted); cursor: pointer; text-decoration: none; flex-shrink: 0; transition: all 0.2s;}
+        .action-icon-btn:hover { background: rgba(212,175,55,0.1); color: var(--gold-main); border-color: rgba(212,175,55,0.3);}
+        .action-icon-btn.red:hover { background: rgba(255,51,102,0.1); color: var(--neon-red); border-color: rgba(255,51,102,0.3);}
+
+        @media (max-width: 480px) {
+            .top-bar-full { padding: 0 10px; gap: 10px;}
+            .vip-shield-wrap { width: 38px; height: 38px; }
+            .vip-shield-wrap i { font-size: 16px; }
+            .stat-balance { font-size: 13px; }
+            .stat-lvl-text { font-size: 10px; }
+            .stat-pct { font-size: 10px; }
+            .action-icon-btn { width: 34px; height: 34px; font-size: 14px; }
+        }
+
+        .history-bar { 
+            flex-shrink: 0; width: 100%; height: 40px; background: #0A0F1A; border-bottom: 1px solid #1E293B;
+            display: flex; align-items: center; padding: 0 10px; overflow-x: auto; gap: 6px; scrollbar-width: none;
+        }
+        .history-bar::-webkit-scrollbar { display: none; }
+        .hist-pill { 
+            padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; 
+            font-family: 'Inter', sans-serif; background: #121C2B; border: 1px solid #1E293B; white-space: nowrap;
+        }
+        .hist-red { color: #FF3B30; border-color: rgba(255,59,48,0.3); background: rgba(255,59,48,0.05); }
+        .hist-green { color: #00FFA3; border-color: rgba(0,255,163,0.3); background: rgba(0,255,163,0.05); }
+
+        /* HATA VE KAZANÇ ŞERİDİ */
+        .win-strip-container {
+            flex-shrink: 0; width: 100%; height: 0; 
+            background: linear-gradient(90deg, rgba(0,255,163,0.05), rgba(0,255,163,0.15), rgba(0,255,163,0.05));
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease; overflow: hidden;
+        }
+        .win-strip-container.show { 
+            height: 34px; opacity: 1; visibility: visible; 
+            border-bottom: 1px solid rgba(0,255,163,0.2);
+        }
+        .win-strip-container.error-mode {
+            background: linear-gradient(90deg, rgba(239,68,68,0.05), rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+            border-bottom: 1px solid rgba(239,68,68,0.2);
+        }
+        .win-strip-content { display: flex; align-items: center; gap: 8px; }
+        .win-strip-avatar { width: 18px; height: 18px; border-radius: 50%; border: 1px solid #00FFA3; object-fit: cover; }
+        .win-strip-text { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; color: #fff; text-transform: uppercase; }
+        .win-strip-mult { font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 900; color: #F59E0B; }
+        .win-strip-amt { font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 900; color: #00FFA3; }
+
+        .game-area { 
+            flex: 1; width: 100%; background: #0A0F1A;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px 15px; overflow-y: auto; z-index: 1;
+        }
+
+        .mines-info-header { 
+            display: flex; justify-content: space-between; width: 100%; max-width: 400px; 
+            margin-bottom: 10px; font-family: 'Orbitron'; 
+        }
+        .mines-info-header div { font-size: 11px; color: #64748B; font-weight: 700; letter-spacing: 1px; }
+        .mines-info-header span { font-size: 14px; font-weight: 900; margin-left: 4px; }
+
+        #grid { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; 
+            width: 100%; max-width: 400px; aspect-ratio: 1/1; 
+        }
+        
+        .tile { 
+            background: #121C2B; border-radius: 10px; display: flex; align-items: center; justify-content: center; 
+            font-size: 28px; cursor: pointer; transition: transform 0.1s, background 0.2s; border: 1px solid #1E293B; 
+        }
+        .tile.active-hover:active { transform: scale(0.9); border-color: #00F0FF; }
+        
+        .tile.open { 
+            background: #00B894; border-color: #55EFC4; 
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            cursor: default; pointer-events: none; 
+        }
+        .tile.mine { 
+            background: #D63031; border-color: #FF7675; 
+            animation: shake 0.4s; cursor: default; pointer-events: none;
+        }
+        .tile.dimmed-diamond { background: rgba(0, 184, 148, 0.1); border-color: transparent; opacity: 0.5; pointer-events: none; filter: grayscale(1);}
+        .tile.dimmed-mine { background: rgba(214, 48, 49, 0.1); border-color: transparent; opacity: 0.5; pointer-events: none; filter: grayscale(1);}
+
+        @keyframes popIn { 0% {transform: scale(0.5); opacity: 0;} 100% {transform: scale(1); opacity: 1;} }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+        .provably-fair-text { font-size: 9px; color: #475569; margin-top: 15px; font-family: monospace; text-align: center; word-wrap: break-word; max-width: 400px;}
+
+        .bottom-controls { 
+            flex-shrink: 0; width: 100%; background: #0A0F1A;
+            padding: 10px 15px; display: flex; justify-content: center;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+        .bet-box { 
+            background: #0B121E; width: 100%; max-width: 400px; border-radius: 14px; padding: 12px;
+            display: flex; flex-direction: column; border: 1px solid #1E293B; gap: 10px;
+        }
+        
+        .input-row { display: flex; gap: 8px; }
+        .input-wrap { flex: 1; background: #0A0F1A; border-radius: 8px; border: 1px solid #1E293B; transition: border 0.3s; position: relative;}
+        .input-wrap:focus-within { border-color: #00F0FF; }
+        .input-wrap input, .input-wrap select { 
+            width: 100%; background: transparent; border: none; color: #00F0FF; padding: 10px; 
+            text-align: center; font-size: 14px; font-weight: 900; font-family: 'Orbitron'; outline: none; appearance: none;
+        }
+        .input-wrap select { color: #fff; }
+        .input-wrap:disabled, .input-wrap input:disabled, .input-wrap select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .btn-row { display: flex; gap: 8px; align-items: stretch; height: 48px; }
+        
+        .auto-switch-wrap { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; 
+            width: 60px; background: #0A0F1A; border-radius: 8px; border: 1px solid #1E293B; flex-shrink: 0;
+        }
+        .auto-switch-wrap span { font-size: 8px; font-weight: 800; color: #64748B; font-family: 'Inter'; }
+        .switch { position: relative; width: 28px; height: 14px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 10px; width: 10px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #00F0FF; }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        .action-btn { 
+            flex: 1; border: none; border-radius: 8px; font-weight: 900; font-size: 14px; 
+            cursor: pointer; transition: 0.1s; text-transform: uppercase; font-family: 'Inter'; 
+            background: linear-gradient(180deg, #4F46E5, #3730A3); color: #fff; box-shadow: 0 4px 0 #312E81;
+        }
+        .action-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+        .btn-cashout { background: linear-gradient(180deg, #10B981, #047857); box-shadow: 0 4px 0 #065F46; }
+        .btn-cashout:active:not(:disabled) { box-shadow: 0 0 0 transparent; }
+        .btn-loss { background: linear-gradient(180deg, #EF4444, #B91C1C); box-shadow: 0 4px 0 #7F1D1D; }
+        .action-btn:disabled { filter: grayscale(1); cursor: not-allowed; transform: translateY(4px); box-shadow: none; opacity: 0.8;}
+
+        .random-btn { 
+            width: 48px; background: #0A0F1A; border: 1px solid #1E293B; border-radius: 8px; 
+            color: #00FFA3; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 #070A12; flex-shrink: 0;
+        }
+        .random-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+        .random-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 100000; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.show { opacity: 1; display: flex; }
+        .modal-card { background: #0B121E; border: 1px solid #1E293B; width: 90%; max-width: 320px; border-radius: 16px; padding: 25px 20px; text-align: center; }
+        .modal-icon { font-size: 40px; margin-bottom: 10px; }
+        .modal-card h3 { color: #fff; font-family: 'Inter'; font-size: 18px; font-weight: 900; margin-bottom: 10px; }
+        .modal-card p { font-size: 13px; color: #94A3B8; line-height: 1.5; margin-bottom: 20px; }
+        .modal-close { background: #00F0FF; color: #000; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s; }
+
+        @media (max-width: 400px) { 
+            .bet-box { padding: 10px; gap: 8px; }
+            .input-wrap input, .input-wrap select { padding: 10px; font-size: 13px; }
+            .action-btn { font-size: 13px; }
+            .tile { font-size: 26px; border-radius: 8px; }
+            #grid { gap: 6px; }
+        }
+    </style>
+  <link rel="stylesheet" href="/premium-phase5.css" />
+  <script src="/premium-phase5.js" defer></script>
+</head>
+<body>
+
+<div id="studioIntro">
+    <div class="intro-logo">
+        <div class="intro-badge"><i class="fa-solid fa-gem"></i> PREMIUM CASINO</div>
+        <div class="intro-title">MINES</div>
+        <div class="intro-sub">Taktik, Şans ve Yüksek Çarpanlar</div>
+    </div>
+    <div class="loader-track"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" class="btn-intro-start">SİSTEME GİRİŞ YAP</button>
+</div>
+
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj</p>
+        <button class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
+    </div>
+</div>
+
+<header class="top-bar-full">
+    <div class="vip-section">
+        <div class="vip-shield-wrap">
+            <i class="fa-solid fa-crown"></i>
+            <div class="vip-shield-badge" id="uiVipBadge">1</div>
+        </div>
+        
+        <div class="vip-stats-area">
+            <div class="stat-row-top">
+                <div class="stat-label">(MC) BAKİYE</div>
+                <div class="stat-balance"><span>MC</span> <span id="uiBalance">0.00</span></div>
+            </div>
+            <div class="stat-row-bottom">
+                <div class="stat-lvl-text">Vip Seviyeniz</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" id="uiVipBar"></div>
+                </div>
+                <div class="stat-pct" id="uiVipPct">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="top-actions">
+        <button class="action-icon-btn" onclick="showHowToPlay()"><i class="fa-solid fa-circle-question"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-power-off"></i></a>
+    </div>
+</header>
+
+<div class="history-bar" id="uiHistory"></div>
+
+<div class="win-strip-container" id="winStrip"></div>
+
+<main class="game-area">
+    <div class="mines-info-header">
+        <div>ÇARPAN: <span id="uiMultiplier" style="color:#00FFA3;">1.00x</span></div>
+        <div>MAYIN: <span id="uiMineCount" style="color:#EF4444;">3</span></div>
+    </div>
+    
+    <div id="grid"></div>
+    <div class="provably-fair-text" id="pfHash">Hash Bekleniyor...</div>
+</main>
+
+<div class="bottom-controls">
+    <div class="bet-box">
+        <div class="input-row">
+            <div class="input-wrap">
+                <input type="number" id="inpBet" value="100" min="100" step="100" placeholder="Bahis (Min: 100)">
+            </div>
+            <div class="input-wrap">
+                <input type="number" id="inpAutoMult" value="2.00" min="1.01" step="0.10" placeholder="Oto Çekim (X)">
+            </div>
+            <div class="input-wrap">
+                <select id="inpMines"></select>
+            </div>
+        </div>
+        <div class="btn-row">
+            <div class="auto-switch-wrap">
+                <span>OTO</span>
+                <label class="switch"><input type="checkbox" id="autoSwitch"><span class="slider"></span></label>
+            </div>
+            <button id="btnAction" class="action-btn btn-bet">MC KULLAN</button>
+            <button id="btnRandom" class="random-btn" disabled><i class="fa-solid fa-dice"></i></button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, getIdToken, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey:"AIzaSyC81Ah46_F2his90zedODoCk07vqsd3vVs",
+        authDomain:"playmatrix-b7df9.firebaseapp.com",
+        projectId:"playmatrix-b7df9",
+        storageBucket:"playmatrix-b7df9.firebasestorage.app",
+        messagingSenderId:"689686425310",
+        appId:"1:689686425310:web:01c9f797b437a770e19c4f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    window.__PM_RUNTIME = window.__PM_RUNTIME || {};
+    window.__PM_RUNTIME.auth = auth;
+    window.__PM_RUNTIME.signOut = signOut;
+    window.__PM_RUNTIME.getIdToken = async (forceRefresh = false) => { if (!auth.currentUser) throw new Error('NO_USER'); return getIdToken(auth.currentUser, forceRefresh); };
+    const API_URL = (() => {
+    const normalize = (value) => String(value || '').trim().replace(/\/+$/, '');
+    const runtimeBase = normalize(window.__PM_RUNTIME?.apiBase || window.__PLAYMATRIX_API_URL__ || '');
+    if (runtimeBase) return runtimeBase;
+    const metaBase = normalize(document.querySelector('meta[name="playmatrix-api-url"]')?.content || '');
+    if (metaBase) return metaBase;
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return "http://localhost:3000";
+    return normalize('https://emirhan-siye.onrender.com') || window.location.origin.replace(/\/+$/, '');
+})();
+window.__PM_RUNTIME = window.__PM_RUNTIME || {};
+window.__PM_RUNTIME.apiBase = API_URL;
+window.__PLAYMATRIX_API_URL__ = API_URL;
+
+    function safeFloat(num) {
+        return parseFloat((Number(num) || 0).toFixed(2));
+    }
+
+    const VIP_RP_TIERS = [
+      { level: 1, start: 0, end: 1000 },
+      { level: 2, start: 1000, end: 2500 },
+      { level: 3, start: 2500, end: 5000 },
+      { level: 4, start: 5000, end: 10000 },
+      { level: 5, start: 10000, end: 20000 },
+      { level: 6, start: 20000, end: 35000 },
+      { level: 7, start: 35000, end: 60000 },
+      { level: 8, start: 60000, end: 100000 },
+      { level: 9, start: 100000, end: 175000 },
+      { level: 10, start: 175000, end: 300000 },
+      { level: 11, start: 300000, end: Number.POSITIVE_INFINITY }
+    ];
+
+    function calcVipPercentage(rp) {
+      const val = Math.max(0, Number(rp) || 0);
+      const tier = VIP_RP_TIERS.find((item) => val < item.end) || VIP_RP_TIERS[VIP_RP_TIERS.length - 1];
+      if (!Number.isFinite(tier.end)) return { pct: 100, level: tier.level };
+      const span = Math.max(1, tier.end - tier.start);
+      const pct = ((val - tier.start) / span) * 100;
+      return { pct: Math.min(Math.max(pct, 0), 100), level: tier.level };
+    }
+
+    document.addEventListener('dblclick', function(event) { event.preventDefault(); }, { passive: false });
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        let now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) { event.preventDefault(); }
+        lastTouchEnd = now;
+    }, { passive: false });
+
+    const elBal = document.getElementById("uiBalance");
+    const elMult = document.getElementById("uiMultiplier");
+    const elMineCount = document.getElementById("uiMineCount");
+    const elHist = document.getElementById("uiHistory");
+    const elGrid = document.getElementById("grid");
+    const elHash = document.getElementById("pfHash");
+    const btnAction = document.getElementById("btnAction");
+    const btnRandom = document.getElementById("btnRandom");
+    const inpBet = document.getElementById("inpBet");
+    const inpAutoMult = document.getElementById("inpAutoMult");
+    const inpMines = document.getElementById("inpMines");
+    const autoSwitch = document.getElementById("autoSwitch");
+    const elMatrixModal = document.getElementById('matrixModal');
+    const elMatrixModalIcon = document.getElementById("matrixModalIcon");
+    const elMatrixModalTitle = document.getElementById("matrixModalTitle");
+    const elMatrixModalDesc = document.getElementById("matrixModalDesc");
+    const elWinStrip = document.getElementById("winStrip");
+    const elBtnEnterGame = document.getElementById('btnEnterGame');
+    const elStudioIntro = document.getElementById('studioIntro');
+    const elLoaderFill = document.getElementById('loaderFill');
+    const elLoaderTrack = document.querySelector('.loader-track');
+    const elUiVipBar = document.getElementById('uiVipBar');
+    const elUiVipPct = document.getElementById('uiVipPct');
+    const elUiVipBadge = document.getElementById('uiVipBadge');
+
+    let currentBalance = 0;
+    let userInfo = { avatar: '', username: 'Sen' };
+    let isProcessing = false;
+    let gameState = null;
+    let autoPlayTimeout = null;
+
+    for(let i=1; i<=24; i++){ let opt = document.createElement("option"); opt.value = i; opt.text = i + " Mayın"; inpMines.appendChild(opt); }
+    inpMines.value = 3; inpMines.addEventListener("change", () => elMineCount.innerText = inpMines.value);
+
+    window.showMatrixModal = (title, message, type = 'info') => {
+        const icon = elMatrixModalIcon;
+        elMatrixModalTitle.innerText = title;
+        elMatrixModalDesc.innerHTML = message;
+        if(type === 'error') { icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#EF4444"></i>'; } 
+        else { icon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#00FFA3"></i>'; }
+        const modal = elMatrixModal;
+        modal.style.display = 'flex'; setTimeout(() => modal.classList.add('show'), 10);
+    };
+
+    window.closeMatrixModal = () => {
+        const modal = elMatrixModal;
+        modal.classList.remove('show'); setTimeout(() => modal.style.display = 'none', 300);
+    };
+
+    window.showInlineError = (msg) => {
+        const el = elWinStrip;
+        el.className = "win-strip-container error-mode show";
+        el.innerHTML = `
+            <div class="win-strip-content">
+                <span style="color:#EF4444; font-weight:900; font-family:'Inter', sans-serif; font-size: 12px; letter-spacing: 0.5px; text-transform:uppercase;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> ${msg}
+                </span>
+            </div>
+        `;
+        if(window.winStripTimeout) clearTimeout(window.winStripTimeout);
+        window.winStripTimeout = setTimeout(() => { el.classList.remove("show"); }, 3500);
+    };
+
+    window.showWinStrip = (avatar, user, mult, amt) => {
+        const el = elWinStrip;
+        const safeAmt = safeFloat(amt).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        el.className = "win-strip-container show";
+        el.innerHTML = `
+            <div class="win-strip-content">
+                <img src="${avatar || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s'}" class="win-strip-avatar">
+                <span class="win-strip-text">${user || 'Sen'}</span>
+                <span style="color:#1E293B">|</span>
+                <span class="win-strip-mult">${safeFloat(mult).toFixed(2)}x</span>
+                <span style="color:#1E293B">|</span>
+                <span class="win-strip-amt">+${safeAmt} MC</span>
+            </div>
+        `;
+        if(window.winStripTimeout) clearTimeout(window.winStripTimeout);
+        window.winStripTimeout = setTimeout(() => { el.classList.remove("show"); }, 3000);
+    };
+
+    window.showHowToPlay = () => showMatrixModal("Mines Kuralları", "1. MC KULLAN ile oyuna başla.\n2. Kutuları açarak elmasları bul, çarpanı katla.\n3. Hedef X girerek OTO OYNA açabilirsin.\n4. Mayına basmadan ÇEK butonuna bas.", "info");
+
+    let audioCtx = null;
+    let audioUnlocked = false; 
+    const sounds = {};
+    const sfxUrls = {
+        bet: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',     
+        open: 'https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3',   
+        explode: 'https://assets.mixkit.co/active_storage/sfx/3146/3146-preview.mp3', 
+        win: 'https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'    
+    };
+
+    function initAndUnlockAudio() {
+        if (audioUnlocked) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer; source.connect(audioCtx.destination); source.start(0);
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            audioUnlocked = true; loadSoundFiles();
+        } catch (e) { }
+    }
+
+    async function loadSoundFiles() {
+        if (!audioCtx) return;
+        for (let [key, url] of Object.entries(sfxUrls)) {
+            try {
+                const res = await fetch(url);
+                const buf = await res.arrayBuffer();
+                sounds[key] = await audioCtx.decodeAudioData(buf);
+            } catch(e) {}
+        }
+    }
+
+    function playSfx(name) {
+        if(!audioCtx || !sounds[name] || !audioUnlocked) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        try {
+            const src = audioCtx.createBufferSource();
+            src.buffer = sounds[name];
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = name === 'open' ? 0.3 : 0.6; 
+            src.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            src.start(0);
+        } catch (e) {}
+    }
+
+    const unlockOnTouch = () => { initAndUnlockAudio(); document.removeEventListener('touchstart', unlockOnTouch); document.removeEventListener('click', unlockOnTouch); };
+    document.addEventListener('touchstart', unlockOnTouch, { once: true, passive: true });
+    document.addEventListener('click', unlockOnTouch, { once: true, passive: true });
+
+    let loadProg = 0;
+    const loadInt = setInterval(() => {
+        loadProg += Math.random() * 25;
+        if(loadProg >= 100) {
+            loadProg = 100; clearInterval(loadInt);
+            elLoaderTrack.style.display = 'none';
+            elBtnEnterGame.style.display = 'block';
+        }
+        elLoaderFill.style.width = loadProg + '%';
+    }, 100);
+
+    elBtnEnterGame.addEventListener('click', () => {
+        initAndUnlockAudio();
+        elStudioIntro.style.opacity = '0';
+        setTimeout(() => { elStudioIntro.style.display = 'none'; initGame(); }, 600);
+    });
+
+    let historyData = JSON.parse(localStorage.getItem('pm_mines_history') || '[]');
+    function addHistory(mult) {
+        historyData.unshift(safeFloat(mult));
+        if(historyData.length > 10) historyData.pop();
+        localStorage.setItem('pm_mines_history', JSON.stringify(historyData));
+        renderHistory();
+    }
+    function renderHistory() {
+        elHist.innerHTML = "";
+        historyData.forEach(v => {
+            let c = v < 2 ? 'hist-red' : 'hist-green';
+            elHist.innerHTML += `<div class="hist-pill ${c}">${safeFloat(v).toFixed(2)}x</div>`;
+        });
+    }
+
+    async function api(endpoint, method='GET', body=null) {
+        if(!auth.currentUser) return null;
+        const token = await getIdToken(auth.currentUser);
+        const opt = { method, headers: {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'} };
+        if(body) opt.body = JSON.stringify(body);
+        const res = await fetch(API_URL+endpoint, opt);
+        const data = await res.json();
+        if(!data.ok) throw new Error(data.error || "Bağlantı hatası.");
+        return data;
+    }
+
+    function updateBal() { 
+        api('/api/me').then(d => { 
+            if(d) { 
+                currentBalance = safeFloat(d.balance); 
+                elBal.innerText = currentBalance.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
+                if(d.user) {
+                    userInfo.avatar = d.user.avatar || '';
+                    userInfo.username = d.user.username || 'Sen';
+                    
+                    let rp = d.user.rp || 0;
+                    let vipData = calcVipPercentage(rp);
+                    elUiVipBar.style.width = vipData.pct + '%';
+                    elUiVipPct.innerText = vipData.pct.toFixed(1) + '%';
+                    elUiVipBadge.innerText = vipData.level;
+                }
+            } 
+        }).catch(()=>{});
+    }
+
+    function initGame() {
+        updateBal();
+        renderHistory(); renderGrid();
+        api('/api/mines/state').then(d => { if(d && d.state) { gameState = d.state; updateUI(); }});
+    }
+
+    function renderGrid() {
+        elGrid.innerHTML = "";
+        for(let i=0; i<25; i++){
+            let tile = document.createElement("div");
+            tile.className = "tile active-hover";
+            tile.id = `tile-${i}`;
+            tile.addEventListener("click", () => handleTileClick(i));
+            elGrid.appendChild(tile);
+        }
+    }
+
+    function updateUI() {
+        if (!gameState || gameState.status !== 'playing') {
+            btnAction.innerText = "MC KULLAN";
+            btnAction.className = "action-btn btn-bet";
+            btnAction.disabled = isProcessing;
+            inpBet.disabled = isProcessing; inpAutoMult.disabled = isProcessing; inpMines.disabled = isProcessing;
+            btnRandom.disabled = true;
+            elMult.innerText = "1.00x"; elMult.style.color = "#00FFA3";
+            elMineCount.innerText = inpMines.value;
+            if(!gameState) elHash.innerText = "Hash Bekleniyor...";
+        } else {
+            inpBet.disabled = true; inpAutoMult.disabled = true; inpMines.disabled = true;
+            btnRandom.disabled = isProcessing;
+            elMult.innerText = safeFloat(gameState.multiplier).toFixed(2) + "x";
+            elMult.style.color = "#00F0FF";
+            elMineCount.innerText = gameState.minesCount;
+            elHash.innerText = `Hash: ${gameState.hash}`;
+            
+            if (gameState.opened.length > 0) {
+                const winAmount = safeFloat(gameState.bet * gameState.multiplier);
+                btnAction.innerText = `ÇEK ${winAmount.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} MC`;
+                btnAction.className = "action-btn btn-cashout";
+                btnAction.disabled = isProcessing;
+            } else {
+                btnAction.innerText = "TAŞ SEÇİN";
+                btnAction.className = "action-btn";
+                btnAction.disabled = true;
+            }
+
+            gameState.opened.forEach(idx => {
+                const t = document.getElementById(`tile-${idx}`);
+                if(t && !t.classList.contains('open')) { t.className = "tile open"; t.innerHTML = "💎"; }
+            });
+        }
+    }
+
+    function revealBoard(boardArray, hitIndex) {
+        for(let i=0; i<25; i++) {
+            const t = document.getElementById(`tile-${i}`);
+            t.className = "tile";
+            if(i === hitIndex) {
+                t.classList.add("mine"); t.innerHTML = "💣";
+            } else if(boardArray[i] === 1) {
+                t.classList.add("dimmed-mine"); t.innerHTML = "💣";
+            } else if(!t.innerHTML.includes("💎")) {
+                t.classList.add("dimmed-diamond"); t.innerHTML = "💎";
+            }
+        }
+    }
+
+    function runAutoLoop() {
+        if (!autoSwitch.checked || isProcessing) return;
+
+        if (!gameState || gameState.status !== 'playing') {
+            handleAction('start', null, true);
+        } else {
+            const targetX = safeFloat(inpAutoMult.value.replace(',', '.')) || 1.01;
+            if (gameState.multiplier >= targetX && gameState.opened.length > 0) {
+                handleAction('cashout', null, true);
+            } else {
+                let available = [];
+                for(let i=0; i<25; i++) { if(!gameState.opened.includes(i)) available.push(i); }
+                if(available.length > 0) {
+                    let rnd = available[Math.floor(Math.random() * available.length)];
+                    handleAction('click', rnd, true);
+                }
+            }
+        }
+    }
+
+    function triggerNextAutoMove() {
+        if (autoPlayTimeout) clearTimeout(autoPlayTimeout);
+        if (autoSwitch.checked) {
+            autoPlayTimeout = setTimeout(() => {
+                if(!isProcessing) runAutoLoop();
+            }, 600); 
+        }
+    }
+
+    async function handleAction(actionType, tileIndex = null, fromAuto = false) {
+        if(isProcessing) return;
+        isProcessing = true; updateUI();
+
+        try {
+            if (actionType === 'start') {
+                const betAmount = safeFloat(inpBet.value.replace(',', '.'));
+                const minesCount = parseInt(inpMines.value);
+                if(isNaN(betAmount) || betAmount < 100) throw new Error("Min bahis 100 MC");
+                
+                currentBalance = safeFloat(currentBalance - betAmount);
+                elBal.innerText = currentBalance.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                const res = await api('/api/mines/start', 'POST', { bet: betAmount, minesCount });
+                gameState = res.state;
+                pmRtEmitMinesBetPresence(betAmount);
+                playSfx("bet");
+                renderGrid();
+                
+                isProcessing = false; updateUI();
+                if(fromAuto) triggerNextAutoMove();
+                return;
+            } 
+            else if (actionType === 'click') {
+                const targetTile = document.getElementById(`tile-${tileIndex}`);
+                if(targetTile) targetTile.style.transform = "scale(0.9)";
+                
+                const res = await api('/api/mines/action', 'POST', { action: 'click', index: tileIndex });
+                gameState = res.state;
+                
+                if(gameState.status === 'busted') {
+                    playSfx("explode");
+                    revealBoard(res.board, tileIndex);
+                    elHash.innerText = `Seed: ${res.serverSeed}`;
+                    btnAction.innerText = "KAYBETTİN!"; btnAction.className = "action-btn btn-loss";
+                    addHistory(0.00);
+                    
+                    isProcessing = false;
+                    setTimeout(() => { gameState = null; renderGrid(); updateUI(); if(autoSwitch.checked) triggerNextAutoMove(); }, 1500);
+                } else if (gameState.status === 'cashed_out') {
+                    playSfx("win");
+                    revealBoard(res.board, -1);
+                    elHash.innerText = `Seed: ${res.serverSeed}`;
+                    
+                    const winAmt = safeFloat(res.winAmount);
+                    currentBalance = safeFloat(currentBalance + winAmt);
+                    elBal.innerText = currentBalance.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    
+                    showWinStrip(userInfo.avatar, userInfo.username, gameState.multiplier, winAmt);
+                    addHistory(gameState.multiplier);
+                    
+                    isProcessing = false;
+                    setTimeout(() => { gameState = null; renderGrid(); updateUI(); if(autoSwitch.checked) triggerNextAutoMove(); }, 1500);
+                } else {
+                    playSfx("open");
+                    isProcessing = false; updateUI();
+                    if(fromAuto) triggerNextAutoMove(); 
+                }
+                return;
+            } 
+            else if (actionType === 'cashout') {
+                const res = await api('/api/mines/action', 'POST', { action: 'cashout' });
+                gameState = res.state;
+                playSfx("win");
+                revealBoard(res.board, -1);
+                elHash.innerText = `Seed: ${res.serverSeed}`;
+                
+                const winAmt = safeFloat(res.winAmount);
+                currentBalance = safeFloat(currentBalance + winAmt);
+                elBal.innerText = currentBalance.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                
+                btnAction.innerText = `KAZANDIN!`; btnAction.className = "action-btn btn-cashout";
+                showWinStrip(userInfo.avatar, userInfo.username, gameState.multiplier, winAmt);
+                addHistory(gameState.multiplier);
+                
+                isProcessing = false;
+                setTimeout(() => { gameState = null; renderGrid(); updateUI(); if(autoSwitch.checked) triggerNextAutoMove(); }, 1500);
+                return;
+            }
+        } catch(e) {
+            showInlineError(e.message);
+            autoSwitch.checked = false; 
+            
+            updateBal(); 
+        }
+        
+        isProcessing = false; updateUI();
+    }
+
+    autoSwitch.addEventListener('change', () => { 
+        if(autoSwitch.checked) {
+            triggerNextAutoMove(); 
+        } else {
+            if(autoPlayTimeout) clearTimeout(autoPlayTimeout);
+        }
+    });
+
+    btnAction.addEventListener("click", () => {
+        if(!gameState || gameState.status !== 'playing') handleAction('start');
+        else if(gameState.opened.length > 0) handleAction('cashout');
+    });
+
+    btnRandom.addEventListener("click", () => {
+        if(!gameState || gameState.status !== 'playing' || isProcessing) return;
+        let available = [];
+        for(let i=0; i<25; i++) { if(!gameState.opened.includes(i)) available.push(i); }
+        if(available.length > 0) {
+            let rnd = available[Math.floor(Math.random() * available.length)];
+            handleAction('click', rnd);
+        }
+    });
+
+    function handleTileClick(index) {
+        if(!gameState || gameState.status !== 'playing' || isProcessing) return;
+        if(gameState.opened.includes(index)) return;
+        handleAction('click', index);
+    }
+
+    
+const PM_REALTIME_PAGE_KEY = "mines";
+let pmRealtimeSocket = null;
+let pmRealtimeBootPromise = null;
+const pmRealtimeMeta = { friendCounts: { incoming: 0, accepted: 0, outgoing: 0 } };
+
+function pmRtEscape(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>'"]/g, (match) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
+}
+
+function pmRtNormalizeGameKey(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return '';
+    if (raw === 'chess' || raw.includes('sat')) return 'chess';
+    if (raw === 'pisti' || raw.includes('pist')) return 'pisti';
+    return '';
+}
+
+function pmRtGameHref(gameKey, roomId) {
+    const safeRoomId = encodeURIComponent(String(roomId || '').trim());
+    return gameKey === 'chess'
+        ? `/Online Oyunlar/Satranc.html?joinRoom=${safeRoomId}`
+        : `/Online Oyunlar/Pisti.html?joinRoom=${safeRoomId}`;
+}
+
+function pmRtSetPendingJoin(gameKey, roomId) {
+    sessionStorage.setItem('pm_auto_join_room', String(roomId || '').trim());
+    sessionStorage.setItem('pm_auto_join_game', pmRtNormalizeGameKey(gameKey));
+    sessionStorage.setItem('pm_auto_join_at', String(Date.now()));
+}
+
+function pmRtEnsureShell() {
+    let styleEl = document.getElementById('pmGameRealtimeStyle');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'pmGameRealtimeStyle';
+        styleEl.textContent = `
+            .pmg-rt-stack{position:fixed;top:calc(env(safe-area-inset-top) + 86px);right:14px;display:flex;flex-direction:column;gap:12px;width:min(360px,calc(100vw - 24px));z-index:2147482500;pointer-events:none}
+            .pmg-rt-toast{pointer-events:auto;position:relative;overflow:hidden;padding:14px 14px 13px 14px;border-radius:18px;background:linear-gradient(180deg,rgba(14,18,27,.96),rgba(8,12,18,.94));border:1px solid rgba(255,255,255,.09);box-shadow:0 20px 48px rgba(0,0,0,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transform:translate3d(0,-10px,0);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+            .pmg-rt-toast.show{transform:translate3d(0,0,0);opacity:1}
+            .pmg-rt-toast.is-success{border-color:rgba(0,255,163,.28)}
+            .pmg-rt-toast.is-error{border-color:rgba(255,59,48,.34)}
+            .pmg-rt-toast.is-info{border-color:rgba(212,175,55,.24)}
+            .pmg-rt-head{display:flex;align-items:flex-start;gap:12px}
+            .pmg-rt-icon{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.06);color:#d4af37;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+            .pmg-rt-toast.is-success .pmg-rt-icon{color:#00ffa3}
+            .pmg-rt-toast.is-error .pmg-rt-icon{color:#ff6b6b}
+            .pmg-rt-copy{min-width:0;flex:1}
+            .pmg-rt-title{font-family:'Orbitron','Inter',sans-serif;font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:#f8fafc;margin-bottom:6px}
+            .pmg-rt-msg{font-size:13px;line-height:1.5;color:rgba(229,231,235,.88);word-break:break-word}
+            .pmg-rt-close{width:34px;height:34px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#cbd5e1;cursor:pointer;flex:0 0 auto;touch-action:manipulation}
+            .pmg-rt-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+            .pmg-rt-btn{min-height:42px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);color:#f8fafc;font-weight:800;cursor:pointer;touch-action:manipulation}
+            .pmg-rt-btn.primary{background:linear-gradient(180deg,#ffe9a9,#d4af37);color:#111827;border-color:transparent}
+            .pmg-rt-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,rgba(255,255,255,.02),rgba(212,175,55,.65),rgba(0,255,163,.6));transform-origin:left center;animation:pmRtToastProgress var(--pmg-toast-duration,5200ms) linear forwards}
+            .pmg-rt-modal{position:fixed;inset:0;z-index:2147482600;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,7,12,.64);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+            .pmg-rt-modal.show{display:flex}
+            .pmg-rt-card{width:min(420px,100%);border-radius:26px;background:linear-gradient(180deg,rgba(19,25,37,.98),rgba(10,14,22,.98));border:1px solid rgba(255,255,255,.1);box-shadow:0 28px 70px rgba(0,0,0,.52);padding:20px;transform:translateY(10px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+            .pmg-rt-modal.show .pmg-rt-card{transform:translateY(0) scale(1);opacity:1}
+            .pmg-rt-badge{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.24);color:#d4af37;font-size:22px;margin-bottom:14px}
+            .pmg-rt-card h3{margin:0 0 8px;font-family:'Orbitron','Inter',sans-serif;font-size:18px;letter-spacing:1px}
+            .pmg-rt-card p{margin:0;color:rgba(226,232,240,.84);line-height:1.65;font-size:14px}
+            @keyframes pmRtToastProgress{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+            @media (max-width:640px){.pmg-rt-stack{left:12px;right:12px;width:auto;top:calc(env(safe-area-inset-top) + 78px)}}
+        `;
+        document.head.appendChild(styleEl);
+    }
+
+    let stack = document.getElementById('pmGameRealtimeStack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'pmGameRealtimeStack';
+        stack.className = 'pmg-rt-stack';
+        document.body.appendChild(stack);
+    }
+
+    let modal = document.getElementById('pmGameRealtimeModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pmGameRealtimeModal';
+        modal.className = 'pmg-rt-modal';
+        modal.innerHTML = '<div class="pmg-rt-card"></div>';
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) pmRtCloseModal();
+        });
+        document.body.appendChild(modal);
+    }
+
+    return { stack, modal, card: modal.querySelector('.pmg-rt-card') };
+}
+
+function pmRtToast(title, message, tone = 'info', options = {}) {
+    const { stack } = pmRtEnsureShell();
+    const toast = document.createElement('div');
+    toast.className = `pmg-rt-toast is-${tone}`;
+    toast.style.setProperty('--pmg-toast-duration', `${Math.max(1800, Number(options.duration) || 5200)}ms`);
+    toast.innerHTML = `
+        <div class="pmg-rt-head">
+            <div class="pmg-rt-icon"><i class="fa-solid ${options.iconClass || (tone === 'success' ? 'fa-circle-check' : tone === 'error' ? 'fa-triangle-exclamation' : 'fa-bell')}"></i></div>
+            <div class="pmg-rt-copy">
+                <div class="pmg-rt-title">${pmRtEscape(title || 'Bildirim')}</div>
+                <div class="pmg-rt-msg">${pmRtEscape(message || '')}</div>
+            </div>
+            <button class="pmg-rt-close" type="button" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="pmg-rt-progress"></div>
+    `;
+    const remove = () => {
+        toast.classList.remove('show');
+        window.setTimeout(() => toast.remove(), 180);
+    };
+    toast.querySelector('.pmg-rt-close').addEventListener('click', remove, { passive: true });
+    stack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    window.setTimeout(remove, Math.max(1800, Number(options.duration) || 5200));
+    return toast;
+}
+
+function pmRtCloseModal() {
+    const modal = document.getElementById('pmGameRealtimeModal');
+    if (modal) modal.classList.remove('show');
+}
+
+function pmRtPrompt(opts = {}) {
+    const { modal, card } = pmRtEnsureShell();
+    return new Promise((resolve) => {
+        const cleanup = (result) => {
+            pmRtCloseModal();
+            window.setTimeout(() => resolve(result), 120);
+        };
+
+        card.innerHTML = `
+            <div class="pmg-rt-badge"><i class="fa-solid ${opts.iconClass || 'fa-bell'}"></i></div>
+            <h3>${pmRtEscape(opts.title || 'Bildirim')}</h3>
+            <p>${pmRtEscape(opts.message || '')}</p>
+            <div class="pmg-rt-actions">
+                <button class="pmg-rt-btn" type="button" data-action="cancel">${pmRtEscape(opts.cancelText || 'Vazgeç')}</button>
+                <button class="pmg-rt-btn primary" type="button" data-action="confirm">${pmRtEscape(opts.confirmText || 'Tamam')}</button>
+            </div>
+        `;
+        card.querySelector('[data-action="cancel"]').addEventListener('click', () => cleanup(false), { passive: true });
+        card.querySelector('[data-action="confirm"]').addEventListener('click', () => cleanup(true), { passive: true });
+        modal.classList.add('show');
+    });
+}
+
+async function pmRtLoadSocketScript() {
+    if (window.io) return;
+    await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-pm-socket-loader="1"]');
+        if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = `${API_URL}/socket.io/socket.io.js`;
+        script.async = true;
+        script.dataset.pmSocketLoader = '1';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Socket istemcisi yüklenemedi.'));
+        document.head.appendChild(script);
+    });
+}
+
+async function pmRtRequest(endpoint, method = 'GET', body = null) {
+    let payload = null;
+
+    if (typeof fetchAPI === 'function') {
+        payload = await fetchAPI(endpoint, method, body);
+    } else if (typeof api === 'function') {
+        payload = await api(endpoint, method, body);
+    } else {
+        if (!auth.currentUser) throw new Error('Oturum bulunamadı.');
+        const token = await getIdToken(auth.currentUser);
+        const options = {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        };
+        if (body) options.body = JSON.stringify(body);
+        const res = await fetch(`${API_URL}${endpoint}`, options);
+        payload = await res.json();
+        if (!res.ok && (payload?.ok === false || payload?.error)) {
+            throw new Error(payload?.error || 'Sunucu isteği başarısız.');
+        }
+    }
+
+    if (!payload) throw new Error('Sunucu yanıt vermedi.');
+    if (payload.ok === false) throw new Error(payload.error || 'İstek başarısız.');
+    return payload;
+}
+
+async function pmRtRefreshFriendCounts(silent = true) {
+    if (!auth.currentUser) return;
+    try {
+        const payload = await pmRtRequest('/api/friends/list');
+        const counts = payload?.counts || {};
+        const nextIncoming = Number(counts.incoming || 0);
+        if (!silent && nextIncoming > Number(pmRealtimeMeta.friendCounts.incoming || 0)) {
+            pmRtToast('Yeni arkadaşlık isteği', 'Sosyal merkezde bekleyen yeni bir istek oluştu.', 'info', { iconClass: 'fa-user-plus' });
+        }
+        pmRealtimeMeta.friendCounts = {
+            incoming: nextIncoming,
+            accepted: Number(counts.accepted || 0),
+            outgoing: Number(counts.outgoing || 0)
+        };
+    } catch (_) {}
+}
+
+async function pmRtMaybeConfirmExit() {
+    if (PM_REALTIME_PAGE_KEY !== 'crash') return true;
+    try {
+        const payload = await pmRtRequest('/api/crash/active-bets');
+        if (!payload?.hasActiveBet) return true;
+        return await pmRtPrompt({
+            title: 'Aktif Crash Bahsi',
+            message: payload.hasRiskyBet
+                ? 'Şu an auto cashout tanımı olmayan aktif Crash bahsin var. Davete geçersen tur arka planda devam eder ve patlama riski sana ait olur. Yine de devam etmek istiyor musun?'
+                : 'Şu an aktif bir Crash bahsin bulunuyor. Davete geçersen tur arka planda devam eder. Devam etmek istiyor musun?',
+            confirmText: 'Yine de Geç',
+            cancelText: 'Kal',
+            iconClass: 'fa-bolt'
+        });
+    } catch (_) {
+        return true;
+    }
+}
+
+async function pmRtBeforeRedirect() {
+    if (PM_REALTIME_PAGE_KEY === 'blackjack') {
+        try {
+            if (typeof bjSocket !== 'undefined' && bjSocket) {
+                bjSocket.emit('bj:leave');
+                window.setTimeout(() => { try { bjSocket.close(); } catch (_) {} }, 60);
+            }
+        } catch (_) {}
+    }
+}
+
+async function pmRtHandleInviteResponse(data, response) {
+    try {
+        if (!data?.inviteId) return;
+        const gameKey = pmRtNormalizeGameKey(data.gameKey);
+        const roomId = String(data.roomId || '').trim();
+        if (!gameKey || !roomId) throw new Error('Davet verisi eksik.');
+
+        if (response === 'accepted') {
+            const canContinue = await pmRtMaybeConfirmExit();
+            if (!canContinue) return;
+            await pmRtRequest(gameKey === 'chess' ? '/api/chess/join' : '/api/pisti-online/join', 'POST', { roomId });
+        }
+
+        if (pmRealtimeSocket) {
+            pmRealtimeSocket.emit('game:invite_response', {
+                inviteId: data.inviteId,
+                hostUid: data.hostUid,
+                roomId,
+                gameKey,
+                response
+            });
+        }
+
+        pmRtCloseModal();
+
+        if (response === 'accepted') {
+            await pmRtBeforeRedirect();
+            pmRtSetPendingJoin(gameKey, roomId);
+            pmRtToast('Oyuna geçiliyor', `${data.hostName || 'Arkadaşın'} ile ${gameKey === 'chess' ? 'satranç' : 'pişti'} masasına bağlanıyorsun.`, 'success', { iconClass: 'fa-arrow-right' });
+            window.setTimeout(() => window.location.replace(pmRtGameHref(gameKey, roomId)), 220);
+        } else {
+            pmRtToast('Davet kapatıldı', `${data.hostName || 'Arkadaşın'} için gönderilen davet reddedildi.`, 'info', { iconClass: 'fa-xmark' });
+        }
+    } catch (error) {
+        pmRtToast('Davet başarısız', error?.message || 'Odaya katılım sağlanamadı.', 'error');
+    }
+}
+
+function pmRtShowInviteModal(payload) {
+    if (!payload?.inviteId) return;
+    const { modal, card } = pmRtEnsureShell();
+    card.innerHTML = `
+        <div class="pmg-rt-badge"><i class="fa-solid fa-gamepad"></i></div>
+        <h3>Canlı Oyun Daveti</h3>
+        <p><strong>${pmRtEscape(payload.hostName || 'Arkadaşın')}</strong> seni <strong>${pmRtEscape(payload.gameName || 'oyuna')}</strong> çağırıyor. Kabul edersen lobiye uğramadan doğrudan oyun masasına geçeceksin.</p>
+        <div class="pmg-rt-actions">
+            <button class="pmg-rt-btn" type="button" data-action="decline">Reddet</button>
+            <button class="pmg-rt-btn primary" type="button" data-action="accept">Kabul Et</button>
+        </div>
+    `;
+    card.querySelector('[data-action="decline"]').addEventListener('click', () => pmRtHandleInviteResponse(payload, 'declined'), { passive: true });
+    card.querySelector('[data-action="accept"]').addEventListener('click', () => pmRtHandleInviteResponse(payload, 'accepted'), { passive: true });
+    modal.classList.add('show');
+}
+
+function pmRtEmitMinesBetPresence(amount) {
+    if (typeof pmRealtimeSocket !== 'undefined' && pmRealtimeSocket && pmRealtimeSocket.connected) {
+        pmRealtimeSocket.emit('social:set_presence', {
+            status: 'IN_GAME',
+            activity: `Mines Oynuyor (${Number(amount || 0).toLocaleString('tr-TR')} MC)`
+        });
+    }
+}
+
+function pmRtBindSocketEvents(sock) {
+    if (!sock || sock.__pmRealtimeBound) return sock;
+    sock.__pmRealtimeBound = true;
+    pmRealtimeSocket = sock;
+
+    sock.on('chat:direct_receive', (payload) => {
+        pmRtToast(payload?.username || 'Yeni özel mesaj', payload?.message || 'Bir özel mesaj aldın.', 'info', { iconClass: 'fa-envelope' });
+    });
+
+    sock.on('friends:updated', () => {
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_received', () => {
+        pmRtToast('Arkadaşlık isteği', 'Yeni bir arkadaşlık isteği geldi.', 'info', { iconClass: 'fa-user-plus' });
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_result', (payload) => {
+        pmRtToast(
+            'Arkadaşlık güncellendi',
+            payload?.accepted ? 'Gönderdiğin istek kabul edildi.' : 'Gönderdiğin istek reddedildi.',
+            payload?.accepted ? 'success' : 'info',
+            { iconClass: payload?.accepted ? 'fa-user-check' : 'fa-user-xmark' }
+        );
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_auto_accepted', () => {
+        pmRtToast('Arkadaş eklendi', 'Karşılıklı istek bulundu ve arkadaşlık anında kuruldu.', 'success', { iconClass: 'fa-user-group' });
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('game:invite_receive', (payload) => {
+        pmRtToast('Oyun daveti', `${payload?.hostName || 'Arkadaşın'} seni ${payload?.gameName || 'oyuna'} çağırıyor.`, 'info', { iconClass: 'fa-gamepad', duration: 4200 });
+        pmRtShowInviteModal(payload);
+    });
+
+    sock.on('game:invite_error', (payload) => {
+        pmRtToast('Davet hatası', payload?.message || 'Davet işlenemedi.', 'error');
+    });
+
+    sock.on('game:invite_response', (payload) => {
+        const guestName = payload?.guestName || 'Arkadaşın';
+        pmRtToast(
+            payload?.response === 'accepted' ? 'Davet kabul edildi' : 'Davet reddedildi',
+            payload?.response === 'accepted' ? `${guestName} daveti kabul etti.` : `${guestName} daveti şu an kabul etmedi.`,
+            payload?.response === 'accepted' ? 'success' : 'info',
+            { iconClass: payload?.response === 'accepted' ? 'fa-circle-check' : 'fa-circle-minus' }
+        );
+    });
+
+    sock.on('connect_error', (error) => {
+        if (error?.message === 'xhr poll error') return;
+        pmRtToast('Canlı bağlantı', 'Bildirim hattı geçici olarak yeniden bağlanıyor.', 'info', { iconClass: 'fa-wifi', duration: 2600 });
+    });
+
+    const setMyPresence = () => {
+        sock.emit('social:set_presence', { status: 'IN_GAME', activity: 'Mines Oynuyor' });
+    };
+
+    if (sock.connected) {
+        setMyPresence();
+    }
+    sock.on('connect', setMyPresence);
+
+    return sock;
+}
+
+async function initPlayMatrixRealtime() {
+    if (!auth.currentUser) {
+        disposePlayMatrixRealtime();
+        return null;
+    }
+    if (pmRealtimeBootPromise) return pmRealtimeBootPromise;
+
+    pmRealtimeBootPromise = (async () => {
+        pmRtEnsureShell();
+        await pmRtRefreshFriendCounts(true);
+        await pmRtLoadSocketScript();
+        const token = await getIdToken(auth.currentUser);
+        const sock = window.io(API_URL, {
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
+        });
+        return pmRtBindSocketEvents(sock);
+    })();
+
+    try {
+        return await pmRealtimeBootPromise;
+    } catch (error) {
+        pmRealtimeBootPromise = null;
+        throw error;
+    }
+}
+
+function disposePlayMatrixRealtime() {
+    pmRtCloseModal();
+    if (pmRealtimeSocket) {
+        try { pmRealtimeSocket.close(); } catch (_) {}
+    }
+    pmRealtimeSocket = null;
+    pmRealtimeBootPromise = null;
+}
+
+window.addEventListener('beforeunload', () => {
+    if (pmRealtimeSocket) {
+        try { pmRealtimeSocket.close(); } catch (_) {}
+    }
+});
+
+
+onAuthStateChanged(auth, user => {
+    if(!user) {
+        disposePlayMatrixRealtime();
+        window.location.href = '/';
+        return;
+    }
+    initPlayMatrixRealtime().catch(() => null);
+});
+</script>
+  <script src="/playmatrix-runtime.js" defer></script>
+</body>
+</html>

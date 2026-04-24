@@ -27,7 +27,7 @@ function normalizePresenceStatus(value = '') {
 }
 
 function getPresenceActivity(status = 'IDLE', gameType = '') {
-  if (status === 'IN_GAME') return normalizeGameType(gameType) === 'pisti' ? 'Pişti Oynuyor' : 'Satranç Oynuyor';
+  if (status === 'IN_GAME') return gameType === 'chess' ? 'Satranç Oynuyor' : 'Pişti Oynuyor';
   if (status === 'MATCHMAKING') return 'Eşleşme Aranıyor...';
   if (status === 'OFFLINE') return '';
   return 'Lobide';

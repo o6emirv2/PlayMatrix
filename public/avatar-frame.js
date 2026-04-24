@@ -1,48 +1,108 @@
 'use strict';
 
 (() => {
-  const FALLBACK_AVATAR = '/assets/avatars/system/fallback.svg';
-  const FRAME_ASSET_COUNT = 18;
-  const DEFAULT_FRAME_PROFILE = Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' });
-  const FRAME_LEVEL_TO_ASSET = Object.freeze([
-    { min: 1, max: 15, asset: 1 },
-    { min: 16, max: 30, asset: 2 },
-    { min: 31, max: 40, asset: 3 },
-    { min: 41, max: 50, asset: 4 },
-    { min: 51, max: 60, asset: 5 },
-    { min: 61, max: 80, asset: 6 },
-    { min: 81, max: 85, asset: 7 },
-    { min: 86, max: 90, asset: 8 },
-    { min: 91, max: 91, asset: 9 },
-    { min: 92, max: 92, asset: 10 },
-    { min: 93, max: 93, asset: 11 },
-    { min: 94, max: 94, asset: 12 },
-    { min: 95, max: 95, asset: 13 },
-    { min: 96, max: 96, asset: 14 },
-    { min: 97, max: 97, asset: 15 },
-    { min: 98, max: 98, asset: 16 },
-    { min: 99, max: 99, asset: 17 },
-    { min: 100, max: 100, asset: 18 }
-  ]);
+  const FALLBACK_AVATAR = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_xNqOtfFq83d6nI4V3B_b-05aBw_Nl7U5ng&s';
   const FRAME_VISUAL_PROFILES = Object.freeze({
-    1: Object.freeze({ scale: 1.34, avatar: 0.82, shiftX: '0px', shiftY: '0px' }),
-    2: Object.freeze({ scale: 1.34, avatar: 0.82, shiftX: '0px', shiftY: '0px' }),
-    3: Object.freeze({ scale: 1.35, avatar: 0.82, shiftX: '0px', shiftY: '0px' }),
-    4: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    5: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    6: Object.freeze({ scale: 1.24, avatar: 0.86, shiftX: '0px', shiftY: '0px' }),
-    7: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    8: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    9: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    10: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    11: Object.freeze({ scale: 1.24, avatar: 0.86, shiftX: '0px', shiftY: '0px' }),
-    12: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    13: Object.freeze({ scale: 1.24, avatar: 0.86, shiftX: '0px', shiftY: '0px' }),
-    14: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    15: Object.freeze({ scale: 1.24, avatar: 0.86, shiftX: '0px', shiftY: '0px' }),
-    16: Object.freeze({ scale: 1.28, avatar: 0.84, shiftX: '0px', shiftY: '0px' }),
-    17: Object.freeze({ scale: 1.24, avatar: 0.86, shiftX: '0px', shiftY: '0px' }),
-    18: Object.freeze({ scale: 1.46, avatar: 0.78, shiftX: '0px', shiftY: '4px' })
+    1: { scale: 1.34, avatar: 0.86 },
+    2: { scale: 1.34, avatar: 0.86 },
+    3: { scale: 1.34, avatar: 0.86 },
+    4: { scale: 1.34, avatar: 0.86 },
+    5: { scale: 1.34, avatar: 0.86 },
+    6: { scale: 1.34, avatar: 0.86 },
+    7: { scale: 1.34, avatar: 0.86 },
+    8: { scale: 1.34, avatar: 0.86 },
+    9: { scale: 1.34, avatar: 0.86 },
+    10: { scale: 1.34, avatar: 0.86 },
+    11: { scale: 1.34, avatar: 0.86 },
+    12: { scale: 1.34, avatar: 0.86 },
+    13: { scale: 1.34, avatar: 0.86 },
+    14: { scale: 1.34, avatar: 0.86 },
+    15: { scale: 1.34, avatar: 0.86 },
+    16: { scale: 1.34, avatar: 0.86 },
+    17: { scale: 1.34, avatar: 0.86 },
+    18: { scale: 1.34, avatar: 0.86 },
+    19: { scale: 1.34, avatar: 0.86 },
+    20: { scale: 1.34, avatar: 0.86 },
+    21: { scale: 1.34, avatar: 0.86 },
+    22: { scale: 1.34, avatar: 0.86 },
+    23: { scale: 1.34, avatar: 0.86 },
+    24: { scale: 1.34, avatar: 0.86 },
+    25: { scale: 1.34, avatar: 0.86 },
+    26: { scale: 1.34, avatar: 0.86 },
+    27: { scale: 1.34, avatar: 0.86 },
+    28: { scale: 1.34, avatar: 0.86 },
+    29: { scale: 1.34, avatar: 0.86 },
+    30: { scale: 1.34, avatar: 0.86 },
+    31: { scale: 1.35, avatar: 0.86 },
+    32: { scale: 1.35, avatar: 0.86 },
+    33: { scale: 1.35, avatar: 0.86 },
+    34: { scale: 1.35, avatar: 0.86 },
+    35: { scale: 1.35, avatar: 0.86 },
+    36: { scale: 1.35, avatar: 0.86 },
+    37: { scale: 1.35, avatar: 0.86 },
+    38: { scale: 1.35, avatar: 0.86 },
+    39: { scale: 1.35, avatar: 0.86 },
+    40: { scale: 1.35, avatar: 0.86 },
+    41: { scale: 1.28, avatar: 0.85 },
+    42: { scale: 1.28, avatar: 0.85 },
+    43: { scale: 1.28, avatar: 0.85 },
+    44: { scale: 1.28, avatar: 0.85 },
+    45: { scale: 1.28, avatar: 0.85 },
+    46: { scale: 1.28, avatar: 0.85 },
+    47: { scale: 1.28, avatar: 0.85 },
+    48: { scale: 1.28, avatar: 0.85 },
+    49: { scale: 1.28, avatar: 0.85 },
+    50: { scale: 1.28, avatar: 0.85 },
+    51: { scale: 1.34, avatar: 0.86 },
+    52: { scale: 1.34, avatar: 0.86 },
+    53: { scale: 1.34, avatar: 0.86 },
+    54: { scale: 1.34, avatar: 0.86 },
+    55: { scale: 1.34, avatar: 0.86 },
+    56: { scale: 1.34, avatar: 0.86 },
+    57: { scale: 1.34, avatar: 0.86 },
+    58: { scale: 1.34, avatar: 0.86 },
+    59: { scale: 1.34, avatar: 0.86 },
+    60: { scale: 1.34, avatar: 0.86 },
+    61: { scale: 1.24, avatar: 0.84 },
+    62: { scale: 1.24, avatar: 0.84 },
+    63: { scale: 1.24, avatar: 0.84 },
+    64: { scale: 1.24, avatar: 0.84 },
+    65: { scale: 1.24, avatar: 0.84 },
+    66: { scale: 1.24, avatar: 0.84 },
+    67: { scale: 1.24, avatar: 0.84 },
+    68: { scale: 1.24, avatar: 0.84 },
+    69: { scale: 1.24, avatar: 0.84 },
+    70: { scale: 1.24, avatar: 0.84 },
+    71: { scale: 1.24, avatar: 0.84 },
+    72: { scale: 1.24, avatar: 0.84 },
+    73: { scale: 1.24, avatar: 0.84 },
+    74: { scale: 1.24, avatar: 0.84 },
+    75: { scale: 1.24, avatar: 0.84 },
+    76: { scale: 1.24, avatar: 0.84 },
+    77: { scale: 1.24, avatar: 0.84 },
+    78: { scale: 1.24, avatar: 0.84 },
+    79: { scale: 1.24, avatar: 0.84 },
+    80: { scale: 1.24, avatar: 0.84 },
+    81: { scale: 1.28, avatar: 0.84 },
+    82: { scale: 1.28, avatar: 0.84 },
+    83: { scale: 1.28, avatar: 0.84 },
+    84: { scale: 1.28, avatar: 0.84 },
+    85: { scale: 1.28, avatar: 0.84 },
+    86: { scale: 1.28, avatar: 0.84 },
+    87: { scale: 1.28, avatar: 0.84 },
+    88: { scale: 1.28, avatar: 0.84 },
+    89: { scale: 1.28, avatar: 0.84 },
+    90: { scale: 1.28, avatar: 0.84 },
+    91: { scale: 1.28, avatar: 0.84 },
+    92: { scale: 1.28, avatar: 0.84 },
+    93: { scale: 1.24, avatar: 0.84 },
+    94: { scale: 1.28, avatar: 0.84 },
+    95: { scale: 1.24, avatar: 0.84 },
+    96: { scale: 1.28, avatar: 0.84 },
+    97: { scale: 1.24, avatar: 0.84 },
+    98: { scale: 1.28, avatar: 0.84 },
+    99: { scale: 1.24, avatar: 0.84 },
+    100: { scale: 1.46, avatar: 0.80, shiftY: '4px' }
   });
 
   function safeAvatarUrl(value = '') {
@@ -68,138 +128,51 @@
 
   function normalizeFrameIndex(frameIndex = 0) {
     const value = Math.floor(Number(frameIndex) || 0);
-    return Math.max(0, Math.min(FRAME_ASSET_COUNT, value));
+    return Math.max(0, Math.min(100, value));
   }
 
   function getFrameAssetIndex(level = 0) {
     const lvl = normalizeLevel(level);
     if (lvl <= 0) return 0;
-    const matchedRange = FRAME_LEVEL_TO_ASSET.find((item) => lvl >= item.min && lvl <= item.max);
-    return matchedRange ? matchedRange.asset : FRAME_ASSET_COUNT;
+    return Math.max(1, Math.min(100, lvl));
   }
 
   function resolveFrameIndex(level = 0, exactFrameIndex = null) {
-    const numericExact = Math.floor(Number(exactFrameIndex) || 0);
-    if (numericExact > 0) {
-      if (numericExact <= FRAME_ASSET_COUNT) return normalizeFrameIndex(numericExact);
-      return getFrameAssetIndex(numericExact);
-    }
+    const exact = normalizeFrameIndex(exactFrameIndex);
+    if (exact > 0) return exact;
     return getFrameAssetIndex(level);
   }
 
   function getFrameProfile(frameIndex = 0) {
-    const normalized = normalizeFrameIndex(frameIndex);
-    if (normalized <= 0) return { scale: 1, avatar: 1, shiftX: '0px', shiftY: '0px' };
-    return FRAME_VISUAL_PROFILES[normalized] || DEFAULT_FRAME_PROFILE;
+    return FRAME_VISUAL_PROFILES[normalizeFrameIndex(frameIndex)] || { scale: 1.30, avatar: 0.86, shiftX: '0px', shiftY: '0px' };
   }
 
-  function createImage({ src, className = '', alt = '', hidden = false, fallback = '', ariaHidden = false } = {}) {
-    const img = document.createElement('img');
-    img.src = src || FALLBACK_AVATAR;
-    img.alt = alt || '';
-    if (className) img.className = className;
-    img.loading = 'lazy';
-    img.decoding = 'async';
-    img.referrerPolicy = 'no-referrer';
-    img.draggable = false;
-    if (fallback) img.dataset.fallback = fallback;
-    if (ariaHidden) img.setAttribute('aria-hidden', 'true');
-    if (hidden) img.hidden = true;
-    return img;
-  }
-
-  function buildHTML({ avatarUrl = '', level = 0, exactFrameIndex = null, sizePx = 45, extraClass = '', imageClass = 'pm-avatar-img', wrapperClass = 'pm-avatar', alt = 'Oyuncu', sizeTag = '' } = {}) {
-    const normalizedLevel = normalizeLevel(level);
-    const frameIndex = resolveFrameIndex(normalizedLevel, exactFrameIndex);
+  function buildHTML({ avatarUrl = '', level = 0, exactFrameIndex = null, sizePx = 45, extraClass = '', imageClass = 'pm-premium-img', wrapperClass = 'pm-premium-avatar', alt = 'Oyuncu', sizeTag = '' } = {}) {
+    const frameIndex = resolveFrameIndex(level, exactFrameIndex);
     const safeAvatar = safeAvatarUrl(avatarUrl);
+    const profile = getFrameProfile(frameIndex);
     const classes = [wrapperClass, frameIndex > 0 ? 'has-frame' : '', extraClass].filter(Boolean).join(' ');
     const normalizedSize = Math.max(18, Number(sizePx) || 45);
-    const sizeAttr = sizeTag ? ` data-pm-avatar-size="${escapeAttr(sizeTag)}"` : '';
+    const styleVars = [
+      `width:${normalizedSize}px`,
+      `height:${normalizedSize}px`,
+      `--pm-avatar-fit:${profile.avatar}`,
+      `--pm-frame-scale:${profile.scale}`,
+      `--pm-frame-shift-x:${profile.shiftX || '0px'}`,
+      `--pm-frame-shift-y:${profile.shiftY || '0px'}`
+    ].join(';');
     const frameHtml = frameIndex > 0
-      ? `<img src="/Cerceve/frame-${frameIndex}.png" class="pm-frame-image pm-avatar-shell__frame frame-${frameIndex}" alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" data-frame-index="${frameIndex}" data-frame-level="${normalizedLevel}" data-fallback="/Çerçeve/frame-${frameIndex}.png">`
+      ? `<img src="/Cerceve/frame-${frameIndex}.png" class="pm-frame-image pm-avatar-shell__frame frame-${frameIndex}" alt="" aria-hidden="true" data-frame-index="${frameIndex}" data-fallback="/Çerçeve/frame-${frameIndex}.png" onerror="if(this.dataset.fallback && this.src !== this.dataset.fallback){this.src=this.dataset.fallback;return;}this.hidden=true;">`
       : '';
-    return `<div class="${escapeAttr(classes)}" data-pm-avatar="true" data-frame-index="${frameIndex}" data-frame-level="${normalizedLevel}" data-frame-asset-index="${frameIndex}" data-pm-avatar-size-px="${normalizedSize}"${sizeAttr}><img src="${escapeAttr(safeAvatar)}" alt="${escapeAttr(alt || 'Oyuncu')}" class="${escapeAttr(imageClass)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" draggable="false" data-fallback="${escapeAttr(FALLBACK_AVATAR)}">${frameHtml}</div>`;
-  }
-
-  function applyNodeProfile(node, { level = 0, exactFrameIndex = null, sizePx = 45 } = {}) {
-    if (!node) return node;
-    const normalizedLevel = normalizeLevel(level);
-    const frameIndex = resolveFrameIndex(normalizedLevel, exactFrameIndex);
-    const profile = getFrameProfile(frameIndex);
-    const normalizedSize = Math.max(18, Number(sizePx) || 45);
-    node.dataset.frameIndex = String(frameIndex);
-    node.dataset.frameLevel = String(normalizedLevel);
-    node.dataset.frameAssetIndex = String(frameIndex);
-    node.dataset.pmAvatarSizePx = String(normalizedSize);
-    node.classList.toggle('has-frame', frameIndex > 0);
-    node.style.width = `${normalizedSize}px`;
-    node.style.height = `${normalizedSize}px`;
-    node.style.setProperty('--pm-avatar-fit', String(profile.avatar));
-    node.style.setProperty('--pm-frame-scale', String(profile.scale));
-    node.style.setProperty('--pm-frame-shift-x', profile.shiftX || '0px');
-    node.style.setProperty('--pm-frame-shift-y', profile.shiftY || '0px');
-    const frame = node.querySelector('.pm-avatar-shell__frame');
-    if (frame) {
-      frame.dataset.frameIndex = String(frameIndex);
-      frame.dataset.frameLevel = String(normalizedLevel);
-      frame.style.setProperty('--pm-frame-scale', String(profile.scale));
-      frame.style.setProperty('--pm-frame-shift-x', profile.shiftX || '0px');
-      frame.style.setProperty('--pm-frame-shift-y', profile.shiftY || '0px');
-    }
-    return node;
+    const sizeAttr = sizeTag ? ` data-pm-avatar-size="${escapeAttr(sizeTag)}"` : '';
+    return `<div class="${escapeAttr(classes)}" data-pm-avatar="true" data-frame-index="${frameIndex}"${sizeAttr} style="${styleVars}"><img src="${escapeAttr(safeAvatar)}" alt="${escapeAttr(alt || 'Oyuncu')}" class="${escapeAttr(imageClass)}" loading="lazy" decoding="async" draggable="false">${frameHtml}</div>`;
   }
 
   function createNode(options = {}) {
-    const {
-      avatarUrl = '',
-      level = 0,
-      exactFrameIndex = null,
-      sizePx = 45,
-      extraClass = '',
-      imageClass = 'pm-avatar-img',
-      wrapperClass = 'pm-avatar',
-      alt = 'Oyuncu',
-      sizeTag = ''
-    } = options || {};
-    const normalizedLevel = normalizeLevel(level);
-    const frameIndex = resolveFrameIndex(normalizedLevel, exactFrameIndex);
-    const node = document.createElement('div');
-    node.className = [wrapperClass, frameIndex > 0 ? 'has-frame' : '', extraClass].filter(Boolean).join(' ');
-    node.dataset.pmAvatar = 'true';
-    if (sizeTag) node.dataset.pmAvatarSize = String(sizeTag);
-    const avatar = createImage({
-      src: safeAvatarUrl(avatarUrl),
-      className: imageClass,
-      alt: alt || 'Oyuncu',
-      fallback: FALLBACK_AVATAR
-    });
-    node.appendChild(avatar);
-    if (frameIndex > 0) {
-      const frame = createImage({
-        src: `/Cerceve/frame-${frameIndex}.png`,
-        className: `pm-frame-image pm-avatar-shell__frame frame-${frameIndex}`,
-        alt: '',
-        fallback: `/Çerçeve/frame-${frameIndex}.png`,
-        ariaHidden: true
-      });
-      node.appendChild(frame);
-    }
-    applyNodeProfile(node, { ...options, level: normalizedLevel, sizePx });
-    return node;
+    const template = document.createElement('template');
+    template.innerHTML = buildHTML(options).trim();
+    return template.content.firstElementChild;
   }
-
-  document.addEventListener('error', (event) => {
-    const img = event.target;
-    if (!(img instanceof HTMLImageElement)) return;
-    const fallback = img.dataset.fallback || '';
-    if (!fallback) return;
-    if (img.dataset.fallbackApplied === 'true') {
-      if (img.classList.contains('pm-avatar-shell__frame')) img.hidden = true;
-      return;
-    }
-    img.dataset.fallbackApplied = 'true';
-    img.src = fallback;
-  }, true);
 
   function mount(target, options = {}) {
     const host = typeof target === 'string' ? document.getElementById(target) : target;
@@ -211,8 +184,6 @@
 
   window.PMAvatar = Object.freeze({
     FALLBACK_AVATAR,
-    FRAME_ASSET_COUNT,
-    FRAME_LEVEL_TO_ASSET,
     FRAME_VISUAL_PROFILES,
     normalizeLevel,
     normalizeFrameIndex,
@@ -220,7 +191,6 @@
     resolveFrameIndex,
     getFrameProfile,
     buildHTML,
-    applyNodeProfile,
     createNode,
     mount
   });

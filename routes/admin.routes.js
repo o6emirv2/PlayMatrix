@@ -6,20 +6,13 @@ const { db, admin, auth } = require('../config/firebase');
 const { verifyAdmin, requireAdminPermission } = require('../middlewares/admin.middleware');
 const { adminLimiter } = require('../middlewares/rateLimiters');
 const { cleanStr, safeNum, safeSignedNum, nowMs } = require('../utils/helpers');
-const { recordAuditLog, APP_LOG_PATH, logCaughtError } = require('../utils/logger');
+const { recordAuditLog, APP_LOG_PATH } = require('../utils/logger');
 const { recordRewardLedger } = require('../utils/rewardLedger');
 const { createNotification } = require('../utils/notifications');
-const { grantReward, grantRewardToAllUsers } = require('../utils/rewardService');
 const { DEFAULT_FEATURE_FLAGS } = require('../config/featureFlags');
-const { buildRewardCatalogSummary } = require('../config/rewardCatalog');
-const { GAME_ISSUES, SOCIAL_ISSUES } = require('../config/adminKnownIssues');
 const { sanitizeFeatureFlags, buildFeatureFlagRows } = require('../utils/featureFlags');
-const { getFeatureFlagsDocument: storeGetFeatureFlagsDocument, setFeatureFlagsDocument: storeSetFeatureFlagsDocument } = require('../utils/featureFlagStore');
 const { buildOpsHealthSnapshot } = require('../utils/opsHealth');
 const { buildPlatformControlSnapshot } = require('../utils/platformControl');
-const { buildCanonicalUserState } = require('../utils/accountState');
-const { normalizeUserRankState } = require('../utils/progression');
-const { restrictionSnapshot } = require('../utils/userRestrictions');
 
 const router = express.Router();
 const colUsers = () => db.collection('users');
@@ -27,34 +20,37 @@ const colTickets = () => db.collection('support_tickets');
 const colAudit = () => db.collection('audit_logs');
 const colConfig = () => db.collection('ops_config');
 const colOpsErrors = () => db.collection('ops_errors');
-const colPromos = () => db.collection('promo_codes');
-const colGameAudit = () => db.collection('game_audit_logs');
-const colChess = () => db.collection('chess_rooms');
-const colPistiRooms = () => db.collection('pisti_online_rooms');
 const USER_PAGE_LIMIT_MAX = 100;
 const DEFAULT_PAGE_LIMIT = 25;
 const BULK_BATCH_SIZE = 250;
 const REMOTE_DEFAULTS = {
   balance: 0,
-  accountLevel: 1,
-  accountXp: 0,
-  accountLevelScore: 0,
-  selectedFrame: 0,
+  rp: 0,
+  seasonRp: 0,
+  level: 1,
+  xp: 0,
+  chessElo: 1000,
+  pistiElo: 1000,
+  rank: 0,
   monthlyActiveScore: 0,
   activityScore: 0
 };
 const BULK_RESET_FIELD_LABELS = {
   balance: 'Bakiye',
-  accountLevel: 'Hesap Seviyesi',
-  accountXp: 'Hesap XP',
-  selectedFrame: 'Seçili Çerçeve',
+  rp: 'RP',
+  seasonRp: 'Sezon RP',
+  level: 'Seviye',
+  xp: 'XP',
+  chessElo: 'Satranç Elo',
+  pistiElo: 'Pişti Elo',
+  rank: 'Rank',
   monthlyActiveScore: 'Aylık aktiflik',
   activityScore: 'Aktiflik puanı'
 };
 const EDITABLE_COMMON_FIELDS = new Set([
-  'username', 'fullName', 'email', 'avatar', 'balance', 'accountLevel', 'accountXp', 'accountLevelScore', 'selectedFrame',
-  'monthlyActiveScore', 'activityScore',
-  'isMuted', 'isBanned', 'isFlagged', 'moderationReason', 'badge'
+  'username', 'fullName', 'email', 'avatar', 'balance', 'rp', 'seasonRp', 'level', 'xp', 'rank',
+  'chessElo', 'pistiElo', 'monthlyActiveScore', 'activityScore', 'activeFrame', 'activeFrameClass',
+  'isMuted', 'isBanned', 'isFlagged', 'moderationReason', 'badge', 'vip', 'vipTier'
 ]);
 const BLOCKED_PATCH_KEYS = new Set([
   '__proto__', 'prototype', 'constructor', 'customClaims', 'passwordHash', 'passwordSalt',
@@ -83,23 +79,30 @@ async function recordAdminAudit(req, payload = {}) {
 
 async function getFeatureFlagsDocument() {
   try {
-    return await storeGetFeatureFlagsDocument();
-  } catch (error) {
-    logCaughtError('admin.feature_flags.get', error);
+    const snap = await colConfig().doc('feature_flags').get();
+    const data = snap.exists ? (snap.data() || {}) : {};
+    return sanitizeFeatureFlags(data.flags || data, DEFAULT_FEATURE_FLAGS);
+  } catch (_) {
     return { ...DEFAULT_FEATURE_FLAGS };
   }
 }
 
 async function setFeatureFlagsDocument(nextFlags = {}, actorUid = '') {
-  return storeSetFeatureFlagsDocument(nextFlags, actorUid);
+  const flags = sanitizeFeatureFlags(nextFlags, DEFAULT_FEATURE_FLAGS);
+  await colConfig().doc('feature_flags').set({
+    flags,
+    updatedAt: nowMs(),
+    updatedBy: cleanStr(actorUid || '', 160),
+    version: admin.firestore.FieldValue.increment(1)
+  }, { merge: true });
+  return flags;
 }
 
 async function listOpsErrors(limit = 30) {
   try {
     const snap = await colOpsErrors().orderBy('createdAt', 'desc').limit(Math.max(1, Math.min(100, limit))).get();
     return snap.docs.map((doc) => ({ id: doc.id, ...(serializeValue(doc.data() || {})) }));
-  } catch (error) {
-    logCaughtError('admin.ops_errors.list', error, { limit });
+  } catch (_) {
     return [];
   }
 }
@@ -152,20 +155,24 @@ function serializeValue(value, depth = 0) {
 
 function sanitizeUserDoc(doc) {
   const data = doc.data() || {};
-  const canonical = buildCanonicalUserState(data, { defaultFrame: 0 });
   return {
     uid: doc.id,
     username: cleanStr(data.username || data.fullName || 'Oyuncu', 60) || 'Oyuncu',
     fullName: cleanStr(data.fullName || '', 120),
     email: cleanStr(data.email || '', 200),
     avatar: cleanStr(data.avatar || '', 400),
+    level: safeNum(data.level, 1),
+    xp: safeNum(data.xp, 0),
+    rp: safeNum(data.rp, 0),
+    seasonRp: safeNum(data.seasonRp, 0),
     balance: safeNum(data.balance, 0),
-    accountLevel: canonical.accountLevel,
-    accountXp: canonical.accountXp,
-    accountLevelScore: canonical.accountLevelScore,
-    selectedFrame: canonical.selectedFrame,
-    monthlyActiveScore: canonical.monthlyActiveScore,
+    rank: safeNum(data.rank, 0),
+    monthlyActiveScore: safeNum(data.monthlyActiveScore, 0),
     activityScore: safeNum(data.activityScore, 0),
+    chessElo: safeNum(data.chessElo, 1000),
+    pistiElo: safeNum(data.pistiElo, 1000),
+    activeFrame: safeNum(data.activeFrame, 0),
+    activeFrameClass: cleanStr(data.activeFrameClass || '', 80),
     isMuted: !!data.isMuted,
     isBanned: !!data.isBanned,
     isFlagged: !!data.isFlagged,
@@ -228,63 +235,6 @@ function sanitizeFieldUpdateMap(payload = {}) {
     }
   }
   return out;
-}
-
-function normalizeEditableEmail(value = '') {
-  return cleanStr(value || '', 200).toLowerCase();
-}
-
-function isValidEditableEmail(value = '') {
-  const email = normalizeEditableEmail(value);
-  return !!email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-async function syncAdminEditedEmail({ uid = '', currentUser = {}, requestedPatch = {} } = {}) {
-  if (!Object.prototype.hasOwnProperty.call(requestedPatch, 'email')) return null;
-
-  const nextEmail = normalizeEditableEmail(requestedPatch.email);
-  const currentEmail = normalizeEditableEmail(currentUser.email);
-
-  if (!isValidEditableEmail(nextEmail)) {
-    const error = new Error('Geçerli bir e-posta adresi girilmelidir.');
-    error.statusCode = 400;
-    throw error;
-  }
-
-  requestedPatch.email = nextEmail;
-  if (nextEmail === currentEmail) return null;
-
-  try {
-    const existing = await auth.getUserByEmail(nextEmail);
-    if (existing && existing.uid !== uid) {
-      const error = new Error('Bu e-posta başka bir hesapta kullanılıyor.');
-      error.statusCode = 409;
-      throw error;
-    }
-  } catch (error) {
-    if (error?.code !== 'auth/user-not-found') throw error;
-  }
-
-  let authRecord = null;
-  try {
-    authRecord = await auth.getUser(uid);
-  } catch (error) {
-    const wrapped = new Error('Firebase Auth kullanıcısı bulunamadı, e-posta senkronu yapılamadı.');
-    wrapped.statusCode = 404;
-    throw wrapped;
-  }
-
-  const previousEmail = normalizeEditableEmail(authRecord.email);
-  const previousVerified = !!authRecord.emailVerified;
-  if (previousEmail === nextEmail) return null;
-
-  await auth.updateUser(uid, {
-    email: nextEmail,
-    emailVerified: false
-  });
-
-  requestedPatch.emailVerified = false;
-  return { email: previousEmail, emailVerified: previousVerified };
 }
 
 async function scanUsersForSearch(queryText = '', hardLimit = 50) {
@@ -411,87 +361,6 @@ async function getUserDetail(uid = '') {
   };
 }
 
-
-
-async function resolveUserByIdentifier(identifier = '') {
-  const raw = cleanStr(identifier || '', 200).trim();
-  if (!raw) {
-    const error = new Error('Kullanıcı bilgisi gerekli.');
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const safe = raw.toLowerCase();
-  const direct = await colUsers().doc(raw).get().catch(() => null);
-  if (direct?.exists) return { uid: direct.id, data: direct.data() || {} };
-
-  const users = await scanUsersForSearch(raw, 25);
-  const exact = users.find((user) => {
-    return [user.uid, user.email, user.username, user.fullName]
-      .map((item) => cleanStr(item || '', 200).toLowerCase())
-      .includes(safe);
-  }) || users[0];
-
-  if (!exact?.uid) {
-    const error = new Error('Kullanıcı bulunamadı.');
-    error.statusCode = 404;
-    throw error;
-  }
-
-  return { uid: exact.uid, data: exact };
-}
-
-async function countUsersByScan(predicate) {
-  let total = 0;
-  let lastDoc = null;
-  while (true) {
-    let query = colUsers().orderBy(admin.firestore.FieldPath.documentId()).limit(250);
-    if (lastDoc) query = query.startAfter(lastDoc.id);
-    const snap = await query.get();
-    if (snap.empty) break;
-    for (const doc of snap.docs) {
-      if (predicate(doc.data() || {})) total += 1;
-    }
-    lastDoc = snap.docs[snap.docs.length - 1];
-    if (snap.size < 250) break;
-  }
-  return total;
-}
-
-async function summarizeEconomyAndRooms() {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const dayStart = startOfDay.getTime();
-
-  const [chessSnap, pistiSnap, auditSnap] = await Promise.all([
-    colChess().limit(500).get().catch(() => ({ docs: [] })),
-    colPistiRooms().limit(500).get().catch(() => ({ docs: [] })),
-    colGameAudit().orderBy('createdAt', 'desc').limit(2500).get().catch(() => ({ docs: [] }))
-  ]);
-
-  const openRoomCount = (chessSnap.docs || []).filter((doc) => ['waiting', 'playing'].includes(cleanStr(doc.data()?.status || '', 24))).length
-    + (pistiSnap.docs || []).filter((doc) => ['waiting', 'playing'].includes(cleanStr(doc.data()?.status || '', 24))).length;
-
-  let dailySpend = 0;
-  let totalAmount = 0;
-  let totalPayout = 0;
-  for (const doc of auditSnap.docs || []) {
-    const data = doc.data() || {};
-    const createdAt = safeNum(data.createdAt, 0);
-    const amount = Math.max(0, safeNum(data.amount, 0));
-    const payout = Math.max(0, safeNum(data.payout, 0));
-    totalAmount += amount;
-    totalPayout += payout;
-    if (createdAt >= dayStart) dailySpend += amount;
-  }
-
-  return {
-    dailyMcSpend: dailySpend,
-    totalProfit: Math.max(0, totalAmount - totalPayout),
-    totalLoss: Math.max(0, totalPayout - totalAmount),
-    openRoomCount
-  };
-}
 async function runUserBatches(mutator) {
   let totalUpdated = 0;
   let batchCount = 0;
@@ -526,11 +395,7 @@ router.get('/admin/ping', requireAdminPermission('admin.read'), async (req, res)
     ok: true,
     admin: {
       uid: cleanStr(req.user?.uid || '', 160),
-      email: cleanStr(req.user?.email || '', 200),
-      role: cleanStr(req.adminContext?.role || 'admin', 40),
-      roles: Array.isArray(req.adminContext?.roles) ? req.adminContext.roles : [],
-      permissions: Array.isArray(req.adminContext?.permissions) ? req.adminContext.permissions : [],
-      source: cleanStr(req.adminContext?.source || '', 40)
+      email: cleanStr(req.user?.email || '', 200)
     },
     serverTime: nowMs(),
     service: 'PlayMatrix Admin API'
@@ -681,35 +546,19 @@ router.get('/admin/users/:uid', requireAdminPermission('users.read'), async (req
 });
 
 router.patch('/admin/users/:uid', requireAdminPermission('users.write'), async (req, res) => {
-  let emailRollbackState = null;
-  let uid = '';
-
   try {
-    uid = cleanStr(req.params.uid || '', 160);
+    const uid = cleanStr(req.params.uid || '', 160);
     if (!uid) throw new Error('Kullanıcı UID gerekli.');
 
     const commonFields = sanitizeFieldUpdateMap(req.body || {});
     const mergePatch = sanitizePatchObject(req.body?.mergePatch || req.body?.patch || {});
-    const requestedPatch = { ...commonFields, ...(mergePatch && typeof mergePatch === 'object' ? mergePatch : {}) };
-    if (Object.keys(requestedPatch).length === 0) throw new Error('Güncellenecek en az bir alan gerekli.');
+    const patch = { ...commonFields, ...(mergePatch && typeof mergePatch === 'object' ? mergePatch : {}) };
+    if (Object.keys(patch).length === 0) throw new Error('Güncellenecek en az bir alan gerekli.');
+    patch.updatedAt = nowMs();
+    patch.lastAdminEditAt = nowMs();
+    patch.lastAdminEditBy = req.user.uid;
 
-    const userRef = colUsers().doc(uid);
-    const userSnap = await userRef.get();
-    if (!userSnap.exists) throw new Error('Kullanıcı bulunamadı.');
-    const currentUser = userSnap.data() || {};
-    emailRollbackState = await syncAdminEditedEmail({ uid, currentUser, requestedPatch });
-    const mergedUser = { ...currentUser, ...requestedPatch };
-    const canonicalState = buildCanonicalUserState(mergedUser, { defaultFrame: 0 });
-    const patch = {
-      ...requestedPatch,
-      ...canonicalState,
-      ...normalizeUserRankState({ ...mergedUser, ...canonicalState }),
-      updatedAt: nowMs(),
-      lastAdminEditAt: nowMs(),
-      lastAdminEditBy: req.user.uid
-    };
-
-    await userRef.set(patch, { merge: true });
+    await colUsers().doc(uid).set(patch, { merge: true });
     await recordAdminAudit(req, {
       action: 'user.profile.edit',
       targetType: 'user',
@@ -720,16 +569,7 @@ router.patch('/admin/users/:uid', requireAdminPermission('users.write'), async (
     const payload = await getUserDetail(uid);
     res.json({ ok: true, message: 'Kullanıcı güncellendi.', ...payload });
   } catch (error) {
-    if (uid && emailRollbackState && emailRollbackState.email) {
-      try {
-        await auth.updateUser(uid, {
-          email: emailRollbackState.email,
-          emailVerified: !!emailRollbackState.emailVerified
-        });
-      } catch (_) {}
-    }
-
-    res.status(error.statusCode || 400).json({ ok: false, error: error.message || 'Kullanıcı güncellenemedi.' });
+    res.status(400).json({ ok: false, error: error.message || 'Kullanıcı güncellenemedi.' });
   }
 });
 
@@ -740,26 +580,14 @@ router.post('/admin/users/:uid/reset-values', requireAdminPermission('users.writ
     const requestedFields = Array.isArray(req.body?.fields) ? req.body.fields.map((item) => cleanStr(item, 60)).filter(Boolean) : [];
     if (requestedFields.length === 0) throw new Error('Sıfırlanacak alan seçmelisin.');
 
-    const userRef = colUsers().doc(uid);
-    const userSnap = await userRef.get();
-    if (!userSnap.exists) throw new Error('Kullanıcı bulunamadı.');
-    const currentUser = userSnap.data() || {};
-    const requestedPatch = { updatedAt: nowMs(), lastAdminResetAt: nowMs(), lastAdminResetBy: req.user.uid };
+    const patch = { updatedAt: nowMs(), lastAdminResetAt: nowMs(), lastAdminResetBy: req.user.uid };
     for (const field of requestedFields) {
       if (!Object.prototype.hasOwnProperty.call(REMOTE_DEFAULTS, field)) continue;
-      requestedPatch[field] = REMOTE_DEFAULTS[field];
+      patch[field] = REMOTE_DEFAULTS[field];
     }
-    if (Object.keys(requestedPatch).length <= 3) throw new Error('Geçerli sıfırlama alanı yok.');
+    if (Object.keys(patch).length <= 3) throw new Error('Geçerli sıfırlama alanı yok.');
 
-    const mergedUser = { ...currentUser, ...requestedPatch };
-    const canonicalState = buildCanonicalUserState(mergedUser, { defaultFrame: 0 });
-    const patch = {
-      ...requestedPatch,
-      ...canonicalState,
-      ...normalizeUserRankState({ ...mergedUser, ...canonicalState })
-    };
-
-    await userRef.set(patch, { merge: true });
+    await colUsers().doc(uid).set(patch, { merge: true });
     await recordAdminAudit(req, {
       action: 'user.values.reset',
       targetType: 'user',
@@ -785,17 +613,10 @@ router.post('/admin/users/bulk-reset', requireAdminPermission('users.write'), as
     if (requestedFields.length === 0) throw new Error('Sıfırlanacak alan seçmelisin.');
 
     const now = nowMs();
-    const result = await runUserBatches((doc) => {
-      const currentUser = doc.data() || {};
-      const requestedPatch = { updatedAt: now, lastBulkResetAt: now, lastBulkResetBy: req.user.uid };
-      requestedFields.forEach((field) => { requestedPatch[field] = REMOTE_DEFAULTS[field]; });
-      const mergedUser = { ...currentUser, ...requestedPatch };
-      const canonicalState = buildCanonicalUserState(mergedUser, { defaultFrame: 0 });
-      return {
-        ...requestedPatch,
-        ...canonicalState,
-        ...normalizeUserRankState({ ...mergedUser, ...canonicalState })
-      };
+    const result = await runUserBatches(() => {
+      const patch = { updatedAt: now, lastBulkResetAt: now, lastBulkResetBy: req.user.uid };
+      requestedFields.forEach((field) => { patch[field] = REMOTE_DEFAULTS[field]; });
+      return patch;
     });
 
     await recordAdminAudit(req, {
@@ -818,49 +639,52 @@ router.post('/admin/users/bulk-reset', requireAdminPermission('users.write'), as
   }
 });
 
-router.post('/admin/activity/reset', requireAdminPermission('system.read', 'users.write'), async (req, res) => {
+router.post('/admin/season/reset', requireAdminPermission('system.read', 'users.write'), async (req, res) => {
   try {
     const confirmText = cleanStr(req.body?.confirmText || '', 120).toUpperCase();
-    if (confirmText !== 'AKTIFLIK SIFIRLA') throw new Error('Onay metni hatalı.');
+    if (confirmText !== 'SEZONU SIFIRLA') throw new Error('Onay metni hatalı.');
+
+    const resetRank = req.body?.resetRank === true;
     const resetMonthly = req.body?.resetMonthly !== false;
-    const activityLabel = cleanStr(req.body?.activityLabel || '', 80) || new Date().toISOString().slice(0, 10);
+    const seasonLabel = cleanStr(req.body?.seasonLabel || '', 80) || new Date().toISOString().slice(0, 10);
     const now = nowMs();
 
     const result = await runUserBatches(() => {
       const patch = {
-        activityRank: 'Seviye',
-        activityRankKey: 'level',
-        activityRankClass: 'rank-level',
-        lastActivityResetAt: now,
-        lastActivityResetBy: req.user.uid,
-        lastActivityLabel: activityLabel,
+        seasonRp: 0,
+        lastSeasonResetAt: now,
+        lastSeasonResetBy: req.user.uid,
+        lastSeasonLabel: seasonLabel,
         updatedAt: now
       };
       if (resetMonthly) patch.monthlyActiveScore = 0;
+      if (resetRank) patch.rank = 0;
       return patch;
     });
 
     await recordAdminAudit(req, {
-      action: 'activity.reset',
+      action: 'season.reset',
       targetType: 'system',
-      targetId: activityLabel,
+      targetId: seasonLabel,
       metadata: {
+        resetRank,
         resetMonthly,
-        activityLabel,
+        seasonLabel,
         totalUpdated: result.totalUpdated
       }
     });
 
     res.json({
       ok: true,
-      message: 'Aylık aktiflik sıfırlandı.',
-      activityLabel,
+      message: 'Sezon sıfırlandı.',
+      seasonLabel,
+      resetRank,
       resetMonthly,
       totalUpdated: result.totalUpdated,
       batchCount: result.batchCount
     });
   } catch (error) {
-    res.status(400).json({ ok: false, error: error.message || 'Aylık aktiflik sıfırlanamadı.' });
+    res.status(400).json({ ok: false, error: error.message || 'Sezon sıfırlanamadı.' });
   }
 });
 
@@ -899,29 +723,26 @@ router.post('/admin/rewards/grant', requireAdminPermission('rewards.write'), asy
     const reason = cleanStr(req.body?.reason || '', 240);
     if (!uid || !amount) throw new Error('UID ve tutar zorunlu.');
 
-    const grant = await grantReward({
-      uid,
-      amount,
-      source: 'admin_manual_grant',
-      referenceId: `admin:${req.user.uid}`,
-      idempotencyKey: cleanStr(req.body?.idempotencyKey || `admin_manual:${req.user.uid}:${uid}:${nowMs()}`, 220),
-      actorUid: req.user.uid,
-      reason,
-      userPatch: {
-        lastManualRewardAt: nowMs(),
-        lastManualRewardAmount: amount,
-        lastManualRewardReason: reason
-      }
-    });
+    await colUsers().doc(uid).set({
+      balance: admin.firestore.FieldValue.increment(amount),
+      updatedAt: nowMs(),
+      lastManualRewardAt: nowMs(),
+      lastManualRewardAmount: amount,
+      lastManualRewardReason: reason
+    }, { merge: true });
 
     await recordAdminAudit(req, {
       action: 'reward.manual_grant',
       targetType: 'user',
       targetId: uid,
-      metadata: { amount, reason, ledgerId: grant.id, duplicated: !!grant.duplicated }
+      metadata: { amount, reason }
     });
+    await Promise.allSettled([
+      recordRewardLedger({ uid, amount, source: 'admin_manual_grant', referenceId: req.user.uid, meta: { reason } }),
+      createNotification({ uid, type: 'reward', title: 'Manuel ödül', body: `${amount} MC hesabına eklendi.`, data: { source: 'admin_manual_grant', amount, reason } })
+    ]);
 
-    res.json({ ok: true, uid, amount, ledgerId: grant.id, duplicated: !!grant.duplicated });
+    res.json({ ok: true, uid, amount });
   } catch (error) {
     res.status(400).json({ ok: false, error: error.message || 'Ödül verilemedi.' });
   }
@@ -1025,7 +846,7 @@ router.get('/admin/platform/control', requireAdminPermission('system.read'), asy
     const control = buildPlatformControlSnapshot({
       featureFlags: flags,
       recentErrors,
-      rewardCatalogSummary: buildRewardCatalogSummary({ includePrivate: true }),
+      rewardCatalogSummary: { total: 0, sources: [] },
       users,
       opsHealth
     });
@@ -1090,217 +911,5 @@ router.get('/admin/deployment-health', requireAdminPermission('system.read'), as
 });
 
 
-
-
-
-router.get('/admin/matrix/dashboard', requireAdminPermission('admin.read', 'users.read'), async (_req, res) => {
-  try {
-    const [userCount, mutedCount, deletedCount, flags, economy, recentErrors] = await Promise.all([
-      getCount(colUsers()),
-      countUsersByScan((row) => restrictionSnapshot(row).globalChatBlocked || !!row.isMuted),
-      countUsersByScan((row) => safeNum(row.deletedAt, 0) > 0 || !!row.disabledAt),
-      getFeatureFlagsDocument(),
-      summarizeEconomyAndRooms(),
-      listOpsErrors(24)
-    ]);
-
-    return res.json({
-      ok: true,
-      metrics: {
-        userCount,
-        mutedCount,
-        deletedCount,
-        dailyMcSpend: economy.dailyMcSpend,
-        totalProfit: economy.totalProfit,
-        totalLoss: economy.totalLoss,
-        openRoomCount: economy.openRoomCount
-      },
-      maintenance: {
-        crash: !!flags.crashMaintenance,
-        pisti: !!flags.pistiMaintenance,
-        chess: !!flags.chessMaintenance,
-        classic: !!flags.classicGamesMaintenance,
-        global: !!flags.maintenanceMode
-      },
-      issues: {
-        games: GAME_ISSUES,
-        systems: SOCIAL_ISSUES,
-        recentErrors
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || 'Dashboard yüklenemedi.' });
-  }
-});
-
-router.post('/admin/matrix/reset-nuclear', requireAdminPermission('users.write'), async (req, res) => {
-  try {
-    const confirmText = cleanStr(req.body?.confirmText || '', 120).toUpperCase();
-    if (confirmText !== 'ONAYLIYORUM') throw new Error('Onay metni hatalı.');
-    const requestedFields = Array.isArray(req.body?.fields)
-      ? req.body.fields.map((item) => cleanStr(item, 60)).filter((item) => Object.prototype.hasOwnProperty.call(REMOTE_DEFAULTS, item))
-      : [];
-    if (!requestedFields.length) throw new Error('Sıfırlanacak alan seçilmedi.');
-    const now = nowMs();
-    const result = await runUserBatches((doc) => {
-      const currentUser = doc.data() || {};
-      const requestedPatch = { updatedAt: now, lastBulkResetAt: now, lastBulkResetBy: _req.user.uid };
-      requestedFields.forEach((field) => { requestedPatch[field] = REMOTE_DEFAULTS[field]; });
-      const mergedUser = { ...currentUser, ...requestedPatch };
-      const canonicalState = buildCanonicalUserState(mergedUser, { defaultFrame: 0 });
-      return {
-        ...requestedPatch,
-        ...canonicalState,
-        ...normalizeUserRankState({ ...mergedUser, ...canonicalState })
-      };
-    });
-    await recordAdminAudit(_req, { action: 'matrix.reset_nuclear', targetType: 'system', targetId: 'all_users', metadata: { fields: requestedFields, totalUpdated: result.totalUpdated } });
-    return res.json({ ok: true, totalUpdated: result.totalUpdated, fields: requestedFields });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Toplu sıfırlama başarısız.' });
-  }
-});
-
-router.post('/admin/matrix/restrict-user', requireAdminPermission('moderation.write'), async (req, res) => {
-  try {
-    const target = await resolveUserByIdentifier(req.body?.identifier || req.body?.uid || '');
-    const action = cleanStr(req.body?.action || '', 64).toLowerCase();
-    const durationMinutes = Math.max(0, Math.min(5256000, Math.floor(safeNum(req.body?.durationMinutes, 0))));
-    const confirmText = cleanStr(req.body?.confirmText || '', 120).toUpperCase();
-    const reason = cleanStr(req.body?.reason || '', 500);
-    if (confirmText !== 'ONAYLIYORUM') throw new Error('Onay metni hatalı.');
-    if (!['games_mute', 'global_chat_mute', 'dm_mute', 'ban'].includes(action)) throw new Error('Geçersiz işlem.');
-    const until = durationMinutes > 0 ? nowMs() + (durationMinutes * 60 * 1000) : 0;
-    const patch = { moderationReason: reason, moderationUpdatedAt: nowMs(), updatedAt: nowMs() };
-    if (action === 'games_mute') patch.gamesRestrictedUntil = until;
-    if (action === 'global_chat_mute') patch.globalChatMutedUntil = until;
-    if (action === 'dm_mute') patch.dmChatMutedUntil = until;
-    if (action === 'ban') {
-      patch.isBanned = true;
-      patch.globalChatMutedUntil = 0;
-      patch.dmChatMutedUntil = 0;
-      patch.gamesRestrictedUntil = 0;
-    }
-    await colUsers().doc(target.uid).set(patch, { merge: true });
-    await createNotification({ uid: target.uid, type: 'system', title: 'Yönetici işlemi', body: reason || 'Hesabın üzerinde yönetici kısıtlaması güncellendi.', data: { action, until, source: 'admin_matrix' } }).catch(() => null);
-    await recordAdminAudit(_req, { action: `matrix.restrict.${action}`, targetType: 'user', targetId: target.uid, metadata: { durationMinutes, reason } });
-    return res.json({ ok: true, uid: target.uid, action, until });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Kısıtlama işlemi başarısız.' });
-  }
-});
-
-router.post('/admin/matrix/reward-user', requireAdminPermission('rewards.write'), async (req, res) => {
-  try {
-    const target = await resolveUserByIdentifier(req.body?.identifier || req.body?.uid || '');
-    const confirmText = cleanStr(req.body?.confirmText || '', 120).toUpperCase();
-    const amount = Math.max(1, Math.min(100000000, Math.floor(safeSignedNum(req.body?.amount, 0))));
-    const reason = cleanStr(req.body?.reason || '', 240);
-    if (confirmText !== 'ONAYLIYORUM') throw new Error('Onay metni hatalı.');
-    const grant = await grantReward({
-      uid: target.uid,
-      amount,
-      source: 'admin_manual_grant',
-      referenceId: `admin_matrix:${_req.user.uid}`,
-      idempotencyKey: cleanStr(req.body?.idempotencyKey || `admin_matrix_user:${_req.user.uid}:${target.uid}:${nowMs()}`, 220),
-      actorUid: _req.user.uid,
-      reason
-    });
-    await recordAdminAudit(_req, { action: 'matrix.reward_user', targetType: 'user', targetId: target.uid, metadata: { amount, reason, ledgerId: grant.id, duplicated: !!grant.duplicated } });
-    return res.json({ ok: true, uid: target.uid, amount, ledgerId: grant.id, duplicated: !!grant.duplicated });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Kullanıcı ödülü verilemedi.' });
-  }
-});
-
-router.post('/admin/matrix/reward-all', requireAdminPermission('rewards.write'), async (req, res) => {
-  try {
-    const confirmText = cleanStr(req.body?.confirmText || '', 120).toUpperCase();
-    const amount = Math.max(1, Math.min(1000000, Math.floor(safeSignedNum(req.body?.amount, 0))));
-    const reason = cleanStr(req.body?.reason || '', 240);
-    if (confirmText !== 'ONAYLIYORUM') throw new Error('Onay metni hatalı.');
-    const bulkId = cleanStr(req.body?.bulkId || `admin_reward_all:${_req.user.uid}:${nowMs()}`, 180);
-    const result = await grantRewardToAllUsers({
-      amount,
-      source: 'admin_bulk_grant',
-      referenceId: bulkId,
-      bulkId,
-      actorUid: _req.user.uid,
-      reason,
-      meta: { operation: 'matrix.reward_all' }
-    });
-    await recordAdminAudit(_req, { action: 'matrix.reward_all', targetType: 'system', targetId: 'all_users', metadata: { amount, reason, ...result } });
-    return res.json({ ok: true, totalUpdated: result.totalGranted, amount, reason, ...result });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Toplu ödül verilemedi.' });
-  }
-});
-
-router.post('/admin/matrix/promo-codes', requireAdminPermission('rewards.write'), async (req, res) => {
-  try {
-    const code = cleanStr(req.body?.code || '', 40).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
-    const amount = Math.max(1, Math.min(100000000, Math.floor(safeSignedNum(req.body?.amount, 0))));
-    const usageLimit = Math.max(1, Math.min(1000000, Math.floor(safeNum(req.body?.usageLimit, 1))));
-    const durationHours = Math.max(1, Math.min(8760, Math.floor(safeNum(req.body?.durationHours, 24))));
-    const onePerAccount = req.body?.onePerAccount !== false;
-    if (!code || code.length < 4) throw new Error('Promo kodu geçersiz.');
-    const exists = await colPromos().doc(code).get();
-    if (exists.exists) throw new Error('Bu promo kodu zaten var.');
-    await colPromos().doc(code).set({
-      code,
-      normalizedCode: code,
-      amount,
-      limitLeft: usageLimit,
-      limitInitial: usageLimit,
-      onePerAccount,
-      active: true,
-      createdAt: nowMs(),
-      expiresAt: nowMs() + (durationHours * 60 * 60 * 1000),
-      createdByUid: _req.user.uid,
-      description: cleanStr(req.body?.description || '', 240)
-    }, { merge: true });
-    await recordAdminAudit(_req, { action: 'matrix.promo_create', targetType: 'promo', targetId: code, metadata: { amount, usageLimit, durationHours, onePerAccount } });
-    return res.json({ ok: true, code, amount, usageLimit, durationHours, onePerAccount });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Promo kod oluşturulamadı.' });
-  }
-});
-
-router.get('/admin/matrix/promos', requireAdminPermission('rewards.read'), async (_req, res) => {
-  try {
-    const snap = await colPromos().orderBy('createdAt', 'desc').limit(40).get().catch(() => ({ docs: [] }));
-    const items = (snap.docs || []).map((doc) => ({ id: doc.id, ...(serializeValue(doc.data() || {})) }));
-    return res.json({ ok: true, items });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || 'Promo kod listesi alınamadı.' });
-  }
-});
-
-router.patch('/admin/matrix/maintenance', requireAdminPermission('system.read'), async (_req, res) => {
-  try {
-    const current = await getFeatureFlagsDocument();
-    const nextFlags = sanitizeFeatureFlags({
-      ...current,
-      crashMaintenance: _req.body?.crash === true,
-      pistiMaintenance: _req.body?.pisti === true,
-      chessMaintenance: _req.body?.chess === true,
-      classicGamesMaintenance: _req.body?.classic === true
-    }, DEFAULT_FEATURE_FLAGS);
-    await setFeatureFlagsDocument(nextFlags, _req.user?.uid || '');
-    await recordAdminAudit(_req, { action: 'matrix.maintenance_update', targetType: 'system', targetId: 'maintenance', metadata: { crash: nextFlags.crashMaintenance, pisti: nextFlags.pistiMaintenance, chess: nextFlags.chessMaintenance, classic: nextFlags.classicGamesMaintenance } });
-    return res.json({ ok: true, maintenance: { crash: nextFlags.crashMaintenance, pisti: nextFlags.pistiMaintenance, chess: nextFlags.chessMaintenance, classic: nextFlags.classicGamesMaintenance } });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Bakım modu güncellenemedi.' });
-  }
-});
-
-router.get('/admin/matrix/issues', requireAdminPermission('system.read'), async (_req, res) => {
-  try {
-    const recentErrors = await listOpsErrors(50);
-    return res.json({ ok: true, games: GAME_ISSUES, systems: SOCIAL_ISSUES, recentErrors });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || 'Hata listesi alınamadı.' });
-  }
-});
 
 module.exports = router;

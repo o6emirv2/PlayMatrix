@@ -1,137 +1,19 @@
+// engines/crashEngine.js
 'use strict';
 
 const crypto = require('crypto');
 const { db, admin } = require('../config/firebase');
 const { 
   CRASH_MIN_AUTO, CRASH_MAX_AUTO, CRASH_MAX_MULTIPLIER, 
-  CRASH_TICK_MS, CRASH_FULL_STATE_EVERY, AUTO_CASHOUT_BATCH_SIZE, AUTO_CASHOUT_RETRY_DELAY_MS,
-  GAME_RESULT_CODES, GAME_SETTLEMENT_STATUS
+  CRASH_TICK_MS, CRASH_FULL_STATE_EVERY, AUTO_CASHOUT_BATCH_SIZE, AUTO_CASHOUT_RETRY_DELAY_MS 
 } = require('../config/constants');
-const { safeFloat, safeNum, clamp, nowMs, cleanStr } = require('../utils/helpers');
-const { saveMatchHistory } = require('../utils/matchHistory');
-const { recordGameAudit } = require('../utils/gameAudit');
+const { safeFloat, clamp, nowMs } = require('../utils/helpers');
 
 const colUsers = () => db.collection('users');
 
-
-const colCrashBets = () => db.collection('crash_bets');
-
-function buildCrashHistoryEntry({ betId = '', uid = '', roundId = '', amount = 0, payout = 0, resultCode = '', crashPoint = 0, cashoutMult = 0, createdAt = 0 } = {}) {
-  const safeBetId = cleanStr(betId || '', 180);
-  const safeUid = cleanStr(uid || '', 160);
-  if (!safeBetId || !safeUid) return null;
-  const rewardMc = Math.floor(Number.isFinite(Number(payout)) ? Number(payout) : 0);
-  const stakeMc = Math.floor(Number.isFinite(Number(amount)) ? Number(amount) : 0);
-  const netMc = rewardMc - stakeMc;
-  return {
-    id: `crash_${safeBetId}`,
-    gameType: 'crash',
-    roomId: cleanStr(roundId || safeBetId, 160),
-    status: 'finished',
-    result: resultCode === GAME_RESULT_CODES.CRASH_CRASHED_LOSS ? 'crashed_loss' : (resultCode === GAME_RESULT_CODES.CRASH_CASHOUT_AUTO ? 'auto_cashout' : 'cashout'),
-    winnerUid: netMc > 0 ? safeUid : '',
-    loserUid: netMc < 0 ? safeUid : '',
-    participants: [safeUid],
-    rewards: { mc: rewardMc, stakeMc, netMc },
-    meta: {
-      resultCode: cleanStr(resultCode || '', 64),
-      roundId: cleanStr(roundId || '', 160),
-      crashPoint: safeFloat(crashPoint),
-      cashoutMult: safeFloat(cashoutMult)
-    },
-    createdAt: createdAt || nowMs()
-  };
-}
-
-async function persistCrashSettlementArtifacts({ uid = '', betId = '', roundId = '', amount = 0, payout = 0, resultCode = '', crashPoint = 0, cashoutMult = 0, meta = {}, idempotencyKey = '' } = {}) {
-  const historyEntry = buildCrashHistoryEntry({ betId, uid, roundId, amount, payout, resultCode, crashPoint, cashoutMult, createdAt: nowMs() });
-  const tasks = [];
-  if (historyEntry) tasks.push(saveMatchHistory(historyEntry));
-  tasks.push(recordGameAudit({
-    gameType: 'crash',
-    entityType: 'bet',
-    entityId: betId,
-    roomId: roundId,
-    roundId,
-    betId,
-    eventType: 'bet_settled',
-    resultCode,
-    reason: cleanStr(meta?.reason || '', 48),
-    status: GAME_SETTLEMENT_STATUS.SETTLED,
-    actorUid: uid,
-    subjectUid: uid,
-    amount,
-    payout,
-    meta,
-    idempotencyKey
-  }));
-  await Promise.allSettled(tasks);
-}
-
-function isCrashBetAlreadySettled(record = {}) {
-  const settlementStatus = cleanStr(record.settlementStatus || '', 24);
-  return safeNum(record.settledAt, 0) > 0 || settlementStatus === GAME_SETTLEMENT_STATUS.SETTLED || record.cashed === true;
-}
-
-async function settleSingleCrashLoss({ uid = '', bet = {}, boxKey = '', roundId = '', crashPoint = 0, settledAt = nowMs() } = {}) {
-  if (!uid || !bet?.betId) return null;
-  return db.runTransaction(async (tx) => {
-    const betRef = colCrashBets().doc(bet.betId);
-    const betSnap = await tx.get(betRef);
-    if (!betSnap.exists) return null;
-    const betDoc = betSnap.data() || {};
-    if (isCrashBetAlreadySettled(betDoc)) return null;
-    if (cleanStr(betDoc.uid || '', 160) !== cleanStr(uid || '', 160)) return null;
-    if (cleanStr(betDoc.roundId || '', 160) !== cleanStr(roundId || bet.roundId || '', 160)) return null;
-
-    tx.update(betRef, {
-      status: 'settled',
-      settlementStatus: GAME_SETTLEMENT_STATUS.SETTLED,
-      resultCode: GAME_RESULT_CODES.CRASH_CRASHED_LOSS,
-      resultReason: 'crashed_loss',
-      settledAt,
-      updatedAt: settledAt,
-      cashoutSource: '',
-      win: 0,
-      cashoutMult: 0,
-      crashPoint: safeFloat(crashPoint)
-    });
-
-    return {
-      uid,
-      betId: bet.betId,
-      amount: bet.bet,
-      payout: 0,
-      resultCode: GAME_RESULT_CODES.CRASH_CRASHED_LOSS,
-      cashoutMult: 0,
-      crashPoint: safeFloat(crashPoint),
-      meta: { box: bet.box || (boxKey === 'box2' ? 2 : 1), reason: 'crashed_loss' },
-      idempotencyKey: `crash:${bet.betId}:crashed_loss`
-    };
-  });
-}
-
-async function settleCrashRoundLosses(roundId = '', crashPoint = 0) {
-  const safeRoundId = cleanStr(roundId || '', 160);
-  if (!safeRoundId) return;
-  const settledAt = nowMs();
-  const candidates = [];
-  Object.entries(engineState.crashState.players || {}).forEach(([uid, player]) => {
-    ['box1', 'box2'].forEach((boxKey) => {
-      const bet = player && player[boxKey];
-      if (!bet || !bet.betId || bet.cashed || bet.cashingOut) return;
-      candidates.push({ uid, bet, boxKey, roundId: safeRoundId, crashPoint, settledAt });
-    });
-  });
-  if (!candidates.length) return;
-
-  const settled = await Promise.allSettled(candidates.map((item) => settleSingleCrashLoss(item)));
-  const artifacts = settled
-    .filter((item) => item.status === 'fulfilled' && item.value)
-    .map((item) => item.value);
-  await Promise.allSettled(artifacts.map((item) => persistCrashSettlementArtifacts({ ...item, roundId: safeRoundId })));
-}
-
+// ---------------------------------------------------------
+// BOT VERİLERİ VE YARDIMCILAR
+// ---------------------------------------------------------
 const botAvatarLinks = [
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5zAeu-cciaZQRBbbgfvokkXU8IauErIJ3WaeoXtHtVg&s=10",
       "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKLBdAAxI0eLkwSo408HEo38rFAu632wNxoZByHpOVdQ&s=10",
@@ -201,25 +83,51 @@ const botAvatarLinks = [
     ];
 
 const botUsernames = [
+  // --- MEVCUT İSİMLER ---
   "AhmetBey", "GizemliOyuncu", "Mehmet34", "Kral1903", "ZeynepX", "YusufEfe",
-  "CanerTR", "AyseNur", "ProOyuncu", "EfsaneTR", "ElifK", "AliK",
+  "CryptoEmre", "CanerVIP", "AyseNur", "ProOyuncu", "EfsaneTR", "ElifK",
+  "AliK", "VipGamer", "LuckyStrike", "DarkKnight", "CetinBaba", "Fenerli1907",
+
+  // --- İSİM + PLAKA / DOĞUM YILI (En Sık Rastlananlar) ---
   "Burak99", "Merve35", "Okan_06", "Ceren1998", "Hakan34", "Volkan88",
   "Emirhan55", "Selin07", "Tarik1923", "Berkay41", "Arda2005", "Buse_16",
-  "Tolga_01", "Yasin61", "Gokhan27", "Asli_34", "Cemal55", "Deniz1905",
-  "Tugay42", "Esra1995", "Halil63", "Kaan2001", "Busra09", "Ozgur35",
+  "Tolga_01", "Yasin.61", "Gokhan27", "Asli_34", "Cemal.55", "Deniz_1905",
+  "Tugay_42", "Esra1995", "Halil.63", "Kaan2001", "Busra_09", "Ozgur.35",
+
+  // --- TÜRK OYUNCU KÜLTÜRÜ LAKAPLARI ---
   "KemalReis", "SinanKaptan", "RizaBaba", "UgurHoca", "TugbaHanim",
   "YasarDayi", "CemBaskan", "KadirAga", "DeliEmin", "SariMuzo",
-  "DoktorAli", "UstaKemal", "SoforRiza", "KralSaban", "Dayi06",
+  "GaddarKerim", "DoktorAli", "Usta_Kemal", "SoforRiza", "Kral_Saban",
+  "Dayi_06", "TeyzeOglu", "Asabi_Genç", "Kralice", "Pasa_Kemal",
+
+  // --- CASİNO, KRİPTO & OYUN TEMALI (Gerçekçi) ---
+  "SlotKrali", "Btc_Kadir", "Katlayici", "Riskci_34", "ParaBabasi", 
+  "JackpotAvcisi", "RuletEfsanesi", "All_In_Ahmet", "Batakci", "OkeyPro", 
+  "Zar_Tutan", "Blofcu", "Banko_Cemal", "KriptoKral", "Vip_Eren", 
+  "KasaKatlayan", "Aviator_Pro", "Crash_Uzmani", "SanalAlem", "Carkci",
+  "KasaHerZamanKazanir", "Vurguncu_06", "X_Avcisi", "Katlama_Pro",
+
+  // --- GÜNLÜK / SIRADAN (İsim + Soyisim Baş Harfi) ---
+  "Yunus_E", "Fatma_K", "AliCan_S", "Umut_D", "Erdem_T", "Gizem_Y",
+  "Batu_B", "Ozan_C", "Caner_A", "Derya_M", "Furkan_K", "Ilayda_S",
+  "Kaan_Y", "Melis_B", "Omer_F", "Sarp_D", "Tugce_A", "Veli_K",
+  "Onur_H", "Cagla_E", "Burcu_S", "Emre_C", "Kerem_A", "Pelin_D",
+
+  // --- FUTBOL / TARAFTAR TEMALI ---
   "AslanGS", "KartalBjk", "Goztepeli35", "Trabzon61", "TexasliBursa",
-  "Carsi34", "Ultraslan", "GencFenerli", "BordoMavi", "KafKaf35",
-  "Esesli26", "Timsah16", "DemirBakan", "KirmiziKara", "Bozbaykus",
+  "Carsi_34", "Ultraslan", "GencFenerli", "BordoMavi", "KafKaf_35",
+  "Esesli_26", "Timsah_16", "DemirBakan", "KirmiziKara", "Bozbaykus",
   "Kanarya1907", "Cimbomlu", "Karakartal", "Tatanga54", "Yigido58",
-  "GeceKusu", "YalnizKurt", "SonVurus", "Karanlik", "Bela34",
-  "ZehirX", "RuzgarinOglu", "Suskun", "Golgeler", "KaosBeyi",
-  "KizilElma", "DemirYumruk", "SessizFirtina", "AyYildiz", "SokakKedisi",
-  "Kabus", "Mermi", "Hedef", "EfsaneX", "Oyuncu5490",
-  "User98341", "Guest772", "Ahmet7382", "Ali991", "Can9283",
-  "Pro1123", "Gamer445", "KullaniciX", "Anonim99", "MasaUstasi"
+
+  // --- OYUN İÇİ "HAVALI" NİCKLER (Edgy / Klasik) ---
+  "GeceKusu", "YalnizKurt", "SonVurus", "Karanlik", "Bela_34",
+  "Zehir_X", "RuzgarinOglu", "Suskun", "Vurguncu", "Golgeler",
+  "Kaos_Beyi", "Kizil_Elma", "DemirYumruk", "Sessiz_Firtina", "AyYildiz",
+  "SokakKedisi", "Kabus", "Mermi", "Hedef", "Efsane_X",
+
+  // --- RASTGELE SAYILI (Otomatik atanmış gibi duranlar) ---
+  "User98341", "Guest_772", "Oyuncu_5490", "Ahmet7382", "Ali_991",
+  "Can9283", "Pro_1123", "Gamer445", "X_Kullanici", "Anonim_99"
 ];
 
 function normalizeAutoCashout(value) {
@@ -234,7 +142,7 @@ function pickBotCount() {
   return packs[Math.floor(Math.random() * packs.length)];
 }
 
-function getBotLevelBandByBet(bet) {
+function getBotVipLevelByBet(bet) {
   const roll = Math.random();
   if (roll < 0.005 && safeFloat(bet) >= 2500) return 6;
   if (roll < 0.03 && safeFloat(bet) >= 1000) return 5;
@@ -272,8 +180,8 @@ function generateBots() {
 
   for (let i = 0; i < numBots; i++) {
       const bBet = betPool[Math.floor(Math.random() * betPool.length)];
-      const levelBand = getBotLevelBandByBet(bBet);
-      const accountLevel = [4, 8, 14, 22, 32, 45][levelBand - 1];
+      const vipLevel = getBotVipLevelByBet(bBet);
+      const rp = [480, 1450, 3550, 7200, 11800, 15000][vipLevel - 1];
 
       generatedBots.push({
           uid: `bot_${nowMs()}_${i}`,
@@ -286,8 +194,8 @@ function generateBots() {
           win: 0,
           cashoutMult: 0,
           isBot: true,
-          levelBand,
-          accountLevel
+          vipLevel,
+          rp
       });
   }
   return generatedBots;
@@ -306,6 +214,9 @@ function generateRoundProvablyFair() {
   return { serverSeed, hash, crashPoint: safeFloat(cappedCrash) };
 }
 
+// ---------------------------------------------------------
+// OYUN DURUMU (STATE)
+// ---------------------------------------------------------
 const engineState = {
   crashState: {
     phase: 'COUNTDOWN',
@@ -345,6 +256,9 @@ async function saveCrashHistory() {
   catch (e) { console.error('saveCrashHistory error:', e); }
 }
 
+// ---------------------------------------------------------
+// OTOMATİK ÇEKİM (AUTO CASHOUT) SİSTEMİ
+// ---------------------------------------------------------
 const autoCashoutQueue = new Map();
 let autoCashoutFlushRunning = false;
 
@@ -369,68 +283,25 @@ async function flushAutoCashoutQueue() {
   const entries = Array.from(autoCashoutQueue.values()).slice(0, AUTO_CASHOUT_BATCH_SIZE);
   for (const item of entries) {
       try {
-          const settledAt = nowMs();
-          const settlement = await db.runTransaction(async (tx) => {
-            const betRef = colCrashBets().doc(item.betId);
-            const betSnap = await tx.get(betRef);
-            if (!betSnap.exists) throw new Error('AUTO_CASHOUT_BET_NOT_FOUND');
-            const betDoc = betSnap.data() || {};
-            if (isCrashBetAlreadySettled(betDoc)) {
-              return {
-                duplicated: true,
-                resultCode: cleanStr(betDoc.resultCode || '', 64),
-                win: safeFloat(betDoc.win || 0),
-                cashoutMult: safeFloat(betDoc.cashoutMult || 0),
-                cashoutSource: cleanStr(betDoc.cashoutSource || '', 32)
-              };
-            }
-            if (cleanStr(betDoc.uid || '', 160) !== cleanStr(item.uid || '', 160)) throw new Error('AUTO_CASHOUT_UID_MISMATCH');
-
-            tx.update(betRef, {
-              cashed: true,
-              win: item.finalWin,
-              cashoutMult: item.finalMult,
-              updatedAt: settledAt,
-              status: 'settled',
-              settlementStatus: GAME_SETTLEMENT_STATUS.SETTLED,
-              resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_AUTO,
-              resultReason: 'cashout_auto',
-              settledAt,
-              cashoutSource: 'auto'
-            });
-            tx.update(colUsers().doc(item.uid), { balance: admin.firestore.FieldValue.increment(item.finalWin) });
-            return { duplicated: false, resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_AUTO, win: item.finalWin, cashoutMult: item.finalMult, cashoutSource: 'auto' };
-          });
-
+          const batch = db.batch();
+          batch.update(db.collection('crash_bets').doc(item.betId), { cashed: true, win: item.finalWin, cashoutMult: item.finalMult });
+          batch.update(colUsers().doc(item.uid), { balance: admin.firestore.FieldValue.increment(item.finalWin) });
+          await batch.commit();
+          
           autoCashoutQueue.delete(item.betId);
           const player = engineState.crashState.players[item.uid];
-          if (player && player[item.boxKey]) {
-            player[item.boxKey].cashingOut = false;
-            player[item.boxKey].cashed = true;
-            player[item.boxKey].win = settlement.win;
-            player[item.boxKey].cashoutMult = settlement.cashoutMult;
-            if (!settlement.duplicated) {
-              await persistCrashSettlementArtifacts({
-                uid: item.uid,
-                betId: item.betId,
-                roundId: cleanStr(player[item.boxKey].roundId || engineState.crashState.roundId || '', 160),
-                amount: player[item.boxKey].bet,
-                payout: item.finalWin,
-                resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_AUTO,
-                cashoutMult: item.finalMult,
-                meta: { box: player[item.boxKey].box || (item.boxKey === 'box2' ? 2 : 1), reason: 'cashout_auto' },
-                idempotencyKey: `crash:${item.betId}:cashout_auto`
-              }).catch(() => null);
-            }
-          }
+          if (player && player[item.boxKey]) player[item.boxKey].cashingOut = false;
           engineState.triggerUpdate();
       } catch (e) {
-          item.retryCount = Math.min(10, Math.floor(safeNum(item.retryCount, 0) + 1));
-          item.lastError = cleanStr(e?.message || e || 'auto_cashout_failed', 120);
-          item.lastRetryAt = nowMs();
-          autoCashoutQueue.set(item.betId, item);
-          const player = engineState.crashState.players[item.uid];
-          if (player && player[item.boxKey]) player[item.boxKey].cashingOut = false;
+          item.retryCount += 1;
+          if (item.retryCount >= 5) {
+              autoCashoutQueue.delete(item.betId);
+              const player = engineState.crashState.players[item.uid];
+              if (player && player[item.boxKey]) {
+                  player[item.boxKey].cashed = false; player[item.boxKey].cashingOut = false;
+                  player[item.boxKey].win = 0; player[item.boxKey].cashoutMult = 0;
+              }
+          } else { autoCashoutQueue.set(item.betId, item); }
           engineState.triggerUpdate();
           await new Promise(resolve => setTimeout(resolve, AUTO_CASHOUT_RETRY_DELAY_MS));
       }
@@ -452,6 +323,9 @@ function processAutoCashout(uid, boxKey, targetMult) {
   return true;
 }
 
+// ---------------------------------------------------------
+// MOTORU BAŞLATMA
+// ---------------------------------------------------------
 function initCrashEngine(io) {
   let tickCounter = 0;
 
@@ -510,7 +384,6 @@ function initCrashEngine(io) {
             state.phase = 'CRASHED'; state.endTime = now; state.currentMult = safeFloat(state.crashPoint);
             state.history.unshift(safeFloat(state.crashPoint));
             if (state.history.length > 15) state.history.pop();
-            settleCrashRoundLosses(String(state.roundId || ''), safeFloat(state.crashPoint)).catch(() => null);
             saveCrashHistory(); engineState.triggerUpdate();
         }
     } else if (state.phase === 'CRASHED') {

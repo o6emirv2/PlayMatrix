@@ -1,3 +1,4 @@
+// sockets/index.js
 'use strict';
 
 const crypto = require('crypto');
@@ -5,11 +6,10 @@ const { db, admin } = require('../config/firebase');
 const { safeNum, cleanStr, checkProfanity, nowMs } = require('../utils/helpers');
 const { touchUserActivity } = require('../utils/activity');
 const { captureError } = require('../utils/errorMonitor');
-const { logCaughtError } = require('../utils/logger');
 const { assertDmAllowed: assertDmAllowedInSocket, getPeerRelationshipFlags: getPeerRelationshipFlagsInSocket } = require('../utils/socialKit');
 const { createNotification } = require('../utils/notifications');
 const { assertNoOtherActiveGame } = require('../utils/gameSession');
-const { restrictionSnapshot, formatRestrictionMessage } = require('../utils/userRestrictions');
+const { awardRpFromSpend } = require('../utils/rpSystem');
 const {
   isUserOnlinePersistent,
   setPresence: persistPresence,
@@ -27,12 +27,9 @@ const {
 const {
   LOBBY_CHAT_MAX_LENGTH, LOBBY_CHAT_HISTORY_LIMIT, SOCKET_CHAT_WINDOW_MS, SOCKET_CHAT_MAX_PER_WINDOW,
   SOCKET_DM_WINDOW_MS, SOCKET_DM_MAX_PER_WINDOW, SOCKET_TYPING_WINDOW_MS, SOCKET_TYPING_MAX_PER_WINDOW,
-  SOCKET_INVITE_WINDOW_MS, SOCKET_INVITE_MAX_PER_WINDOW, PRESENCE_GRACE_MS, CHAT_RETENTION_POLICY,
-  LOBBY_CHAT_RETENTION_DAYS, DIRECT_CHAT_RETENTION_DAYS,
-  SOCKET_PING_INTERVAL_MS, SOCKET_STALE_TIMEOUT_MS, SOCKET_MEMORY_SWEEP_INTERVAL_MS
+  SOCKET_INVITE_WINDOW_MS, SOCKET_INVITE_MAX_PER_WINDOW, PRESENCE_GRACE_MS
 } = require('../config/constants');
 const { evaluateInviteRoomState } = require('../utils/gameFlow');
-const { getCanonicalSelectedFrame } = require('../utils/accountState');
 
 const colUsers = () => db.collection('users');
 const colFriends = () => db.collection('friends');
@@ -51,8 +48,8 @@ async function findPendingInviteBetweenUsers(hostUid, targetUid, roomId, gameKey
   if (!safeHostUid || !safeTargetUid || !safeRoomId || !safeGameKey) return { kind: 'none', invite: null };
   const now = nowMs();
   const [hostSnap, reverseSnap] = await Promise.all([
-    colGameInvites().where('hostUid', '==', safeHostUid).limit(30).get().catch((error) => { logCaughtError('socket.firestore_query', error); return ({ docs: [] }); }),
-    colGameInvites().where('hostUid', '==', safeTargetUid).limit(20).get().catch((error) => { logCaughtError('socket.firestore_query', error); return ({ docs: [] }); })
+    colGameInvites().where('hostUid', '==', safeHostUid).limit(30).get().catch(() => ({ docs: [] })),
+    colGameInvites().where('hostUid', '==', safeTargetUid).limit(20).get().catch(() => ({ docs: [] }))
   ]);
 
   const hostPending = (hostSnap.docs || [])
@@ -96,16 +93,6 @@ const userPresence = Object.create(null);
 const matchQueue = { pisti: [], chess: [] };
 const recentMessageFingerprints = new Map();
 
-function pruneTransientMaps() {
-  const now = Date.now();
-  for (const [key, bucket] of socketActionWindows.entries()) {
-    if (!bucket || safeNum(bucket.resetAt, 0) < (now - SOCKET_MEMORY_SWEEP_INTERVAL_MS)) socketActionWindows.delete(key);
-  }
-  for (const [key, meta] of recentMessageFingerprints.entries()) {
-    if (!meta || safeNum(meta.createdAt, 0) < (now - 5 * 60 * 1000)) recentMessageFingerprints.delete(key);
-  }
-}
-
 function getFirestoreTimestampMs(value, fallback = 0) {
   if (value && typeof value.toMillis === 'function') return safeNum(value.toMillis(), fallback);
   if (value instanceof Date) return safeNum(value.getTime(), fallback);
@@ -114,7 +101,11 @@ function getFirestoreTimestampMs(value, fallback = 0) {
 }
 
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+  if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+  const numericSelected = Number(user?.selectedFrame);
+  if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+  if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+  return Number.isFinite(Number(user?.activeFrame)) && Number(user?.activeFrame) > 0 ? Math.floor(Number(user?.activeFrame)) : 0;
 }
 
 function sanitizeStoredUsername(value = '') {
@@ -152,11 +143,11 @@ function normalizeGameType(value = '') {
 }
 
 function getGamePath(gameType = '') {
-  return normalizeGameType(gameType) === 'pisti' ? '/Online Oyunlar/Pisti.html' : '/Online Oyunlar/Satranc.html';
+  return normalizeGameType(gameType) === 'chess' ? '/Online Oyunlar/Satranc.html' : '/Online Oyunlar/Pisti.html';
 }
 
 function getGameDisplayName(gameType = '') {
-  return normalizeGameType(gameType) === 'pisti' ? 'Pişti' : 'Satranç';
+  return normalizeGameType(gameType) === 'chess' ? 'Satranç' : 'Pişti';
 }
 
 function friendshipDocId(uidA, uidB) {
@@ -212,7 +203,7 @@ async function isUserOnline(uid) {
 }
 
 function getPresenceActivity(status = 'IDLE', gameType = '') {
-  if (status === 'IN_GAME') return normalizeGameType(gameType) === 'pisti' ? 'Pişti Oynuyor' : 'Satranç Oynuyor';
+  if (status === 'IN_GAME') return gameType === 'chess' ? 'Satranç Oynuyor' : 'Pişti Oynuyor';
   if (status === 'MATCHMAKING') return 'Eşleşme Aranıyor...';
   if (status === 'OFFLINE') return '';
   return 'Lobide';
@@ -242,16 +233,9 @@ function getUserPresence(uid, fallback = {}) {
   };
 }
 
-function emitPresenceUpdate(io, uid, source = 'socket') {
+function emitPresenceUpdate(io, uid) {
   if (!io || !uid) return;
-  const presence = getUserPresence(uid);
-  io.emit('social:presence_update', {
-    uid,
-    presence,
-    source,
-    updatedAt: safeNum(presence?.updatedAt, Date.now()),
-    ts: Date.now()
-  });
+  io.emit('social:presence_update', { uid, presence: getUserPresence(uid), ts: Date.now() });
 }
 
 function updateUserPresence(io, uid, status = 'IDLE', activity = '', extras = {}) {
@@ -280,7 +264,7 @@ function updateUserPresence(io, uid, status = 'IDLE', activity = '', extras = {}
   if (extras.socketId) {
     touchSocketConnection({ socketId: extras.socketId, uid, status: nextStatus, activity: nextActivity, gameType: nextGameType }).catch(() => null);
   }
-  emitPresenceUpdate(io, uid, 'state_change');
+  emitPresenceUpdate(io, uid);
   return getUserPresence(uid);
 }
 
@@ -304,21 +288,15 @@ function getPersistentDirectChatId(uidA, uidB) {
 }
 
 function normalizeLobbyMessage(message = {}) {
-  const deletedAt = safeNum(message.deletedAt, 0);
-  const deletionMode = cleanStr(message.deletionMode || '', 32) || (deletedAt > 0 ? CHAT_RETENTION_POLICY.deleteModes.retention : '');
-  const deletedLabel = deletionMode === CHAT_RETENTION_POLICY.deleteModes.retention ? CHAT_RETENTION_POLICY.cleanupLabel : (deletedAt > 0 ? CHAT_RETENTION_POLICY.manualDeleteLabel : '');
   return {
     id: cleanStr(message.id || crypto.randomUUID(), 120),
     uid: cleanStr(message.uid || '', 160),
     username: sanitizeStoredUsername(message.username) || 'Oyuncu',
     avatar: typeof message.avatar === 'string' ? message.avatar : '',
+    rp: safeNum(message.rp, 0),
     selectedFrame: pickUserSelectedFrame(message),
-    message: deletedAt > 0 ? '' : cleanStr(message.message || '', LOBBY_CHAT_MAX_LENGTH),
-    createdAt: safeNum(message.createdAt || getFirestoreTimestampMs(message.timestamp, 0), nowMs()),
-    deletedAt,
-    deleted: deletedAt > 0,
-    deletionMode,
-    deletedLabel
+    message: cleanStr(message.message || '', LOBBY_CHAT_MAX_LENGTH),
+    createdAt: safeNum(message.createdAt || getFirestoreTimestampMs(message.timestamp, 0), nowMs())
   };
 }
 
@@ -326,6 +304,7 @@ async function loadLobbyChatHistory() {
   try {
     const snap = await colLobbyChat().orderBy('createdAt', 'desc').limit(LOBBY_CHAT_HISTORY_LIMIT).get();
     const rawMessages = snap.docs.map((doc) => normalizeLobbyMessage({ id: doc.id, ...(doc.data() || {}) }))
+      .filter((item) => item.message)
       .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
     const uniqueUids = Array.from(new Set(rawMessages.map((item) => cleanStr(item.uid || '', 160)).filter(Boolean)));
@@ -358,10 +337,10 @@ async function persistLobbyChatMessage(payload) {
       uid: payload.uid,
       username: payload.username,
       avatar: payload.avatar,
+      rp: payload.rp,
       selectedFrame: payload.selectedFrame,
       message: payload.message,
       createdAt: payload.createdAt,
-      expiresAt: payload.createdAt + (LOBBY_CHAT_RETENTION_DAYS * 24 * 60 * 60 * 1000),
       timestamp: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
   } catch (_) {}
@@ -369,10 +348,7 @@ async function persistLobbyChatMessage(payload) {
 
 function formatDirectMessagePayload(message = {}, meta = {}) {
   const createdAt = safeNum(message.createdAt || getFirestoreTimestampMs(message.timestamp, 0), nowMs());
-  const deletedAt = safeNum(message.deletedAt, 0);
-  const deletionMode = cleanStr(message.deletionMode || '', 32) || (deletedAt > 0 ? CHAT_RETENTION_POLICY.deleteModes.manual : '');
-  const deletedLabel = deletionMode === CHAT_RETENTION_POLICY.deleteModes.retention ? CHAT_RETENTION_POLICY.cleanupLabel : (deletedAt > 0 ? CHAT_RETENTION_POLICY.manualDeleteLabel : '');
-  const text = deletedAt > 0 ? '' : cleanStr(message.text || message.message || '', LOBBY_CHAT_MAX_LENGTH);
+  const text = cleanStr(message.text || message.message || '', LOBBY_CHAT_MAX_LENGTH);
   const sender = cleanStr(message.sender || message.fromUid || '', 160);
   const toUid = cleanStr(message.toUid || meta.toUid || '', 160);
   return {
@@ -387,12 +363,6 @@ function formatDirectMessagePayload(message = {}, meta = {}) {
     text,
     message: text,
     createdAt,
-    editedAt: safeNum(message.editedAt, 0),
-    deletedAt,
-    deleted: deletedAt > 0,
-    deletionMode,
-    deletedLabel,
-    deletedBy: cleanStr(message.deletedBy || '', 160),
     status: cleanStr(message.status || 'sent', 24) || 'sent',
     clientTempId: cleanStr(message.clientTempId || '', 120)
   };
@@ -438,10 +408,6 @@ async function loadDirectChatHistory(uid, targetUid) {
       selectedFrame: peerMeta.selectedFrame,
       text: data.text,
       createdAt: data.createdAt || getFirestoreTimestampMs(data.timestamp, nowMs()),
-      editedAt: data.editedAt,
-      deletedAt: data.deletedAt,
-      deletedBy: data.deletedBy,
-      deletionMode: data.deletionMode,
       status: data.status || 'sent'
     });
   }).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
@@ -468,6 +434,7 @@ async function validateInviteRoomOwnership(uid, roomId, gameType) {
   if (!['waiting', 'playing'].includes(cleanStr(room.status || 'waiting', 24))) throw new Error('Pişti odası aktif değil.');
   return room;
 }
+
 
 function assertInviteJoinable(room = {}, invite = {}, targetUid = '') {
   const decision = evaluateInviteRoomState(room, invite, targetUid);
@@ -501,7 +468,6 @@ async function markDirectMessagesRead(readerUid, peerUid, limit = 200) {
   const readAt = nowMs();
   messagesSnap.docs.forEach((doc) => {
     const data = doc.data() || {};
-    if (safeNum(data.deletedAt, 0) > 0 || cleanStr(data.status || 'sent', 24) === 'deleted') return;
     if (cleanStr(data.sender || '', 160) === targetUid && cleanStr(data.status || 'sent', 24) !== 'read') {
       batch.set(doc.ref, { status: 'read', readAt }, { merge: true });
       changed += 1;
@@ -523,7 +489,7 @@ function isDuplicateMessage(uid, text, scope = '') {
   return last > 0 && (now - last) < 4000;
 }
 
-async function createMatchmakingRoom(gameType, uidA, uidB) {
+async function createMatchmakingRoom(gameType, uidA, uidB, options = {}) {
   const safeGameType = normalizeGameType(gameType);
   if (!safeGameType || !uidA || !uidB || uidA === uidB) throw new Error('Geçersiz eşleşme.');
   await assertNoOtherActiveGame(uidA, { allowGameType: safeGameType });
@@ -534,21 +500,194 @@ async function createMatchmakingRoom(gameType, uidA, uidB) {
     if (!aSnap.exists || !bSnap.exists) throw new Error('Oyuncular bulunamadı.');
     const a = aSnap.data() || {};
     const b = bSnap.data() || {};
-    const [aUsername, bUsername] = await Promise.all([resolvePublicUsername(uidA, a), resolvePublicUsername(uidB, b)]);
+    const [aUsername, bUsername] = await Promise.all([
+      resolvePublicUsername(uidA, a),
+      resolvePublicUsername(uidB, b)
+    ]);
 
-    const roomRef = colChess().doc();
-    tx.set(roomRef, {
-      host: { uid: uidA, username: aUsername, avatar: a.avatar || null, selectedFrame: pickUserSelectedFrame(a), lastPing: nowMs() },
-      guest: { uid: uidB, username: bUsername, avatar: b.avatar || null, selectedFrame: pickUserSelectedFrame(b), lastPing: nowMs() },
-      status: 'playing',
-      bet: 0,
-      fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
-      turn: 'w',
-      winner: null,
+    if (safeGameType === 'chess') {
+      const roomRef = colChess().doc();
+      tx.set(roomRef, {
+        host: { uid: uidA, username: aUsername, avatar: a.avatar || null, selectedFrame: pickUserSelectedFrame(a), lastPing: nowMs() },
+        guest: { uid: uidB, username: bUsername, avatar: b.avatar || null, selectedFrame: pickUserSelectedFrame(b), lastPing: nowMs() },
+        status: 'playing',
+        bet: 0,
+        fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+        turn: 'w',
+        winner: null,
+        createdAt: nowMs(),
+        updatedAt: nowMs()
+      });
+      return { roomId: roomRef.id, gameType: 'chess', gamePath: '/Online Oyunlar/Satranc.html' };
+    }
+
+    const mode = ['2-52', '2-104', '4-104'].includes(cleanStr(options.mode, 16)) ? cleanStr(options.mode, 16) : '2-52';
+    const bet = Math.max(1, Math.min(10000000, Math.floor(safeNum(options.bet, 1000))));
+    if (safeNum(a.balance, 0) < bet || safeNum(b.balance, 0) < bet) throw new Error('MATCHMAKE_INSUFFICIENT_BALANCE');
+
+    tx.update(aSnap.ref, { balance: admin.firestore.FieldValue.increment(-bet) });
+    tx.update(bSnap.ref, { balance: admin.firestore.FieldValue.increment(-bet) });
+    awardRpFromSpend(tx, aSnap.ref, a, bet, 'PISTI_MATCHMAKE', { activityScore: 0 });
+    awardRpFromSpend(tx, bSnap.ref, b, bet, 'PISTI_MATCHMAKE', { activityScore: 0 });
+
+    const roomRef = colOnlinePisti().doc();
+    const deckCount = mode === '2-104' || mode === '4-104' ? 2 : 1;
+    const maxPlayers = mode === '4-104' ? 4 : 2;
+    const deck = [];
+    const suits = ['H', 'D', 'C', 'S'];
+    const vals = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K'];
+    for (let d = 0; d < deckCount; d += 1) {
+      for (const s of suits) for (const v of vals) deck.push(`${v + s}|${crypto.randomBytes(4).toString('hex')}`);
+    }
+    for (let i = deck.length - 1; i > 0; i -= 1) {
+      const j = crypto.randomInt(0, i + 1);
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    const room = {
+      mode,
+      maxPlayers,
+      deckCount,
+      bet,
+      isPrivate: false,
+      roomName: mode === '4-104' ? 'Takım Lobisi' : 'Hızlı Eşleşme',
+      password: '',
+      tableCards: [],
+      deck,
+      turn: 0,
+      status: maxPlayers === 2 ? 'playing' : 'waiting',
+      finishReason: '',
+      isFirstDeal: true,
       createdAt: nowMs(),
-      updatedAt: nowMs()
-    });
-    return { roomId: roomRef.id, gameType: 'chess', gamePath: '/Online Oyunlar/Satranc.html' };
+      updatedAt: nowMs(),
+      players: [
+        { uid: uidA, username: aUsername, avatar: a.avatar || null, selectedFrame: pickUserSelectedFrame(a), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 },
+        { uid: uidB, username: bUsername, avatar: b.avatar || null, selectedFrame: pickUserSelectedFrame(b), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 }
+      ]
+    };
+
+    if (maxPlayers === 2) {
+      room.tableCards = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+      room.players = room.players.map((player) => ({ ...player, hand: [deck.pop(), deck.pop(), deck.pop(), deck.pop()] }));
+      room.turn = crypto.randomInt(0, 2);
+    }
+
+    tx.set(roomRef, room);
+    return { roomId: roomRef.id, gameType: 'pisti', gamePath: '/Online Oyunlar/Pisti.html', mode, bet, status: room.status, participantUids: room.players.map((player) => player.uid) };
+  });
+}
+
+function startQueuedPistiRoom(room) {
+  const deckCount = Math.max(1, Math.min(2, safeNum(room.deckCount, room.mode === '4-104' || room.mode === '2-104' ? 2 : 1)));
+  if (!Array.isArray(room.deck) || room.deck.length < ((Array.isArray(room.players) ? room.players.length : 0) * 4 + 4)) {
+    const suits = ['H', 'D', 'C', 'S'];
+    const vals = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K'];
+    const deck = [];
+    for (let d = 0; d < deckCount; d += 1) {
+      for (const s of suits) for (const v of vals) deck.push(`${v + s}|${crypto.randomBytes(4).toString('hex')}`);
+    }
+    for (let i = deck.length - 1; i > 0; i -= 1) {
+      const j = crypto.randomInt(0, i + 1);
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    room.deck = deck;
+  }
+
+  room.status = 'playing';
+  room.finishReason = '';
+  room.winner = [];
+  room.tableCards = [room.deck.pop(), room.deck.pop(), room.deck.pop(), room.deck.pop()];
+  room.players = (room.players || []).map((player) => ({
+    ...player,
+    hand: [room.deck.pop(), room.deck.pop(), room.deck.pop(), room.deck.pop()],
+    processingUntil: 0
+  }));
+  room.turn = crypto.randomInt(0, Math.max(1, room.players.length));
+  room.isFirstDeal = true;
+  room.lastCapturer = null;
+  room.lastEvent = null;
+}
+
+async function tryJoinExistingTeamLobby(uid, options = {}) {
+  const mode = cleanStr(options.mode || '', 16);
+  if (mode !== '4-104') return null;
+  const bet = Math.max(1, Math.min(10000000, Math.floor(safeNum(options.bet, 1000))));
+
+  return db.runTransaction(async (tx) => {
+    const uRef = colUsers().doc(uid);
+    const uSnap = await tx.get(uRef);
+    if (!uSnap.exists) throw new Error('Kullanıcı bulunamadı.');
+    const userData = uSnap.data() || {};
+    if (safeNum(userData.balance, 0) < bet) throw new Error('MATCHMAKE_INSUFFICIENT_BALANCE');
+
+    const candidateSnap = await tx.get(
+      colOnlinePisti()
+        .where('status', '==', 'waiting')
+        .where('isPrivate', '==', false)
+        .where('mode', '==', '4-104')
+        .where('bet', '==', bet)
+        .limit(10)
+    );
+
+    const candidateDocs = (candidateSnap.docs || [])
+      .map((doc) => ({ doc, data: doc.data() || {} }))
+      .filter((entry) => {
+        const players = Array.isArray(entry.data.players) ? entry.data.players : [];
+        const maxPlayers = Math.max(2, safeNum(entry.data.maxPlayers, 4));
+        return players.length >= 2
+          && players.length < maxPlayers
+          && !players.some((player) => cleanStr(player?.uid || '', 160) === uid);
+      })
+      .sort((a, b) => {
+        const aPlayers = Array.isArray(a.data.players) ? a.data.players.length : 0;
+        const bPlayers = Array.isArray(b.data.players) ? b.data.players.length : 0;
+        if (bPlayers !== aPlayers) return bPlayers - aPlayers;
+        return safeNum(a.data.createdAt, 0) - safeNum(b.data.createdAt, 0);
+      });
+
+    if (!candidateDocs.length) return null;
+
+    const chosen = candidateDocs[0];
+    const room = chosen.data;
+    const players = [
+      ...(Array.isArray(room.players) ? room.players : []),
+      {
+        uid,
+        username: await resolvePublicUsername(uid, userData),
+        avatar: userData.avatar || null,
+        selectedFrame: pickUserSelectedFrame(userData),
+        score: 0,
+        cardCount: 0,
+        hand: [],
+        lastPing: nowMs(),
+        processingUntil: 0
+      }
+    ];
+
+    tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
+    awardRpFromSpend(tx, uRef, userData, bet, 'PISTI_MATCHMAKE', { activityScore: 0 });
+
+    const updated = {
+      ...room,
+      players,
+      updatedAt: nowMs(),
+      finishReason: ''
+    };
+
+    if (players.length === Math.max(2, safeNum(room.maxPlayers, 4))) {
+      startQueuedPistiRoom(updated);
+    }
+
+    tx.update(chosen.doc.ref, updated);
+    return {
+      roomId: chosen.doc.id,
+      gameType: 'pisti',
+      gamePath: '/Online Oyunlar/Pisti.html',
+      mode: '4-104',
+      bet,
+      status: updated.status,
+      participantUids: players.map((player) => player.uid)
+    };
   });
 }
 
@@ -612,11 +751,6 @@ async function syncPendingInvitesForSocket(socket, io, uid) {
 }
 
 module.exports = function initSockets(io, auth) {
-  const transientSweepTimer = setInterval(() => {
-    pruneTransientMaps();
-  }, SOCKET_MEMORY_SWEEP_INTERVAL_MS);
-  transientSweepTimer.unref?.();
-
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token || socket.handshake.query?.token;
@@ -639,7 +773,7 @@ module.exports = function initSockets(io, auth) {
     socket.join(`user_${uid}`);
 
     const lobbyMessages = await loadLobbyChatHistory();
-    socket.emit('chat:lobby_history', { messages: lobbyMessages.slice(-LOBBY_CHAT_HISTORY_LIMIT), policy: CHAT_RETENTION_POLICY });
+    socket.emit('chat:lobby_history', { messages: lobbyMessages.slice(-LOBBY_CHAT_HISTORY_LIMIT) });
 
     socket.data.seenTargetInviteIds = socket.data.seenTargetInviteIds instanceof Set ? socket.data.seenTargetInviteIds : new Set();
     socket.data.seenHostInviteUpdateIds = socket.data.seenHostInviteUpdateIds instanceof Set ? socket.data.seenHostInviteUpdateIds : new Set();
@@ -648,11 +782,10 @@ module.exports = function initSockets(io, auth) {
 
     await touchSocketConnection({ socketId: socket.id, uid, status: 'IDLE', activity: 'Lobide' }).catch(() => null);
     if (!userPresence[uid] || getUserPresence(uid).status === 'OFFLINE') syncSocketPresence('IDLE', 'Lobide');
-    else emitPresenceUpdate(io, uid, 'sync');
+    else emitPresenceUpdate(io, uid);
     touchUserActivity(uid, { scope: 'socket_connect', status: 'IDLE', activity: 'Lobide' }).catch(() => null);
     syncPendingInvitesForSocket(socket, io, uid).catch(() => null);
 
-    socket.data.lastPongAt = Date.now();
     socket.data.connectionRefreshTimer = setInterval(() => {
       const presence = getUserPresence(uid);
       touchSocketConnection({
@@ -669,33 +802,6 @@ module.exports = function initSockets(io, auth) {
       syncPendingInvitesForSocket(socket, io, uid).catch(() => null);
     }, 4000);
     socket.data.inviteSyncTimer.unref?.();
-
-    socket.data.socketHealthTimer = setInterval(() => {
-      const now = Date.now();
-      const lastPongAt = safeNum(socket.data.lastPongAt, 0);
-      if (lastPongAt > 0 && (now - lastPongAt) > SOCKET_STALE_TIMEOUT_MS) {
-        try { socket.emit('pm:stale', { reason: 'pong_timeout', ts: now }); } catch (_) {}
-        try { socket.disconnect(true); } catch (_) {}
-        return;
-      }
-      try { socket.emit('pm:ping', { ts: now }); } catch (_) {}
-    }, SOCKET_PING_INTERVAL_MS);
-    socket.data.socketHealthTimer.unref?.();
-
-    socket.on('pm:pong', (payload = {}) => {
-      socket.data.lastPongAt = Date.now();
-      const presence = getUserPresence(uid);
-      touchSocketConnection({
-        socketId: socket.id,
-        uid,
-        status: presence.status || 'IDLE',
-        activity: presence.activity || 'Lobide',
-        gameType: presence.gameType || ''
-      }).catch(() => null);
-      if (payload?.page) {
-        touchUserActivity(uid, { scope: 'socket_pong', status: presence.status || 'IDLE', activity: cleanStr(payload.page, 120) || 'socket_pong' }).catch(() => null);
-      }
-    });
 
     socket.on('social:set_presence', (data = {}) => {
       const rawStatus = cleanStr(data?.status || 'IDLE', 24).toUpperCase();
@@ -716,11 +822,6 @@ module.exports = function initSockets(io, auth) {
       if (socket.data.bjRoomId) socket.leave(socket.data.bjRoomId);
       socket.data.bjRoomId = null;
     });
-
-
-
-
-
 
     socket.on('pisti:join', (id) => {
       const roomId = cleanStr(id, 160);
@@ -744,9 +845,8 @@ module.exports = function initSockets(io, auth) {
 
         const uSnap = await colUsers().doc(uid).get();
         const u = uSnap.data() || {};
-        const restriction = restrictionSnapshot(u);
-        if (restriction.isBanned) return socket.emit('chat:lobby_error', { message: 'Hesabınız kısıtlı.' });
-        if (restriction.globalChatBlocked) return socket.emit('chat:lobby_error', { message: formatRestrictionMessage('global', u) });
+        if (u.isBanned) return socket.emit('chat:lobby_error', { message: 'Hesabınız kısıtlı.' });
+        if (u.isMuted) return socket.emit('chat:lobby_error', { message: 'Sohbet susturması aktif.' });
         if (isDuplicateMessage(uid, msg, 'lobby')) return socket.emit('chat:lobby_error', { message: 'Aynı mesajı çok hızlı tekrar gönderdiniz.' });
         const publicUsername = await resolvePublicUsername(uid, u);
         const chatPayload = {
@@ -754,6 +854,7 @@ module.exports = function initSockets(io, auth) {
           uid,
           username: publicUsername,
           avatar: u.avatar || '',
+          rp: safeNum(u.rp, 0),
           selectedFrame: pickUserSelectedFrame(u),
           message: msg,
           createdAt: Date.now()
@@ -778,7 +879,7 @@ module.exports = function initSockets(io, auth) {
           socket.emit('chat:unread_count', { unread: Math.max(0, safeNum((await colUsers().doc(uid).get().catch(() => ({ data: () => ({ unread_messages: 0 }) }))).data()?.unread_messages, 0)) });
         }
         touchUserActivity(uid, { scope: 'dm_load' }).catch(() => null);
-        socket.emit('chat:dm_history', { targetUid, peerUid: targetUid, messages, policy: CHAT_RETENTION_POLICY });
+        socket.emit('chat:dm_history', { targetUid, peerUid: targetUid, messages });
       } catch (error) {
         socket.emit('chat:dm_error', { message: error.message || 'Konuşma geçmişi yüklenemedi.' });
       }
@@ -807,9 +908,8 @@ module.exports = function initSockets(io, auth) {
 
         const uSnap = await colUsers().doc(uid).get();
         const u = uSnap.data() || {};
-        const restriction = restrictionSnapshot(u);
-        if (restriction.isBanned) return socket.emit('chat:dm_error', { message: 'Hesabınız kısıtlı.' });
-        if (restriction.dmBlocked) return socket.emit('chat:dm_error', { message: formatRestrictionMessage('dm', u) });
+        if (u.isBanned) return socket.emit('chat:dm_error', { message: 'Hesabınız kısıtlı.' });
+        if (u.isMuted) return socket.emit('chat:dm_error', { message: 'Özel mesaj göndermeniz geçici olarak kapatıldı.' });
         if (isDuplicateMessage(uid, msg, `dm:${targetUid}`)) return socket.emit('chat:dm_error', { message: 'Aynı mesajı çok hızlı tekrar gönderdiniz.' });
         const chatId = getPersistentDirectChatId(uid, targetUid);
         const messageId = crypto.randomUUID();
@@ -820,7 +920,6 @@ module.exports = function initSockets(io, auth) {
           text: msg,
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           createdAt,
-          expiresAt: createdAt + (DIRECT_CHAT_RETENTION_DAYS * 24 * 60 * 60 * 1000),
           status: 'sent'
         });
         await colChats().doc(chatId).set({
@@ -1020,7 +1119,43 @@ module.exports = function initSockets(io, auth) {
 
         await removeUserFromQueue(uid);
         const reqData = { uid, gameType, joinedAt: Date.now() };
+        if (gameType === 'pisti') {
+          reqData.mode = ['2-52', '2-104', '4-104'].includes(cleanStr(data?.mode, 16)) ? cleanStr(data.mode, 16) : '2-52';
+          reqData.bet = Math.max(1, Math.min(10000000, Math.floor(safeNum(data?.bet, 1000))));
+          const uSnap = await colUsers().doc(uid).get();
+          if (safeNum(uSnap.data()?.balance, 0) < reqData.bet) return socket.emit('game:matchmake_error', { message: 'Bakiye yetersiz.' });
 
+          const existingTeamLobby = await tryJoinExistingTeamLobby(uid, reqData);
+          if (existingTeamLobby) {
+            const waitingActivity = existingTeamLobby.status === 'playing' ? getPresenceActivity('IN_GAME', gameType) : 'Takım Lobisi';
+            syncSocketPresence('IN_GAME', waitingActivity, { gameType });
+            socket.emit('game:matchmake_success', {
+              ok: true,
+              gameType,
+              roomId: existingTeamLobby.roomId,
+              gamePath: existingTeamLobby.gamePath,
+              mode: existingTeamLobby.mode,
+              bet: existingTeamLobby.bet,
+              status: existingTeamLobby.status
+            });
+            io.to(`pisti_${existingTeamLobby.roomId}`).emit('pisti:update', { id: existingTeamLobby.roomId, sender: 'system' });
+            if (existingTeamLobby.status === 'playing') {
+              (existingTeamLobby.participantUids || []).forEach((participantUid) => {
+                io.to(`user_${participantUid}`).emit('game:matchmake_success', {
+                  ok: true,
+                  gameType,
+                  roomId: existingTeamLobby.roomId,
+                  gamePath: existingTeamLobby.gamePath,
+                  mode: existingTeamLobby.mode,
+                  bet: existingTeamLobby.bet,
+                  status: existingTeamLobby.status
+                });
+                updateUserPresence(io, participantUid, 'IN_GAME', getPresenceActivity('IN_GAME', gameType), { gameType });
+              });
+            }
+            return;
+          }
+        }
 
         syncSocketPresence('MATCHMAKING', 'Eşleşme Aranıyor...', { gameType });
         const claimResult = await claimMatchmakingCandidate(reqData);
@@ -1053,12 +1188,10 @@ module.exports = function initSockets(io, auth) {
     socket.on('disconnect', () => {
       if (socket.data.connectionRefreshTimer) clearInterval(socket.data.connectionRefreshTimer);
       if (socket.data.inviteSyncTimer) clearInterval(socket.data.inviteSyncTimer);
-      if (socket.data.socketHealthTimer) clearInterval(socket.data.socketHealthTimer);
       if (socket.data.bjRoomId) socket.leave(socket.data.bjRoomId);
       if (socket.data.pistiRooms instanceof Set) {
         socket.data.pistiRooms.forEach((roomId) => socket.leave(`pisti_${roomId}`));
       }
-
       removeSocketConnection(socket.id).catch(() => null);
       const wentOffline = untrackUserOnline(uid);
       if (wentOffline) {
@@ -1069,7 +1202,7 @@ module.exports = function initSockets(io, auth) {
           if (stillOnline) return;
           userPresence[uid] = { ...presence, status: 'OFFLINE', lastSeen: Date.now(), disconnectTimer: null };
           persistPresence(uid, userPresence[uid]).catch(() => null);
-          emitPresenceUpdate(io, uid, 'disconnect');
+          emitPresenceUpdate(io, uid);
           colUsers().doc(uid).set({ lastSeen: admin.firestore.Timestamp.now() }, { merge: true }).catch(() => {});
         }, PRESENCE_GRACE_MS);
       }
