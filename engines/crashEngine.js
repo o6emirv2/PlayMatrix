@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { db, admin } = require('../config/firebase');
+const { db, admin, isFirebaseReady, getFirebaseStatus } = require('../config/firebase');
 const { 
   CRASH_MIN_AUTO, CRASH_MAX_AUTO, CRASH_MAX_MULTIPLIER, 
   CRASH_TICK_MS, CRASH_FULL_STATE_EVERY, AUTO_CASHOUT_BATCH_SIZE, AUTO_CASHOUT_RETRY_DELAY_MS,
@@ -15,6 +15,20 @@ const colUsers = () => db.collection('users');
 
 
 const colCrashBets = () => db.collection('crash_bets');
+
+let crashDbUnavailableLogged = false;
+
+function isCrashDbReady() {
+  return typeof isFirebaseReady === 'function' && isFirebaseReady();
+}
+
+function logCrashDbUnavailable(context = 'crash-db') {
+  if (crashDbUnavailableLogged) return;
+  crashDbUnavailableLogged = true;
+  const status = typeof getFirebaseStatus === 'function' ? getFirebaseStatus() : {};
+  const reason = cleanStr(status?.error || 'Firebase Admin hazır değil.', 260);
+  console.warn(`[PlayMatrix][crash] Firebase Admin hazır değil; ${context} kalıcı Firestore işlemleri bu süreçte atlanıyor. ${reason}`);
+}
 
 function buildCrashHistoryEntry({ betId = '', uid = '', roundId = '', amount = 0, payout = 0, resultCode = '', crashPoint = 0, cashoutMult = 0, createdAt = 0 } = {}) {
   const safeBetId = cleanStr(betId || '', 180);
@@ -114,6 +128,10 @@ async function settleSingleCrashLoss({ uid = '', bet = {}, boxKey = '', roundId 
 async function settleCrashRoundLosses(roundId = '', crashPoint = 0) {
   const safeRoundId = cleanStr(roundId || '', 160);
   if (!safeRoundId) return;
+  if (!isCrashDbReady()) {
+    logCrashDbUnavailable('round-loss settlement');
+    return;
+  }
   const settledAt = nowMs();
   const candidates = [];
   Object.entries(engineState.crashState.players || {}).forEach(([uid, player]) => {
@@ -326,23 +344,41 @@ const engineState = {
 };
 
 async function initCrashDb() {
+  const pf = generateRoundProvablyFair();
+  engineState.crashState.crashPoint = pf.crashPoint;
+  engineState.crashState.serverSeed = pf.serverSeed;
+  engineState.crashState.hash = pf.hash;
+
+  if (!isCrashDbReady()) {
+    logCrashDbUnavailable('startup history read');
+    return;
+  }
+
   try {
-      const snap = await db.collection('server_data').doc('crash_global').get();
-      if (snap.exists) {
-          engineState.crashState.history = Array.isArray(snap.data().history) ? snap.data().history : [];
-          engineState.crashState.roundId = Date.now();
-      }
-      const pf = generateRoundProvablyFair();
-      engineState.crashState.crashPoint = pf.crashPoint;
-      engineState.crashState.serverSeed = pf.serverSeed;
-      engineState.crashState.hash = pf.hash;
-  } catch (e) { console.error('initCrashDb error:', e); }
+    const snap = await db.collection('server_data').doc('crash_global').get();
+    if (snap.exists) {
+      engineState.crashState.history = Array.isArray(snap.data().history) ? snap.data().history : [];
+      engineState.crashState.roundId = Date.now();
+    }
+  } catch (e) {
+    console.error('initCrashDb error:', e);
+  }
 }
 initCrashDb();
 
 async function saveCrashHistory() {
-  try { await db.collection('server_data').doc('crash_global').set({ history: engineState.crashState.history }, { merge: true }); } 
-  catch (e) { console.error('saveCrashHistory error:', e); }
+  if (!isCrashDbReady()) {
+    logCrashDbUnavailable('history write');
+    return false;
+  }
+
+  try {
+    await db.collection('server_data').doc('crash_global').set({ history: engineState.crashState.history }, { merge: true });
+    return true;
+  } catch (e) {
+    console.error('saveCrashHistory error:', e);
+    return false;
+  }
 }
 
 const autoCashoutQueue = new Map();
@@ -366,6 +402,17 @@ function scheduleAutoCashoutFlush() {
 }
 
 async function flushAutoCashoutQueue() {
+  if (!isCrashDbReady()) {
+    logCrashDbUnavailable('auto-cashout settlement');
+    Array.from(autoCashoutQueue.values()).forEach((item) => {
+      const player = engineState.crashState.players[item.uid];
+      if (player && player[item.boxKey]) player[item.boxKey].cashingOut = false;
+    });
+    autoCashoutQueue.clear();
+    engineState.triggerUpdate();
+    return;
+  }
+
   const entries = Array.from(autoCashoutQueue.values()).slice(0, AUTO_CASHOUT_BATCH_SIZE);
   for (const item of entries) {
       try {
