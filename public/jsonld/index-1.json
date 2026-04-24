@@ -1,0 +1,26 @@
+{
+      "@context":"https://schema.org",
+      "@graph":[
+        {
+          "@type":"WebSite",
+          "@id":"https://playmatrix.com.tr/#website",
+          "url":"https://playmatrix.com.tr/",
+          "name":"PlayMatrix",
+          "inLanguage":"tr-TR",
+          "description":"Ücretsiz online multiplayer ve zeka oyunları platformu."
+        },
+        {
+          "@type":"Organization",
+          "@id":"https://playmatrix.com.tr/#organization",
+          "name":"PlayMatrix",
+          "url":"https://playmatrix.com.tr/",
+          "logo":"https://playmatrix.com.tr/apple-touch-icon.png",
+          "email":"mailto:playmatrixdestek@gmail.com",
+          "sameAs":[
+            "https://t.me/playmatrixresmi",
+            "https://www.instagram.com/playmatrix_games",
+            "https://www.tiktok.com/@playmatrixresmi"
+          ]
+        }
+      ]
+    }
