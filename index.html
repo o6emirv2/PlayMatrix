@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.82, maximum-scale=0.82, minimum-scale=0.82, user-scalable=no, viewport-fit=cover" />
+    <title>Sistem Bakımı | Lütfen Bekleyiniz</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Roboto:wght@400;500;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <style>
+        /* --- 1. ÇİFT TIKLAMA ZOOM ENGELLEMESİ VE TEMEL AYARLAR --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: #ffffff;
+            font-family: 'Roboto', sans-serif;
+            touch-action: manipulation; 
+            overflow: hidden; /* Dış arka planın kaymasını engeller */
+        }
+
+        /* --- 2. HAREKETLİ DEGRADE VE NEON ARKA PLAN --- */
+        body {
+            background: linear-gradient(-45deg, #050914, #0b1426, #111a30, #08101e);
+            background-size: 400% 400%;
+            animation: gradientAnim 12s ease infinite; 
+            position: relative;
+        }
+
+        @keyframes gradientAnim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Neon Işık Huzmeleri (Orbs) */
+        .neon-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 1;
+            animation: floatOrb 8s ease-in-out infinite alternate;
+        }
+        .orb-1 {
+            top: -100px; left: -100px;
+            width: 400px; height: 400px;
+            background: rgba(0, 195, 255, 0.4); /* Mavi Neon */
+        }
+        .orb-2 {
+            bottom: -150px; right: -100px;
+            width: 500px; height: 500px;
+            background: rgba(255, 45, 125, 0.3); /* Pembe/Kırmızı Neon */
+            animation-delay: -4s;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(30px) scale(1.1); }
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(rgba(0, 195, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 2;
+        }
+
+        /* --- 3. OVERLAY (ARKA PLAN BULANIKLIĞI) VE KAYDIRMA --- */
+        .premium-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 9, 20, 0.5); 
+            backdrop-filter: blur(15px); 
+            display: flex;
+            align-items: flex-start; 
+            padding: 20px; 
+            box-sizing: border-box;
+            overflow-y: auto; 
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        /* --- 4. AÇILIR PENCERE (MODAL) TASARIMI --- */
+        .premium-modal {
+            background: rgba(17, 25, 40, 0.80); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid rgba(0, 195, 255, 0.8); 
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 650px;
+            width: 100%;
+            margin: auto; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9), 0 0 40px rgba(0, 195, 255, 0.1) inset;
+            box-sizing: border-box;
+            
+            transform: scale(0.95) translateY(20px);
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .premium-overlay.active { opacity: 1; visibility: visible; }
+        .premium-overlay.active .premium-modal { transform: scale(1) translateY(0); opacity: 1; }
+
+        /* --- 5. BAŞLIK VE METİNLER --- */
+        .modal-header { text-align: center; margin-bottom: 30px; }
+        
+        .modal-header h1 {
+            font-family: 'Rajdhani', sans-serif; 
+            font-size: 34px;
+            font-weight: 700;
+            color: #00c3ff; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 15px rgba(0, 195, 255, 0.6); 
+        }
+
+        .modal-header p { color: #94a3b8; font-size: 16px; margin: 0; }
+
+        /* --- 6. İÇERİK KARTLARI (MADDELER) --- */
+        .info-grid { display: flex; flex-direction: column; gap: 15px; }
+
+        .info-card {
+            display: flex;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.3s ease;
+        }
+
+        .info-card:hover { background: rgba(255, 255, 255, 0.08); } 
+
+        .premium-overlay.active .info-card:nth-child(1) { opacity: 1; transform: translateX(0); transition-delay: 0.3s; }
+        .premium-overlay.active .info-card:nth-child(2) { opacity: 1; transform: translateX(0); transition-delay: 0.5s; }
+        .premium-overlay.active .info-card:nth-child(3) { opacity: 1; transform: translateX(0); transition-delay: 0.7s; }
+
+        .icon-box {
+            background: rgba(0, 195, 255, 0.1);
+            padding: 12px; border-radius: 10px; margin-right: 15px;
+            display: flex; justify-content: center; align-items: center;
+            border: 1px solid rgba(0, 195, 255, 0.2); flex-shrink: 0; 
+        }
+        .icon-box svg { width: 24px; height: 24px; stroke: #00c3ff; }
+
+        .text-box h3 { margin: 0 0 5px 0; font-size: 18px; color: #f8fafc; font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; }
+        .text-box p { margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.5; }
+
+        /* --- 7. NEON YAZI (ALT YAPI GÜNCELLENİYOR) --- */
+        .neon-alert {
+            text-align: center;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-top: 35px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            animation: neonPulse 1.5s infinite alternate;
+        }
+
+        @keyframes neonPulse {
+            0% { text-shadow: 0 0 5px #00c3ff, 0 0 10px #00c3ff; color: #e0f7fa; }
+            100% { text-shadow: 0 0 10px #00c3ff, 0 0 20px #00c3ff, 0 0 40px #00c3ff; color: #ffffff; }
+        }
+
+        /* --- 8. FOOTER: SOSYAL MEDYA VE LİNK --- */
+        .modal-footer {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .social-btn {
+            width: 46px; height: 46px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            background: rgba(0, 195, 255, 0.15);
+            color: #00c3ff;
+            border-color: #00c3ff;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 195, 255, 0.3);
+        }
+
+        .site-link {
+            font-size: 15px;
+            font-weight: 500;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        /* --- 9. MOBİL UYUMLULUK --- */
+        @media screen and (max-width: 600px) {
+            .premium-modal { padding: 25px 20px; }
+            .modal-header h1 { font-size: 26px; }
+            .info-card { padding: 15px; }
+            .icon-box { padding: 10px; margin-right: 12px; }
+            .neon-alert { font-size: 18px; margin-top: 25px; }
+            .social-btn { width: 40px; height: 40px; font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="neon-orb orb-1"></div>
+    <div class="neon-orb orb-2"></div>
+
+    <div class="premium-overlay" id="sysModal">
+        <div class="premium-modal">
+            
+            <div class="modal-header">
+                <h1>Sistem Bakımı</h1>
+                <p>Hizmet kalitemizi en üst seviyeye taşımak için çalışıyoruz.</p>
+            </div>
+
+            <div class="info-grid">
+                
+                <div class="info-card">
+                    <div class="icon-box">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </div>
+                    <div class="text-box">
+                        <h3>1. Kapsamlı Oyun Güncellemesi</h3>
+                        <p>Sistem mimarisini modernize etmek ve yeni nesil içerikleri entegre etmek amacıyla ana sunucularımızda sürüm güncellemesi yapılmaktadır.</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="icon-box">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                        </svg>
+                    </div>
+                    <div class="text-box">
+                        <h3>2. Donanım ve Altyapı Güçlendirmesi</h3>
+                        <p>Ağ gecikmelerini (ping) sıfıra indirmek ve bağlantı stabilitesini maksimize etmek için veri merkezi yönlendirmelerimiz optimize edilmektedir.</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="icon-box">
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    </div>
+                    <div class="text-box">
+                        <h3>3. Maksimum Kullanıcı Deneyimi</h3>
+                        <p>Tüm bu operasyonların yegane amacı, çalışmalar tamamlandığında sizlere kusursuz ve en üst düzey oyun deneyimini sunmaktır.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="neon-alert">Alt Yapı Güncelleniyor...</div>
+
+            <div class="modal-footer">
+                <div class="social-links">
+                    <a href="https://t.me/playmatrixresmi" target="_blank" class="social-btn" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
+                    <a href="https://www.instagram.com/playmatrix_games" target="_blank" class="social-btn" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="https://www.tiktok.com/@playmatrixresmi" target="_blank" class="social-btn" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                </div>
+                <div class="site-link">playmatrix.com.tr</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('sysModal').classList.add('active');
+            }, 150);
+        });
+    </script>
+
+  <script src="/playmatrix-runtime.js" defer></script>
+</body>
+</html>
