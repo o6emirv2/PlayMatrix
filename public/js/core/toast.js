@@ -1,2 +1,0 @@
-/* PlayMatrix FAZ 3 modular architecture. */
-export function showToast(title = "Bilgi", message = "", tone = "info") { if (typeof window.showToast === "function") return window.showToast(title, message, tone); const stack = document.getElementById("toastStack"); if (!stack) return null; const toast = document.createElement("div"); toast.className = `toast ${tone}`; toast.textContent = [title, message].filter(Boolean).join(" — "); stack.appendChild(toast); window.setTimeout(() => toast.remove(), 4200); return toast; }
