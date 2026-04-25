@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta name="playmatrix-api-url" content="" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.90, maximum-scale=0.90, minimum-scale=0.90, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>PlayMatrix Crash | Hızlı Çarpan Turları</title>
+    <meta name="description" content="PlayMatrix Crash ile hızlı çarpan turlarına katıl, doğru anda çıkış al ve tur yönetimini akıcı oyun akışıyla takip et.">
+    <meta name="keywords" content="crash oyunu, canlı çarpan, playmatrix, tarayıcı oyunu, strateji oyunu, online oyun">
+    <meta name="author" content="PlayMatrix Gaming">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="language" content="Turkish">
+    <link rel="canonical" href="https://playmatrix.com.tr/Online%20Oyunlar/Crash">
+
+    <meta property="og:locale" content="tr_TR">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PlayMatrix Crash | Hızlı Çarpan Turları">
+    <meta property="og:description" content="Hızlı çarpan turlarına katıl, doğru anda çıkış al ve turun gidişatını kontrollü şekilde yönet.">
+    <meta property="og:url" content="https://playmatrix.com.tr/Online%20Oyunlar/Crash">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta property="og:image" content="https://playmatrix.com.tr/logo.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Crash | Hızlı Çarpan">
+    <meta name="twitter:description" content="Hızlı çarpan turuna katıl ve doğru anda çıkış alarak turunu kontrollü şekilde tamamla.">
+    <meta name="twitter:image" content="https://playmatrix.com.tr/logo.png">
+
+    <meta name="theme-color" content="#1a1c24">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Crash">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="../public/js/games/crash/crash-route-normalizer.js" defer></script>
+    <link rel="stylesheet" href="../public/css/games/crash.css" />
+  <link rel="stylesheet" href="../public/avatar-frame.css" />
+  <script src="../public/playmatrix-static-runtime.js"></script>
+  <script src="../public/playmatrix-api.js"></script>
+  <script src="../public/avatar-frame.js" defer></script>
+  <link rel="stylesheet" href="../public/shell-enhancements.css" />
+  <script src="../public/shell-enhancements.js" defer></script>
+  <link rel="stylesheet" href="../public/css/phase4-inline.css" />
+</head>
+<body>
+
+<div id="studioIntro">
+    <div class="intro-shell">
+        <div class="intro-badge"><i class="fa-solid fa-layer-group"></i> PlayMatrix</div>
+        <div class="intro-title">CRASH LOUNGE</div>
+        <div class="intro-sub"><strong>Yüksek Risk</strong> • <strong>Büyük (MC) Kazancı</strong></div>
+        <div class="loader-track"><div class="loader-fill" id="loaderFill"></div></div>
+        <div class="loader-status" id="loaderStatus">Bağlantı hazırlanıyor...</div>
+        <div class="loader-actions">
+            <button id="btnEnterGame" class="btn-intro-start">CRASH OYNA</button>
+            <button id="btnRetryBoot" class="btn-intro-retry" type="button">TEKRAR DENE</button>
+        </div>
+    </div>
+</div>
+
+<div id="rulesModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+      <h3>OYUN KURALLARI</h3>
+      <p>
+        <b class="pm-csp-inline-4fe1492313">1. Tura Katıl:</b> Geri sayım bitmeden ayırmak istediğiniz MC miktarını girip katılımı onaylayın.<br><br>
+        <b class="pm-csp-inline-4fe1492313">2. İvmelenme:</b> Uçak havalandığında çarpan (X) yükselmeye başlar.<br><br>
+        <b class="pm-csp-inline-4fe1492313">3. Çıkış Al:</b> Uçak patlamadan önce çıkış alırsanız, o anki çarpan üzerinden turun sonucu hesabınıza işlenir.<br><br>
+        <i class="pm-csp-inline-1d85e1b4d5">*Otomatik Çıkış: Belirlediğiniz değere ulaşıldığında sistem sizin yerinize tam o noktada çıkış alır.</i>
+      </p>
+      <button class="modal-close" data-pm-action="closeRulesModal" data-pm-args="[]">ANLADIM</button>
+    </div>
+</div>
+
+<header class="top-bar-full">
+    <div class="account-level-section">
+        <div class="level-badge-wrap">
+            <i class="fa-solid fa-layer-group"></i>
+            <div class="level-badge-indicator" id="uiAccountLevelBadge">1</div>
+        </div>
+
+        <div class="level-stats-area">
+            <div class="stat-row-top">
+                <div class="stat-label">(MC) BAKİYE</div>
+                <div class="stat-balance"><span>MC</span> <span id="uiBalance">0.00</span></div>
+            </div>
+            <div class="stat-row-bottom">
+                <div class="stat-lvl-text">Hesap Seviyeniz</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" id="uiAccountLevelBar"></div>
+                </div>
+                <div class="stat-pct" id="uiAccountLevelPct">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-actions">
+        <button class="action-icon-btn" data-pm-action="openRulesModal" data-pm-args="[]"><i class="fa-solid fa-circle-question"></i></button>
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-power-off"></i></a>
+    </div>
+</header>
+
+<div class="history-bar" id="uiHistory"></div>
+
+<div class="win-strip-container" id="winStrip">
+    <div class="win-strip-content">
+        <img src="data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20128%20128%27%20role%3D%27img%27%20aria-label%3D%27PlayMatrix%20Avatar%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27pmg%27%20x1%3D%270%27%20x2%3D%271%27%20y1%3D%270%27%20y2%3D%271%27%3E%3Cstop%20offset%3D%270%25%27%20stop-color%3D%27%23111827%27%2F%3E%3Cstop%20offset%3D%27100%25%27%20stop-color%3D%27%231f2937%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27128%27%20height%3D%27128%27%20rx%3D%2728%27%20fill%3D%27url%28%23pmg%29%27%2F%3E%3Ccircle%20cx%3D%2764%27%20cy%3D%2750%27%20r%3D%2724%27%20fill%3D%27%23f59e0b%27%20fill-opacity%3D%27.94%27%2F%3E%3Cpath%20d%3D%27M26%20108c8-18%2024-28%2038-28s30%2010%2038%2028%27%20fill%3D%27%23fbbf24%27%20fill-opacity%3D%27.92%27%2F%3E%3Ctext%20x%3D%2764%27%20y%3D%27118%27%20text-anchor%3D%27middle%27%20font-family%3D%27Inter%2CArial%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23f9fafb%27%3EPM%3C%2Ftext%3E%3C%2Fsvg%3E" id="wsAvatar" class="win-strip-avatar">
+        <span class="win-strip-text" id="wsUser">Sen</span>
+        <span class="pm-csp-inline-5872de20d5">|</span>
+        <span class="win-strip-mult" id="wsMult">1.00x</span>
+        <span class="pm-csp-inline-5872de20d5">|</span>
+        <span class="win-strip-amt" id="wsAmt">+0.00 MC</span>
+    </div>
+</div>
+
+<div class="app-container">
+    <main class="game-area" id="gameArea">
+        <div class="bg-motion-layer"></div>
+        <div class="bg-speed-layer" id="bgSpeedLayer"></div>
+        <div class="bg-grid-glow"></div>
+        <div class="meteor-layer" aria-hidden="true">
+            <span class="meteor m1"></span><span class="meteor m2"></span><span class="meteor m3"></span><span class="meteor m4"></span>
+        </div>
+
+        <div class="round-hud">
+            <div class="hud-chip"><i class="fa-solid fa-bolt"></i> Faz: <strong id="hudPhase">Bekleniyor</strong></div>
+            <div class="hud-chip"><i class="fa-solid fa-gauge-high"></i> İvme: <strong id="hudSpeed">0%</strong></div>
+        </div>
+
+        <canvas id="crashCanvas"></canvas>
+        <div class="multiplier-core">
+            <div class="phase-text" id="uiPhase">BAĞLANILIYOR...</div>
+            <div class="multiplier-val" id="uiMultiplier">1.00x</div>
+        </div>
+    </main>
+
+    <div class="bottom-layout">
+        <div id="crashRuntimeNotice" class="crash-runtime-notice" aria-live="polite"></div>
+        <div class="bet-controls">
+            <div class="bet-box">
+                <div class="bet-box-header">
+                    <div class="bet-box-title"><i class="fa-solid fa-rocket"></i> Hızlı Tur Paneli 1</div>
+                    <div class="bet-box-status" id="boxStatus1">Hazır</div>
+                </div>
+
+                <div class="bet-main-layout">
+                    <div class="bet-left-stack">
+                        <div class="amount-shell">
+                            <button class="step-btn" data-target="inpBet1" data-op="minus10" type="button">−</button>
+                            <div class="amount-input-group">
+                                <label>BET,(MC)</label>
+                                <input type="number" id="inpBet1" value="10" min="1" step="1">
+                            </div>
+                            <button class="step-btn" data-target="inpBet1" data-op="plus10" type="button">+</button>
+                        </div>
+
+                        <div class="quick-controls">
+                            <button class="chip-btn" data-target="inpBet1" data-op="plus1" type="button">+1</button>
+                            <button class="chip-btn" data-target="inpBet1" data-op="plus10" type="button">+10</button>
+                            <button class="chip-btn" data-target="inpBet1" data-op="plus100" type="button">+100</button>
+                            <button class="chip-btn" data-target="inpBet1" data-op="double" type="button">X2</button>
+                            <button class="chip-btn" data-target="inpBet1" data-op="half" type="button">/2</button>
+                            <button class="chip-btn" data-target="inpBet1" data-op="max" type="button">Max</button>
+                        </div>
+                    </div>
+
+                    <button id="btnAction1" class="action-btn btn-bet" type="button">MC KULLAN <span>10.00 MC</span></button>
+                </div>
+
+                <label class="hidden-auto-bet"><input type="checkbox" id="chkAutoBet1"></label>
+
+                <div class="auto-row">
+                    <button class="auto-icon-btn" id="btnAutoMode1" type="button" aria-label="Her tur otomatik katılım modu 1"><i class="fa-solid fa-rotate"></i></button>
+                    <input type="checkbox" id="chkAutoCash1" class="toggle-switch-only" aria-label="Otomatik bozdurma 1">
+                    <div class="auto-input-shell"><span>x</span><input type="number" id="inpAuto1" value="50.00" min="1.10" max="100.00" step="0.10"></div>
+                </div>
+            </div>
+
+            <div class="bet-box">
+                <div class="bet-box-header">
+                    <div class="bet-box-title"><i class="fa-solid fa-fire"></i> Hızlı Tur Paneli 2</div>
+                    <div class="bet-box-status" id="boxStatus2">Hazır</div>
+                </div>
+
+                <div class="bet-main-layout">
+                    <div class="bet-left-stack">
+                        <div class="amount-shell">
+                            <button class="step-btn" data-target="inpBet2" data-op="minus10" type="button">−</button>
+                            <div class="amount-input-group">
+                                <label>BET,(MC)</label>
+                                <input type="number" id="inpBet2" value="10" min="1" step="1">
+                            </div>
+                            <button class="step-btn" data-target="inpBet2" data-op="plus10" type="button">+</button>
+                        </div>
+
+                        <div class="quick-controls">
+                            <button class="chip-btn" data-target="inpBet2" data-op="plus1" type="button">+1</button>
+                            <button class="chip-btn" data-target="inpBet2" data-op="plus10" type="button">+10</button>
+                            <button class="chip-btn" data-target="inpBet2" data-op="plus100" type="button">+100</button>
+                            <button class="chip-btn" data-target="inpBet2" data-op="double" type="button">X2</button>
+                            <button class="chip-btn" data-target="inpBet2" data-op="half" type="button">/2</button>
+                            <button class="chip-btn" data-target="inpBet2" data-op="max" type="button">Max</button>
+                        </div>
+                    </div>
+
+                    <button id="btnAction2" class="action-btn btn-bet" type="button">MC KULLAN <span>10.00 MC</span></button>
+                </div>
+
+                <label class="hidden-auto-bet"><input type="checkbox" id="chkAutoBet2"></label>
+
+                <div class="auto-row">
+                    <button class="auto-icon-btn" id="btnAutoMode2" type="button" aria-label="Her tur otomatik katılım modu 2"><i class="fa-solid fa-rotate"></i></button>
+                    <input type="checkbox" id="chkAutoCash2" class="toggle-switch-only" aria-label="Otomatik bozdurma 2">
+                    <div class="auto-input-shell"><span>x</span><input type="number" id="inpAuto2" value="50.00" min="1.10" max="100.00" step="0.10"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="live-table">
+            <div class="table-header">
+                <span>CANLI TUR PANELİ</span>
+                <div class="table-header-stats">
+                    <span class="table-header-pill" id="liveBetCount"><i class="fa-solid fa-user"></i>0 oyuncu</span>
+                    <span class="table-header-pill cashouts" id="liveCashoutCount"><i class="fa-solid fa-user"></i>0 çıkış aldı</span>
+                </div>
+            </div>
+            <div class="table-body" id="liveTableBody"></div>
+            <div id="inlineNotificationArea" class="inline-notif-area"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="../public/js/games/crash/crash-app.js"></script>
+  <script src="../public/playmatrix-runtime.js" defer></script>
+  <script src="../public/js/phase4/static-actions.js" defer></script>
+</body>
+</html>
