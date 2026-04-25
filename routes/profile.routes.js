@@ -431,7 +431,7 @@ router.get('/me/active-sessions', verifyAuth, async (req, res) => {
     const sessions = await listActiveSessionsForUid(req.user.uid);
     const items = sessions.map((item) => ({
       ...item,
-      resumePath: item.gameType === 'pisti' ? './Online Oyunlar/Pisti.html' : './Online Oyunlar/Satranc.html',
+      resumePath: item.gameType === 'pisti' ? './pisti' : './satranc',
       roomKey: `${item.gameType}:${item.roomId}`
     }));
     return res.json({ ok: true, items, sessions: items });

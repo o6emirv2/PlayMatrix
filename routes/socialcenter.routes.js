@@ -282,7 +282,7 @@ router.get('/social-center/summary', verifyAuth, async (req, res) => {
   },
   activeSessions: (activeSessions || []).map((item) => ({
     ...item,
-    resumePath: item.gameType === 'pisti' ? './Online Oyunlar/Pisti.html' : './Online Oyunlar/Satranc.html'
+    resumePath: item.gameType === 'pisti' ? './pisti' : './satranc'
   })),
   chatPolicy: CHAT_RETENTION_POLICY,
   rewardCenter: {

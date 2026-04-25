@@ -65,18 +65,18 @@ let firebaseGetIdToken = null; let firebaseReload = null;      const $ = (id) =>
      const REWARDS = [       { label:"2.500 MC", val:2500, color:"rgba(255,255,255,0.14)" },       { label:"5.000 MC", val:5000, color:"rgba(255,255,255,0.09)" },       { label:"7.500 MC", val:7500, color:"rgba(255,255,255,0.14)" },
       { label:"12.500 MC", val:12500, color:"rgba(255,255,255,0.09)" },       { label:"20.000 MC", val:20000, color:"rgba(255,255,255,0.14)" },       { label:"25.000 MC", val:25000, color:"rgba(255,255,255,0.09)" },       { label:"30.000 MC", val:30000, color:"rgba(255,255,255,0.14)" },       { label:"50.000 MC", val:50000, color:"rgba(255,255,255,0.09)" }
     ];        const GAMES = [
-      {         name: "Crash",         category: "online",         access: "auth",         url: "Online Oyunlar/Crash.html",
+      {         name: "Crash",         category: "online",         access: "auth",         url: "/crash",
         color: "69,162,255",         icon: "fa-arrow-trend-up",         desc: "Gerçek para içermeyen, refleks ve zamanlama odaklı hızlı tempo multiplier oyunu.",         tags: ["Canlı Oyun", "Rekabet", "Hızlı Tur"],         keywords: "crash multiplier online rocket roket çarpan"
       },       {         name: "Satranç",         category: "online",         access: "auth",
-        url: "Online Oyunlar/Satranc.html",         color: "104,178,255",         icon: "fa-chess",         desc: "Klasik satranç deneyimini modern arayüz ve giriş tabanlı rekabet akışıyla oyna.",         tags: ["PvP", "Strateji", "Arena"],
+        url: "/satranc",         color: "104,178,255",         icon: "fa-chess",         desc: "Klasik satranç deneyimini modern arayüz ve giriş tabanlı rekabet akışıyla oyna.",         tags: ["PvP", "Strateji", "Arena"],
         keywords: "chess online pvp satranç"       },       {         name: "Pişti",         category: "online",
-        access: "auth",         url: "Online Oyunlar/Pisti.html",         color: "93,95,254",         icon: "fa-layer-group",         desc: "Kart takibi ve tempo yönetimi isteyen online pişti deneyimi.",
+        access: "auth",         url: "/pisti",         color: "93,95,254",         icon: "fa-layer-group",         desc: "Kart takibi ve tempo yönetimi isteyen online pişti deneyimi.",
         tags: ["Kart", "Online", "Klasik"],         keywords: "card kart multiplayer online pisti pişti"       },       {         name: "Pattern Master",
-        category: "classic",         access: "free",         url: "Klasik Oyunlar/PatternMaster.html",         color: "97,220,176",         icon: "fa-shapes",
+        category: "classic",         access: "free",         url: "/classic-games/pattern-master",         color: "97,220,176",         icon: "fa-shapes",
         desc: "Dikkat ve görsel hafıza odaklı ücretsiz pattern oyunu.",         tags: ["Ücretsiz", "Zeka", "Refleks"],         keywords: "arcade pattern master ücretsiz zeka"       },       {
-        name: "Space Pro",         category: "classic",         access: "free",         url: "Klasik Oyunlar/SpacePro.html",         color: "103,170,255",
+        name: "Space Pro",         category: "classic",         access: "free",         url: "/classic-games/space-pro",         color: "103,170,255",
         icon: "fa-user-astronaut",         desc: "Tarayıcıda anında açılan hafif ve hızlı klasik arcade uzay oyunu.",         tags: ["Arcade", "Retro", "Ücretsiz"],         keywords: "arcade pro space uzay"       },
-      {         name: "Snake Pro",         category: "classic",         access: "free",         url: "Klasik Oyunlar/SnakePro.html",
+      {         name: "Snake Pro",         category: "classic",         access: "free",         url: "/classic-games/snake-pro",
         color: "85,214,140",         icon: "fa-wave-square",         desc: "Retro hisli, akıcı ve ücretsiz snake deneyimi.",         tags: ["Retro", "Arcade", "Ücretsiz"],         keywords: "arcade pro retro snake yılan"
       },     ];       const createSocialState = () => ({
       activeTab: "global",       selectedKey: "global:lobby",       directMessages: {},       unreadDirect: {},       mobilePanelOpen: false,
@@ -375,7 +375,7 @@ function getSocialRankMeta(){ return { name: "SEVİYE", className: "rank-level" 
               else if (state.currentSheet === "social") renderSocialHub({ main: false });             });           }         }, 2500);         return;
       }        loadDirectHistoryByHttp(peerUid).catch((error) => {         state.social.directHistoryErrors[peerUid] = error.message || "Konuşma geçmişi yüklenemedi.";         delete state.social.directHistoryPending[peerUid];
         delete state.social.directHistoryRequestedAt[peerUid];         if (!renderActiveDirectStream(peerUid) && state.currentSheet === "social") renderSocialHub();         else if (state.currentSheet === "social") renderSocialHub({ main: false });       });     }
-     function resolveInviteTargetHref(payload = {}) {       const roomId = encodeURIComponent(payload.roomId || "");       const gameKey = payload.gameKey || payload.gameCode || "";       const gamePath = payload.gamePath || ((payload.gameKey || payload.gameCode) === "pisti" ? "./Online Oyunlar/Pisti.html" : "./Online Oyunlar/Satranc.html");
+     function resolveInviteTargetHref(payload = {}) {       const roomId = encodeURIComponent(payload.roomId || "");       const gameKey = payload.gameKey || payload.gameCode || "";       const gamePath = payload.gamePath || ((payload.gameKey || payload.gameCode) === "pisti" ? "/pisti" : "/satranc");
       return `${gamePath}?joinRoom=${roomId}`;     }      let inviteNavigationLock = false;     let inviteNavigationResetTimer = 0;
      function navigateToInviteRoom(payload = {}) {       const roomId = String(payload?.roomId || "").trim();       const gameKey = String(payload?.gameKey || payload?.gameCode || "").trim().toLowerCase();       if (!roomId) return false;
       if (inviteNavigationLock) {         const queuedRoomId = String(sessionStorage.getItem("pm_auto_join_room") || "").trim();         return queuedRoomId === roomId;       } 
@@ -406,7 +406,7 @@ function getSocialRankMeta(){ return { name: "SEVİYE", className: "rank-level" 
       };     }      function updateMatchmakingToastMessage(message = "Uygun bir rakip aranıyor...") {       const toast = state.social.matchmakingToastEl;
       const el = toast?.querySelector?.("[data-matchmake-message]");       if (el) el.textContent = message;     }      function dismissMatchmakingToast() {
       if (state.social?.matchmakingToastEl?.remove) state.social.matchmakingToastEl.remove();       if (state.social) state.social.matchmakingToastEl = null;     }      function getMatchmakingPagePath(gameType = "") {
-      return gameType === "pisti" ? "./Online Oyunlar/Pisti.html" : "./Online Oyunlar/Satranc.html";     }      function showMatchmakingToast(gameType = "") {       dismissMatchmakingToast();
+      return gameType === "pisti" ? "/pisti" : "/satranc";     }      function showMatchmakingToast(gameType = "") {       dismissMatchmakingToast();
       const title = gameType === "pisti" ? "Pişti Eşleşmesi" : "Satranç Eşleşmesi";       const { toast, body, closeBtn } = createToastBase({         tone: "info",         iconClass: "fa-bolt",         title: `${title} aranıyor`
       });        closeBtn.addEventListener("click", () => cancelMatchmaking(gameType));        const message = document.createElement("div");
       message.className = "toast-message";       message.dataset.matchmakeMessage = "true";       message.textContent = "Uygun bir rakip aranıyor...";        const actions = document.createElement("div");
@@ -731,7 +731,7 @@ function renderMessageStack(stream, messages, emptyTitle, emptyMessage, getIsSel
           const payload = await fetchPrivate("/api/chess/create", "POST", {});           roomId = payload?.room?.id || "";         } else {           const payload = await fetchPrivate("/api/pisti-online/create-private", "POST", {             mode: config.mode,
             bet: config.bet,             roomName: `${state.userData?.username || "PlayMatrix"} Özel Oda`,             password: ""           });           roomId = payload?.room?.id || "";
         }          if (!roomId) throw new Error("Davet odası hazırlanamadı.");          state.social.pendingInviteNavigation = {
-          roomId,           gameKey: config.gameKey,           gameCode: config.gameKey,           gamePath: config.gameKey === "pisti" ? "./Online Oyunlar/Pisti.html" : "./Online Oyunlar/Satranc.html",           targetUid: entry.uid
+          roomId,           gameKey: config.gameKey,           gameCode: config.gameKey,           gamePath: config.gameKey === "pisti" ? "/pisti" : "/satranc",           targetUid: entry.uid
         };          socket.emit("game:invite_send", {           targetUid: entry.uid,           roomId,
           gameKey: config.gameKey,           gameName: config.gameName         });          showToast("Davet hazırlanıyor", "Sunucu onayı bekleniyor. Başarılı olduğunda odaya otomatik geçeceksiniz.", "info");
       } catch (error) {         state.social.pendingInviteNavigation = null;         showToast("Davet hatası", error.message || "Davet gönderilemedi.", "error");       }     }
@@ -768,8 +768,8 @@ function renderMessageStack(stream, messages, emptyTitle, emptyMessage, getIsSel
           state.socket.emit("game:invite_response", {             inviteId: data.inviteId,             hostUid: data.hostUid,             roomId: data.roomId,             gameKey: data.gameKey,
             response           });         }          removeInviteToast(data.inviteId);
          if (response === "accepted") {           showToast("Oyuna Bağlanılıyor", "Oyun odasına aktarılıyorsunuz...", "success");                      setTimeout(() => {
-            sessionStorage.setItem("pm_auto_join_room", data.roomId);             sessionStorage.setItem("pm_auto_join_game", data.gameKey);                          const targetHref = data.gameKey === "pisti"               ? `/Online Oyunlar/Pisti.html?joinRoom=${encodeURIComponent(data.roomId)}`
-              : `/Online Oyunlar/Satranc.html?joinRoom=${encodeURIComponent(data.roomId)}`;             window.location.href = targetHref;           }, 1000);          } else {
+            sessionStorage.setItem("pm_auto_join_room", data.roomId);             sessionStorage.setItem("pm_auto_join_game", data.gameKey);                          const targetHref = data.gameKey === "pisti"               ? `/pisti?joinRoom=${encodeURIComponent(data.roomId)}`
+              : `/satranc?joinRoom=${encodeURIComponent(data.roomId)}`;             window.location.href = targetHref;           }, 1000);          } else {
           showToast("Oyun daveti", `${data.hostName || "Arkadaşın"} tarafından gönderilen davet kapatıldı.`, "info");         }       } catch (error) {         showToast("Davet katılımı başarısız", error.message || "Odaya katılım sağlanamadı.", "error");       }
     }      function showInviteToast(data) {       if (!data?.inviteId) return;       removeInviteToast(data.inviteId);
        const { toast, body, closeBtn } = createToastBase({         tone: "info",         iconClass: "fa-gamepad",         title: "Oyun Daveti"

@@ -23,7 +23,9 @@
     "check:home-phase10": "node tools/check-home-phase10.js",
     "check:chat-phase11": "node tools/check-chat-retention-phase11.js",
     "check:security-phase0": "node tools/check-security-phase0.js",
-    "check:economy-phase1": "node tools/check-economy-phase1.js"
+    "check:economy-phase1": "node tools/check-economy-phase1.js",
+    "check:asset-paths": "node tools/check-asset-paths.js",
+    "check:ui-phase3": "node tools/check-ui-phase3.js"
   },
   "dependencies": {
     "express": "^4.18.3",
