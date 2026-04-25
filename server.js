@@ -358,10 +358,6 @@ safeStaticDirs.forEach((dir) => {
   }
 });
 
-mountStaticAlias('/public', path.join(__dirname, 'public'), { maxAge: '7d' });
-mountStaticAlias('/assets/games/online', path.join(__dirname, 'Online Oyunlar'), { maxAge: '7d' });
-mountStaticAlias('/assets/games/classic', path.join(__dirname, 'Klasik Oyunlar'), { maxAge: '7d' });
-
 app.use('/api/auth', authLimiter);
 app.use('/api', apiLimiter);
 
@@ -403,17 +399,10 @@ mountGameHtmlAliases(
   ['/', '/index.html']
 );
 
-const SATRANC_PAGE_ROUTES = ['/Online Oyunlar/Satranc.html', '/Satranc.html', '/online-games/chess', '/online-games/satranc', '/chess', '/satranc'];
-const PISTI_PAGE_ROUTES = ['/Online Oyunlar/Pisti.html', '/Pisti.html', '/OnlinePisti.html', '/online-games/pisti', '/pisti'];
-const CRASH_PAGE_ROUTES = ['/Online Oyunlar/Crash.html', '/Crash.html', '/crash', '/online-games/crash'];
-const PATTERN_MASTER_PAGE_ROUTES = ['/Klasik Oyunlar/PatternMaster.html', '/PatternMaster.html', '/patternmaster', '/pattern-master', '/classic-games/pattern-master'];
-const SNAKE_PRO_PAGE_ROUTES = ['/Klasik Oyunlar/SnakePro.html', '/SnakePro.html', '/snakepro', '/snake-pro', '/classic-games/snake-pro'];
-const SPACE_PRO_PAGE_ROUTES = ['/Klasik Oyunlar/SpacePro.html', '/SpacePro.html', '/spacepro', '/space-pro', '/classic-games/space-pro'];
-
-app.get(SATRANC_PAGE_ROUTES, enforceMaintenanceMode);
-app.get(PISTI_PAGE_ROUTES, enforceMaintenanceMode);
-app.get(CRASH_PAGE_ROUTES, enforceMaintenanceMode);
-app.get([...PATTERN_MASTER_PAGE_ROUTES, ...SNAKE_PRO_PAGE_ROUTES, ...SPACE_PRO_PAGE_ROUTES], enforceMaintenanceMode);
+app.get(['/Online Oyunlar/Satranc.html', '/Satranc.html', '/online-games/chess', '/satranc'], enforceMaintenanceMode);
+app.get(['/Online Oyunlar/Pisti.html', '/Pisti.html', '/OnlinePisti.html', '/online-games/pisti', '/pisti'], enforceMaintenanceMode);
+app.get(['/Crash.html', '/crash', '/online-games/crash'], enforceMaintenanceMode);
+app.get(['/Klasik Oyunlar/PatternMaster.html', '/Klasik Oyunlar/SnakePro.html', '/Klasik Oyunlar/SpacePro.html'], enforceMaintenanceMode);
 
 mountGameHtmlAliases(
   'Satranc.html',
@@ -421,7 +410,7 @@ mountGameHtmlAliases(
     path.join(__dirname, 'Satranc.html'),
     path.join(__dirname, 'Online Oyunlar', 'Satranc.html')
   ]),
-  SATRANC_PAGE_ROUTES
+  ['/Online Oyunlar/Satranc.html', '/Satranc.html', '/online-games/chess', '/satranc']
 );
 
 
@@ -434,7 +423,7 @@ mountGameHtmlAliases(
     path.join(__dirname, 'Online Oyunlar', 'OnlinePisti.html'),
     path.join(__dirname, 'Online Oyunlar', 'Pisti.html')
   ]),
-  PISTI_PAGE_ROUTES
+  ['/Online Oyunlar/Pisti.html', '/Pisti.html', '/OnlinePisti.html', '/online-games/pisti', '/pisti']
 );
 
 mountGameHtmlAliases(
@@ -443,26 +432,10 @@ mountGameHtmlAliases(
     path.join(__dirname, 'Crash.html'),
     path.join(__dirname, 'Online Oyunlar', 'Crash.html')
   ]),
-  CRASH_PAGE_ROUTES
+  ['/Crash.html', '/crash', '/online-games/crash']
 );
 
-mountGameHtmlAliases(
-  'PatternMaster.html',
-  firstExistingPath([path.join(__dirname, 'Klasik Oyunlar', 'PatternMaster.html')]),
-  PATTERN_MASTER_PAGE_ROUTES
-);
 
-mountGameHtmlAliases(
-  'SnakePro.html',
-  firstExistingPath([path.join(__dirname, 'Klasik Oyunlar', 'SnakePro.html')]),
-  SNAKE_PRO_PAGE_ROUTES
-);
-
-mountGameHtmlAliases(
-  'SpacePro.html',
-  firstExistingPath([path.join(__dirname, 'Klasik Oyunlar', 'SpacePro.html')]),
-  SPACE_PRO_PAGE_ROUTES
-);
 
 mountGameHtmlAliases(
   'admin.html',

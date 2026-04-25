@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, getIdToken, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { loadFirebaseWebConfig } from "/public/firebase-runtime.js";
+    import { loadFirebaseWebConfig } from "../public/firebase-runtime.js";
 
     const firebaseConfig = await loadFirebaseWebConfig({ required: true, scope: "classic" });
 
@@ -183,8 +183,8 @@ function pmRtNormalizeGameKey(value) {
 function pmRtGameHref(gameKey, roomId) {
     const safeRoomId = encodeURIComponent(String(roomId || '').trim());
     return gameKey === 'chess'
-        ? `/satranc?joinRoom=${safeRoomId}`
-        : `/satranc?joinRoom=${safeRoomId}`;
+        ? `/Online Oyunlar/Satranc.html?joinRoom=${safeRoomId}`
+        : `/Online Oyunlar/Satranc.html?joinRoom=${safeRoomId}`;
 }
 
 function pmRtSetPendingJoin(gameKey, roomId) {

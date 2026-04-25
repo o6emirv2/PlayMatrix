@@ -32,7 +32,7 @@ async function findLiveSession(uid) {
       session: {
         gameType: 'chess',
         roomId: chessDoc.id,
-        gamePath: '/satranc',
+        gamePath: '/Online Oyunlar/Satranc.html',
         role: cleanStr(data.host?.uid || '', 160) === uid ? 'host' : 'guest',
         status: cleanStr(data.status || '', 24)
       }
@@ -54,7 +54,7 @@ async function findLiveSession(uid) {
       session: {
         gameType: 'pisti',
         roomId: pistiDoc.id,
-        gamePath: '/pisti',
+        gamePath: '/Online Oyunlar/Pisti.html',
         role: roleIndex === 0 ? 'host' : 'guest',
         status: cleanStr(data.status || '', 24)
       }

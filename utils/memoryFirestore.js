@@ -180,12 +180,6 @@ class MemoryDocumentRef {
     this.id = parts[parts.length - 1] || '';
   }
 
-  get parent() {
-    const parts = this.path.split('/').filter(Boolean);
-    if (parts.length < 2) return null;
-    return new MemoryCollectionRef(this._store, parts.slice(0, -1).join('/'));
-  }
-
   collection(name) {
     return new MemoryCollectionRef(this._store, `${this.path}/${cleanPath(name)}`);
   }
@@ -310,12 +304,6 @@ class MemoryCollectionRef extends MemoryQuery {
     this.id = parts[parts.length - 1] || '';
   }
 
-  get parent() {
-    const parts = this.path.split('/').filter(Boolean);
-    if (parts.length < 2) return null;
-    return new MemoryDocumentRef(this._store, parts.slice(0, -1).join('/'));
-  }
-
   doc(id = '') {
     const safeId = cleanPath(id || randomId());
     return new MemoryDocumentRef(this._store, `${this.path}/${safeId}`);
@@ -330,44 +318,6 @@ class MemoryCollectionRef extends MemoryQuery {
   async listDocuments() {
     const snap = await this.get();
     return snap.docs.map((doc) => doc.ref);
-  }
-}
-
-class MemoryCollectionGroupQuery extends MemoryQuery {
-  constructor(store, collectionId, filters = [], order = [], limitValue = 0, startAfterValue = undefined) {
-    super(store, collectionId, filters, order, limitValue, startAfterValue);
-    this._collectionGroupId = String(collectionId || '').trim();
-  }
-
-  where(field, op, value) {
-    return new MemoryCollectionGroupQuery(this._store, this._collectionGroupId, [...this._filters, { field: normalizeFieldKey(field), op: String(op || '=='), value }], this._order, this._limitValue, this._startAfterValue);
-  }
-
-  orderBy(field, direction = 'asc') {
-    return new MemoryCollectionGroupQuery(this._store, this._collectionGroupId, this._filters, [...this._order, { field: normalizeFieldKey(field), direction: String(direction || 'asc').toLowerCase() }], this._limitValue, this._startAfterValue);
-  }
-
-  limit(value) {
-    return new MemoryCollectionGroupQuery(this._store, this._collectionGroupId, this._filters, this._order, Math.max(0, Number(value) || 0), this._startAfterValue);
-  }
-
-  startAfter(value) {
-    return new MemoryCollectionGroupQuery(this._store, this._collectionGroupId, this._filters, this._order, this._limitValue, value);
-  }
-
-  _collectionDocs() {
-    const docs = [];
-    for (const [path, data] of this._store._documents.entries()) {
-      const parts = path.split('/').filter(Boolean);
-      if (parts.length < 2 || parts.length % 2 !== 0) continue;
-      const parentCollectionId = parts[parts.length - 2];
-      if (parentCollectionId !== this._collectionGroupId) continue;
-      const ref = new MemoryDocumentRef(this._store, path);
-      const payload = clone(data || {});
-      payload.__name__ = ref.id;
-      docs.push({ ref, data: payload });
-    }
-    return docs;
   }
 }
 
@@ -427,10 +377,6 @@ class MemoryFirestore {
 
   collection(path) {
     return new MemoryCollectionRef(this, path);
-  }
-
-  collectionGroup(collectionId) {
-    return new MemoryCollectionGroupQuery(this, collectionId);
   }
 
   doc(path) {

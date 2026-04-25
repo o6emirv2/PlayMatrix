@@ -1,4 +1,4 @@
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js";
+import { initPlayMatrixOnlineCore } from "../public/pm-online-core.js";
 
 const core = await initPlayMatrixOnlineCore();
 const auth = core.auth;

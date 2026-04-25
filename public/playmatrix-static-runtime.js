@@ -15,21 +15,6 @@
     measurementId: 'G-BL9ZP43VVW'
   });
 
-  const routes = Object.freeze({
-    crash: '/crash',
-    pisti: '/pisti',
-    chess: '/satranc',
-    patternMaster: '/classic-games/pattern-master',
-    spacePro: '/classic-games/space-pro',
-    snakePro: '/classic-games/snake-pro'
-  });
-
-  const assetBases = Object.freeze({
-    onlineGames: '/assets/games/online',
-    classicGames: '/assets/games/classic',
-    public: '/public'
-  });
-
   function normalizeBase(value) {
     return String(value || '').trim().replace(/\/+$/, '').replace(/\/api$/i, '');
   }
@@ -43,9 +28,6 @@
     environment: 'production',
     siteOrigin: STATIC_SITE_ORIGIN,
     apiBase,
-    canonicalApiBase: apiBase,
-    routes,
-    assetBases,
     firebase: hasUsableFirebaseConfig(firebase) ? firebase : null,
     firebaseReady: hasUsableFirebaseConfig(firebase),
     source: 'static-runtime-fallback'
@@ -55,15 +37,6 @@
   window.__PM_RUNTIME = Object.assign({}, runtime, window.__PM_RUNTIME || {});
   if (!window.__PM_RUNTIME.apiBase || normalizeBase(window.__PM_RUNTIME.apiBase) === normalizeBase(window.location.origin)) {
     window.__PM_RUNTIME.apiBase = apiBase;
-  }
-  if (!window.__PM_RUNTIME.canonicalApiBase) {
-    window.__PM_RUNTIME.canonicalApiBase = apiBase;
-  }
-  if (!window.__PM_RUNTIME.routes) {
-    window.__PM_RUNTIME.routes = routes;
-  }
-  if (!window.__PM_RUNTIME.assetBases) {
-    window.__PM_RUNTIME.assetBases = assetBases;
   }
   if (!window.__PM_RUNTIME.firebase && runtime.firebase) {
     window.__PM_RUNTIME.firebase = runtime.firebase;

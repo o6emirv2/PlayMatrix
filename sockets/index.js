@@ -152,7 +152,7 @@ function normalizeGameType(value = '') {
 }
 
 function getGamePath(gameType = '') {
-  return normalizeGameType(gameType) === 'pisti' ? '/pisti' : '/satranc';
+  return normalizeGameType(gameType) === 'pisti' ? '/Online Oyunlar/Pisti.html' : '/Online Oyunlar/Satranc.html';
 }
 
 function getGameDisplayName(gameType = '') {
@@ -548,7 +548,7 @@ async function createMatchmakingRoom(gameType, uidA, uidB) {
       createdAt: nowMs(),
       updatedAt: nowMs()
     });
-    return { roomId: roomRef.id, gameType: 'chess', gamePath: '/satranc' };
+    return { roomId: roomRef.id, gameType: 'chess', gamePath: '/Online Oyunlar/Satranc.html' };
   });
 }
 

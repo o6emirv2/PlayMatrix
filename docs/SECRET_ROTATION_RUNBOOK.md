@@ -83,7 +83,7 @@ Render üzerinde eski `FIREBASE_KEY` raw JSON env değeri varsa servis artık de
 
 - Production standard remains `FIREBASE_KEY_BASE64` or `FIREBASE_KEY_PATH`.
 - Legacy `FIREBASE_KEY` is accepted only for deploy continuity and must be rotated to the standard form.
-- If a service-account payload is missing required Admin fields in production, the web service fails fast. Memory-store fallback is disabled for production so persistent data, cron jobs and settlement flows cannot run on temporary storage.
+- If a service-account payload is missing required Admin fields, the web service starts in Firebase-degraded mode instead of exiting before the port opens. Replace the credential immediately; authenticated and database-backed APIs require a valid Firebase Admin credential.
 - Supported emergency split fields: `FIREBASE_PRIVATE_KEY_BASE64` or `FIREBASE_PRIVATE_KEY` with `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PROJECT_ID`.
 
 ## Render Public Origin Kontrolü
@@ -106,7 +106,7 @@ saveCrashHistory error: FIREBASE_ADMIN_UNAVAILABLE
 
 Kök neden: Render ortamındaki `FIREBASE_KEY` değeri Firebase Admin SDK service-account JSON formatında değil veya service-account JSON içinde `private_key` alanı eksik/geçersiz. Firebase Web Config (`apiKey`, `authDomain`, `appId`, `measurementId`) Admin SDK credential yerine kullanılamaz.
 
-Kod davranışı: Production ortamında Firebase Admin credential eksik/geçersizse servis fail-fast davranır ve memory-store fallback açılmaz. Development ortamında cron/job akışları Firebase Admin hazır değilken veri yazmadan kontrollü skip eder; `db.collectionGroup is not a function` hatası üretilmez.
+Kod davranışı: Crash motoru artık Firebase Admin hazır değilken startup/history/auto-cashout Firestore işlemlerini tek kontrollü uyarıyla atlar; servis canlı kalır ve log spam/retry döngüsü üretmez. Kalıcı veri ve kullanıcı bakiyesi işlemleri için Render'a geçerli service-account credential eklenmelidir.
 
 Render üzerinde kalıcı çözüm:
 
@@ -133,7 +133,7 @@ Kod davranışı:
 
 - Placeholder/geçersiz `FIREBASE_KEY_BASE64` artık tek uyarıyla atlanır.
 - Varsa `FIREBASE_KEY_PATH`, split env veya legacy `FIREBASE_KEY` denenir.
-- Production ortamında geçerli Admin credential yoksa servis başlatılmaz. Development ortamında memory-store yalnızca yerel uyumluluk için kullanılabilir ve cron/job akışları Firestore verisi yazmadan skip eder.
+- Geçerli Admin credential yoksa servis degraded modda canlı kalır; auth/database gerektiren API'ler geçerli service-account gelene kadar 503 döndürebilir.
 
 Doğru değer üretimi:
 
@@ -160,7 +160,7 @@ FIREBASE_KEY_BASE64=SERVICE_ACCOUNT_JSON_BASE64
 Kalıcı frontend düzeltmesi:
 
 - `public/playmatrix-static-runtime.js` public Firebase Web Config ve Render backend origin fallback sağlar.
-- HTML giriş noktaları hardcoded backend origin taşımaz; production backend origin `public/playmatrix-static-runtime.js` üzerinden tek kaynak olarak sağlanır.
+- Tüm HTML giriş noktalarında `playmatrix-api-url` metası `https://emirhan-siye.onrender.com` olarak ayarlanmıştır.
 - Root HTML içindeki eski statik meta CSP kaldırıldı; production CSP sunucu Helmet headerları üzerinden uygulanır ve statik CDN fallback Render API originini engellemez.
 
 ## Render 2026-04-25 runtime düzeltmesi

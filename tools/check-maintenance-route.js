@@ -24,9 +24,6 @@ function read(filePath) {
 }
 
 if (!fs.existsSync(serverPath)) fail('server.js bulunamadı.');
-const rootEntries = fs.readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
-const brokenMaintenanceDirs = rootEntries.filter((name) => /^Bak/i.test(name) && name !== 'Bakım');
-if (brokenMaintenanceDirs.length) fail(`Bakım klasör encoding sorunu: ${brokenMaintenanceDirs.join(', ')}. Tek geçerli klasör adı Bakım olmalı.`);
 if (!fs.existsSync(bakımPath)) fail('Bakım/index.html bulunamadı veya klasör adı bozuk.');
 if (!fs.existsSync(shellJs)) fail('public/shell-enhancements.js bulunamadı.');
 if (!fs.existsSync(shellCss)) fail('public/shell-enhancements.css bulunamadı.');

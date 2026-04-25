@@ -36,7 +36,7 @@ const homeJs = [read('script.js'), readTree('public/js/home', '.js'), readTree('
 const css = [read('style.css'), readTree('public/css', '.css')].join('\n');
 const indexHtml = read('index.html');
 
-mustContain(indexHtml, 'index.html', 'name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"', 'FAZ 3 standart mobil viewport');
+mustContain(indexHtml, 'index.html', 'name="viewport" content="width=device-width, initial-scale=0.90, maximum-scale=0.90, minimum-scale=0.90, user-scalable=no, viewport-fit=cover"', 'korunan mobil viewport');
 mustContain(indexHtml, 'index.html', 'id="ddLevel"', 'profil dropdown seviye id');
 mustContain(indexHtml, 'index.html', 'id="profileStatsGrid"', 'profil istatistik grid');
 mustContain(indexHtml, 'index.html', 'promo-stack--enhanced', 'yenilenmiş promo isimlendirmesi');

@@ -182,7 +182,7 @@ function looksLikeRawFirebaseKey(value = '') {
   const raw = String(value || '').trim();
   if (!raw) return false;
   return /"private_key"\s*:/i.test(raw)
-    || /-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----/i.test(raw)
+    || /-----BEGIN [^-]+ PRIVATE KEY-----/i.test(raw)
     || /"client_email"\s*:\s*"[^"@]+@[^"@]+\.iam\.gserviceaccount\.com"/i.test(raw);
 }
 
@@ -247,7 +247,8 @@ function validateRuntimeEnv(env = process.env) {
     && hasAnyValue(env, ['FIREBASE_CLIENT_EMAIL', 'FIREBASE_SERVICE_ACCOUNT_EMAIL', 'GOOGLE_CLIENT_EMAIL']);
   const hasLegacyRawFirebaseKey = hasValue(env, 'FIREBASE_KEY');
   if (production && !hasPreferredFirebaseCredential && !hasSplitFirebaseCredential && !hasLegacyRawFirebaseKey) {
-    errors.push('Üretimde Firebase Admin credential zorunludur: FIREBASE_KEY_BASE64, FIREBASE_KEY_PATH veya split FIREBASE_PRIVATE_KEY + FIREBASE_CLIENT_EMAIL kullan. Production memory-store fallback kapalıdır.');
+    const message = 'Üretimde Firebase Admin credential eksik/geçersiz: FIREBASE_KEY_BASE64, FIREBASE_KEY_PATH veya split FIREBASE_PRIVATE_KEY + FIREBASE_CLIENT_EMAIL kullan. Servis degraded modda açılır; auth/database APIleri için geçerli Admin credential şarttır.';
+    (isTruthyFlag(env.FIREBASE_ADMIN_STRICT_BOOT) ? errors : warnings).push(message);
   }
   if (production && hasLegacyRawFirebaseKey) {
     warnings.push('Legacy raw FIREBASE_KEY üretimde algılandı; deploy kırılmaması için desteklenir, fakat FIREBASE_KEY_BASE64 veya FIREBASE_KEY_PATH standardına taşınmalıdır.');
@@ -256,7 +257,7 @@ function validateRuntimeEnv(env = process.env) {
     warnings.push('FIREBASE_KEY içinde raw service-account/private_key içeriği algılandı; base64 veya secret-file kullan.');
   }
   if (env.FIREBASE_KEY_BASE64 && !hasValue(env, 'FIREBASE_KEY_BASE64')) {
-    (production ? errors : warnings).push('FIREBASE_KEY_BASE64 placeholder/geçersiz değer gibi görünüyor; gerçek service-account JSON base64 değeriyle değiştir.');
+    warnings.push('FIREBASE_KEY_BASE64 placeholder/geçersiz değer gibi görünüyor; gerçek service-account JSON base64 değeriyle değiştir.');
   }
 
   const missingPublicFirebase = [

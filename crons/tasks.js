@@ -1,6 +1,6 @@
 'use strict';
 
-const { db, admin, isFirebaseReady, getFirebaseStatus } = require('../config/firebase');
+const { db, admin } = require('../config/firebase');
 const { safeNum, nowMs, cleanStr } = require('../utils/helpers');
 const { writeLine, serializeError } = require('../utils/logger');
 const { grantReward } = require('../utils/rewardService');
@@ -28,27 +28,7 @@ const colLobbyChat = () => db.collection('lobby_chat');
 
 const wait = (ms = 0) => new Promise((resolve) => setTimeout(resolve, Math.max(0, safeNum(ms, 0))));
 
-const skippedFirebaseCronLogs = new Set();
 
-function shouldSkipFirebaseCron(job = 'cron') {
-  if (typeof isFirebaseReady === 'function' && isFirebaseReady()) return false;
-  if (!skippedFirebaseCronLogs.has(job)) {
-    skippedFirebaseCronLogs.add(job);
-    const status = typeof getFirebaseStatus === 'function' ? getFirebaseStatus() : {};
-    writeLine('warn', 'cron_skipped_firebase_admin_unavailable', {
-      job,
-      code: 'FIREBASE_ADMIN_UNAVAILABLE',
-      reason: cleanStr(status?.error || 'Firebase Admin hazır değil.', 500),
-      firebaseMode: cleanStr(status?.mode || 'unknown', 80)
-    });
-  }
-  return true;
-}
-
-async function runFirebaseCron(job, handler) {
-  if (shouldSkipFirebaseCron(job)) return null;
-  return handler();
-}
 
 async function commitBatchOps(ops) {
   const MAX = 450;
@@ -152,7 +132,6 @@ async function resetActivityPresentationForNewPeriod(currentPeriodKey = '') {
 }
 
 async function processMonthlyRewardsIfNeeded() {
-  if (shouldSkipFirebaseCron('monthly_rewards')) return null;
   const resetMeta = getActivityResetWindowMeta();
   const currentPeriodKey = resetMeta.currentPeriodKey;
   const rewardMonthKey = resetMeta.previousPeriodKey || getPreviousActivityPeriodKey(currentPeriodKey);
@@ -237,7 +216,6 @@ async function processMonthlyRewardsIfNeeded() {
 }
 
 async function processActivityResetIfNeeded() {
-  if (shouldSkipFirebaseCron('activity_reset')) return null;
   const resetMeta = getActivityResetWindowMeta();
   const currentPeriodKey = resetMeta.currentPeriodKey;
   const lock = await acquireJobLock('activity_reset');
@@ -267,7 +245,6 @@ async function processActivityResetIfNeeded() {
 }
 
 async function cleanupStaleData() {
-  if (shouldSkipFirebaseCron('cleanup_stale_data')) return null;
   try {
     const now = Date.now();
     const oldTime20Mins = now - (20 * 60 * 1000);
@@ -426,16 +403,16 @@ async function cleanupLongTermData() {
 }
 
 function initCrons() {
-  setInterval(() => { runFirebaseCron('cleanup_stale_data', cleanupStaleData).catch(() => null); }, 60 * 1000);
+  setInterval(() => { cleanupStaleData().catch(() => null); }, 60 * 1000);
   setInterval(() => { cleanupLongTermData().catch(() => null); }, 60 * 60 * 1000);
-  setInterval(() => { runFirebaseCron('monthly_rewards', processMonthlyRewardsIfNeeded).catch(() => null); }, MONTHLY_REWARD_CHECK_INTERVAL_MS);
-  setInterval(() => { runFirebaseCron('activity_reset', processActivityResetIfNeeded).catch(() => null); }, ACTIVITY_RESET_CHECK_INTERVAL_MS);
-  setInterval(() => { runFirebaseCron('inactive_users_cleanup', warnInactiveUsersAndCleanup).catch(() => null); }, 6 * 60 * 60 * 1000);
+  setInterval(() => { processMonthlyRewardsIfNeeded().catch(() => null); }, MONTHLY_REWARD_CHECK_INTERVAL_MS);
+  setInterval(() => { processActivityResetIfNeeded().catch(() => null); }, ACTIVITY_RESET_CHECK_INTERVAL_MS);
+  setInterval(() => { warnInactiveUsersAndCleanup().catch(() => null); }, 6 * 60 * 60 * 1000);
 
-  setTimeout(() => { runFirebaseCron('cleanup_stale_data', cleanupStaleData).catch(() => null); }, 10 * 1000).unref();
-  setTimeout(() => { runFirebaseCron('monthly_rewards', processMonthlyRewardsIfNeeded).catch(() => null); }, 20 * 1000).unref();
-  setTimeout(() => { runFirebaseCron('activity_reset', processActivityResetIfNeeded).catch(() => null); }, 30 * 1000).unref();
-  setTimeout(() => { runFirebaseCron('inactive_users_cleanup', warnInactiveUsersAndCleanup).catch(() => null); }, 40 * 1000).unref();
+  setTimeout(() => { cleanupStaleData().catch(() => null); }, 10 * 1000).unref();
+  setTimeout(() => { processMonthlyRewardsIfNeeded().catch(() => null); }, 20 * 1000).unref();
+  setTimeout(() => { processActivityResetIfNeeded().catch(() => null); }, 30 * 1000).unref();
+  setTimeout(() => { warnInactiveUsersAndCleanup().catch(() => null); }, 40 * 1000).unref();
 }
 
 module.exports = { initCrons };

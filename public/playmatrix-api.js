@@ -1,12 +1,10 @@
 (function () {
   'use strict';
 
-  const PRODUCTION_API_BASE = '';
-  const PRODUCTION_HOSTS = new Set(['playmatrix.com.tr', 'www.playmatrix.com.tr']);
-  const DEV_FALLBACKS_BY_HOST = Object.freeze({
-    localhost: 'http://localhost:3000',
+  const DEV_FALLBACKS_BY_HOST = {
+    'localhost': 'http://localhost:3000',
     '127.0.0.1': 'http://localhost:3000'
-  });
+  };
   const PM_API_STORAGE_KEY = 'pm_api_base';
   const PM_API_TIMEOUT_MS = 2500;
 
@@ -18,10 +16,6 @@
 
   function normalizeBase(value) {
     return String(value || '').trim().replace(/\/+$/, '').replace(/\/api$/i, '');
-  }
-
-  function isProductionHost() {
-    return PRODUCTION_HOSTS.has(String(window.location.hostname || '').trim().toLowerCase());
   }
 
   function getHostFallback() {
@@ -38,7 +32,7 @@
   }
 
   function getStaticRuntimeBase() {
-    return normalizeBase(window.__PM_STATIC_RUNTIME_CONFIG__?.apiBase || PRODUCTION_API_BASE);
+    return normalizeBase(window.__PM_STATIC_RUNTIME_CONFIG__?.apiBase || '');
   }
 
   function isCurrentOriginOnly(base) {
@@ -46,7 +40,6 @@
   }
 
   function getStoredBase() {
-    if (isProductionHost()) return '';
     try {
       const fromSession = normalizeBase(window.sessionStorage?.getItem(PM_API_STORAGE_KEY) || '');
       if (fromSession) return fromSession;
@@ -60,7 +53,7 @@
 
   function persistBase(value) {
     const normalized = normalizeBase(value);
-    if (!normalized || isProductionHost()) return;
+    if (!normalized) return;
     try { window.sessionStorage?.setItem(PM_API_STORAGE_KEY, normalized); } catch (_) {}
     try { window.localStorage?.setItem(PM_API_STORAGE_KEY, normalized); } catch (_) {}
   }
@@ -72,21 +65,20 @@
       if (!normalized || list.includes(normalized)) return;
       list.push(normalized);
     };
-
     push(getStaticRuntimeBase());
-    push(getMetaBase());
     push(getRuntimeBase());
-    push(getHostFallback());
+    push(getMetaBase());
     push(getStoredBase());
-    if (!isProductionHost()) push(window.location.origin);
+    push(getHostFallback());
+    push(window.location.origin);
     return list;
   }
 
   function setApiBase(base) {
-    const normalized = normalizeBase(base) || getStaticRuntimeBase() || normalizeBase(window.location.origin);
+    const normalized = normalizeBase(base);
+    if (!normalized) return normalizeBase(window.location.origin);
     window.__PM_RUNTIME = window.__PM_RUNTIME || {};
     window.__PM_RUNTIME.apiBase = normalized;
-    window.__PM_RUNTIME.canonicalApiBase = getStaticRuntimeBase() || normalized;
     window.__PLAYMATRIX_API_URL__ = normalized;
     persistBase(normalized);
     return normalized;
@@ -94,10 +86,10 @@
 
   function getApiBaseSync() {
     const preferred = getStaticRuntimeBase()
-      || getMetaBase()
       || getRuntimeBase()
-      || getHostFallback()
+      || getMetaBase()
       || getStoredBase()
+      || getHostFallback()
       || normalizeBase(window.location.origin);
     return setApiBase(preferred);
   }

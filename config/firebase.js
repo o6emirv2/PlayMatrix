@@ -19,21 +19,6 @@ function clean(value = '') {
   return String(value || '').trim();
 }
 
-function isStrictFirebaseBoot() {
-  if (isProductionEnv(process.env)) return true;
-  return isTruthyFlag(process.env.FIREBASE_ADMIN_STRICT_BOOT || '');
-}
-
-function looksLikeFirebaseWebConfig(value = {}) {
-  if (!value || typeof value !== 'object') return false;
-  return !!(value.apiKey || value.authDomain || value.appId || value.messagingSenderId || value.measurementId);
-}
-
-function redactErrorMessage(message = '') {
-  return String(message || '')
-    .replace(/-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----[\s\S]*?-----END (?:[A-Z0-9]+ )?PRIVATE KEY-----/g, '[REDACTED_PRIVATE_KEY]')
-    .replace(/private_key\"?\s*:\s*\"[^\"]+/gi, 'private_key:"[REDACTED]');
-}
 
 function isPlaceholderCredential(value = '') {
   const raw = clean(value);
@@ -202,15 +187,11 @@ function resolveFirebaseServiceAccount() {
 }
 
 function validateServiceAccount(serviceAccount = {}) {
-  if (looksLikeFirebaseWebConfig(serviceAccount) && !clean(serviceAccount.private_key)) {
-    throw new Error('FIREBASE_KEY_BASE64 içine Firebase Web Config yazılmış görünüyor. Admin SDK için service-account JSON gerekir: type, project_id, client_email ve private_key alanları zorunludur.');
-  }
-
   const missing = [];
   if (serviceAccount.type !== 'service_account') missing.push('type=service_account');
   if (!clean(serviceAccount.project_id)) missing.push('project_id');
   if (!clean(serviceAccount.client_email) || !/@.+\.iam\.gserviceaccount\.com$/i.test(clean(serviceAccount.client_email))) missing.push('client_email');
-  if (!clean(serviceAccount.private_key) || !/-----BEGIN (?:[A-Z0-9]+ )?PRIVATE KEY-----/i.test(clean(serviceAccount.private_key))) missing.push('private_key');
+  if (!clean(serviceAccount.private_key) || !/-----BEGIN [^-]+ PRIVATE KEY-----/i.test(clean(serviceAccount.private_key))) missing.push('private_key');
   if (missing.length) {
     throw new Error(`Firebase service account eksik/geçersiz alanlar: ${missing.join(', ')}`);
   }
@@ -237,21 +218,14 @@ function buildFirebaseAdminOptions(serviceAccount) {
 
 function markFirebaseUnavailable(error, source = '') {
   firebaseReady = false;
-  firebaseCredentialSource = source || firebaseCredentialSource || 'unavailable';
-  const rawError = error instanceof Error ? error : new Error(String(error || 'Firebase Admin kullanılamıyor.'));
-  firebaseInitError = new Error(redactErrorMessage(rawError.message || 'Firebase Admin kullanılamıyor.'));
-  if (isStrictFirebaseBoot() && !/production memory-store fallback kapalı/i.test(firebaseInitError.message)) {
-    firebaseInitError.message = `${firebaseInitError.message} Production memory-store fallback kapalıdır.`;
-  }
-  firebaseInitError.code = rawError.code || 'FIREBASE_ADMIN_UNAVAILABLE';
+  firebaseCredentialSource = source || firebaseCredentialSource || 'degraded-memory';
+  firebaseInitError = error instanceof Error ? error : new Error(String(error || 'Firebase Admin kullanılamıyor.'));
   const message = firebaseInitError.message || 'bilinmeyen hata';
-
-  if (isStrictFirebaseBoot()) {
-    console.error(`[PlayMatrix][firebase] KRİTİK: Firebase Admin başlatılamadı; production memory-store fallback kapalı. ${message}`);
+  if (isProductionEnv(process.env) && isTruthyFlag(process.env.FIREBASE_ADMIN_STRICT_BOOT || '')) {
+    console.error(`[PlayMatrix][firebase] Firebase Admin devre dışı: ${message}`);
     throw firebaseInitError;
   }
-
-  console.warn(`[PlayMatrix][firebase] Firebase Admin devre dışı; yalnızca development için REST auth + memory-store degraded mod aktif. ${message}`);
+  console.warn(`[PlayMatrix][firebase] Firebase Admin devre dışı; REST auth + memory-store degraded mod aktif: ${message}`);
 }
 
 function unavailableError() {
@@ -305,7 +279,7 @@ function getFirebaseStatus() {
   return {
     ready: firebaseReady,
     degraded: !firebaseReady,
-    mode: firebaseReady ? 'admin-sdk' : 'development-rest-auth-memory-store',
+    mode: firebaseReady ? 'admin-sdk' : 'rest-auth-memory-store',
     source: firebaseCredentialSource || null,
     error: firebaseInitError ? firebaseInitError.message : null
   };
