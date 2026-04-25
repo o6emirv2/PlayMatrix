@@ -13,9 +13,9 @@ const { recordRewardLedger, buildLedgerDocId } = require('../utils/rewardLedger'
 const { createNotification } = require('../utils/notifications');
 const { saveMatchHistory } = require('../utils/matchHistory');
 const { buildTimelineEvent, appendTimelineEntry, bumpStateVersion } = require('../utils/gameFlow');
-const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
+const { getCanonicalSelectedFrame } = require('../utils/accountState');
 const { assertGamesAllowed } = require('../utils/userRestrictions');
-const { getAccountXp, normalizeUserRankState } = require('../utils/progression');
+const { applyProgressionPatchInTransaction } = require('../utils/economyCore');
 
 const colPisti = () => db.collection('pisti_sessions');
 const colOnlinePisti = () => db.collection('pisti_online_rooms');
@@ -59,9 +59,9 @@ function pickUserSelectedFrame(user = {}) {
 
 
 
-function calculateSpendProgressReward(spendMc = 0, source = '') {
+function calculatePistiSpendProgressReward(spendMc = 0, source = '') {
   const spend = Math.max(0, Math.floor(safeNum(spendMc, 0)));
-  if (spend <= 0) return { xpEarned: 0, activityEarned: 0, roundsEarned: 0, spentMc: 0, source: cleanStr(source || 'GAME_SPEND', 64) };
+  if (spend <= 0) return { xpEarned: 0, activityEarned: 0, roundsEarned: 0, spentMc: 0, source: cleanStr(source || 'PISTI_SPEND', 64) };
   let xpEarned = 0;
   if (spend >= 200000) xpEarned = 110;
   else if (spend >= 100000) xpEarned = 64;
@@ -69,40 +69,21 @@ function calculateSpendProgressReward(spendMc = 0, source = '') {
   else if (spend >= 20000) xpEarned = 20;
   else if (spend >= 10000) xpEarned = 12;
   else if (spend >= 1000) xpEarned = 5;
-  return {
-    xpEarned,
-    activityEarned: 1,
-    roundsEarned: 1,
-    spentMc: spend,
-    source: cleanStr(source || 'PISTI_SPEND', 64) || 'PISTI_SPEND'
-  };
+  return { xpEarned, activityEarned: 1, roundsEarned: 1, spentMc: spend, source: cleanStr(source || 'PISTI_SPEND', 64) || 'PISTI_SPEND' };
 }
 
 function applySpendProgression(tx, userRef, userData = {}, spendMc = 0, source = '') {
-  const reward = calculateSpendProgressReward(spendMc, source);
-  const nextUser = {
-    ...userData,
-    accountXp: Math.max(0, getAccountXp(userData) + reward.xpEarned),
-    monthlyActiveScore: Math.max(0, safeNum(userData.monthlyActiveScore, 0) + reward.activityEarned),
-    totalRounds: Math.max(0, safeNum(userData.totalRounds, 0) + reward.roundsEarned),
-    totalSpentMc: Math.max(0, safeNum(userData.totalSpentMc, 0) + reward.spentMc)
-  };
-  const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-  const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextUser.monthlyActiveScore });
-  tx.set(userRef, {
-    ...canonical,
-    ...normalized,
-    monthlyActiveScore: nextUser.monthlyActiveScore,
-    totalRounds: nextUser.totalRounds,
-    totalSpentMc: nextUser.totalSpentMc,
-    activityUpdatedAt: nowMs(),
-    lastGameProgressSource: reward.source,
-    lastGameXpEarned: reward.xpEarned
-  }, { merge: true });
+  const reward = calculatePistiSpendProgressReward(spendMc, source);
+  applyProgressionPatchInTransaction(tx, userRef, userData, {
+    xpEarned: reward.xpEarned,
+    activityEarned: reward.activityEarned,
+    roundsEarned: reward.roundsEarned,
+    spentMc: reward.spentMc,
+    source: reward.source,
+    updatedAt: nowMs()
+  });
   return reward;
 }
-
-
 
 function recordPistiProgressLedger(uid = '', reward = {}, referenceId = '', meta = {}) {
   const xpEarned = Math.max(0, Math.floor(safeNum(reward?.xpEarned, 0)));

@@ -8,8 +8,7 @@ const { db, admin } = require('../config/firebase');
 const { verifyAuth } = require('../middlewares/auth.middleware');
 const { profileLimiter } = require('../middlewares/rateLimiters');
 const { safeNum, cleanStr, nowMs } = require('../utils/helpers');
-const { getAccountXp, normalizeUserRankState } = require('../utils/progression');
-const { buildCanonicalUserState } = require('../utils/accountState');
+const { applyProgressionPatchInTransaction } = require('../utils/economyCore');
 const { recordRewardLedger } = require('../utils/rewardLedger');
 
 const colUsers = () => db.collection('users');
@@ -95,9 +94,6 @@ router.post('/classic/submit', verifyAuth, profileLimiter, async (req, res) => {
       }
 
       const userData = userSnap.exists ? (userSnap.data() || {}) : {};
-      const nextAccountXp = Math.max(0, getAccountXp(userData) + levelPoints);
-      const nextMonthlyActiveScore = Math.max(0, safeNum(userData.monthlyActiveScore, 0) + activityEarned);
-      const nextTotalRounds = Math.max(0, safeNum(userData.totalRounds, 0) + 1);
       const previousStats = (userData.classicStats && typeof userData.classicStats === 'object') ? userData.classicStats : {};
       const gameStats = previousStats[gameType] && typeof previousStats[gameType] === 'object' ? previousStats[gameType] : {};
       const nextClassicStats = {
@@ -114,36 +110,24 @@ router.post('/classic/submit', verifyAuth, profileLimiter, async (req, res) => {
         }
       };
 
-      const nextUser = {
-        ...userData,
-        accountXp: nextAccountXp,
-        monthlyActiveScore: nextMonthlyActiveScore,
-        totalRounds: nextTotalRounds,
-        classicStats: nextClassicStats,
-        lastGameProgressSource: `CLASSIC_${gameType.toUpperCase()}`,
-        lastGameXpEarned: levelPoints,
-        lastClassicGameType: gameType,
-        lastClassicScore: score,
-        lastClassicRunId: runId,
-        lastClassicSubmittedAt: submittedAt
-      };
+      const progress = applyProgressionPatchInTransaction(tx, userRef, userData, {
+        xpEarned: levelPoints,
+        activityEarned,
+        roundsEarned: 1,
+        source: `CLASSIC_${gameType.toUpperCase()}`,
+        referenceId: fingerprint,
+        updatedAt: submittedAt
+      });
 
-      const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-      const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextMonthlyActiveScore });
       tx.set(userRef, {
-        ...canonical,
-        ...normalized,
         classicStats: nextClassicStats,
-        monthlyActiveScore: nextMonthlyActiveScore,
-        totalRounds: nextTotalRounds,
-        activityUpdatedAt: submittedAt,
-        lastGameProgressSource: `CLASSIC_${gameType.toUpperCase()}`,
-        lastGameXpEarned: levelPoints,
         lastClassicGameType: gameType,
         lastClassicScore: score,
         lastClassicRunId: runId,
         lastClassicSubmittedAt: submittedAt
       }, { merge: true });
+
+      const canonical = progress.canonical;
 
       tx.create(runRef, {
         uid,

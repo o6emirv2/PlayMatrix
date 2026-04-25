@@ -5,6 +5,7 @@ const { cleanStr, safeNum, nowMs } = require('./helpers');
 const { createNotification } = require('./notifications');
 const { normalizeRewardSource, buildLedgerDocId, normalizeRewardLedgerItem } = require('./rewardLedger');
 const { getRewardDefinition, getRewardAmount, buildRewardGrantMessage } = require('../config/rewardCatalog');
+const { buildProgressionPatch } = require('./economyCore');
 
 const colUsers = () => db.collection('users');
 const colRewardLedger = () => db.collection('reward_ledger');
@@ -75,11 +76,28 @@ async function applyRewardGrantInTransaction(tx, input = {}) {
   const updateUser = input.updateUser !== false;
   const userPatch = input.userPatch && typeof input.userPatch === 'object' ? input.userPatch : {};
   const creditBalance = input.creditBalance !== false && grant.currency === 'MC';
+  const creditProgression = input.creditProgression !== false && grant.currency === 'XP';
   const committedAt = nowMs();
+  let progressionPatch = null;
+  if (updateUser && creditProgression) {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists) throw new Error('REWARD_USER_NOT_FOUND');
+    const progress = buildProgressionPatch(userSnap.data() || {}, {
+      xpEarned: grant.amount,
+      activityEarned: safeNum(grant.meta?.activityEarned, 0),
+      roundsEarned: safeNum(grant.meta?.roundsEarned, 0),
+      spentMc: safeNum(grant.meta?.spentMc, 0),
+      source: grant.source,
+      referenceId: grant.referenceId,
+      updatedAt: committedAt
+    });
+    progressionPatch = progress.patch;
+  }
   tx.set(ledgerRef, payload, { merge: false });
   if (updateUser) {
     const patch = { updatedAt: committedAt, lastRewardAt: committedAt, lastRewardSource: grant.source, lastRewardAmount: grant.amount, lastRewardLedgerId: ledgerRef.id, ...userPatch };
     if (creditBalance) patch.balance = admin.firestore.FieldValue.increment(grant.amount);
+    if (progressionPatch) Object.assign(patch, progressionPatch);
     tx.set(userRef, patch, { merge: true });
   }
   return { ...payload, id: ledgerRef.id, duplicated: false, notificationRequired: true, definition: grant.definition };

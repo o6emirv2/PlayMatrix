@@ -5,7 +5,8 @@ const {
   ACCOUNT_PROGRESSION_VERSION,
   ACCOUNT_LEVEL_CURVE_MODE,
   buildProgressionSnapshot,
-  getAccountLevel
+  getAccountLevel,
+  getAccountXpExact
 } = require('./progression');
 
 const FRAME_LEVEL_CAP = 100;
@@ -109,14 +110,17 @@ function buildCanonicalUserState(user = {}, options = {}) {
   const monthlyActiveScore = normalizeInt(user.monthlyActiveScore ?? progression.monthlyActivity, 0, Number.MAX_SAFE_INTEGER, 0);
   const accountLevel = normalizeAccountLevel(progression.accountLevel);
   const accountXp = normalizeInt(progression.accountXp, 0, Number.MAX_SAFE_INTEGER, 0);
+  const accountXpExact = getAccountXpExact({ ...user, ...progression });
   const selectedFrame = getCanonicalSelectedFrame(user, { accountLevel, defaultFrame: options.defaultFrame ?? 0 });
 
   return {
     accountXp,
+    accountXpExact,
     xp: accountXp,
     accountLevel,
     level: accountLevel,
     accountLevelScore: accountXp,
+    accountLevelScoreExact: accountXpExact,
     accountLevelProgressPct: progression.accountLevelProgressPct,
     accountLevelCurrentXp: progression.accountLevelCurrentXp,
     accountLevelNextXp: progression.accountLevelNextXp,
@@ -128,8 +132,10 @@ function buildCanonicalUserState(user = {}, options = {}) {
     progression: {
       ...progression,
       accountXp,
+      accountXpExact,
       accountLevel,
       accountLevelScore: accountXp,
+      accountLevelScoreExact: accountXpExact,
       selectedFrame,
       accountProgressionVersion: ACCOUNT_PROGRESSION_VERSION,
       accountLevelCurveMode: ACCOUNT_LEVEL_CURVE_MODE,

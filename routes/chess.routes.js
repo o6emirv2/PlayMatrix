@@ -11,8 +11,8 @@ const { getIstanbulDateKey } = require('../utils/activity');
 const { applyRewardGrantInTransaction, createRewardNotificationForGrant } = require('../utils/rewardService');
 const { assertNoOtherActiveGame } = require('../utils/gameSession');
 const { saveMatchHistory } = require('../utils/matchHistory');
-const { normalizeUserRankState, getAccountXp, buildProgressionSnapshot } = require('../utils/progression');
-const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
+const { getCanonicalSelectedFrame } = require('../utils/accountState');
+const { applyProgressionPatchInTransaction } = require('../utils/economyCore');
 const { assertGamesAllowed } = require('../utils/userRestrictions');
 const { buildTimelineEvent, appendTimelineEntry, bumpStateVersion, applySettlement, isRecordSettled } = require('../utils/gameFlow');
 const { recordGameAudit } = require('../utils/gameAudit');
@@ -82,22 +82,16 @@ function applyChessProgression(tx, uidA, uidB, outcome) {
         : { aXp: 110, bXp: 110, aActivity: 10, bActivity: 10 });
 
     const applyUserState = (ref, current, opponentUid, nextStreak, xpGain, activityGain) => {
-      const nextActivity = Math.max(0, safeNum(current.monthlyActiveScore, 0) + (boostBlocked ? 0 : activityGain));
-      const nextRounds = Math.max(0, safeNum(current.totalRounds, 0) + 1);
-      const nextXp = Math.max(0, getAccountXp(current) + (boostBlocked ? 0 : xpGain));
-      const nextUser = { ...current, accountXp: nextXp, monthlyActiveScore: nextActivity, totalRounds: nextRounds };
-      const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-      const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextActivity });
+      applyProgressionPatchInTransaction(tx, ref, current, {
+        xpEarned: boostBlocked ? 0 : xpGain,
+        activityEarned: boostBlocked ? 0 : activityGain,
+        roundsEarned: 1,
+        source: 'CHESS_MATCH',
+        updatedAt: nowMs()
+      });
       tx.set(ref, {
-        ...canonical,
-        ...normalized,
-        totalRounds: nextRounds,
-        monthlyActiveScore: nextActivity,
-        activityUpdatedAt: nowMs(),
         chessLastOppUid: opponentUid,
-        chessOppStreak: nextStreak,
-        lastGameProgressSource: 'CHESS_MATCH',
-        lastGameXpEarned: boostBlocked ? 0 : xpGain
+        chessOppStreak: nextStreak
       }, { merge: true });
     };
 

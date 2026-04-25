@@ -23,6 +23,13 @@ function assertNotIncludesInWindowClosedBranch(file) {
 assertIncludes('utils/rewardService.js', 'applyRewardGrantInTransaction', 'Merkezi reward service');
 assertIncludes('utils/rewardService.js', 'buildLedgerDocId', 'Ledger idempotency');
 assertIncludes('utils/rewardService.js', 'grantRewardToAllUsers', 'Toplu reward service');
+assertIncludes('utils/economyCore.js', 'applyProgressionPatchInTransaction', 'Merkezi XP progression transaction helper');
+assertIncludes('utils/economyCore.js', 'buildProgressionPatch', 'Merkezi progression patch builder');
+assertIncludes('utils/rewardService.js', "grant.currency === 'XP'", 'Reward service XP ledger/progression currency support');
+assertIncludes('utils/progression.js', 'ACCOUNT_LEVEL_STEPS_EXACT', 'BigInt exact XP step table');
+assertIncludes('utils/progression.js', 'accountXpExact', 'Exact XP field support');
+assertIncludes('public/data/progression-policy.js', 'ACCOUNT_LEVEL_STEPS_EXACT', 'Frontend exact XP policy');
+assertIncludes('utils/helpers.js', 'sanitizerEngine', 'xss fallback warning spam kapalı');
 assertIncludes('crons/tasks.js', "require('../utils/rewardService')", 'Cron merkezi reward service kullanımı');
 assertIncludes('crons/tasks.js', "idempotencyKey: `monthly_active_reward:${rewardMonthKey}:${item.doc.id}`", 'Aylık reward idempotency');
 assertNotIncludesInWindowClosedBranch('crons/tasks.js');

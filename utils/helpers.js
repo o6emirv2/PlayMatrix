@@ -4,10 +4,12 @@ const crypto = require('crypto');
 const { USERNAME_BAD_WORD_PATTERNS } = require('../config/constants');
 
 let xss = null;
+let sanitizerEngine = 'internal';
 try {
   xss = require('xss');
+  sanitizerEngine = 'xss';
 } catch (error) {
-  console.warn("⚠️ 'xss' modülü bulunamadı. Güçlendirilmiş dahili sanitize katmanı kullanılacak.");
+  xss = null;
 }
 
 const nowMs = () => Date.now();
@@ -178,6 +180,7 @@ function checkProfanity(text) {
 }
 
 module.exports = {
+  sanitizerEngine,
   nowMs,
   safeNum,
   safeSignedNum,

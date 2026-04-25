@@ -3,10 +3,11 @@
 const { safeNum } = require('./helpers');
 
 const ACCOUNT_LEVEL_CAP = 100;
-const ACCOUNT_PROGRESSION_VERSION = 5;
-const ACCOUNT_LEVEL_CURVE_MODE = 'MD_FACTORIAL_OPTION_A';
+const ACCOUNT_PROGRESSION_VERSION = 6;
+const ACCOUNT_LEVEL_CURVE_MODE = 'MD_FACTORIAL_OPTION_A_BIGINT';
 const ACCOUNT_BASE_XP = 120;
 const MIGRATION_ACCOUNT_XP_STEP = 100;
+const MAX_SAFE_XP_NUMBER = Number.MAX_SAFE_INTEGER;
 
 const LEGACY_V4_LEVEL_STEP_SEGMENTS = Object.freeze([
   Object.freeze({ from: 1, to: 9, startStep: 120, endStep: 420 }),
@@ -43,10 +44,33 @@ function normalizeLevel(level = 1) {
   return Math.max(1, Math.min(ACCOUNT_LEVEL_CAP, clampPositiveInt(level, 1)));
 }
 
+function parseXpBigInt(value = 0) {
+  if (typeof value === 'bigint') return value > 0n ? value : 0n;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value <= 0) return 0n;
+    return BigInt(Math.floor(Math.min(value, Number.MAX_VALUE)));
+  }
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0n;
+  if (/^\d+$/.test(raw)) return BigInt(raw);
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0n;
+  return BigInt(Math.floor(Math.min(parsed, Number.MAX_VALUE)));
+}
+
+function toFiniteXpNumber(value = 0n) {
+  const exact = parseXpBigInt(value);
+  if (exact <= BigInt(MAX_SAFE_XP_NUMBER)) return Number(exact);
+  const approx = Number(exact.toString());
+  return Number.isFinite(approx) ? approx : Number.MAX_VALUE;
+}
+
 function normalizeXp(value = 0) {
-  const parsed = safeNum(value, 0);
-  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
-  return parsed;
+  return toFiniteXpNumber(parseXpBigInt(value));
+}
+
+function normalizeXpExact(value = 0) {
+  return parseXpBigInt(value).toString();
 }
 
 function interpolateStep(segment, level) {
@@ -75,49 +99,65 @@ const LEGACY_V4_LEVEL_THRESHOLDS = Object.freeze((() => {
   return table;
 })());
 
-function buildMdFactorialStepTable() {
-  const table = new Array(ACCOUNT_LEVEL_CAP + 1).fill(0);
-  let step = ACCOUNT_BASE_XP;
+function buildMdFactorialStepTableExact() {
+  const table = new Array(ACCOUNT_LEVEL_CAP + 1).fill(0n);
+  let step = BigInt(ACCOUNT_BASE_XP);
   for (let level = 1; level < ACCOUNT_LEVEL_CAP; level += 1) {
-    if (level === 1) step = ACCOUNT_BASE_XP;
-    else step *= level;
+    if (level === 1) step = BigInt(ACCOUNT_BASE_XP);
+    else step *= BigInt(level);
     table[level] = step;
   }
   return table;
 }
 
-const ACCOUNT_LEVEL_STEPS = Object.freeze(buildMdFactorialStepTable());
+const ACCOUNT_LEVEL_STEPS_BIGINT = Object.freeze(buildMdFactorialStepTableExact());
+const ACCOUNT_LEVEL_STEPS_EXACT = Object.freeze(ACCOUNT_LEVEL_STEPS_BIGINT.map((xp) => xp.toString()));
+const ACCOUNT_LEVEL_STEPS = Object.freeze(ACCOUNT_LEVEL_STEPS_BIGINT.map((xp) => toFiniteXpNumber(xp)));
+
+const ACCOUNT_LEVEL_THRESHOLDS_BIGINT = Object.freeze((() => {
+  const table = new Array(ACCOUNT_LEVEL_CAP + 1).fill(0n);
+  let cumulativeXp = 0n;
+  table[1] = 0n;
+  for (let level = 2; level <= ACCOUNT_LEVEL_CAP; level += 1) {
+    cumulativeXp += ACCOUNT_LEVEL_STEPS_BIGINT[level - 1];
+    table[level] = cumulativeXp;
+  }
+  return table;
+})());
+const ACCOUNT_LEVEL_THRESHOLDS_EXACT = Object.freeze(ACCOUNT_LEVEL_THRESHOLDS_BIGINT.map((xp) => xp.toString()));
+const ACCOUNT_LEVEL_THRESHOLDS = Object.freeze(ACCOUNT_LEVEL_THRESHOLDS_BIGINT.map((xp) => toFiniteXpNumber(xp)));
+
 const ACCOUNT_LEVEL_STEP_RULES = Object.freeze(Array.from({ length: ACCOUNT_LEVEL_CAP - 1 }, (_, index) => {
   const level = index + 1;
   return Object.freeze({
     fromLevel: level,
     toLevel: level + 1,
     multiplier: level === 1 ? 1 : level,
-    stepXp: ACCOUNT_LEVEL_STEPS[level]
+    stepXp: ACCOUNT_LEVEL_STEPS[level],
+    stepXpExact: ACCOUNT_LEVEL_STEPS_EXACT[level]
   });
 }));
 
 function getXpStepForLevel(level = 1) {
   const safeLevel = normalizeLevel(level);
   if (safeLevel >= ACCOUNT_LEVEL_CAP) return 0;
-  return normalizeXp(ACCOUNT_LEVEL_STEPS[safeLevel]);
+  return ACCOUNT_LEVEL_STEPS[safeLevel];
 }
 
-const ACCOUNT_LEVEL_THRESHOLDS = Object.freeze((() => {
-  const table = new Array(ACCOUNT_LEVEL_CAP + 1).fill(0);
-  let cumulativeXp = 0;
-  table[1] = 0;
-  for (let level = 2; level <= ACCOUNT_LEVEL_CAP; level += 1) {
-    cumulativeXp += getXpStepForLevel(level - 1);
-    table[level] = cumulativeXp;
-  }
-  return table;
-})());
+function getXpStepExactForLevel(level = 1) {
+  const safeLevel = normalizeLevel(level);
+  if (safeLevel >= ACCOUNT_LEVEL_CAP) return '0';
+  return ACCOUNT_LEVEL_STEPS_EXACT[safeLevel];
+}
 
 const ACCOUNT_XP_STEP = getXpStepForLevel(1);
 
 function deriveXpFromLevel(level = 1) {
   return ACCOUNT_LEVEL_THRESHOLDS[normalizeLevel(level)] || 0;
+}
+
+function deriveXpExactFromLevel(level = 1) {
+  return ACCOUNT_LEVEL_THRESHOLDS_EXACT[normalizeLevel(level)] || '0';
 }
 
 function deriveLegacyV4XpFromLevel(level = 1) {
@@ -129,15 +169,15 @@ function deriveMigrationQuadraticXpFromLevel(level = 1) {
   return Math.max(0, Math.round(Math.pow(Math.max(0, safeLevel - 1), 2) * MIGRATION_ACCOUNT_XP_STEP));
 }
 
-function getLevelFromThresholds(xp = 0, thresholds = ACCOUNT_LEVEL_THRESHOLDS) {
-  const safeXp = normalizeXp(xp);
+function getLevelFromThresholds(xp = 0, thresholds = ACCOUNT_LEVEL_THRESHOLDS_BIGINT) {
+  const safeXp = parseXpBigInt(xp);
+  const thresholdTable = Array.isArray(thresholds) ? thresholds : ACCOUNT_LEVEL_THRESHOLDS_BIGINT;
   let low = 1;
   let high = ACCOUNT_LEVEL_CAP;
   let resolved = 1;
-
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
-    const threshold = thresholds[normalizeLevel(mid)] || 0;
+    const threshold = parseXpBigInt(thresholdTable[normalizeLevel(mid)] || 0);
     if (safeXp >= threshold) {
       resolved = mid;
       low = mid + 1;
@@ -145,7 +185,6 @@ function getLevelFromThresholds(xp = 0, thresholds = ACCOUNT_LEVEL_THRESHOLDS) {
       high = mid - 1;
     }
   }
-
   return normalizeLevel(resolved);
 }
 
@@ -184,16 +223,13 @@ function mapStoredXpToCurrentXp(storedXp = 0, version = 0) {
   const safeVersion = Math.floor(safeNum(version, 0));
   if (safeVersion >= ACCOUNT_PROGRESSION_VERSION) return normalizeXp(storedXp);
   if (safeVersion >= 4) {
-    return mapXpBetweenCurves(storedXp, {
-      fromThresholds: LEGACY_V4_LEVEL_THRESHOLDS,
-      fromStepForLevel: getLegacyV4XpStepForLevel
-    });
+    return mapXpBetweenCurves(storedXp, { fromThresholds: LEGACY_V4_LEVEL_THRESHOLDS, fromStepForLevel: getLegacyV4XpStepForLevel });
   }
   return mapLegacyQuadraticXpToCurrentXp(storedXp);
 }
 
 function getAccountLevelFromXp(xp = 0) {
-  return getLevelFromThresholds(xp, ACCOUNT_LEVEL_THRESHOLDS);
+  return getLevelFromThresholds(xp, ACCOUNT_LEVEL_THRESHOLDS_BIGINT);
 }
 
 function isCurrentProgressionVersion(user = {}) {
@@ -211,77 +247,98 @@ function getMonthlyActivity(user = {}) {
   return 0;
 }
 
-function getAccountXp(user = {}) {
+function getAccountXpExact(user = {}) {
+  const exactCandidates = [user.accountXpExact, user.accountLevelScoreExact, user.progression?.accountXpExact, user.progression?.accountLevelScoreExact];
+  if (isCurrentProgressionVersion(user)) {
+    for (const candidate of exactCandidates) {
+      if (String(candidate ?? '').trim()) return normalizeXpExact(candidate);
+    }
+  }
   const explicitAccountXp = safeNum(user.accountXp ?? user.accountLevelScore, Number.NaN);
   const explicitXp = safeNum(user.xp, Number.NaN);
   const explicitLevel = safeNum(user.accountLevel ?? user.level, Number.NaN);
   const progressionVersion = Math.floor(safeNum(user.accountProgressionVersion ?? user.progression?.accountProgressionVersion, 0));
 
   if (isCurrentProgressionVersion(user)) {
-    if (Number.isFinite(explicitAccountXp) && explicitAccountXp >= 0) return normalizeXp(explicitAccountXp);
-    if (Number.isFinite(explicitXp) && explicitXp >= 0) return normalizeXp(explicitXp);
-    if (Number.isFinite(explicitLevel) && explicitLevel > 0) return deriveXpFromLevel(explicitLevel);
-    return 0;
+    if (Number.isFinite(explicitAccountXp) && explicitAccountXp >= 0) return normalizeXpExact(explicitAccountXp);
+    if (Number.isFinite(explicitXp) && explicitXp >= 0) return normalizeXpExact(explicitXp);
+    if (Number.isFinite(explicitLevel) && explicitLevel > 0) return deriveXpExactFromLevel(explicitLevel);
+    return '0';
   }
 
-  if (Number.isFinite(explicitAccountXp) && explicitAccountXp >= 0) return mapStoredXpToCurrentXp(explicitAccountXp, progressionVersion);
-  if (Number.isFinite(explicitXp) && explicitXp >= 0) return mapStoredXpToCurrentXp(explicitXp, progressionVersion);
-  if (Number.isFinite(explicitLevel) && explicitLevel > 0) return deriveXpFromLevel(explicitLevel);
-  return 0;
+  if (Number.isFinite(explicitAccountXp) && explicitAccountXp >= 0) return normalizeXpExact(mapStoredXpToCurrentXp(explicitAccountXp, progressionVersion));
+  if (Number.isFinite(explicitXp) && explicitXp >= 0) return normalizeXpExact(mapStoredXpToCurrentXp(explicitXp, progressionVersion));
+  if (Number.isFinite(explicitLevel) && explicitLevel > 0) return deriveXpExactFromLevel(explicitLevel);
+  return '0';
+}
+
+function getAccountXp(user = {}) {
+  return normalizeXp(getAccountXpExact(user));
 }
 
 function getAccountLevel(user = {}) {
   const explicitLevel = safeNum(user.accountLevel ?? user.level, Number.NaN);
   if (isCurrentProgressionVersion(user) && Number.isFinite(explicitLevel) && explicitLevel > 0) return normalizeLevel(explicitLevel);
-  return getAccountLevelFromXp(getAccountXp(user));
+  return getAccountLevelFromXp(getAccountXpExact(user));
 }
 
 function getAccountLevelWindow(level = 1) {
   const safeLevel = normalizeLevel(level);
-  const currentLevelXp = deriveXpFromLevel(safeLevel);
-  const nextLevelXp = safeLevel >= ACCOUNT_LEVEL_CAP ? currentLevelXp : deriveXpFromLevel(safeLevel + 1);
-  const currentLevelSpan = Math.max(1, nextLevelXp - currentLevelXp);
+  const currentLevelXpExact = deriveXpExactFromLevel(safeLevel);
+  const nextLevelXpExact = safeLevel >= ACCOUNT_LEVEL_CAP ? currentLevelXpExact : deriveXpExactFromLevel(safeLevel + 1);
+  const currentLevelSpanExact = (parseXpBigInt(nextLevelXpExact) - parseXpBigInt(currentLevelXpExact)).toString();
   return {
-    currentLevelXp,
-    nextLevelXp,
-    currentLevelSpan,
-    xpSpanToNextLevel: currentLevelSpan
+    currentLevelXp: normalizeXp(currentLevelXpExact),
+    nextLevelXp: normalizeXp(nextLevelXpExact),
+    currentLevelSpan: Math.max(1, normalizeXp(currentLevelSpanExact)),
+    xpSpanToNextLevel: Math.max(1, normalizeXp(currentLevelSpanExact)),
+    currentLevelXpExact,
+    nextLevelXpExact,
+    currentLevelSpanExact,
+    xpSpanToNextLevelExact: currentLevelSpanExact
   };
 }
 
 function getAccountLevelProgress(user = {}) {
-  const accountXp = getAccountXp(user);
+  const accountXpExact = getAccountXpExact(user);
+  const accountXpBig = parseXpBigInt(accountXpExact);
   const accountLevel = getAccountLevel(user);
-  const { currentLevelXp, nextLevelXp, currentLevelSpan, xpSpanToNextLevel } = getAccountLevelWindow(accountLevel);
-  const progressInLevel = accountLevel >= ACCOUNT_LEVEL_CAP ? currentLevelSpan : Math.max(0, accountXp - currentLevelXp);
-  const xpToNextLevel = accountLevel >= ACCOUNT_LEVEL_CAP ? 0 : Math.max(0, nextLevelXp - accountXp);
-  const progressPct = accountLevel >= ACCOUNT_LEVEL_CAP ? 100 : Math.max(0, Math.min(100, (progressInLevel / currentLevelSpan) * 100));
+  const window = getAccountLevelWindow(accountLevel);
+  const currentLevelXpBig = parseXpBigInt(window.currentLevelXpExact);
+  const nextLevelXpBig = parseXpBigInt(window.nextLevelXpExact);
+  const spanBig = nextLevelXpBig > currentLevelXpBig ? (nextLevelXpBig - currentLevelXpBig) : 1n;
+  const progressBig = accountLevel >= ACCOUNT_LEVEL_CAP ? spanBig : (accountXpBig > currentLevelXpBig ? accountXpBig - currentLevelXpBig : 0n);
+  const remainingBig = accountLevel >= ACCOUNT_LEVEL_CAP ? 0n : (nextLevelXpBig > accountXpBig ? nextLevelXpBig - accountXpBig : 0n);
+  const progressPct = accountLevel >= ACCOUNT_LEVEL_CAP ? 100 : Math.max(0, Math.min(100, Number((progressBig * 10000n) / spanBig) / 100));
   return {
-    accountXp,
+    accountXp: normalizeXp(accountXpExact),
+    accountXpExact,
     accountLevel,
-    currentLevelXp,
-    nextLevelXp,
-    currentLevelSpan,
-    xpSpanToNextLevel,
-    xpToNextLevel,
-    progressInLevel,
+    currentLevelXp: window.currentLevelXp,
+    nextLevelXp: window.nextLevelXp,
+    currentLevelSpan: window.currentLevelSpan,
+    xpSpanToNextLevel: window.xpSpanToNextLevel,
+    currentLevelXpExact: window.currentLevelXpExact,
+    nextLevelXpExact: window.nextLevelXpExact,
+    currentLevelSpanExact: window.currentLevelSpanExact,
+    xpSpanToNextLevelExact: window.xpSpanToNextLevelExact,
+    xpToNextLevel: normalizeXp(remainingBig),
+    xpToNextLevelExact: remainingBig.toString(),
+    progressInLevel: normalizeXp(progressBig),
+    progressInLevelExact: progressBig.toString(),
     progressPct,
-    score: accountXp
+    score: normalizeXp(accountXpExact),
+    scoreExact: accountXpExact
   };
 }
 
 function buildLevelRankMeta(accountLevel = 1) {
   const safeLevel = normalizeLevel(accountLevel);
-  return {
-    key: 'level',
-    name: `Seviye ${safeLevel}`,
-    className: 'rank-level'
-  };
+  return { key: 'level', name: `Seviye ${safeLevel}`, className: 'rank-level' };
 }
 
 function getRankMetaFromScore(score = 0) {
-  const safeScore = Math.max(0, safeNum(score, 0));
-  return buildLevelRankMeta(getAccountLevelFromXp(safeScore));
+  return buildLevelRankMeta(getAccountLevelFromXp(score));
 }
 
 function getTotalRankMeta(user = {}) {
@@ -291,9 +348,7 @@ function getTotalRankMeta(user = {}) {
 function getActivityRankMeta(user = {}) {
   const score = getMonthlyActivity(user);
   let resolved = MONTHLY_ACTIVITY_STAGES[0];
-  for (const stage of MONTHLY_ACTIVITY_STAGES) {
-    if (score >= stage.min) resolved = stage;
-  }
+  for (const stage of MONTHLY_ACTIVITY_STAGES) if (score >= stage.min) resolved = stage;
   return resolved;
 }
 
@@ -339,16 +394,21 @@ function buildProgressionSnapshot(user = {}) {
   const monthlyActivityValue = getMonthlyActivity(user);
   const totalRankMeta = buildLevelRankMeta(levelProgress.accountLevel);
   const activityRankMeta = getActivityRankMeta({ ...user, monthlyActiveScore: monthlyActivityValue });
-
   return {
     accountXp: levelProgress.accountXp,
+    accountXpExact: levelProgress.accountXpExact,
     accountLevel: levelProgress.accountLevel,
     accountLevelProgressPct: levelProgress.progressPct,
     accountLevelCurrentXp: levelProgress.currentLevelXp,
+    accountLevelCurrentXpExact: levelProgress.currentLevelXpExact,
     accountLevelNextXp: levelProgress.nextLevelXp,
+    accountLevelNextXpExact: levelProgress.nextLevelXpExact,
     accountLevelSpanXp: levelProgress.currentLevelSpan,
+    accountLevelSpanXpExact: levelProgress.currentLevelSpanExact,
     accountLevelRemainingXp: levelProgress.xpToNextLevel,
+    accountLevelRemainingXpExact: levelProgress.xpToNextLevelExact,
     accountLevelScore: levelProgress.score,
+    accountLevelScoreExact: levelProgress.scoreExact,
     accountProgressionVersion: ACCOUNT_PROGRESSION_VERSION,
     accountLevelCurveMode: ACCOUNT_LEVEL_CURVE_MODE,
     accountLevelBaseXp: ACCOUNT_BASE_XP,
@@ -368,6 +428,11 @@ function buildProgressionSnapshot(user = {}) {
   };
 }
 
+function addAccountXpExact(user = {}, xpDelta = 0) {
+  const next = parseXpBigInt(getAccountXpExact(user)) + parseXpBigInt(xpDelta);
+  return (next > 0n ? next : 0n).toString();
+}
+
 function buildProgressionPolicySummary() {
   return {
     version: ACCOUNT_PROGRESSION_VERSION,
@@ -375,20 +440,13 @@ function buildProgressionPolicySummary() {
     levelCap: ACCOUNT_LEVEL_CAP,
     baseXp: ACCOUNT_BASE_XP,
     openingStepXp: getXpStepForLevel(1),
+    openingStepXpExact: getXpStepExactForLevel(1),
     endgameStepXp: getXpStepForLevel(ACCOUNT_LEVEL_CAP - 1),
-    formula: 'step[1] = BASE_XP; step[n] = step[n - 1] * n; threshold[level] = sum(step[1..level-1])',
-    rules: ACCOUNT_LEVEL_STEP_RULES.map((rule) => ({
-      fromLevel: rule.fromLevel,
-      toLevel: rule.toLevel,
-      multiplier: rule.multiplier,
-      stepXp: rule.stepXp
-    })),
-    thresholds: ACCOUNT_LEVEL_THRESHOLDS.map((xp, level) => ({ level, xp })).filter((entry) => entry.level >= 1),
-    activityStages: MONTHLY_ACTIVITY_STAGES.map((stage) => ({
-      min: stage.min,
-      key: stage.key,
-      name: stage.name
-    }))
+    endgameStepXpExact: getXpStepExactForLevel(ACCOUNT_LEVEL_CAP - 1),
+    formula: 'step[1] = BASE_XP; step[n] = step[n - 1] * n; exact values are stored as decimal strings to avoid unsafe Number precision.',
+    rules: ACCOUNT_LEVEL_STEP_RULES.map((rule) => ({ ...rule })),
+    thresholds: ACCOUNT_LEVEL_THRESHOLDS.map((xp, level) => ({ level, xp, xpExact: ACCOUNT_LEVEL_THRESHOLDS_EXACT[level] })).filter((entry) => entry.level >= 1),
+    activityStages: MONTHLY_ACTIVITY_STAGES.map((stage) => ({ min: stage.min, key: stage.key, name: stage.name }))
   };
 }
 
@@ -398,8 +456,10 @@ module.exports = {
   ACCOUNT_XP_STEP,
   ACCOUNT_LEVEL_CURVE_MODE,
   ACCOUNT_LEVEL_STEPS,
+  ACCOUNT_LEVEL_STEPS_EXACT,
   ACCOUNT_LEVEL_STEP_RULES,
   ACCOUNT_LEVEL_THRESHOLDS,
+  ACCOUNT_LEVEL_THRESHOLDS_EXACT,
   ACCOUNT_PROGRESSION_VERSION,
   LEGACY_V4_LEVEL_STEP_SEGMENTS,
   LEGACY_V4_LEVEL_THRESHOLDS,
@@ -409,8 +469,12 @@ module.exports = {
   buildActivityResetState,
   buildProgressionPolicySummary,
   deriveXpFromLevel,
+  deriveXpExactFromLevel,
   getXpStepForLevel,
+  getXpStepExactForLevel,
   getAccountXp,
+  getAccountXpExact,
+  addAccountXpExact,
   getAccountLevelFromXp,
   getAccountLevel,
   getAccountLevelWindow,
@@ -420,5 +484,6 @@ module.exports = {
   getActivityRankMeta,
   normalizeUserRankState,
   buildProgressionSnapshot,
-  mapStoredXpToCurrentXp
+  mapStoredXpToCurrentXp,
+  normalizeXpExact
 };

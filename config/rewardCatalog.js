@@ -1,6 +1,6 @@
 'use strict';
 
-const REWARD_POLICY_VERSION = 2;
+const REWARD_POLICY_VERSION = 3;
 
 const REWARD_SOURCE_ALIASES = Object.freeze({
   signup_bonus: 'signup_reward',
@@ -187,7 +187,7 @@ const REWARD_CATALOG = Object.freeze({
     grantType: 'score_based',
     cadence: 'per_valid_run',
     visibility: 'private',
-    description: 'Klasik oyun skor gönderimlerinden kazanılan hesap XP audit kaydı.',
+    description: 'Klasik oyun skor gönderimlerinden kazanılan hesap XP, exact XP progression ve audit ledger kaydı.' ,
     order: 105,
     badgeTone: 'accent'
   }),
@@ -199,7 +199,7 @@ const REWARD_CATALOG = Object.freeze({
     grantType: 'spend_based',
     cadence: 'per_bet',
     visibility: 'private',
-    description: 'Crash harcama tabanlı hesap XP audit kaydı.',
+    description: 'Crash harcama tabanlı hesap XP, exact XP progression ve audit ledger kaydı.' ,
     order: 106,
     badgeTone: 'accent'
   }),
@@ -211,7 +211,7 @@ const REWARD_CATALOG = Object.freeze({
     grantType: 'spend_based',
     cadence: 'per_round',
     visibility: 'private',
-    description: 'Pişti harcama tabanlı hesap XP audit kaydı.',
+    description: 'Pişti harcama tabanlı hesap XP, exact XP progression ve audit ledger kaydı.' ,
     order: 107,
     badgeTone: 'accent'
   }),

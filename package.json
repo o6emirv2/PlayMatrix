@@ -34,7 +34,8 @@
     "check:no-inline-styles": "node tools/check-no-inline-styles.js",
     "check:large-files": "node tools/check-large-files.js",
     "check:runtime-hardening": "node tools/check-runtime-hardening.js",
-    "check:render-runtime": "node tools/check-render-runtime.js"
+    "check:render-runtime": "node tools/check-render-runtime.js",
+    "check:economy-phase5": "node tools/check-economy-phase5.js"
   },
   "dependencies": {
     "express": "^4.18.3",

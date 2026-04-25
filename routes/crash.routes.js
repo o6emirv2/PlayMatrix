@@ -10,7 +10,7 @@ const { CRASH_MIN_BET, CRASH_MIN_AUTO, CRASH_MAX_MULTIPLIER, GAME_RESULT_CODES, 
 const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
 const { assertGamesAllowed } = require('../utils/userRestrictions');
 const { recordGameAudit } = require('../utils/gameAudit');
-const { getAccountXp, normalizeUserRankState } = require('../utils/progression');
+const { applyProgressionPatchInTransaction, calculateSpendProgressReward } = require('../utils/economyCore');
 const { saveMatchHistory } = require('../utils/matchHistory');
 const { recordRewardLedger } = require('../utils/rewardLedger');
 
@@ -23,46 +23,16 @@ function pickUserSelectedFrame(user = {}) {
 
 
 
-function calculateSpendProgressReward(spendMc = 0, source = '') {
-  const spend = Math.max(0, Math.floor(safeNum(spendMc, 0)));
-  if (spend <= 0) return { xpEarned: 0, activityEarned: 0, roundsEarned: 0, spentMc: 0, source: cleanStr(source || 'GAME_SPEND', 64) };
-  let xpEarned = 0;
-  if (spend >= 200000) xpEarned = 120;
-  else if (spend >= 100000) xpEarned = 72;
-  else if (spend >= 40000) xpEarned = 42;
-  else if (spend >= 20000) xpEarned = 24;
-  else if (spend >= 10000) xpEarned = 14;
-  else if (spend >= 1000) xpEarned = 6;
-  return {
-    xpEarned,
-    activityEarned: 1,
-    roundsEarned: 1,
-    spentMc: spend,
-    source: cleanStr(source || 'GAME_SPEND', 64) || 'GAME_SPEND'
-  };
-}
-
 function applySpendProgression(tx, userRef, userData = {}, spendMc = 0, source = '') {
   const reward = calculateSpendProgressReward(spendMc, source);
-  const nextUser = {
-    ...userData,
-    accountXp: Math.max(0, getAccountXp(userData) + reward.xpEarned),
-    monthlyActiveScore: Math.max(0, safeNum(userData.monthlyActiveScore, 0) + reward.activityEarned),
-    totalRounds: Math.max(0, safeNum(userData.totalRounds, 0) + reward.roundsEarned),
-    totalSpentMc: Math.max(0, safeNum(userData.totalSpentMc, 0) + reward.spentMc)
-  };
-  const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-  const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextUser.monthlyActiveScore });
-  tx.set(userRef, {
-    ...canonical,
-    ...normalized,
-    monthlyActiveScore: nextUser.monthlyActiveScore,
-    totalRounds: nextUser.totalRounds,
-    totalSpentMc: nextUser.totalSpentMc,
-    activityUpdatedAt: nowMs(),
-    lastGameProgressSource: reward.source,
-    lastGameXpEarned: reward.xpEarned
-  }, { merge: true });
+  applyProgressionPatchInTransaction(tx, userRef, userData, {
+    xpEarned: reward.xpEarned,
+    activityEarned: reward.activityEarned,
+    roundsEarned: reward.roundsEarned,
+    spentMc: reward.spentMc,
+    source: reward.source,
+    updatedAt: nowMs()
+  });
   return reward;
 }
 
