@@ -1,0 +1,32 @@
+/* PlayMatrix FAZ 2: design tokens only. */
+
+:root{
+      --bg:#0b0e11;
+      --bg-soft:#11141b;
+      --bg-elev:rgba(255,255,255,.03);
+      --bg-elev-2:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.08);
+      --line-soft:rgba(255,255,255,.05);
+      --text:#f7f9fc;
+      --muted:rgba(247,249,252,.68);
+      --muted-2:rgba(247,249,252,.48);
+      --primary:#3f8cff;
+      --primary-2:#5d5ffe;
+      --accent:#19c37d;
+      --success:#29d17f;
+      --danger:#ff6b73;
+      --warning:#ffd166;
+      --gold:#ffe082;
+      --radius-xl:26px;
+      --radius-lg:20px;
+      --radius-md:16px;
+      --radius-sm:12px;
+      --shadow-xl:0 28px 64px rgba(0,0,0,.34);
+      --shadow-lg:0 14px 34px rgba(0,0,0,.26);
+      --shadow-md:0 8px 22px rgba(0,0,0,.18);
+      --topbar-h:74px;
+      --bottom-nav-h:74px;
+      --container:min(1240px, calc(100vw - 32px));
+      --transition:220ms cubic-bezier(.2,.8,.2,1);
+      --app-height:100vh;
+    }
