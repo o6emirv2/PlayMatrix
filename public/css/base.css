@@ -1,0 +1,87 @@
+/* PlayMatrix FAZ 2: base reset, document hardening and typography. */
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+}
+
+body {
+    min-height: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none !important;
+    position: relative;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    touch-action: manipulation;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html{scroll-behavior:smooth;background:var(--bg)}
+
+body{
+      margin:0;
+      min-height:var(--app-height, 100vh);
+      color:var(--text);
+      font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background:
+        radial-gradient(42rem 42rem at 0% -10%, rgba(63,140,255,.08), transparent 58%),
+        radial-gradient(28rem 28rem at 100% 0%, rgba(93,95,254,.06), transparent 56%),
+        linear-gradient(180deg, #090b10 0%, #0b0e11 42%, #0d1016 100%);
+      padding-top:calc(var(--topbar-h) + env(safe-area-inset-top));
+      padding-bottom:max(28px, calc(20px + env(safe-area-inset-bottom)));
+      overflow-x:clip;
+      letter-spacing:-.01em;
+    }
+
+body::before, body::after{
+      content:'';
+      position:fixed;
+      width:32rem;height:32rem;filter:blur(110px);opacity:.14;pointer-events:none;z-index:0;
+    }
+
+body::before{top:-12rem;left:-10rem;background:#0d7dff}
+
+body::after{right:-8rem;bottom:-16rem;background:#4067ff}
+
+a{color:inherit;text-decoration:none}
+
+html,body{max-width:100%; overscroll-behavior-x:none}
+
+body{width:100%; text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased}
+
+button{border:0;background:none;color:inherit;cursor:pointer}
+
+img{display:block;max-width:100%}
+
+html, body {
+  overscroll-behavior-x: none;
+}
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
