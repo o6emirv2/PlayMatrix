@@ -170,3 +170,32 @@ Kalıcı frontend düzeltmesi:
 - Telefonda deploy yönetimi için daha güvenli alternatif: Render Secret File `firebase-service-account.json` + `FIREBASE_KEY_PATH=/etc/secrets/firebase-service-account.json`.
 - Firebase Admin credential hazır değilken public leaderboard endpoint'i artık 500 üretmez; boş/degraded payload döner.
 - Auth session bootstrap Firebase Admin yokken 401 yerine 503 verir; frontend bunu geçici altyapı durumu olarak işler ve istek fırtınasını backoff ile keser.
+
+## Render 2026-04-25 Auth Degraded Mode Fix
+
+Görülen yeni runtime hata zinciri:
+
+```text
+Firebase Admin devre dışı: Firebase service account eksik/geçersiz alanlar: private_key
+POST /api/auth/session/create statusCode=503
+POST /api/profile/update statusCode=401
+POST /api/wheel/spin statusCode=401
+```
+
+Kök neden: Firebase Admin service-account credential hâlâ geçerli değil. Web client Firebase ile giriş yapabiliyor olsa bile backend `verifyIdToken` için Admin SDK'ya bağımlı kaldığı için server session bootstrap 503'e düşüyordu.
+
+Kod davranışı artık şöyledir:
+
+- Geçerli Admin credential varsa normal Firestore/Admin SDK yolu kullanılır.
+- Admin credential yoksa servis kapanmaz; Firebase Auth REST `accounts:lookup` ile ID token doğrulaması yapılır.
+- Admin credential yokken geçici bellek tabanlı Firestore uyumluluk katmanı devreye girer.
+- Login/session, profil kaydetme ve günlük çark endpointleri Render üzerinde 503/401 hata fırtınası üretmeden çalışabilir.
+- Bu mod kalıcı veri garantisi vermez; servis restart olursa memory-store verisi sıfırlanır. Kalıcı çözüm hâlâ gerçek `FIREBASE_KEY_BASE64` veya `FIREBASE_KEY_PATH` service-account credential eklemektir.
+
+Telefonla yönetimde en az hata üreten yöntem:
+
+1. Firebase Console > Project settings > Service accounts > Generate new private key.
+2. JSON içeriğini Render Secret File olarak ekle.
+3. Env değişkeni olarak `FIREBASE_KEY_PATH=/etc/secrets/firebase-service-account.json` tanımla.
+4. Yanlış/placeholder `FIREBASE_KEY_BASE64` değerini kaldır.
+5. Redeploy yap.

@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { db, getFirebaseStatus } = require('../config/firebase');
+const { db } = require('../config/firebase');
 const { verifyAuth, extractSessionToken, resolveOptionalAuthUser } = require('../middlewares/auth.middleware');
 const { profileLimiter } = require('../middlewares/rateLimiters');
 const { cleanStr, safeNum } = require('../utils/helpers');
@@ -181,12 +181,16 @@ router.post('/auth/session/create', async (req, res) => {
       }
     });
   } catch (error) {
-    const status = getFirebaseStatus();
-    if (error?.code === 'FIREBASE_ADMIN_UNAVAILABLE' || !status.ready) {
+    const code = String(error?.code || '');
+    const isTemporaryAuthBackendError = error?.statusCode === 503
+      || code === 'FIREBASE_ADMIN_UNAVAILABLE'
+      || code === 'PUBLIC_FIREBASE_API_KEY_MISSING'
+      || code === 'FIREBASE_REST_AUTH_NETWORK';
+    if (isTemporaryAuthBackendError) {
       return res.status(503).json({
         ok: false,
-        code: 'FIREBASE_ADMIN_UNAVAILABLE',
-        error: 'Sunucu hatası. (503) Firebase Admin credential hazır değil.'
+        code: code || 'AUTH_BACKEND_TEMPORARILY_UNAVAILABLE',
+        error: 'Sunucu kimlik doğrulama altyapısı geçici olarak kullanılamıyor.'
       });
     }
     res.locals.errorLogged = true;

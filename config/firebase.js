@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const admin = require('firebase-admin');
 const { loadEnvFiles, isProductionEnv, looksLikeRawFirebaseKey, isTruthyFlag } = require('../utils/env');
+const { createMemoryFirestore } = require('../utils/memoryFirestore');
+const { verifyIdTokenWithFirebaseRest } = require('../utils/firebaseRestAuth');
 
 loadEnvFiles({ cwd: path.join(__dirname, '..') });
 
@@ -216,13 +218,14 @@ function buildFirebaseAdminOptions(serviceAccount) {
 
 function markFirebaseUnavailable(error, source = '') {
   firebaseReady = false;
-  firebaseCredentialSource = source || firebaseCredentialSource || 'unavailable';
+  firebaseCredentialSource = source || firebaseCredentialSource || 'degraded-memory';
   firebaseInitError = error instanceof Error ? error : new Error(String(error || 'Firebase Admin kullanılamıyor.'));
   const message = firebaseInitError.message || 'bilinmeyen hata';
-  console.error(`[PlayMatrix][firebase] Firebase Admin devre dışı: ${message}`);
   if (isProductionEnv(process.env) && isTruthyFlag(process.env.FIREBASE_ADMIN_STRICT_BOOT || '')) {
+    console.error(`[PlayMatrix][firebase] Firebase Admin devre dışı: ${message}`);
     throw firebaseInitError;
   }
+  console.warn(`[PlayMatrix][firebase] Firebase Admin devre dışı; REST auth + memory-store degraded mod aktif: ${message}`);
 }
 
 function unavailableError() {
@@ -232,34 +235,13 @@ function unavailableError() {
   return err;
 }
 
-function unavailableFunction() {
-  throw unavailableError();
-}
-
-function createUnavailableFirestore() {
-  const docRef = () => new Proxy({}, { get: () => unavailableFunction });
-  const collectionRef = () => new Proxy({ doc: docRef }, { get: (target, prop) => target[prop] || unavailableFunction });
-  return new Proxy({
-    __unavailable: true,
-    collection: collectionRef,
-    doc: docRef,
-    batch: unavailableFunction,
-    runTransaction: unavailableFunction
-  }, {
-    get(target, prop) {
-      if (prop in target) return target[prop];
-      return unavailableFunction;
+function createDegradedAuth() {
+  return {
+    __degraded: true,
+    async verifyIdToken(idToken) {
+      return verifyIdTokenWithFirebaseRest(idToken);
     }
-  });
-}
-
-function createUnavailableAuth() {
-  return new Proxy({ __unavailable: true }, {
-    get(target, prop) {
-      if (prop in target) return target[prop];
-      return unavailableFunction;
-    }
-  });
+  };
 }
 
 (function initFirebase() {
@@ -286,8 +268,8 @@ function createUnavailableAuth() {
   }
 })();
 
-const db = firebaseReady ? admin.firestore() : createUnavailableFirestore();
-const auth = firebaseReady ? admin.auth() : createUnavailableAuth();
+const db = firebaseReady ? admin.firestore() : createMemoryFirestore();
+const auth = firebaseReady ? admin.auth() : createDegradedAuth();
 
 function isFirebaseReady() {
   return firebaseReady;
@@ -296,6 +278,8 @@ function isFirebaseReady() {
 function getFirebaseStatus() {
   return {
     ready: firebaseReady,
+    degraded: !firebaseReady,
+    mode: firebaseReady ? 'admin-sdk' : 'rest-auth-memory-store',
     source: firebaseCredentialSource || null,
     error: firebaseInitError ? firebaseInitError.message : null
   };
