@@ -1,104 +1,1228 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta name="playmatrix-api-url" content="" />
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=0.90, maximum-scale=0.90, minimum-scale=0.90, user-scalable=no, viewport-fit=cover" />
-  <title>PlayMatrix Admin Giriş</title>
-  <link rel="stylesheet" href="./matrix-auth.css" />
-  <link rel="stylesheet" href="index.phase4-1.css" />
-  <link rel="stylesheet" href="../shell-enhancements.css" />
-  <script src="../playmatrix-static-runtime.js"></script>
-  <script src="../playmatrix-api.js"></script>
-  <script src="./admin-auth.js"></script>
-  <link rel="stylesheet" href="../css/phase4-inline.css" />
-  <script src="../shell-enhancements.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>PlayMatrix Admin Pro</title>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:rgba(255,255,255,.05);
+      --panel-2:rgba(255,255,255,.035);
+      --line:rgba(255,255,255,.08);
+      --soft:rgba(255,255,255,.06);
+      --text:#edf4ff;
+      --muted:rgba(237,244,255,.7);
+      --accent:#3b82f6;
+      --accent-2:#60a5fa;
+      --ok:#34d399;
+      --warn:#fbbf24;
+      --danger:#fb7185;
+      --shadow:0 28px 60px rgba(0,0,0,.34);
+      --radius:22px;
+      --radius-sm:16px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;background:radial-gradient(circle at top,#0f2343 0%, #07111f 42%, #07111f 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+    body{padding:24px 18px 40px;touch-action:manipulation}
+    input,select,textarea,button{font:inherit}
+    input,select,textarea{font-size:16px}
+    button{cursor:pointer}
+    .wrap{max-width:1480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+    .hero,.card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.035));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .hero{padding:26px 26px 22px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+    .title{margin:0;font-size:clamp(34px,6vw,60px);line-height:1.02;font-weight:900;letter-spacing:-.03em}
+    .subtitle{margin-top:8px;color:var(--muted);font-size:clamp(16px,2.3vw,24px)}
+    .hero-badges{display:flex;flex-direction:column;gap:10px;min-width:min(420px,100%)}
+    .badge{display:inline-flex;align-items:center;gap:12px;min-height:54px;padding:0 18px;border-radius:999px;border:1px solid var(--line);font-size:clamp(15px,2vw,18px);font-weight:800;backdrop-filter:blur(14px);background:rgba(255,255,255,.03)}
+    .badge::before{content:"";width:16px;height:16px;border-radius:999px;flex:none;background:rgba(255,255,255,.35)}
+    .badge.ok{color:var(--ok)} .badge.ok::before{background:var(--ok)}
+    .badge.warn{color:var(--warn)} .badge.warn::before{background:var(--warn)}
+    .badge.error{color:var(--danger)} .badge.error::before{background:var(--danger)}
+    .badge.normal{color:var(--muted)}
+    .card{padding:22px}
+    .section-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+    .section-title h2{margin:0;font-size:clamp(24px,3vw,38px);line-height:1.05}
+    .hint{color:var(--muted);font-size:14px}
+    .tiny{font-size:12px;color:var(--muted)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:12px}
+    .grid{display:grid;gap:16px}
+    .g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .g-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .field{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .field label{font-size:14px;font-weight:700;color:var(--muted)}
+    .input,textarea,select{width:100%;border-radius:18px;padding:16px 18px;border:1px solid var(--line);background:#06101d;color:var(--text);outline:none;box-shadow:none}
+    .input:focus,textarea:focus,select:focus{border-color:rgba(96,165,250,.7);box-shadow:0 0 0 4px rgba(59,130,246,.14)}
+    textarea{min-height:120px;resize:vertical}
+    .mono{font-family:var(--mono)}
+    .buttons{display:flex;flex-wrap:wrap;gap:12px}
+    button{border:0;border-radius:18px;padding:16px 22px;font-weight:900;letter-spacing:-.01em;color:#fff;background:linear-gradient(180deg,var(--accent-2),var(--accent));box-shadow:inset 0 -1px 0 rgba(0,0,0,.18)}
+    button.secondary{background:rgba(37,99,235,.18);border:1px solid rgba(96,165,250,.18);color:#eff6ff}
+    button.ghost{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--text)}
+    button.danger{background:linear-gradient(180deg,#fb7185,#e11d48)}
+    button.warn{background:linear-gradient(180deg,#fbbf24,#d97706)}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .status-box{padding:16px 18px;border-radius:18px;border:1px solid var(--line);background:var(--panel-2);line-height:1.6;word-break:break-word}
+    .status-box.ok{border-color:rgba(52,211,153,.28)}
+    .status-box.warn{border-color:rgba(251,191,36,.24)}
+    .status-box.error{border-color:rgba(251,113,133,.24)}
+    .status-box.normal{border-color:var(--line)}
+    .metrics{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .metric-card{padding:22px;border-radius:20px;border:1px solid var(--line);background:var(--panel-2)}
+    .metric-label{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+    .metric{margin-top:10px;font-size:clamp(28px,4vw,48px);font-weight:900;letter-spacing:-.03em}
+    .split{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+    .users-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+    .panel-scroll{overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:14px 10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top}
+    th{font-size:13px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+    td{font-size:14px}
+    tr:hover td{background:rgba(255,255,255,.018)}
+    .table-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .small-btn{padding:10px 12px;border-radius:12px;font-size:13px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);font-size:12px;font-weight:800}
+    .pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.error{color:var(--danger)}
+    .json{max-height:420px;overflow:auto;background:#05101c;border:1px solid var(--line);border-radius:20px;padding:16px}
+    pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:13px;line-height:1.55}
+    .checkboxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+    .check{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+    .check input{width:18px;height:18px;accent-color:var(--accent)}
+    .info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .info-box{padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+    .info-box .k{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}
+    .info-box .v{font-weight:800;word-break:break-word}
+    .sticky-actions{position:sticky;bottom:12px;display:flex;justify-content:flex-end;pointer-events:none}
+    .sticky-actions .buttons{pointer-events:auto;background:rgba(7,17,31,.86);padding:10px;border-radius:18px;border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(12px)}
+    .divider{height:1px;background:rgba(255,255,255,.08);margin:18px 0}
+    .summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .list-empty{padding:18px;border-radius:18px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.1);color:var(--muted)}
+    @media (max-width:1200px){
+      .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .split,.users-layout{grid-template-columns:1fr}
+      .info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:760px){
+      body{padding:18px 12px 34px}
+      .hero,.card{padding:18px}
+      .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .g-2,.g-3,.g-4,.summary-grid,.info-grid{grid-template-columns:1fr}
+      .buttons button{width:100%}
+      table{min-width:640px}
+      .badge{min-height:48px;padding:0 14px}
+      .sticky-actions{position:static}
+      .sticky-actions .buttons{width:100%}
+    }
+  </style>
+  <link rel="stylesheet" href="/premium-phase5.css" />
+  <script src="/premium-phase5.js" defer></script>
 </head>
-<body class="matrix-auth-body">
-  <canvas id="matrixCanvas" aria-hidden="true"></canvas>
-  <main class="gate-stage" aria-live="polite">
-    <section class="gate-shell">
-      <header class="gate-brandbar">
-        <div class="gate-brand">
-          <img src="../../logo.png" alt="PlayMatrix" />
-          <div>
-            <span class="gate-kicker">PLAYMATRIX</span>
-            <h1>ADMIN KONTROL MERKEZİ</h1>
-          </div>
-        </div>
-        <div class="gate-chip">MATRIX EDITION</div>
-      </header>
-
-      <div class="gate-progress" id="stepProgress" data-step="1" aria-hidden="true">
-        <span></span><span></span><span></span><span></span>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div>
+        <h1 class="title">PlayMatrix Admin</h1>
+        <div class="subtitle">A'dan Z'ye kullanıcı, sezon, destek, ödül, moderasyon ve sağlık yönetimi</div>
       </div>
-
-      <div class="gate-viewport">
-        <section class="gate-step is-active" data-step="1">
-          <div class="step-badge">ADIM 1</div>
-          <div class="step-icon" aria-hidden="true">✦</div>
-          <h2>YÖNETİCİ HESABI<br/>DOĞRULANIYOR</h2>
-          <p>Aktif oturumdaki yönetici hesabı otomatik algılanır ve güvenlik adımlarına kontrollü biçimde geçilir.</p>
-          <label class="gate-field">
-            <span>Algılanan yönetici e-postası</span>
-            <div class="field-shell success-shell">
-              <input id="adminEmail" type="email" autocomplete="off" spellcheck="false" placeholder="Oturumdan otomatik algılanıyor" readonly />
-              <b class="field-check" aria-hidden="true">✓</b>
-            </div>
-          </label>
-          <div class="status" id="emailStatus"></div>
-          <button type="button" class="ghost-btn" id="retryEmail">YENİDEN ALGILA</button>
-          <div class="legal-warning">Yalnızca yetkili ekip hesapları bu adımları tamamlayabilir.</div>
-        </section>
-
-        <section class="gate-step" data-step="2">
-          <div class="step-badge">ADIM 2</div>
-          <div class="step-icon shield" aria-hidden="true">⬡</div>
-          <h2>ŞİFRE DOĞRULAMA</h2>
-          <p>İkinci faktör şifresi doğru girildiği anda operatör doğrulamasına geçilir.</p>
-          <label class="gate-field">
-            <span>Admin Panel Şifresi</span>
-            <div class="field-shell">
-              <input id="adminPassword" type="password" autocomplete="off" spellcheck="false" placeholder="Şifre" />
-              <b class="field-check" aria-hidden="true">✓</b>
-            </div>
-          </label>
-          <div class="status" id="passwordStatus"></div>
-          <button type="button" class="ghost-btn" id="retryPassword">SIFIRLA</button>
-          <div class="legal-warning">Yalnızca yetkili ekip hesapları bu adımları tamamlayabilir.</div>
-        </section>
-
-        <section class="gate-step" data-step="3">
-          <div class="step-badge">ADIM 3</div>
-          <div class="step-icon fingerprint" aria-hidden="true">◉</div>
-          <h2>SON DOĞRULAMA</h2>
-          <p>Son doğrulama tamamlandığında güvenli yönetici oturumu başlatılır ve panel açılır.</p>
-          <label class="gate-field">
-            <span>Yönetici doğrulama adı</span>
-            <div class="field-shell">
-              <input id="adminName" type="text" autocomplete="off" spellcheck="false" placeholder="Yönetici doğrulama adı" />
-              <b class="field-check" aria-hidden="true">✓</b>
-            </div>
-          </label>
-          <div class="status" id="nameStatus"></div>
-          <button type="button" class="ghost-btn" id="retryName">SIFIRLA</button>
-          <div class="legal-warning">Yalnızca yetkili ekip hesapları bu adımları tamamlayabilir.</div>
-        </section>
-
-        <section class="gate-step" data-step="4">
-          <div class="step-badge">ADIM 4</div>
-          <div class="final-shell">
-            <div class="final-key" aria-hidden="true">⌁</div>
-            <h2>YÖNETİCİ OTURUMU HAZIR</h2>
-            <p>Güvenli erişim anahtarı oluşturuldu.</p>
-            <strong>PANEL HAZIRLANIYOR</strong>
-            <small>Kontrol merkezi hazırlanıyor.</small>
-            <div class="final-spinner" aria-hidden="true"></div>
-          </div>
-        </section>
+      <div class="hero-badges">
+        <div class="badge normal" id="authStatus">Oturum aranıyor...</div>
+        <div class="badge normal" id="apiStatus">API hazırlanıyor...</div>
       </div>
     </section>
-  </main>
-  <script type="module" src="./matrix-auth.js"></script>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Bağlantı ve Oturum</h2>
+        <span class="hint">Varsayılan olarak aynı domain /api kullanılır. Uzak backend gerekirse elle girilir</span>
+      </div>
+      <div class="grid g-3">
+        <div class="field">
+          <label for="apiInput">API tabanı</label>
+          <input id="apiInput" class="input mono" type="text" placeholder="/api veya tam backend URL" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="manualTokenInput">Yedek Bearer token</label>
+          <input id="manualTokenInput" class="input" type="password" placeholder="Otomatik giriş yoksa buraya token gir" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label>Hızlı İşlemler</label>
+          <div class="buttons">
+            <button id="saveConfigBtn" type="button">Bağlantıyı Kaydet</button>
+            <button id="refreshBtn" class="secondary" type="button">Paneli Yenile</button>
+            <button id="reauthBtn" class="ghost" type="button">Otomatik Girişi Yenile</button>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="summary-grid">
+        <div class="status-box" id="connectionHint">Bağlantı hazırlanıyor...</div>
+        <div class="status-box" id="panelMessage">Admin panel hazırlanıyor...</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Sistem İşlemleri</h2>
+        <span class="hint">Dikkat: toplu sıfırlama geri alınamaz</span>
+      </div>
+      <div class="split">
+        <div class="status-box">
+          <div class="section-title" style="margin-bottom:12px"><h2 style="font-size:24px">Sezon Sıfırla</h2></div>
+          <div class="grid g-2">
+            <div class="field">
+              <label for="seasonLabel">Sezon etiketi</label>
+              <input id="seasonLabel" class="input" placeholder="2026 Sezon 2" />
+            </div>
+            <div class="field">
+              <label for="seasonConfirm">Onay metni</label>
+              <input id="seasonConfirm" class="input mono" placeholder="SEZONU SIFIRLA" />
+            </div>
+          </div>
+          <div class="checkboxes" style="margin-top:12px">
+            <label class="check"><input id="seasonResetMonthly" type="checkbox" checked />Aylık aktiflik sıfırlansın</label>
+            <label class="check"><input id="seasonResetRank" type="checkbox" />Rank de sıfırlansın</label>
+          </div>
+          <div class="buttons" style="margin-top:14px"><button id="seasonResetBtn" class="warn" type="button">Sezonu Sıfırla</button></div>
+        </div>
+        <div class="status-box">
+          <div class="section-title" style="margin-bottom:12px"><h2 style="font-size:24px">Toplu Kullanıcı Sıfırlama</h2></div>
+          <div class="checkboxes" id="bulkResetChecks"></div>
+          <div class="grid g-2" style="margin-top:12px">
+            <div class="field">
+              <label for="bulkResetConfirm">Onay metni</label>
+              <input id="bulkResetConfirm" class="input mono" placeholder="TUM KULLANICILARI SIFIRLA" />
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <div class="buttons"><button id="bulkResetBtn" class="danger" type="button">Seçili Alanları Toplu Sıfırla</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid metrics" id="metrics"></section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Kayıtlı Kullanıcılar</h2>
+        <span class="hint" id="userListMeta">Tüm üyeler burada listelenir</span>
+      </div>
+      <div class="toolbar">
+        <div class="field" style="flex:2">
+          <label for="userSearchInput">Kullanıcı ara</label>
+          <input id="userSearchInput" class="input" placeholder="UID, kullanıcı adı, ad soyad veya e-posta" />
+        </div>
+        <div class="field" style="width:140px">
+          <label for="userLimitInput">Sayfa boyutu</label>
+          <select id="userLimitInput" class="input"><option>10</option><option selected>25</option><option>50</option><option>100</option></select>
+        </div>
+        <div class="field" style="min-width:280px">
+          <label>İşlemler</label>
+          <div class="buttons">
+            <button id="userSearchBtn" type="button">Listeyi Yükle</button>
+            <button id="userPrevBtn" class="secondary" type="button">Önceki</button>
+            <button id="userNextBtn" class="secondary" type="button">Sonraki</button>
+          </div>
+        </div>
+      </div>
+      <div class="users-layout" style="margin-top:14px">
+        <div class="panel-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>UID</th>
+                <th>Kullanıcı</th>
+                <th>E-posta</th>
+                <th>Bakiye</th>
+                <th>RP</th>
+                <th>Seviye</th>
+                <th>Elo</th>
+                <th>Durum</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"><tr><td class="list-empty" colspan="9">Henüz kullanıcı listesi yüklenmedi.</td></tr></tbody>
+          </table>
+        </div>
+        <div>
+          <div class="card" style="padding:18px;background:rgba(255,255,255,.03)">
+            <div class="section-title"><h2 style="font-size:28px">Seçili Kullanıcı</h2><span class="hint" id="selectedUidHint">Henüz seçim yok</span></div>
+            <div class="info-grid" id="userSummaryGrid"></div>
+            <div class="divider"></div>
+            <div class="grid g-3">
+              <div class="field"><label for="editUsername">Kullanıcı adı</label><input id="editUsername" class="input" /></div>
+              <div class="field"><label for="editFullName">Ad soyad</label><input id="editFullName" class="input" /></div>
+              <div class="field"><label for="editEmail">E-posta (doküman)</label><input id="editEmail" class="input" /></div>
+              <div class="field"><label for="editBalance">Bakiye</label><input id="editBalance" class="input" type="number" step="0.01" /></div>
+              <div class="field"><label for="editRp">RP</label><input id="editRp" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editSeasonRp">Sezon RP</label><input id="editSeasonRp" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editLevel">Seviye</label><input id="editLevel" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editXp">Legacy XP</label><input id="editXp" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editRank">Rank</label><input id="editRank" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editChessElo">Satranç Elo</label><input id="editChessElo" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editPistiElo">Pişti Elo</label><input id="editPistiElo" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editMonthlyActiveScore">Aylık aktiflik</label><input id="editMonthlyActiveScore" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editActivityScore">Aktiflik puanı</label><input id="editActivityScore" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editActiveFrame">Aktif çerçeve</label><input id="editActiveFrame" class="input" type="number" step="1" /></div>
+              <div class="field"><label for="editActiveFrameClass">Çerçeve sınıfı</label><input id="editActiveFrameClass" class="input" /></div>
+              <label class="check"><input id="editIsMuted" type="checkbox" />Muted</label>
+              <label class="check"><input id="editIsBanned" type="checkbox" />Banlı</label>
+              <label class="check"><input id="editIsFlagged" type="checkbox" />Flagli</label>
+            </div>
+            <div class="field" style="margin-top:12px"><label for="editModerationReason">Not / Moderasyon nedeni</label><textarea id="editModerationReason" class="input" placeholder="Kullanıcı için yönetici notu"></textarea></div>
+            <div class="field" style="margin-top:12px"><label for="advancedPatch">Gelişmiş JSON merge patch</label><textarea id="advancedPatch" class="input mono" placeholder='{"vip": true, "badge": "founder"}'></textarea></div>
+            <div class="divider"></div>
+            <div class="section-title"><h2 style="font-size:24px">Seçili Kullanıcıyı Sıfırla</h2><span class="hint">Sadece seçili UID etkilenir</span></div>
+            <div class="checkboxes" id="singleResetChecks"></div>
+            <div class="sticky-actions">
+              <div class="buttons">
+                <button id="userReloadBtn" class="secondary" type="button">Detayı Yenile</button>
+                <button id="userSaveBtn" type="button">Kullanıcıyı Kaydet</button>
+                <button id="singleResetBtn" class="warn" type="button">Seçili Alanları Sıfırla</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:16px;background:rgba(255,255,255,.03)">
+            <div class="section-title"><h2 style="font-size:24px">Ham Veri</h2><span class="hint">Seçili kullanıcının Firestore + Auth özeti</span></div>
+            <div class="json"><pre id="userRawJson">Henüz kullanıcı seçilmedi.</pre></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="card panel-scroll">
+        <div class="section-title"><h2>Destek Talepleri</h2><span class="hint">Son 50 kayıt</span></div>
+        <table>
+          <thead><tr><th>ID</th><th>Konu</th><th>Durum</th><th>Öncelik</th><th>UID</th><th>Güncellendi</th></tr></thead>
+          <tbody id="ticketsBody"><tr><td class="list-empty" colspan="6">Henüz veri yok.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>Hızlı Moderasyon / Ödül</h2></div>
+        <div class="grid g-2">
+          <div class="field"><label for="moderationUid">Kullanıcı UID</label><input id="moderationUid" class="input" placeholder="Kullanıcı UID" /></div>
+          <div class="field"><label for="moderationAction">İşlem</label><select id="moderationAction" class="input"><option value="mute">Mute</option><option value="unmute">Unmute</option><option value="ban">Ban</option><option value="unban">Unban</option><option value="flag">Flag</option></select></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label for="moderationReason">Moderasyon nedeni</label><textarea id="moderationReason" class="input" placeholder="Moderasyon nedeni"></textarea></div>
+        <div class="buttons" style="margin-top:12px"><button id="moderateBtn" type="button">İşlemi Uygula</button></div>
+        <div class="divider"></div>
+        <div class="grid g-2">
+          <div class="field"><label for="rewardUid">Kullanıcı UID</label><input id="rewardUid" class="input" placeholder="Kullanıcı UID" /></div>
+          <div class="field"><label for="rewardAmount">MC miktarı</label><input id="rewardAmount" class="input" type="number" min="1" step="1" placeholder="MC miktarı" /></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label for="rewardReason">Ödül nedeni</label><textarea id="rewardReason" class="input" placeholder="Ödül nedeni"></textarea></div>
+        <div class="buttons" style="margin-top:12px"><button id="rewardBtn" type="button">Ödülü Ver</button></div>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="card panel-scroll">
+        <div class="section-title"><h2>Denetim Kayıtları</h2><span class="hint">Son 100 hareket</span></div>
+        <table>
+          <thead><tr><th>Zaman</th><th>İşlem</th><th>Hedef</th><th>Aktör</th><th>Durum</th></tr></thead>
+          <tbody id="auditBody"><tr><td class="list-empty" colspan="5">Henüz veri yok.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card panel-scroll">
+        <div class="section-title"><h2>Aktif Oyuncular</h2><span class="hint">Aylık aktiflik sırası</span></div>
+        <table>
+          <thead><tr><th>#</th><th>Kullanıcı</th><th>Aktiflik</th><th>RP</th><th>Bakiye</th></tr></thead>
+          <tbody id="topBody"><tr><td class="list-empty" colspan="5">Henüz veri yok.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>İnaktif Hesap Silme Raporları</h2>
+        <span class="hint">Son cleanup işlemleri, adımlar ve hata kayıtları</span>
+      </div>
+      <div class="panel-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>UID</th>
+              <th>Tetik</th>
+              <th>Durum</th>
+              <th>Silinen</th>
+              <th>Hata</th>
+              <th>Başladı</th>
+              <th>Bitti</th>
+            </tr>
+          </thead>
+          <tbody id="cleanupReportsBody"><tr><td class="list-empty" colspan="7">Henüz cleanup raporu yüklenmedi.</td></tr></tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <section class="split">
+      <div class="card panel-scroll">
+        <div class="section-title"><h2>Feature Flags</h2><span class="hint">Canlı sistem anahtarları</span></div>
+        <table>
+          <thead><tr><th>Anahtar</th><th>Etiket</th><th>Durum</th></tr></thead>
+          <tbody id="flagsBody"><tr><td class="list-empty" colspan="3">Henüz feature flag yüklenmedi.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card panel-scroll">
+        <div class="section-title"><h2>Operasyon Hataları</h2><span class="hint">Son yakalanan uygulama hataları</span></div>
+        <table>
+          <thead><tr><th>Zaman</th><th>Hata</th><th>Seviye</th><th>Bağlam</th></tr></thead>
+          <tbody id="opsErrorsBody"><tr><td class="list-empty" colspan="4">Henüz operasyon hatası yüklenmedi.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, browserLocalPersistence, setPersistence, onIdTokenChanged, getIdToken } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyC81Ah46_F2his90zedODoCk07vqsd3vVs',
+      authDomain: 'playmatrix-b7df9.firebaseapp.com',
+      projectId: 'playmatrix-b7df9',
+      storageBucket: 'playmatrix-b7df9.firebasestorage.app',
+      messagingSenderId: '689686425310',
+      appId: '1:689686425310:web:01c9f797b437a770e19c4f',
+      measurementId: 'G-BL9ZP43VVW'
+    };
+
+    const REMOTE_FALLBACKS = ['https://emirhan-siye.onrender.com/api'];
+    const MANUAL_TOKEN_STORAGE_KEY = 'pm_admin_manual_token';
+    const RESET_FIELDS = [
+      ['balance', 'Bakiye'],
+      ['rp', 'RP'],
+      ['seasonRp', 'Sezon RP'],
+      ['level', 'Seviye'],
+      ['xp', 'Legacy XP'],
+      ['chessElo', 'Satranç Elo'],
+      ['pistiElo', 'Pişti Elo'],
+      ['rank', 'Rank'],
+      ['monthlyActiveScore', 'Aylık aktiflik'],
+      ['activityScore', 'Aktiflik puanı']
+    ];
+
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+    const state = {
+      apiBase: '/api',
+      activeBase: '/api',
+      autoToken: '',
+      manualToken: '',
+      authReady: false,
+      user: null,
+      sessionReady: false,
+      loading: false,
+      usersCursor: '',
+      usersPrev: [],
+      userSearch: '',
+      userLimit: 25,
+      totalUsers: 0,
+      selectedUid: '',
+      selectedDetail: null,
+      cleanupReports: [],
+      lastLoadAt: 0
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+    const fmt = (value) => Number(value || 0).toLocaleString('tr-TR');
+    const fmtDate = (value) => {
+      const num = Number(value || 0);
+      return num > 0 ? new Date(num).toLocaleString('tr-TR') : '-';
+    };
+
+    function setBadge(id, text, tone = 'normal') {
+      const el = $(id);
+      if (!el) return;
+      el.className = `badge ${tone}`;
+      el.textContent = text;
+    }
+
+    function setBox(id, text, tone = 'normal') {
+      const el = $(id);
+      if (!el) return;
+      el.className = `status-box ${tone}`;
+      el.innerHTML = text;
+    }
+
+    function normalizeApiBase(rawInput = '') {
+      let raw = String(rawInput || '').trim();
+      if (!raw) return '/api';
+
+      raw = raw
+        .replace(/^ttps:\/\//i, 'https://')
+        .replace(/^tps:\/\//i, 'https://')
+        .replace(/^htps:\/\//i, 'https://');
+
+      if (/^\/?ap$/i.test(raw) || /^\/?api$/i.test(raw)) return '/api';
+      if (raw.startsWith('/')) {
+        const path = raw.replace(/\/+$/, '');
+        if (!path || path === '/' || path === '/admin') return '/api';
+        return /\/api(?:$|\/)/i.test(path) ? path : `${path}/api`.replace(/\/\/+/, '/');
+      }
+
+      if (!/^https?:\/\//i.test(raw)) raw = raw.includes('.') ? `https://${raw}` : `/${raw}`;
+      if (raw.startsWith('/')) return normalizeApiBase(raw);
+
+      try {
+        const url = new URL(raw);
+        let pathname = (url.pathname || '').replace(/\/+$/, '');
+        if (!pathname || pathname === '/' || pathname === '/admin' || pathname === '/ap') pathname = '/api';
+        else if (!/\/api(?:$|\/)/i.test(pathname)) pathname = `${pathname}/api`;
+        return `${url.origin}${pathname}`;
+      } catch (_) {
+        return '/api';
+      }
+    }
+
+    function joinApiUrl(base, path) {
+      const normalized = normalizeApiBase(base);
+      const cleanPath = String(path || '').startsWith('/') ? String(path) : `/${String(path || '')}`;
+      return `${normalized.replace(/\/$/, '')}${cleanPath}`;
+    }
+
+    function tokenNow() {
+      return state.autoToken || state.manualToken || '';
+    }
+
+    async function readJsonSafe(response) {
+      const text = await response.text().catch(() => '');
+      if (!text) return {};
+      try { return JSON.parse(text); } catch (_) { return { raw: text }; }
+    }
+
+    function mapHttpError(response, payload, url) {
+      const msg = payload?.error || payload?.message || payload?.raw || '';
+      if (response.status === 401) return 'Oturum geçersiz. Ana sitede tekrar giriş yap ve paneli yenile.';
+      if (response.status === 403) return msg || 'Bu hesap admin yetkisine sahip değil.';
+      if (response.status === 404) return `Endpoint bulunamadı (404): ${url}. Bu backend sürümünde admin route eksik veya deploy edilmemiş olabilir.`;
+      if (response.status >= 500) return msg || 'Sunucu tarafında hata oluştu.';
+      return msg || `HTTP ${response.status}`;
+    }
+
+    async function api(path, options = {}) {
+      const token = tokenNow();
+      if (!token) throw new Error('Admin oturumu bulunamadı. Ana sitede giriş yap veya manuel token gir.');
+
+      const base = normalizeApiBase(options.baseOverride || state.activeBase || state.apiBase);
+      const url = joinApiUrl(base, path);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
+
+      try {
+        const response = await fetch(url, {
+          method: options.method || 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...(options.headers || {})
+          },
+          body: options.body,
+          signal: controller.signal,
+          credentials: 'include'
+        });
+        const payload = await readJsonSafe(response);
+        if (!response.ok || payload?.ok === false) throw new Error(mapHttpError(response, payload, url));
+        return payload;
+      } catch (error) {
+        if (error?.name === 'AbortError') throw new Error('İstek zaman aşımına uğradı.');
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+
+    async function apiOrNull(path, options = {}) {
+      try {
+        return await api(path, options);
+      } catch (error) {
+        if (/404/.test(String(error?.message || ''))) return null;
+        throw error;
+      }
+    }
+
+    async function probeBase(base) {
+      const normalized = normalizeApiBase(base);
+      try {
+        const response = await fetch(joinApiUrl(normalized, '/healthz'), { method: 'GET', credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        await readJsonSafe(response);
+        return { ok: true, base: normalized };
+      } catch (error) {
+        return { ok: false, base: normalized, error: error.message || 'Probe başarısız' };
+      }
+    }
+
+    async function probeAdminCapability(base, token, preferredPath) {
+      const normalized = normalizeApiBase(base);
+      const probePaths = [preferredPath, '/admin/ping', '/admin/overview', '/admin/deployment-health']
+        .filter(Boolean)
+        .filter((item, index, arr) => arr.indexOf(item) === index);
+
+      for (const probePath of probePaths) {
+        try {
+          const response = await fetch(joinApiUrl(normalized, probePath), {
+            method: 'GET',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            credentials: 'include'
+          });
+          const payload = await readJsonSafe(response);
+          if (response.ok && payload?.ok !== false) {
+            return { ok: true, base: normalized, path: probePath };
+          }
+          if (response.status === 401 || response.status === 403) {
+            return { ok: false, base: normalized, authError: true, error: payload?.error || `HTTP ${response.status}` };
+          }
+        } catch (_) {}
+      }
+      return { ok: false, base: normalized, missing: true, error: 'ADMIN_CAPABILITY_MISSING' };
+    }
+
+    async function chooseWorkingApiBase(preferred = '') {
+      const token = tokenNow();
+      const candidates = [preferred || state.apiBase, '/api', ...REMOTE_FALLBACKS]
+        .map((item) => normalizeApiBase(item))
+        .filter((item, index, arr) => item && arr.indexOf(item) === index);
+
+      let firstHealthyBase = '';
+      let firstAuthError = '';
+      for (const candidate of candidates) {
+        const probe = await probeBase(candidate);
+        if (!probe.ok) continue;
+        firstHealthyBase = firstHealthyBase || probe.base;
+        const capability = await probeAdminCapability(probe.base, token, '/admin/ping');
+        if (capability.ok) {
+          state.activeBase = capability.base;
+          if (capability.base !== '/api') {
+            setBadge('apiStatus', 'Uzak admin backend bağlı', 'ok');
+            setBox('connectionHint', `Admin endpoint aynı domainde yoktu. Aktif backend: <span class="mono">${escapeHtml(capability.base)}</span>.`, 'ok');
+          } else {
+            setBadge('apiStatus', 'Aynı domain admin API bağlı', 'ok');
+            setBox('connectionHint', `Aktif admin backend <span class="mono">/api</span>.`, 'ok');
+          }
+          return capability.base;
+        }
+        if (capability.authError && !firstAuthError) firstAuthError = capability.error || 'Yönetici yetkisi gerekli.';
+      }
+
+      state.activeBase = normalizeApiBase(firstHealthyBase || preferred || state.apiBase || '/api');
+      if (firstAuthError) {
+        setBadge('apiStatus', 'Yetki doğrulanamadı', 'error');
+        setBox('connectionHint', `Admin endpoint bulundu ama erişim reddedildi: <strong>${escapeHtml(firstAuthError)}</strong>`, 'error');
+      } else {
+        setBadge('apiStatus', 'Admin endpoint bulunamadı', 'error');
+        setBox('connectionHint', `Health bulundu ama admin route bulunamadı. Aktif taban: <span class="mono">${escapeHtml(state.activeBase)}</span>.`, 'error');
+      }
+      return state.activeBase;
+    }
+
+    function isSameOriginApiBase(base = '') {
+      const normalized = normalizeApiBase(base);
+      if (!normalized) return false;
+      if (normalized.startsWith('/')) return true;
+      try {
+        return new URL(normalized).origin === window.location.origin;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    async function bootstrapAdminSession(base = state.activeBase || state.apiBase) {
+      const token = tokenNow();
+      const normalized = normalizeApiBase(base);
+      if (!token || !isSameOriginApiBase(normalized)) return false;
+
+      try {
+        const response = await fetch(joinApiUrl(normalized, '/auth/admin/bootstrap'), {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          credentials: 'include'
+        });
+        const payload = await readJsonSafe(response);
+        if (!response.ok || payload?.ok === false) {
+          state.sessionReady = false;
+          return false;
+        }
+        state.sessionReady = true;
+        return true;
+      } catch (_) {
+        state.sessionReady = false;
+        return false;
+      }
+    }
+
+    async function refreshAutoToken(force = false) {
+
+      const user = auth.currentUser;
+      if (!user) {
+        state.autoToken = '';
+        state.user = null;
+        state.authReady = true;
+        updateAuthUi();
+        return false;
+      }
+      try {
+        state.autoToken = await getIdToken(user, force);
+        state.user = { uid: user.uid, email: user.email || '', displayName: user.displayName || '' };
+        state.authReady = true;
+        updateAuthUi();
+        return true;
+      } catch (error) {
+        state.autoToken = '';
+        state.authReady = true;
+        updateAuthUi();
+        setBox('panelMessage', `Otomatik token alınamadı: <strong>${escapeHtml(error.message || 'Bilinmeyen hata')}</strong>`, 'error');
+        return false;
+      }
+    }
+
+    function updateAuthUi() {
+      if (state.autoToken && state.sessionReady) setBadge('authStatus', `Otomatik giriş + güvenli oturum aktif · ${state.user?.email || state.user?.uid || 'admin'}`, 'ok');
+      else if (state.autoToken) setBadge('authStatus', `Otomatik giriş aktif · ${state.user?.email || state.user?.uid || 'admin'}`, 'ok');
+      else if (state.manualToken) setBadge('authStatus', 'Manuel token hazır', 'warn');
+      else if (state.authReady) setBadge('authStatus', 'Admin oturumu bulunamadı', 'error');
+      else setBadge('authStatus', 'Oturum aranıyor...', 'normal');
+    }
+
+    function renderResetChecks() {
+      const html = RESET_FIELDS.map(([field, label]) => `<label class="check"><input type="checkbox" value="${field}" />${escapeHtml(label)}</label>`).join('');
+      $('bulkResetChecks').innerHTML = html;
+      $('singleResetChecks').innerHTML = html;
+    }
+
+    function currentChecked(containerId) {
+      return [...$(containerId).querySelectorAll('input[type="checkbox"]:checked')].map((el) => el.value);
+    }
+
+    function renderMetrics(metrics = {}) {
+      const items = [
+        ['Toplam kullanıcı', fmt(metrics.userCount)],
+        ['Açık ticket', fmt(metrics.openTicketCount)],
+        ['Çözümlenmemiş ticket', fmt(metrics.unresolvedTicketCount)],
+        ['Banlı kullanıcı', fmt(metrics.bannedCount)],
+        ['Muted kullanıcı', fmt(metrics.mutedCount)],
+        ['Uptime', `${fmt(metrics.uptimeSec)} sn`]
+      ];
+      $('metrics').innerHTML = items.map(([label, value]) => `
+        <div class="metric-card">
+          <div class="metric-label">${escapeHtml(label)}</div>
+          <div class="metric">${escapeHtml(value)}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderTickets(tickets = []) {
+      if (!Array.isArray(tickets) || tickets.length === 0) {
+        $('ticketsBody').innerHTML = '<tr><td class="list-empty" colspan="6">Kayıt yok.</td></tr>';
+        return;
+      }
+      $('ticketsBody').innerHTML = tickets.map((item) => `
+        <tr>
+          <td class="mono">${escapeHtml(item.id || '-')}</td>
+          <td>${escapeHtml(item.subject || '-')}</td>
+          <td>${escapeHtml(item.status || '-')}</td>
+          <td>${escapeHtml(item.priority || '-')}</td>
+          <td class="mono">${escapeHtml(item.uid || '-')}</td>
+          <td>${escapeHtml(fmtDate(item.updatedAt))}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAudit(rows = []) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        $('auditBody').innerHTML = '<tr><td class="list-empty" colspan="5">Kayıt yok.</td></tr>';
+        return;
+      }
+      $('auditBody').innerHTML = rows.map((item) => `
+        <tr>
+          <td>${escapeHtml(fmtDate(item.createdAt))}</td>
+          <td>${escapeHtml(item.action || '-')}</td>
+          <td>${escapeHtml(item.targetType || '-')} / <span class="mono">${escapeHtml(item.targetId || '-')}</span></td>
+          <td class="mono">${escapeHtml(item.actorUid || '-')}</td>
+          <td>${escapeHtml(item.status || '-')}</td>
+        </tr>
+      `).join('');
+    }
+
+
+    function renderCleanupReports(rows = []) {
+      state.cleanupReports = Array.isArray(rows) ? rows : [];
+      const body = $('cleanupReportsBody');
+      if (!body) return;
+      if (!state.cleanupReports.length) {
+        body.innerHTML = '<tr><td class="list-empty" colspan="7">Henüz cleanup raporu yok.</td></tr>';
+        return;
+      }
+      body.innerHTML = state.cleanupReports.map((item) => {
+        const removedCount = Array.isArray(item.removed) ? item.removed.length : Number(item.removedCount || 0);
+        const errorCount = Array.isArray(item.errors) ? item.errors.length : Number(item.errorCount || 0);
+        return `
+          <tr>
+            <td class="mono">${escapeHtml(item.uid || '-')}</td>
+            <td>${escapeHtml(item.trigger || '-')}</td>
+            <td>${escapeHtml(item.status || '-')}</td>
+            <td>${escapeHtml(fmt(removedCount))}</td>
+            <td>${escapeHtml(fmt(errorCount))}</td>
+            <td>${escapeHtml(fmtDate(item.startedAt))}</td>
+            <td>${escapeHtml(fmtDate(item.finishedAt))}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+
+    function renderFeatureFlags(rows = []) {
+      const body = $('flagsBody');
+      if (!body) return;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        body.innerHTML = '<tr><td class="list-empty" colspan="3">Feature flag verisi yok.</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map((item) => `
+        <tr>
+          <td class="mono">${escapeHtml(item.key || '-')}</td>
+          <td>${escapeHtml(item.label || item.key || '-')}</td>
+          <td>${item.enabled ? '<span class="pill ok">Aktif</span>' : '<span class="pill warn">Pasif</span>'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderOpsErrors(rows = []) {
+      const body = $('opsErrorsBody');
+      if (!body) return;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        body.innerHTML = '<tr><td class="list-empty" colspan="4">Operasyon hata kaydı yok.</td></tr>';
+        return;
+      }
+      body.innerHTML = rows.map((item) => {
+        const contextText = item.context && typeof item.context === 'object'
+          ? Object.entries(item.context).slice(0, 2).map(([k, v]) => `${k}: ${String(v)}`).join(' · ')
+          : '-';
+        const severity = String(item.severity || item.level || item.name || 'error').toLowerCase();
+        const tone = severity.includes('fatal') ? 'error' : (severity.includes('warn') ? 'warn' : 'ok');
+        return `
+          <tr>
+            <td>${escapeHtml(fmtDate(item.createdAt))}</td>
+            <td>${escapeHtml(item.message || item.name || '-')}</td>
+            <td><span class="pill ${tone}">${escapeHtml(severity)}</span></td>
+            <td>${escapeHtml(contextText)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderTop(rows = []) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        $('topBody').innerHTML = '<tr><td class="list-empty" colspan="5">Kayıt yok.</td></tr>';
+        return;
+      }
+      $('topBody').innerHTML = rows.map((item, index) => `
+        <tr>
+          <td>${escapeHtml(item.rankPosition ?? index + 1)}</td>
+          <td>${escapeHtml(item.username || '-')}</td>
+          <td>${escapeHtml(fmt(item.monthlyActiveScore))}</td>
+          <td>${escapeHtml(fmt(item.rp))}</td>
+          <td>${escapeHtml(fmt(item.balance))}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderUsers(users = []) {
+      if (!Array.isArray(users) || users.length === 0) {
+        $('usersBody').innerHTML = '<tr><td class="list-empty" colspan="9">Kullanıcı bulunamadı.</td></tr>';
+        return;
+      }
+      $('usersBody').innerHTML = users.map((item) => `
+        <tr>
+          <td class="mono">${escapeHtml(item.uid || '-')}</td>
+          <td>${escapeHtml(item.username || '-')}</td>
+          <td>${escapeHtml(item.email || '-')}</td>
+          <td>${escapeHtml(fmt(item.balance))}</td>
+          <td>${escapeHtml(fmt(item.rp))}</td>
+          <td>${escapeHtml(fmt(item.level))}</td>
+          <td>♟ ${escapeHtml(fmt(item.chessElo))}<br/>🃏 ${escapeHtml(fmt(item.pistiElo))}</td>
+          <td>
+            ${item.isMuted ? '<span class="pill warn">Muted</span>' : ''}
+            ${item.isBanned ? '<span class="pill error">Banlı</span>' : ''}
+            ${!item.isMuted && !item.isBanned ? '<span class="pill ok">Normal</span>' : ''}
+          </td>
+          <td class="table-actions"><button class="small-btn secondary" data-view-user="${escapeHtml(item.uid)}">Detay</button></td>
+        </tr>
+      `).join('');
+
+      [...$('usersBody').querySelectorAll('[data-view-user]')].forEach((button) => {
+        button.addEventListener('click', () => loadUserDetail(button.getAttribute('data-view-user')));
+      });
+    }
+
+    function setSelectedUid(uid = '') {
+      state.selectedUid = uid || '';
+      $('selectedUidHint').textContent = state.selectedUid || 'Henüz seçim yok';
+      $('moderationUid').value = state.selectedUid || $('moderationUid').value;
+      $('rewardUid').value = state.selectedUid || $('rewardUid').value;
+    }
+
+    function fillUserEditor(detail = null) {
+      if (!detail) {
+        $('userSummaryGrid').innerHTML = '<div class="list-empty">Kullanıcı seçilmedi.</div>';
+        $('userRawJson').textContent = 'Henüz kullanıcı seçilmedi.';
+        return;
+      }
+      const s = detail.summary || {};
+      const infoBoxes = [
+        ['UID', s.uid], ['Kullanıcı', s.username], ['E-posta', s.email], ['Seviye', fmt(s.level)],
+        ['Bakiye', fmt(s.balance)], ['RP', fmt(s.rp)], ['Sezon RP', fmt(s.seasonRp)], ['Rank', fmt(s.rank)],
+        ['Satranç Elo', fmt(s.chessElo)], ['Pişti Elo', fmt(s.pistiElo)], ['Muted', s.isMuted ? 'Evet' : 'Hayır'], ['Banlı', s.isBanned ? 'Evet' : 'Hayır']
+      ];
+      $('userSummaryGrid').innerHTML = infoBoxes.map(([k,v]) => `<div class="info-box"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(v ?? '-')}</span></div>`).join('');
+
+      $('editUsername').value = s.username || '';
+      $('editFullName').value = s.fullName || '';
+      $('editEmail').value = s.email || '';
+      $('editBalance').value = Number(s.balance || 0);
+      $('editRp').value = Number(s.rp || 0);
+      $('editSeasonRp').value = Number(s.seasonRp || 0);
+      $('editLevel').value = Number(s.level || 1);
+      $('editXp').value = Number(s.xp || 0);
+      $('editRank').value = Number(s.rank || 0);
+      $('editChessElo').value = Number(s.chessElo || 1000);
+      $('editPistiElo').value = Number(s.pistiElo || 1000);
+      $('editMonthlyActiveScore').value = Number(s.monthlyActiveScore || 0);
+      $('editActivityScore').value = Number(s.activityScore || 0);
+      $('editActiveFrame').value = Number(s.activeFrame || 0);
+      $('editActiveFrameClass').value = s.activeFrameClass || '';
+      $('editIsMuted').checked = !!s.isMuted;
+      $('editIsBanned').checked = !!s.isBanned;
+      $('editIsFlagged').checked = !!s.isFlagged;
+      $('editModerationReason').value = s.moderationReason || '';
+      $('advancedPatch').value = '';
+      $('userRawJson').textContent = JSON.stringify({ summary: detail.summary, auth: detail.auth, firestore: detail.firestore, recentAudit: detail.recentAudit, recentTickets: detail.recentTickets }, null, 2);
+    }
+
+    async function loadUsers(resetPaging = false) {
+      state.userSearch = $('userSearchInput').value.trim();
+      state.userLimit = Number($('userLimitInput').value || 25);
+      if (resetPaging) {
+        state.usersCursor = '';
+        state.usersPrev = [];
+      }
+      const payload = await api(`/admin/users?limit=${encodeURIComponent(state.userLimit)}&cursor=${encodeURIComponent(state.usersCursor)}&q=${encodeURIComponent(state.userSearch)}`);
+      renderUsers(payload.users || []);
+      state.totalUsers = Number(payload.totalCount || 0);
+      $('userListMeta').textContent = state.userSearch
+        ? `Arama: "${state.userSearch}" · ${payload.users?.length || 0} sonuç`
+        : `Toplam kullanıcı: ${fmt(state.totalUsers)} · Sayfa boyutu: ${state.userLimit}`;
+      $('userNextBtn').disabled = !payload.nextCursor || !!state.userSearch;
+      $('userPrevBtn').disabled = state.usersPrev.length === 0 || !!state.userSearch;
+      state.nextCursor = payload.nextCursor || '';
+    }
+
+    async function loadUserDetail(uid) {
+      if (!uid) return;
+      setSelectedUid(uid);
+      setBox('panelMessage', `<span class="mono">${escapeHtml(uid)}</span> için detaylar yükleniyor...`, 'normal');
+      const detail = await api(`/admin/users/${encodeURIComponent(uid)}`);
+      state.selectedDetail = detail;
+      fillUserEditor(detail);
+      setBox('panelMessage', `<span class="mono">${escapeHtml(uid)}</span> detayları yüklendi.`, 'ok');
+    }
+
+    function gatherUserPatch() {
+      const num = (id) => {
+        const value = Number($(id).value);
+        return Number.isFinite(value) ? value : 0;
+      };
+      let mergePatch = {};
+      const advancedText = $('advancedPatch').value.trim();
+      if (advancedText) {
+        try {
+          mergePatch = JSON.parse(advancedText);
+        } catch (_) {
+          throw new Error('Gelişmiş JSON merge patch geçerli JSON olmalı.');
+        }
+      }
+      return {
+        username: $('editUsername').value.trim(),
+        fullName: $('editFullName').value.trim(),
+        email: $('editEmail').value.trim(),
+        balance: num('editBalance'),
+        rp: num('editRp'),
+        seasonRp: num('editSeasonRp'),
+        level: num('editLevel'),
+        xp: num('editXp'),
+        rank: num('editRank'),
+        chessElo: num('editChessElo'),
+        pistiElo: num('editPistiElo'),
+        monthlyActiveScore: num('editMonthlyActiveScore'),
+        activityScore: num('editActivityScore'),
+        activeFrame: num('editActiveFrame'),
+        activeFrameClass: $('editActiveFrameClass').value.trim(),
+        isMuted: $('editIsMuted').checked,
+        isBanned: $('editIsBanned').checked,
+        isFlagged: $('editIsFlagged').checked,
+        moderationReason: $('editModerationReason').value.trim(),
+        mergePatch
+      };
+    }
+
+    async function saveSelectedUser() {
+      if (!state.selectedUid) throw new Error('Önce kullanıcı seç.');
+      const patch = gatherUserPatch();
+      const payload = await api(`/admin/users/${encodeURIComponent(state.selectedUid)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch)
+      });
+      state.selectedDetail = payload;
+      fillUserEditor(payload);
+      setBox('panelMessage', `Kullanıcı güncellendi: <span class="mono">${escapeHtml(state.selectedUid)}</span>`, 'ok');
+      await loadDashboard(false, true);
+    }
+
+    async function resetSelectedUser() {
+      if (!state.selectedUid) throw new Error('Önce kullanıcı seç.');
+      const fields = currentChecked('singleResetChecks');
+      if (fields.length === 0) throw new Error('Sıfırlanacak en az bir alan seç.');
+      const payload = await api(`/admin/users/${encodeURIComponent(state.selectedUid)}/reset-values`, {
+        method: 'POST',
+        body: JSON.stringify({ fields })
+      });
+      state.selectedDetail = payload;
+      fillUserEditor(payload);
+      setBox('panelMessage', `Seçili kullanıcı sıfırlandı: <span class="mono">${escapeHtml(state.selectedUid)}</span> · ${escapeHtml(fields.join(', '))}`, 'ok');
+      await loadDashboard(false, true);
+    }
+
+    async function handleSeasonReset() {
+      const payload = await api('/admin/season/reset', {
+        method: 'POST',
+        body: JSON.stringify({
+          seasonLabel: $('seasonLabel').value.trim(),
+          confirmText: $('seasonConfirm').value.trim(),
+          resetMonthly: $('seasonResetMonthly').checked,
+          resetRank: $('seasonResetRank').checked
+        })
+      });
+      $('seasonConfirm').value = '';
+      setBox('panelMessage', `Sezon sıfırlandı. Güncellenen kullanıcı: <strong>${escapeHtml(fmt(payload.totalUpdated))}</strong>`, 'ok');
+      await loadDashboard(true, true);
+    }
+
+    async function handleBulkReset() {
+      const fields = currentChecked('bulkResetChecks');
+      if (fields.length === 0) throw new Error('Toplu sıfırlama için alan seç.');
+      const payload = await api('/admin/users/bulk-reset', {
+        method: 'POST',
+        body: JSON.stringify({ fields, confirmText: $('bulkResetConfirm').value.trim() })
+      });
+      $('bulkResetConfirm').value = '';
+      setBox('panelMessage', `Toplu sıfırlama tamamlandı. Kullanıcı: <strong>${escapeHtml(fmt(payload.totalUpdated))}</strong> · Alanlar: ${escapeHtml((payload.labels || fields).join(', '))}`, 'ok');
+      await loadDashboard(true, true);
+    }
+
+    async function handleModeration() {
+      const uid = $('moderationUid').value.trim();
+      const action = $('moderationAction').value.trim();
+      const reason = $('moderationReason').value.trim();
+      if (!uid) throw new Error('Kullanıcı UID gerekli.');
+      await api(`/admin/users/${encodeURIComponent(uid)}/moderate`, {
+        method: 'POST',
+        body: JSON.stringify({ action, reason })
+      });
+      setBox('panelMessage', `Moderasyon uygulandı: <span class="mono">${escapeHtml(uid)}</span> · ${escapeHtml(action)}`, 'ok');
+      if (state.selectedUid === uid) await loadUserDetail(uid);
+      await loadDashboard(false, true);
+    }
+
+    async function handleReward() {
+      const uid = $('rewardUid').value.trim();
+      const amount = Number($('rewardAmount').value || 0);
+      const reason = $('rewardReason').value.trim();
+      if (!uid) throw new Error('Kullanıcı UID gerekli.');
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error('Geçerli bir MC miktarı gir.');
+      await api('/admin/rewards/grant', {
+        method: 'POST',
+        body: JSON.stringify({ uid, amount, reason })
+      });
+      $('rewardAmount').value = '';
+      $('rewardReason').value = '';
+      setBox('panelMessage', `Ödül verildi: <span class="mono">${escapeHtml(uid)}</span> · ${escapeHtml(fmt(amount))} MC`, 'ok');
+      if (state.selectedUid === uid) await loadUserDetail(uid);
+      await loadDashboard(false, true);
+    }
+
+
+async function loadDashboard(forceToken = false, silentUsers = false) {
+  if (state.loading) return;
+  if (forceToken && auth.currentUser) await refreshAutoToken(true);
+  if (!tokenNow()) {
+    setBadge('apiStatus', 'Token bekleniyor', 'warn');
+    setBox('panelMessage', 'Admin oturumu bulunamadı. Ana sitede giriş yaptıktan sonra tekrar dene veya manuel token gir.', 'warn');
+    return;
+  }
+  state.loading = true;
+  $('refreshBtn').disabled = true;
+  setBadge('apiStatus', 'Yükleniyor...', 'normal');
+  setBox('panelMessage', 'Admin verileri yükleniyor...', 'normal');
+
+  try {
+    await chooseWorkingApiBase($('apiInput').value.trim() || state.apiBase);
+    await bootstrapAdminSession(state.activeBase);
+    const overview = await api('/admin/overview');
+    const tickets = await apiOrNull('/admin/tickets');
+    const audit = await apiOrNull('/admin/audit');
+    const cleanupReports = await apiOrNull('/admin/cleanup-reports');
+    const featureFlags = await apiOrNull('/admin/feature-flags');
+    const opsErrors = await apiOrNull('/admin/ops/errors');
+    renderMetrics(overview.metrics || {});
+    renderTickets((tickets && tickets.tickets) || overview.recentTickets || []);
+    renderAudit((audit && audit.rows) || overview.recentAudit || []);
+    renderCleanupReports((cleanupReports && (cleanupReports.items || cleanupReports.rows)) || []);
+    renderFeatureFlags((featureFlags && featureFlags.rows) || (overview.ops && overview.ops.featureFlags) || []);
+    renderOpsErrors((opsErrors && opsErrors.rows) || (overview.ops && overview.ops.recentErrors) || []);
+    renderTop(overview.activeTop || []);
+    if (!silentUsers) {
+      try {
+        await loadUsers(false);
+      } catch (userError) {
+        console.warn('admin user list load failed', userError);
+      }
+    }
+    setBadge('apiStatus', state.activeBase === '/api' ? 'Aynı domain API bağlı' : 'Uzak backend bağlı', 'ok');
+    const missing = [!tickets ? 'ticket' : '', !audit ? 'audit' : ''].filter(Boolean).join(' / ');
+    setBox('panelMessage', missing
+      ? `Panel temel verilerle yüklendi. Eksik endpoint: <strong>${escapeHtml(missing)}</strong> · Aktif API: <span class="mono">${escapeHtml(state.activeBase)}</span>`
+      : `Bağlantı başarılı. Aktif API: <span class="mono">${escapeHtml(state.activeBase)}</span>`, missing ? 'warn' : 'ok');
+    state.lastLoadAt = Date.now();
+  } catch (error) {
+    setBadge('apiStatus', 'API hata verdi', 'error');
+    setBox('panelMessage', `Panel verileri yüklenemedi. <strong>${escapeHtml(error.message || 'Bilinmeyen hata')}</strong>`, 'error');
+  } finally {
+    state.loading = false;
+    $('refreshBtn').disabled = false;
+  }
+}
+
+async function saveConfig() {
+      state.apiBase = normalizeApiBase($('apiInput').value.trim() || '/api');
+      state.manualToken = $('manualTokenInput').value.trim();
+      localStorage.setItem('pm_admin_api', state.apiBase);
+      if (state.manualToken) sessionStorage.setItem(MANUAL_TOKEN_STORAGE_KEY, state.manualToken);
+      else sessionStorage.removeItem(MANUAL_TOKEN_STORAGE_KEY);
+      $('apiInput').value = state.apiBase;
+      updateAuthUi();
+      await loadDashboard(true);
+    }
+
+    function hydrateState() {
+      state.apiBase = normalizeApiBase(localStorage.getItem('pm_admin_api') || '/api');
+      state.manualToken = (sessionStorage.getItem(MANUAL_TOKEN_STORAGE_KEY) || '').trim();
+      $('apiInput').value = state.apiBase;
+      $('manualTokenInput').value = state.manualToken;
+      $('seasonLabel').value = new Date().toLocaleDateString('tr-TR');
+      updateAuthUi();
+      renderResetChecks();
+      renderMetrics({});
+      setBox('connectionHint', 'Varsayılan backend hazırlanıyor...', 'normal');
+      setBox('panelMessage', 'Firebase oturumu kontrol ediliyor...', 'normal');
+    }
+
+    async function withLock(button, task) {
+      const text = button.textContent;
+      button.disabled = true;
+      try {
+        return await task();
+      } finally {
+        button.disabled = false;
+        button.textContent = text;
+      }
+    }
+
+    function bindEvents() {
+      $('saveConfigBtn').addEventListener('click', () => withLock($('saveConfigBtn'), saveConfig));
+      $('refreshBtn').addEventListener('click', () => withLock($('refreshBtn'), () => loadDashboard(true)));
+      $('reauthBtn').addEventListener('click', () => withLock($('reauthBtn'), async () => {
+        const ok = await refreshAutoToken(true);
+        if (!ok && !state.manualToken) throw new Error('Otomatik giriş yenilenemedi.');
+        await loadDashboard(true);
+      }).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Auth yenileme hatası'), 'error')));
+      $('userSearchBtn').addEventListener('click', () => withLock($('userSearchBtn'), () => loadUsers(true)).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Kullanıcı listesi hatası'), 'error')));
+      $('userNextBtn').addEventListener('click', () => withLock($('userNextBtn'), async () => {
+        if (!state.nextCursor) return;
+        if (state.usersCursor) state.usersPrev.push(state.usersCursor);
+        state.usersCursor = state.nextCursor;
+        await loadUsers(false);
+      }).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Sonraki sayfa hatası'), 'error')));
+      $('userPrevBtn').addEventListener('click', () => withLock($('userPrevBtn'), async () => {
+        state.usersCursor = state.usersPrev.pop() || '';
+        await loadUsers(false);
+      }).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Önceki sayfa hatası'), 'error')));
+      $('userSaveBtn').addEventListener('click', () => withLock($('userSaveBtn'), saveSelectedUser).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Kullanıcı kaydedilemedi'), 'error')));
+      $('userReloadBtn').addEventListener('click', () => withLock($('userReloadBtn'), async () => {
+        if (!state.selectedUid) throw new Error('Önce kullanıcı seç.');
+        await loadUserDetail(state.selectedUid);
+      }).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Detay yüklenemedi'), 'error')));
+      $('singleResetBtn').addEventListener('click', () => withLock($('singleResetBtn'), resetSelectedUser).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Sıfırlama başarısız'), 'error')));
+      $('seasonResetBtn').addEventListener('click', () => withLock($('seasonResetBtn'), handleSeasonReset).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Sezon sıfırlanamadı'), 'error')));
+      $('bulkResetBtn').addEventListener('click', () => withLock($('bulkResetBtn'), handleBulkReset).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Toplu sıfırlama başarısız'), 'error')));
+      $('moderateBtn').addEventListener('click', () => withLock($('moderateBtn'), handleModeration).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Moderasyon hatası'), 'error')));
+      $('rewardBtn').addEventListener('click', () => withLock($('rewardBtn'), handleReward).catch((error) => setBox('panelMessage', escapeHtml(error.message || 'Ödül hatası'), 'error')));
+      $('apiInput').addEventListener('blur', () => { $('apiInput').value = normalizeApiBase($('apiInput').value); });
+      $('userSearchInput').addEventListener('keydown', (event) => { if (event.key === 'Enter') $('userSearchBtn').click(); });
+      window.addEventListener('focus', () => { if (!document.hidden && Date.now() - state.lastLoadAt > 60_000 && tokenNow()) loadDashboard(); });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - state.lastLoadAt > 60_000 && tokenNow()) loadDashboard(); });
+    }
+
+    function bootstrapAuth() {
+      onIdTokenChanged(auth, async (user) => {
+        state.authReady = true;
+        if (!user) {
+          state.user = null;
+          state.autoToken = '';
+          updateAuthUi();
+          if (!state.manualToken) {
+            setBadge('apiStatus', 'Oturum yok', 'warn');
+            setBox('panelMessage', 'Firebase admin oturumu bulunamadı. Ana sitede yönetici hesabıyla giriş yap veya yedek token kullan.', 'warn');
+          }
+          return;
+        }
+        try {
+          state.user = { uid: user.uid, email: user.email || '', displayName: user.displayName || '' };
+          state.autoToken = await getIdToken(user, true);
+          await bootstrapAdminSession(state.apiBase);
+          updateAuthUi();
+          await loadDashboard();
+        } catch (error) {
+          state.autoToken = '';
+          updateAuthUi();
+          setBox('panelMessage', `Firebase token alınamadı: <strong>${escapeHtml(error.message || 'Bilinmeyen hata')}</strong>`, 'error');
+        }
+      }, (error) => {
+        state.authReady = true;
+        state.user = null;
+        state.autoToken = '';
+        updateAuthUi();
+        setBox('panelMessage', `Auth izleyici hatası: <strong>${escapeHtml(error.message || 'Bilinmeyen hata')}</strong>`, 'error');
+      });
+    }
+
+    hydrateState();
+    bindEvents();
+    bootstrapAuth();
+    if (state.manualToken) loadDashboard();
+  </script>
 </body>
 </html>

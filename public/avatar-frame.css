@@ -1,3 +1,4 @@
+/* FAZ 3 shared avatar + mobile stability overrides */
 html,
 body {
   overscroll-behavior-x: none !important;
@@ -23,14 +24,14 @@ label,
 .pill-btn,
 .mobile-tab,
 .drop-item,
-.pm-avatar,
+.pm-premium-avatar,
 .pm-game-avatar-shell,
 .t-avatar-wrap {
   touch-action: manipulation;
 }
 
 img,
-.pm-avatar-img,
+.pm-premium-img,
 .pm-avatar-shell__img,
 .pm-avatar-image,
 .p-avatar,
@@ -45,7 +46,7 @@ img,
 }
 
 [data-pm-avatar="true"],
-.pm-avatar,
+.pm-premium-avatar,
 .pm-avatar-shell,
 .pm-game-avatar-shell,
 .t-avatar-wrap {
@@ -73,39 +74,39 @@ img,
 }
 
 .t-avatar-wrap > [data-pm-avatar="true"],
-.t-avatar-wrap > .pm-avatar,
+.t-avatar-wrap > .pm-premium-avatar,
 .pm-game-avatar-shell > [data-pm-avatar="true"],
-.pm-game-avatar-shell > .pm-avatar {
+.pm-game-avatar-shell > .pm-premium-avatar {
   inline-size: 100% !important;
   block-size: 100% !important;
 }
 
 [data-pm-avatar="true"].has-frame,
-.pm-avatar.has-frame,
-.pm-avatar--picker.has-frame,
-.pm-avatar--profile.has-frame,
-.pm-avatar--leaderboard.has-frame,
-.pm-avatar--header.has-frame,
-.pm-avatar--social-card.has-frame,
-.pm-avatar--social-list.has-frame,
-.pm-avatar--chat.has-frame,
-.pm-avatar--topbar.has-frame,
+.pm-premium-avatar.has-frame,
+.pm-premium-avatar--picker.has-frame,
+.pm-premium-avatar--profile.has-frame,
+.pm-premium-avatar--leaderboard.has-frame,
+.pm-premium-avatar--header.has-frame,
+.pm-premium-avatar--social-card.has-frame,
+.pm-premium-avatar--social-list.has-frame,
+.pm-premium-avatar--chat.has-frame,
+.pm-premium-avatar--topbar.has-frame,
 .pm-game-avatar-shell.has-frame,
 .t-avatar-wrap.has-frame {
   --pm-avatar-scale: .84;
 }
 
-.pm-avatar--picker.has-frame,
-.pm-avatar--profile.has-frame {
+.pm-premium-avatar--picker.has-frame,
+.pm-premium-avatar--profile.has-frame {
   --pm-avatar-scale: .82;
 }
 
-.pm-avatar--topbar.has-frame,
-.pm-avatar--header.has-frame {
+.pm-premium-avatar--topbar.has-frame,
+.pm-premium-avatar--header.has-frame {
   --pm-avatar-scale: .80;
 }
 
-.pm-avatar-img,
+.pm-premium-img,
 .pm-avatar-shell__img,
 .pm-avatar-image,
 .p-avatar,
@@ -164,365 +165,406 @@ img,
 [data-pm-avatar="true"][data-frame-index="0"] .pm-avatar-shell__frame {
   display: none !important;
 }
-.pm-avatar-host,
-.hero-profile-avatar,
-.friend-avatar,
-.ps-list-avatar,
-.ps-chat-avatar-shell,
-.avatar,
-.podium-avatar,
-.avatar-pick-preview,
-.frame-pick-preview {
-  position: relative !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: visible !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
 
-#appearancePreviewShell { inline-size: 76px; block-size: 76px; }
-#profileSheetAvatarShell,
-#heroProfileAvatarShell { inline-size: 56px; block-size: 56px; }
-#topbarAvatarShell,
-#headerAvatarShell { inline-size: 34px; block-size: 34px; }
-#psChatAvatar { inline-size: 44px; block-size: 44px; }
-
-.avatar-pick-preview,
-.frame-pick-preview {
-  inline-size: 100%;
-  min-block-size: 88px;
-}
-
-.frame-pick-card,
-.avatar-pick-card {
-  overflow: visible !important;
-}
-
-.frame-pick-card .pm-avatar,
-.avatar-pick-card .pm-avatar {
-  inline-size: 64px !important;
-  block-size: 64px !important;
-  margin-inline: auto !important;
-}
-
-.ps-list-avatar > [data-pm-avatar="true"],
-.friend-avatar > [data-pm-avatar="true"],
-.ps-chat-avatar-shell > [data-pm-avatar="true"],
-.pm-avatar-host > [data-pm-avatar="true"] {
-  inline-size: 100% !important;
-  block-size: 100% !important;
-}
-
-/* Faz 4: Avatar seçiminden ayrılmış seviye kilitli çerçeve seçimi */
-.frame-picker-modal {
-  align-items: center;
-  justify-content: center;
-  background: rgba(15, 23, 42, .42);
-  backdrop-filter: blur(8px);
-}
-
-.frame-picker-sheet {
-  width: min(94vw, 560px);
-  max-height: min(88vh, 760px);
-  display: flex;
-  flex-direction: column;
-  border-radius: 26px;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef7f8 100%);
-  color: #0f172a;
-  border: 1px solid rgba(15, 23, 42, .08);
-  box-shadow: 0 28px 90px rgba(15, 23, 42, .34);
-  overflow: hidden;
-}
-
-.frame-picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 20px 12px;
-  background: rgba(255, 255, 255, .78);
-  border-bottom: 1px solid rgba(15, 23, 42, .06);
-}
-
-.frame-picker-title {
-  margin: 0;
-  font-size: 1.22rem;
-  font-weight: 900;
-  color: #0f172a;
-  letter-spacing: -.02em;
-}
-
-.frame-picker-close {
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 50%;
-  background: #e5e7eb;
-  color: #475569;
-  cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .06);
-}
-
-.frame-picker-close:hover,
-.frame-picker-close:focus-visible {
-  background: #d1d5db;
-  color: #0f172a;
-  outline: none;
-}
-
-.frame-picker-scroll {
-  padding: 14px 16px 18px;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
-
-.frame-picker-scroll::-webkit-scrollbar { width: 8px; }
-.frame-picker-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, .05); border-radius: 999px; }
-.frame-picker-scroll::-webkit-scrollbar-thumb { background: rgba(13, 148, 136, .42); border-radius: 999px; }
-
-.frame-picker-summary {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  margin-bottom: 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, .86);
-  border: 1px solid rgba(13, 148, 136, .18);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, .08);
-}
-
-.frame-picker-summary-preview {
-  width: 78px;
-  height: 78px;
-  flex: 0 0 78px;
-  position: relative;
-}
-
-.frame-picker-summary-copy {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
-
-.frame-picker-summary-copy strong {
-  color: #0f172a;
-  font-size: .98rem;
-  font-weight: 900;
-}
-
-.frame-picker-summary-copy span {
-  color: #64748b;
-  font-size: .82rem;
-  line-height: 1.45;
-}
-
-.frame-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.frame-picker-card {
-  position: relative;
-  min-height: 142px;
-  display: grid;
-  align-content: start;
-  justify-items: center;
-  gap: 8px;
-  padding: 12px 8px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(15, 23, 42, .08);
-  background: rgba(255, 255, 255, .92);
-  color: #0f172a;
-  cursor: pointer;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, .08);
-  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
-}
-
-.frame-picker-card:hover:not(:disabled),
-.frame-picker-card:focus-visible:not(:disabled) {
-  transform: translateY(-2px);
-  border-color: rgba(13, 148, 136, .55);
-  box-shadow: 0 16px 32px rgba(13, 148, 136, .16);
-  outline: none;
-}
-
-.frame-picker-card.is-selected {
-  border-color: rgba(13, 148, 136, .9);
-  background: linear-gradient(180deg, rgba(240, 253, 250, .98), rgba(255, 255, 255, .96));
-  box-shadow: 0 16px 38px rgba(13, 148, 136, .22), inset 0 0 0 1px rgba(20, 184, 166, .22);
-}
-
-.frame-picker-card.is-locked,
-.frame-picker-card:disabled {
-  cursor: not-allowed;
-  background: rgba(248, 250, 252, .82);
-  border-color: rgba(100, 116, 139, .18);
-  box-shadow: none;
-  transform: none;
-}
-
-.frame-picker-card.is-locked::after,
-.frame-picker-card:disabled::after {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  border-radius: 16px;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(248, 250, 252, .12), rgba(100, 116, 139, .10));
-  border: 1px dashed rgba(100, 116, 139, .28);
-}
-
-.frame-picker-card.is-locked::before,
-.frame-picker-card:disabled::before {
-  content: '\f023';
-  font-family: 'Font Awesome 6 Free';
-  font-weight: 900;
-  position: absolute;
-  right: 12px;
-  top: 10px;
-  z-index: 6;
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: #64748b;
-  background: rgba(226, 232, 240, .92);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, .14);
-  font-size: .72rem;
-}
-
-.frame-picker-preview {
-  width: 68px;
-  height: 68px;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-}
-
-.frame-picker-card .pm-avatar,
-.frame-picker-card [data-pm-avatar="true"],
-.frame-picker-card img:not(.pm-frame-image):not(.pm-avatar-shell__frame) {
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-.frame-picker-meta {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  width: 100%;
-}
-
-.frame-picker-card-title {
-  font-size: .76rem;
-  font-weight: 900;
-  color: #0f172a;
-  line-height: 1.1;
-}
-
-.frame-picker-card-asset {
-  font-size: .68rem;
-  color: #64748b;
-  line-height: 1.1;
-}
-
-.frame-picker-card-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 22px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(13, 148, 136, .10);
-  color: #0f766e;
-  font-size: .66rem;
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.frame-picker-card.is-selected .frame-picker-card-status {
-  background: rgba(13, 148, 136, .16);
-  color: #0f766e;
-}
-
-.frame-picker-card.is-locked .frame-picker-card-status,
-.frame-picker-card:disabled .frame-picker-card-status {
-  background: rgba(100, 116, 139, .12);
-  color: #64748b;
-}
-
-.frame-picker-card.is-saving {
-  pointer-events: none;
-}
-
-.appearance-actions {
-  flex-wrap: wrap;
-}
-
-@media (max-width: 560px) {
-  .frame-picker-modal {
-    align-items: flex-end;
-  }
-
-  .frame-picker-sheet {
-    width: 100vw;
-    max-height: 90vh;
-    border-radius: 24px 24px 0 0;
-  }
-
-  .frame-picker-header { padding: 14px 15px 10px; }
-  .frame-picker-scroll { padding: 12px 12px 16px; }
-  .frame-picker-grid { gap: 10px 8px; }
-  .frame-picker-card {
-    min-height: 132px;
-    border-radius: 18px;
-    padding: 10px 5px 9px;
-  }
-  .frame-picker-preview {
-    width: 62px;
-    height: 62px;
-  }
-  .frame-picker-card-status { font-size: .6rem; padding-inline: 6px; }
-}
-
-.frame-picker-card:disabled {
-  opacity: 1 !important;
-  -webkit-text-fill-color: currentColor;
-}
-
-.frame-picker-card:disabled .frame-picker-preview,
-.frame-picker-card:disabled .pm-avatar,
-.frame-picker-card:disabled [data-pm-avatar="true"],
-.frame-picker-card:disabled img:not(.pm-frame-image):not(.pm-avatar-shell__frame) {
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-
-/* FAZ 5 — Kilitli çerçeve önizleme yalnız seçim kartında soluk görünür; gerçek avatarlar etkilenmez. */
-.frame-picker-card.is-locked .frame-picker-preview > [data-pm-avatar="true"],
-.frame-picker-card:disabled .frame-picker-preview > [data-pm-avatar="true"] {
-  opacity: .58 !important;
-  filter: grayscale(.82) saturate(.7) brightness(.92) !important;
-}
-
-.frame-picker-card.is-locked .frame-picker-preview .pm-frame-image,
-.frame-picker-card:disabled .frame-picker-preview .pm-frame-image {
-  opacity: .54 !important;
-}
+.pm-frame-image.frame-1,
+.pm-avatar-shell__frame.frame-1,
+.pm-game-frame.frame-1,
+.t-frame.frame-1 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-2,
+.pm-avatar-shell__frame.frame-2,
+.pm-game-frame.frame-2,
+.t-frame.frame-2 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-3,
+.pm-avatar-shell__frame.frame-3,
+.pm-game-frame.frame-3,
+.t-frame.frame-3 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-4,
+.pm-avatar-shell__frame.frame-4,
+.pm-game-frame.frame-4,
+.t-frame.frame-4 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-5,
+.pm-avatar-shell__frame.frame-5,
+.pm-game-frame.frame-5,
+.t-frame.frame-5 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-6,
+.pm-avatar-shell__frame.frame-6,
+.pm-game-frame.frame-6,
+.t-frame.frame-6 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-7,
+.pm-avatar-shell__frame.frame-7,
+.pm-game-frame.frame-7,
+.t-frame.frame-7 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-8,
+.pm-avatar-shell__frame.frame-8,
+.pm-game-frame.frame-8,
+.t-frame.frame-8 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-9,
+.pm-avatar-shell__frame.frame-9,
+.pm-game-frame.frame-9,
+.t-frame.frame-9 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-10,
+.pm-avatar-shell__frame.frame-10,
+.pm-game-frame.frame-10,
+.t-frame.frame-10 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-11,
+.pm-avatar-shell__frame.frame-11,
+.pm-game-frame.frame-11,
+.t-frame.frame-11 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-12,
+.pm-avatar-shell__frame.frame-12,
+.pm-game-frame.frame-12,
+.t-frame.frame-12 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-13,
+.pm-avatar-shell__frame.frame-13,
+.pm-game-frame.frame-13,
+.t-frame.frame-13 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-14,
+.pm-avatar-shell__frame.frame-14,
+.pm-game-frame.frame-14,
+.t-frame.frame-14 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-15,
+.pm-avatar-shell__frame.frame-15,
+.pm-game-frame.frame-15,
+.t-frame.frame-15 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-16,
+.pm-avatar-shell__frame.frame-16,
+.pm-game-frame.frame-16,
+.t-frame.frame-16 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-17,
+.pm-avatar-shell__frame.frame-17,
+.pm-game-frame.frame-17,
+.t-frame.frame-17 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-18,
+.pm-avatar-shell__frame.frame-18,
+.pm-game-frame.frame-18,
+.t-frame.frame-18 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-19,
+.pm-avatar-shell__frame.frame-19,
+.pm-game-frame.frame-19,
+.t-frame.frame-19 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-20,
+.pm-avatar-shell__frame.frame-20,
+.pm-game-frame.frame-20,
+.t-frame.frame-20 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-21,
+.pm-avatar-shell__frame.frame-21,
+.pm-game-frame.frame-21,
+.t-frame.frame-21 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-22,
+.pm-avatar-shell__frame.frame-22,
+.pm-game-frame.frame-22,
+.t-frame.frame-22 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-23,
+.pm-avatar-shell__frame.frame-23,
+.pm-game-frame.frame-23,
+.t-frame.frame-23 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-24,
+.pm-avatar-shell__frame.frame-24,
+.pm-game-frame.frame-24,
+.t-frame.frame-24 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-25,
+.pm-avatar-shell__frame.frame-25,
+.pm-game-frame.frame-25,
+.t-frame.frame-25 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-26,
+.pm-avatar-shell__frame.frame-26,
+.pm-game-frame.frame-26,
+.t-frame.frame-26 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-27,
+.pm-avatar-shell__frame.frame-27,
+.pm-game-frame.frame-27,
+.t-frame.frame-27 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-28,
+.pm-avatar-shell__frame.frame-28,
+.pm-game-frame.frame-28,
+.t-frame.frame-28 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-29,
+.pm-avatar-shell__frame.frame-29,
+.pm-game-frame.frame-29,
+.t-frame.frame-29 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-30,
+.pm-avatar-shell__frame.frame-30,
+.pm-game-frame.frame-30,
+.t-frame.frame-30 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-31,
+.pm-avatar-shell__frame.frame-31,
+.pm-game-frame.frame-31,
+.t-frame.frame-31 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-32,
+.pm-avatar-shell__frame.frame-32,
+.pm-game-frame.frame-32,
+.t-frame.frame-32 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-33,
+.pm-avatar-shell__frame.frame-33,
+.pm-game-frame.frame-33,
+.t-frame.frame-33 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-34,
+.pm-avatar-shell__frame.frame-34,
+.pm-game-frame.frame-34,
+.t-frame.frame-34 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-35,
+.pm-avatar-shell__frame.frame-35,
+.pm-game-frame.frame-35,
+.t-frame.frame-35 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-36,
+.pm-avatar-shell__frame.frame-36,
+.pm-game-frame.frame-36,
+.t-frame.frame-36 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-37,
+.pm-avatar-shell__frame.frame-37,
+.pm-game-frame.frame-37,
+.t-frame.frame-37 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-38,
+.pm-avatar-shell__frame.frame-38,
+.pm-game-frame.frame-38,
+.t-frame.frame-38 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-39,
+.pm-avatar-shell__frame.frame-39,
+.pm-game-frame.frame-39,
+.t-frame.frame-39 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-40,
+.pm-avatar-shell__frame.frame-40,
+.pm-game-frame.frame-40,
+.t-frame.frame-40 { --pm-frame-scale: 1.35; }
+.pm-frame-image.frame-41,
+.pm-avatar-shell__frame.frame-41,
+.pm-game-frame.frame-41,
+.t-frame.frame-41 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-42,
+.pm-avatar-shell__frame.frame-42,
+.pm-game-frame.frame-42,
+.t-frame.frame-42 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-43,
+.pm-avatar-shell__frame.frame-43,
+.pm-game-frame.frame-43,
+.t-frame.frame-43 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-44,
+.pm-avatar-shell__frame.frame-44,
+.pm-game-frame.frame-44,
+.t-frame.frame-44 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-45,
+.pm-avatar-shell__frame.frame-45,
+.pm-game-frame.frame-45,
+.t-frame.frame-45 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-46,
+.pm-avatar-shell__frame.frame-46,
+.pm-game-frame.frame-46,
+.t-frame.frame-46 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-47,
+.pm-avatar-shell__frame.frame-47,
+.pm-game-frame.frame-47,
+.t-frame.frame-47 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-48,
+.pm-avatar-shell__frame.frame-48,
+.pm-game-frame.frame-48,
+.t-frame.frame-48 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-49,
+.pm-avatar-shell__frame.frame-49,
+.pm-game-frame.frame-49,
+.t-frame.frame-49 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-50,
+.pm-avatar-shell__frame.frame-50,
+.pm-game-frame.frame-50,
+.t-frame.frame-50 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-51,
+.pm-avatar-shell__frame.frame-51,
+.pm-game-frame.frame-51,
+.t-frame.frame-51 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-52,
+.pm-avatar-shell__frame.frame-52,
+.pm-game-frame.frame-52,
+.t-frame.frame-52 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-53,
+.pm-avatar-shell__frame.frame-53,
+.pm-game-frame.frame-53,
+.t-frame.frame-53 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-54,
+.pm-avatar-shell__frame.frame-54,
+.pm-game-frame.frame-54,
+.t-frame.frame-54 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-55,
+.pm-avatar-shell__frame.frame-55,
+.pm-game-frame.frame-55,
+.t-frame.frame-55 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-56,
+.pm-avatar-shell__frame.frame-56,
+.pm-game-frame.frame-56,
+.t-frame.frame-56 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-57,
+.pm-avatar-shell__frame.frame-57,
+.pm-game-frame.frame-57,
+.t-frame.frame-57 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-58,
+.pm-avatar-shell__frame.frame-58,
+.pm-game-frame.frame-58,
+.t-frame.frame-58 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-59,
+.pm-avatar-shell__frame.frame-59,
+.pm-game-frame.frame-59,
+.t-frame.frame-59 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-60,
+.pm-avatar-shell__frame.frame-60,
+.pm-game-frame.frame-60,
+.t-frame.frame-60 { --pm-frame-scale: 1.34; }
+.pm-frame-image.frame-61,
+.pm-avatar-shell__frame.frame-61,
+.pm-game-frame.frame-61,
+.t-frame.frame-61 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-62,
+.pm-avatar-shell__frame.frame-62,
+.pm-game-frame.frame-62,
+.t-frame.frame-62 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-63,
+.pm-avatar-shell__frame.frame-63,
+.pm-game-frame.frame-63,
+.t-frame.frame-63 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-64,
+.pm-avatar-shell__frame.frame-64,
+.pm-game-frame.frame-64,
+.t-frame.frame-64 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-65,
+.pm-avatar-shell__frame.frame-65,
+.pm-game-frame.frame-65,
+.t-frame.frame-65 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-66,
+.pm-avatar-shell__frame.frame-66,
+.pm-game-frame.frame-66,
+.t-frame.frame-66 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-67,
+.pm-avatar-shell__frame.frame-67,
+.pm-game-frame.frame-67,
+.t-frame.frame-67 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-68,
+.pm-avatar-shell__frame.frame-68,
+.pm-game-frame.frame-68,
+.t-frame.frame-68 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-69,
+.pm-avatar-shell__frame.frame-69,
+.pm-game-frame.frame-69,
+.t-frame.frame-69 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-70,
+.pm-avatar-shell__frame.frame-70,
+.pm-game-frame.frame-70,
+.t-frame.frame-70 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-71,
+.pm-avatar-shell__frame.frame-71,
+.pm-game-frame.frame-71,
+.t-frame.frame-71 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-72,
+.pm-avatar-shell__frame.frame-72,
+.pm-game-frame.frame-72,
+.t-frame.frame-72 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-73,
+.pm-avatar-shell__frame.frame-73,
+.pm-game-frame.frame-73,
+.t-frame.frame-73 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-74,
+.pm-avatar-shell__frame.frame-74,
+.pm-game-frame.frame-74,
+.t-frame.frame-74 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-75,
+.pm-avatar-shell__frame.frame-75,
+.pm-game-frame.frame-75,
+.t-frame.frame-75 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-76,
+.pm-avatar-shell__frame.frame-76,
+.pm-game-frame.frame-76,
+.t-frame.frame-76 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-77,
+.pm-avatar-shell__frame.frame-77,
+.pm-game-frame.frame-77,
+.t-frame.frame-77 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-78,
+.pm-avatar-shell__frame.frame-78,
+.pm-game-frame.frame-78,
+.t-frame.frame-78 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-79,
+.pm-avatar-shell__frame.frame-79,
+.pm-game-frame.frame-79,
+.t-frame.frame-79 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-80,
+.pm-avatar-shell__frame.frame-80,
+.pm-game-frame.frame-80,
+.t-frame.frame-80 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-81,
+.pm-avatar-shell__frame.frame-81,
+.pm-game-frame.frame-81,
+.t-frame.frame-81 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-82,
+.pm-avatar-shell__frame.frame-82,
+.pm-game-frame.frame-82,
+.t-frame.frame-82 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-83,
+.pm-avatar-shell__frame.frame-83,
+.pm-game-frame.frame-83,
+.t-frame.frame-83 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-84,
+.pm-avatar-shell__frame.frame-84,
+.pm-game-frame.frame-84,
+.t-frame.frame-84 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-85,
+.pm-avatar-shell__frame.frame-85,
+.pm-game-frame.frame-85,
+.t-frame.frame-85 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-86,
+.pm-avatar-shell__frame.frame-86,
+.pm-game-frame.frame-86,
+.t-frame.frame-86 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-87,
+.pm-avatar-shell__frame.frame-87,
+.pm-game-frame.frame-87,
+.t-frame.frame-87 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-88,
+.pm-avatar-shell__frame.frame-88,
+.pm-game-frame.frame-88,
+.t-frame.frame-88 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-89,
+.pm-avatar-shell__frame.frame-89,
+.pm-game-frame.frame-89,
+.t-frame.frame-89 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-90,
+.pm-avatar-shell__frame.frame-90,
+.pm-game-frame.frame-90,
+.t-frame.frame-90 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-91,
+.pm-avatar-shell__frame.frame-91,
+.pm-game-frame.frame-91,
+.t-frame.frame-91 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-92,
+.pm-avatar-shell__frame.frame-92,
+.pm-game-frame.frame-92,
+.t-frame.frame-92 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-93,
+.pm-avatar-shell__frame.frame-93,
+.pm-game-frame.frame-93,
+.t-frame.frame-93 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-94,
+.pm-avatar-shell__frame.frame-94,
+.pm-game-frame.frame-94,
+.t-frame.frame-94 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-95,
+.pm-avatar-shell__frame.frame-95,
+.pm-game-frame.frame-95,
+.t-frame.frame-95 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-96,
+.pm-avatar-shell__frame.frame-96,
+.pm-game-frame.frame-96,
+.t-frame.frame-96 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-97,
+.pm-avatar-shell__frame.frame-97,
+.pm-game-frame.frame-97,
+.t-frame.frame-97 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-98,
+.pm-avatar-shell__frame.frame-98,
+.pm-game-frame.frame-98,
+.t-frame.frame-98 { --pm-frame-scale: 1.28; }
+.pm-frame-image.frame-99,
+.pm-avatar-shell__frame.frame-99,
+.pm-game-frame.frame-99,
+.t-frame.frame-99 { --pm-frame-scale: 1.24; }
+.pm-frame-image.frame-100,
+.pm-avatar-shell__frame.frame-100,
+.pm-game-frame.frame-100,
+.t-frame.frame-100 { --pm-frame-scale: 1.46;
+  --pm-frame-shift-y: 4px; }
 

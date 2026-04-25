@@ -176,9 +176,11 @@ async function deleteUserGraph(uid = '', options = {}) {
       ['match_history', 'winnerUid'], ['match_history', 'loserUid'], ['match_history', 'uid'],
       ['support_tickets', 'uid'], ['support_callback_requests', 'uid'], ['support_receipts', 'uid'],
       ['audit_logs', 'actorUid'], ['audit_logs', 'targetId'], ['reward_ledger', 'uid'],
-      ['notifications', 'uid'], ['sessions', 'uid'], ['crash_bets', 'uid'], ['game_audit_logs', 'actorUid'], ['game_audit_logs', 'subjectUid'],
+      ['notifications', 'uid'], ['sessions', 'uid'], ['crash_bets', 'uid'], ['pisti_sessions', 'uid'],
       ['promo_claims', 'uid'], ['referrals', 'uid'], ['referrals', 'referrerUid'], ['referrals', 'invitedUid'],
+      ['bj_history', 'uid'], ['bj_sessions', 'uid'], ['bj_shoes', 'uid'], ['mines_sessions', 'uid'],
       ['presence', 'uid'], ['user_settings', 'uid'], ['server_logs', 'uid'], ['lobby_chat', 'uid'],
+      ['party_invites', 'targetUid'], ['party_invites', 'hostUid'], ['party_invites', 'fromUid'], ['party_invites', 'uid'],
       ['game_invites', 'targetUid'], ['game_invites', 'hostUid'], ['matchmaking_queue', 'uid'],
       ['socket_connections', 'uid'], ['admins', 'uid'], ['ops_errors', 'uid']
     ];
@@ -256,7 +258,7 @@ async function deleteUserGraph(uid = '', options = {}) {
 
     try {
       let removed = 0;
-      for (const collectionName of ['chess_rooms']) {
+      for (const collectionName of ['chess_rooms', 'pisti_online_rooms', 'mines_sessions', 'blackjack_sessions', 'bj_sessions', 'parties']) {
         await scanCollection(collectionName, 150, async (doc) => {
           if (!roomContainsUid(doc.data() || {}, safeUid)) return;
           await doc.ref.delete();

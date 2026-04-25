@@ -1,3 +1,4 @@
+// routes/social.routes.js
 'use strict';
 
 const express = require('express');
@@ -8,10 +9,6 @@ const { db } = require('../config/firebase');
 const { verifyAuth } = require('../middlewares/auth.middleware');
 const { profileLimiter } = require('../middlewares/rateLimiters');
 const { safeNum, safeFloat, cleanStr, nowMs } = require('../utils/helpers');
-const { getCanonicalSelectedFrame } = require('../utils/accountState');
-const { buildProgressionSnapshot } = require('../utils/progression');
-const { DEFAULT_AVATAR, sanitizeAvatarForStorage } = require('../utils/avatarManifest');
-const { listPresenceForUids } = require('../utils/realtimeState');
 const { recordAuditLog } = require('../utils/logger');
 
 const colUsers = () => db.collection('users');
@@ -20,6 +17,9 @@ const colSupportReceipts = () => db.collection('support_receipts');
 const colSupportCallbacks = () => db.collection('support_callback_requests');
 const colUsernames = () => db.collection('usernames');
 
+// ---------------------------------------------------------
+// YARDIMCI FONKSİYONLAR
+// ---------------------------------------------------------
 
 function getFirestoreTimestampMs(value, fallback = 0) {
   if (value && typeof value.toMillis === 'function') return safeNum(value.toMillis(), fallback);
@@ -29,7 +29,13 @@ function getFirestoreTimestampMs(value, fallback = 0) {
 }
 
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+  if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+  const numericSelected = Number(user?.selectedFrame);
+  if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+  if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+  const numericActive = Number(user?.activeFrame);
+  if (Number.isFinite(numericActive) && numericActive > 0) return Math.floor(numericActive);
+  return 0;
 }
 
 function friendshipDocId(uidA, uidB) {
@@ -63,62 +69,6 @@ async function resolvePublicUsername(uid = '', userData = {}) {
   return 'Oyuncu';
 }
 
-function buildSocialMemberPayload(uid = '', userData = {}, options = {}) {
-  const presence = options.presence || null;
-  const progression = buildProgressionSnapshot(userData);
-  const monthlyActiveScore = progression.monthlyActivity;
-  const lastSeen = getFirestoreTimestampMs(userData.lastSeen?.toMillis?.() ? userData.lastSeen : (userData.lastSeen || userData.lastActiveAt), 0);
-  const chessWins = safeNum(userData.chessWins, 0);
-  const chessLosses = safeNum(userData.chessLosses, 0);
-  const pistiWins = safeNum(userData.pistiWins || userData.pisti_wins, 0);
-  const pistiLosses = safeNum(userData.pistiLosses || userData.pisti_losses, 0);
-  const crashRounds = safeNum(userData.crashRounds || userData.crash_rounds, 0);
-  const crashWins = safeNum(userData.crashWins || userData.crash_wins, 0);
-  const crashLosses = safeNum(userData.crashLosses || userData.crash_losses, 0);
-  const totalWins = safeNum(userData.totalWins, chessWins + pistiWins + crashWins);
-  const totalLosses = safeNum(userData.totalLosses, chessLosses + pistiLosses + crashLosses);
-  const totalRounds = safeNum(userData.totalRounds, totalWins + totalLosses + crashRounds);
-  return {
-    uid,
-    username: options.username || 'Oyuncu',
-    avatar: sanitizeAvatarForStorage(userData.avatar) || DEFAULT_AVATAR,
-    selectedFrame: pickUserSelectedFrame({ ...userData, accountLevel: progression.accountLevel }),
-    accountLevelScore: progression.accountLevelScore,
-    accountLevelProgressPct: progression.accountLevelProgressPct,
-    accountLevel: progression.accountLevel,
-    accountXp: progression.accountXp,
-    monthlyActiveScore,
-    progression: {
-      ...progression,
-      accountLevel: progression.accountLevel,
-      accountXp: progression.accountXp,
-      accountLevelScore: progression.accountLevelScore,
-      monthlyActivity: monthlyActiveScore,
-      accountLevelProgressPct: progression.accountLevelProgressPct,
-      selectedFrame: pickUserSelectedFrame({ ...userData, accountLevel: progression.accountLevel })
-    },
-    stats: {
-      totalRounds,
-      totalWins,
-      totalLosses,
-      totalSpentMc: safeNum(userData.totalSpentMc, 0),
-      chessWins,
-      chessLosses,
-      pistiWins,
-      pistiLosses,
-      crashRounds,
-      crashWins,
-      crashLosses
-    },
-    presence,
-    online: !!presence?.online,
-    lastSeen,
-    activity: cleanStr(presence?.activity || '', 80),
-    activityStatus: cleanStr(presence?.status || '', 24),
-    activityGameType: cleanStr(presence?.gameType || '', 24)
-  };
-}
-
 async function getFriendDocsForUid(uid, status = null) {
   const requesterQuery = status
     ? colFriends().where('requesterUid', '==', uid).where('status', '==', status)
@@ -150,7 +100,11 @@ async function resolveFriendTarget(targetRaw, targetUidRaw) {
   return userSnap.exists ? { uid, data: userSnap.data() || {} } : null;
 }
 
+// ---------------------------------------------------------
+// API UÇ NOKTALARI
+// ---------------------------------------------------------
 
+// GET /api/friends/list
 router.get('/friends/list', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -161,10 +115,7 @@ router.get('/friends/list', verifyAuth, async (req, res) => {
     }).filter((itemUid) => itemUid !== uid)));
 
     const refs = relatedUids.map((friendUid) => colUsers().doc(friendUid));
-    const [snaps, presenceMap] = await Promise.all([
-      refs.length ? db.getAll(...refs) : [],
-      listPresenceForUids(relatedUids)
-    ]);
+    const snaps = refs.length ? await db.getAll(...refs) : [];
     const userMap = new Map();
     snaps.forEach((snap) => { if (snap.exists) userMap.set(snap.id, snap.data() || {}); });
 
@@ -181,18 +132,15 @@ router.get('/friends/list', verifyAuth, async (req, res) => {
       if (!friendUid) return;
       const friendData = userMap.get(friendUid) || {};
 
-      const presence = presenceMap instanceof Map ? (presenceMap.get(friendUid) || null) : null;
       const entry = {
-        friendshipId: doc.id,
-        ...buildSocialMemberPayload(friendUid, friendData, {
-          username: usernameMap.get(friendUid) || 'Oyuncu',
-          presence
-        }),
+        friendshipId: doc.id, uid: friendUid,
+        username: usernameMap.get(friendUid) || 'Oyuncu',
+        avatar: typeof friendData.avatar === 'string' ? friendData.avatar : '',
+        selectedFrame: pickUserSelectedFrame(friendData),
+        rp: safeNum(friendData.rp, 0),
         status: cleanStr(data.status || 'pending', 16) || 'pending',
-        requestedAt: safeNum(data.createdAt, 0),
-        updatedAt: safeNum(data.updatedAt, 0),
-        requesterUid: String(data.requesterUid || ''),
-        recipientUid: String(data.recipientUid || '')
+        requestedAt: safeNum(data.createdAt, 0), updatedAt: safeNum(data.updatedAt, 0),
+        requesterUid: String(data.requesterUid || ''), recipientUid: String(data.recipientUid || '')
       };
 
       if (entry.status === 'accepted') payload.accepted.push(entry);
@@ -205,35 +153,14 @@ router.get('/friends/list', verifyAuth, async (req, res) => {
     payload.outgoing.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
     res.json({
-  ok: true,
-  schemaVersion: 2,
-  generatedAt: nowMs(),
-  lists: {
-    accepted: payload.accepted,
-    incoming: payload.incoming,
-    outgoing: payload.outgoing
-  },
-  members: {
-    accepted: payload.accepted,
-    incoming: payload.incoming,
-    outgoing: payload.outgoing
-  },
-  counts: {
-    accepted: payload.accepted.length,
-    incoming: payload.incoming.length,
-    outgoing: payload.outgoing.length,
-    online: payload.accepted.filter((item) => item.online).length
-  },
-  summary: {
-    acceptedCount: payload.accepted.length,
-    incomingCount: payload.incoming.length,
-    outgoingCount: payload.outgoing.length,
-    onlineCount: payload.accepted.filter((item) => item.online).length
-  }
-});
+      ok: true,
+      accepted: payload.accepted, incoming: payload.incoming, outgoing: payload.outgoing,
+      counts: { accepted: payload.accepted.length, incoming: payload.incoming.length, outgoing: payload.outgoing.length }
+    });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/friends/request
 router.post('/friends/request', verifyAuth, profileLimiter, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -273,6 +200,7 @@ router.post('/friends/request', verifyAuth, profileLimiter, async (req, res) => 
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/friends/respond
 router.post('/friends/respond', verifyAuth, profileLimiter, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -305,6 +233,7 @@ router.post('/friends/respond', verifyAuth, profileLimiter, async (req, res) => 
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/friends/remove
 router.post('/friends/remove', verifyAuth, profileLimiter, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -330,6 +259,7 @@ router.post('/friends/remove', verifyAuth, profileLimiter, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/support/receipt
 router.post('/support/receipt', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -357,6 +287,7 @@ router.post('/support/receipt', verifyAuth, async (req, res) => {
   } catch(e){ res.json({ ok:false, error:e.message }); }
 });
 
+// POST /api/support/callback
 router.post('/support/callback', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;

@@ -61,7 +61,7 @@ function buildExpiredSessionCookie() {
   return 'pm_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure';
 }
 
-async function createServerSession({ uid = '', email = '', emailVerified = false, ip = '', userAgent = '', source = 'firebase_id_token' } = {}) {
+async function createServerSession({ uid = '', email = '', ip = '', userAgent = '', source = 'firebase_id_token' } = {}) {
   const safeUid = cleanStr(uid, 160);
   if (!safeUid) throw new Error('SESSION_UID_REQUIRED');
   const { token, tokenHash } = buildSessionToken();
@@ -70,7 +70,6 @@ async function createServerSession({ uid = '', email = '', emailVerified = false
   const payload = {
     uid: safeUid,
     email: cleanStr(email, 200).toLowerCase(),
-    emailVerified: !!emailVerified,
     tokenHash,
     source: cleanStr(source, 40),
     createdAt,

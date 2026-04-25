@@ -5,17 +5,18 @@ const { cleanStr, safeNum } = require('./helpers');
 const ACHIEVEMENT_DEFINITIONS = Object.freeze([
   Object.freeze({ key: 'first_win', label: 'İlk Zafer', description: 'İlk maç galibiyetini al.', metric: 'wins', target: 1, icon: '🏆' }),
   Object.freeze({ key: 'chess_rookie', label: 'Satranç Çaylağı', description: 'Satrançta 1 galibiyet al.', metric: 'chessWins', target: 1, icon: '♟️' }),
+  Object.freeze({ key: 'pisti_sharp', label: 'Pişti Ustası', description: "Online Pişti'de 3 galibiyet al.", metric: 'pistiWins', target: 3, icon: '🃏' }),
   Object.freeze({ key: 'activity_runner', label: 'Aktif Oyuncu', description: "Aylık aktiflik puanını 25'e çıkar.", metric: 'monthlyActiveScore', target: 25, icon: '⚡' }),
   Object.freeze({ key: 'reward_collector', label: 'Ödül Koleksiyoncusu', description: 'En az 5 ödül kaydı topla.', metric: 'rewardItems', target: 5, icon: '🎁' }),
-  Object.freeze({ key: 'level_start', label: 'Seviye Başlangıcı', description: 'Hesap seviyeni 10 seviyesine çıkar.', metric: 'accountLevel', target: 10, icon: '📈' })
+  Object.freeze({ key: 'competitive_start', label: 'Rank Başlangıcı', description: 'Competitive puanını 1000 üzerine taşı.', metric: 'competitiveScore', target: 1000, icon: '📈' })
 ]);
 
 const MISSION_DEFINITIONS = Object.freeze([
   Object.freeze({ key: 'mission_matches_3', label: '3 Maç Tamamla', description: 'Herhangi bir modda toplam 3 maç tamamla.', metric: 'matches', target: 3, bucket: 'core' }),
   Object.freeze({ key: 'mission_win_1', label: '1 Galibiyet Al', description: 'Günün akışını açmak için tek bir galibiyet yeterli.', metric: 'wins', target: 1, bucket: 'core' }),
-  Object.freeze({ key: 'mission_activity_25', label: 'Aktiflik 25', description: 'Aylık aktiflik puanını 25 seviyesine getir.', metric: 'monthlyActiveScore', target: 25, bucket: 'activity' }),
+  Object.freeze({ key: 'mission_activity_25', label: 'Aktiflik 25', description: 'Aylık aktiflik puanını 25 seviyesine getir.', metric: 'monthlyActiveScore', target: 25, bucket: 'season' }),
   Object.freeze({ key: 'mission_reward_3', label: '3 Ödül Topla', description: 'Sistemde en az 3 farklı ödül kaydı üret.', metric: 'rewardItems', target: 3, bucket: 'economy' }),
-  Object.freeze({ key: 'mission_level_25', label: 'Seviye 25', description: 'Hesap seviyeni 25 seviyesine taşı.', metric: 'accountLevel', target: 25, bucket: 'rank' })
+  Object.freeze({ key: 'mission_competitive_1500', label: '1500 Competitive Score', description: 'Competitive score alanını 1500 seviyesine taşı.', metric: 'competitiveScore', target: 1500, bucket: 'rank' })
 ]);
 
 function clampProgress(current = 0, target = 1) {
@@ -30,9 +31,10 @@ function buildMetricBag({ user = {}, matchSummary = {}, rewardSummary = {}, cont
     wins: safeNum(matchSummary.wins, 0),
     matches: safeNum(matchSummary.totalMatches, 0),
     chessWins: safeNum(byGame.chess?.wins, 0),
+    pistiWins: safeNum(byGame.pisti?.wins, 0),
     monthlyActiveScore: safeNum(user.monthlyActiveScore, 0),
     rewardItems: safeNum(rewardSummary.itemCount, 0),
-    accountLevel: safeNum(user.accountLevel ?? user.level ?? user.progression?.accountLevel, 1),
+    competitiveScore: safeNum(user.competitiveScore ?? user.rp, 0),
     friendCount: safeNum(context.friendCount, 0)
   };
 }

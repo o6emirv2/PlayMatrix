@@ -1,37 +1,37 @@
+// routes/profile.routes.js
 'use strict';
 
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 
-const { db, admin, isFirebaseReady, getFirebaseStatus } = require('../config/firebase');
+// Modüllerimiz
+const { db, admin } = require('../config/firebase');
 const { verifyAuth, tryVerifyOptionalAuth } = require('../middlewares/auth.middleware');
 const { profileLimiter, bonusLimiter } = require('../middlewares/rateLimiters');
 const { safeNum, cleanStr, isDisposableEmail, containsBlockedUsername, nowMs } = require('../utils/helpers');
 const { touchUserActivity, touchUserPresence, touchServerSession } = require('../utils/activity');
 const { createNotification } = require('../utils/notifications');
 const { recordRewardLedger } = require('../utils/rewardLedger');
-const { grantReward, applyRewardGrantInTransaction, createRewardNotificationForGrant } = require('../utils/rewardService');
-const { buildRewardFlowOverview, getRewardAmount, buildRewardGrantMessage } = require('../config/rewardCatalog');
-const { ACCOUNT_PROGRESSION_VERSION, buildProgressionSnapshot, getAccountLevel, getAccountXp, normalizeUserRankState } = require('../utils/progression');
-const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
-const { bootstrapAccountByAuth } = require('../utils/accountBootstrap');
+const { ACCOUNT_PROGRESSION_VERSION, buildProgressionSnapshot, getAccountLevel, getAccountXp, getVipMembershipScore, normalizeUserRankState } = require('../utils/progression');
+const { getSafeCompetitiveElo } = require('../utils/eloSystem');
 const { TtlCache } = require('../utils/cache');
 const { listActiveSessionsForUid } = require('../utils/gameSession');
-const { listMatchHistoryForUid, summarizeMatchHistoryForUid } = require('../utils/matchHistory');
-const { getNextActivityResetMeta } = require('../utils/platformControl');
-const { getActivityCalendarParts } = require('../utils/activityPeriod');
-const { CHAT_RETENTION_POLICY } = require('../config/constants');
-const {
-  DEFAULT_AVATAR,
-  sanitizeAvatarForStorage
-} = require('../utils/avatarManifest');
+const { 
+  COMPETITIVE_ELO_DEFAULT, 
+  ALLOWED_AVATAR_DOMAIN, 
+  ALLOWED_LOCAL_AVATAR_PATH,
+  CHAT_RETENTION_POLICY 
+} = require('../config/constants');
 
 const colUsers = () => db.collection('users');
 const leaderboardCache = new TtlCache(15000, 24);
 const colPromos = () => db.collection('promo_codes');
 const colUsernames = () => db.collection('usernames');
 
+// ---------------------------------------------------------
+// YARDIMCI FONKSİYONLAR (Sadece bu rotada kullanılanlar)
+// ---------------------------------------------------------
 function getFirestoreTimestampMs(value, fallback = 0) {
   if (value && typeof value.toMillis === 'function') return safeNum(value.toMillis(), fallback);
   if (value instanceof Date) return safeNum(value.getTime(), fallback);
@@ -40,8 +40,23 @@ function getFirestoreTimestampMs(value, fallback = 0) {
 }
 
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+  if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+  const numericSelected = Number(user?.selectedFrame);
+  if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+  if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+  const numericActive = Number(user?.activeFrame);
+  if (Number.isFinite(numericActive) && numericActive > 0) return Math.floor(numericActive);
+  return 0;
 }
+
+function isAllowedAvatarValue(value = '') {
+  const avatar = String(value || '').trim();
+  if (!avatar || avatar.length > 250) return false;
+  if (avatar.startsWith(ALLOWED_AVATAR_DOMAIN)) return true;
+  if (ALLOWED_LOCAL_AVATAR_PATH.test(avatar)) return true;
+  return false;
+}
+
 
 function sanitizeStoredUsername(value = '') {
   const username = cleanStr(value || '', 32);
@@ -89,50 +104,47 @@ function applyNormalizedRankPatch(user = {}, updates = {}) {
 }
 
 
-function applyCanonicalAccountPatch(user = {}, updates = {}) {
-  const canonical = buildCanonicalUserState(user, { defaultFrame: 0 });
-  let changed = false;
-  Object.entries(canonical).forEach(([key, value]) => {
-    if (key === 'progression') return;
-    if (!hasSameScalarValue(user?.[key], value)) {
-      updates[key] = value;
-      user[key] = value;
-      changed = true;
-    }
-  });
-  return changed;
-}
-
-
+// Liderlik tablosu formatlayıcı
 async function formatLeaderboardUser(doc, rank = null, extra = {}) {
   const data = doc.data() || {};
+  const totalRp = safeNum(data.rp, 0);
   const username = await resolvePublicUsername(doc.id, data);
-  const canonical = buildCanonicalUserState(data, { defaultFrame: 0 });
-  const progression = canonical.progression && typeof canonical.progression === 'object' ? canonical.progression : {};
-  const metricKey = cleanStr(extra.metricKey || '', 32);
-  const metricLabel = cleanStr(extra.metricLabel || '', 64);
-  const metricValue = safeNum(extra.metricValue, 0);
+  const progression = buildProgressionSnapshot(data);
   return {
     uid: doc.id,
     username,
-    avatar: sanitizeAvatarForStorage(data.avatar) || DEFAULT_AVATAR,
-    selectedFrame: canonical.selectedFrame,
-    accountLevel: canonical.accountLevel,
-    accountXp: canonical.accountXp,
-    monthlyActiveScore: canonical.monthlyActiveScore,
-    progression: {
-      ...progression,
-      accountLevel: canonical.accountLevel,
-      accountXp: canonical.accountXp,
-      accountLevelScore: canonical.accountLevelScore,
-      monthlyActivity: canonical.monthlyActiveScore
-    },
-    leaderboard: {
-      rank: safeNum(rank, 0),
-      metricKey,
-      metricLabel,
-      metricValue
-    }
+    avatar: isAllowedAvatarValue(data.avatar) ? data.avatar : '',
+    rp: totalRp,
+    seasonRp: safeNum(data.seasonRp, 0),
+    totalRp,
+    level: progression.accountLevel,
+    accountLevel: progression.accountLevel,
+    accountXp: progression.accountXp,
+    accountLevelScore: progression.accountLevelScore,
+    competitiveScore: progression.competitiveScore,
+    totalRank: progression.totalRank,
+    totalRankName: progression.totalRank,
+    totalRankClass: progression.totalRankClass,
+    totalRankScore: progression.totalRankScore,
+    seasonScore: progression.seasonScore,
+    seasonRank: progression.seasonRank,
+    seasonRankName: progression.seasonRank,
+    seasonRankClass: progression.seasonRankClass,
+    monthlyActiveScore: progression.monthlyActivity,
+    chessElo: getSafeCompetitiveElo(data.chessElo, COMPETITIVE_ELO_DEFAULT),
+    pistiElo: getSafeCompetitiveElo(data.pistiElo, COMPETITIVE_ELO_DEFAULT),
+    vipLevel: progression.vipLevel,
+    vipBand: progression.vipBand,
+    vipName: progression.vipName,
+    vipLabel: progression.vipLabel,
+    vipScore: progression.vipScore,
+    vipProgress: progression.vipProgress,
+    rankName: progression.rank,
+    rankClass: progression.rankClass,
+    selectedFrame: pickUserSelectedFrame(data),
+    progression,
+    rank,
+    ...extra
   };
 }
 
@@ -151,12 +163,9 @@ async function scanUsersByComputedMetric(metric = '', limit = 10, targetUid = ''
     snap.docs.forEach((doc) => {
       const data = doc.data() || {};
       let score = 0;
-      let shouldInclude = false;
-      if (safeMetric === 'accountLevelScore') {
-        score = getAccountXp(data);
-        shouldInclude = getAccountLevel(data) >= 1;
-      }
-      if (shouldInclude || doc.id === targetUid) entries.push({ doc, score });
+      if (safeMetric === 'accountLevelScore') score = getAccountXp(data);
+      else if (safeMetric === 'vipScore') score = getVipMembershipScore(data);
+      if (score > 0 || doc.id === targetUid) entries.push({ doc, score });
     });
 
     lastDoc = snap.docs[snap.docs.length - 1];
@@ -165,78 +174,36 @@ async function scanUsersByComputedMetric(metric = '', limit = 10, targetUid = ''
 
   entries.sort((a, b) => b.score - a.score || String(a.doc.id).localeCompare(String(b.doc.id)));
   const topSlice = entries.slice(0, safeLimit);
-  const metricLabel = safeMetric === 'monthlyActiveScore' ? 'Aylık Aktiflik' : 'Hesap Seviyesi';
-  const top = await Promise.all(topSlice.map(async (entry, index) => formatLeaderboardUser(entry.doc, index + 1, {
-    metricKey: safeMetric,
-    metricLabel,
-    metricValue: entry.score
-  })));
+  const top = await Promise.all(topSlice.map(async (entry, index) => formatLeaderboardUser(entry.doc, index + 1, { [safeMetric]: entry.score })));
   let self = null;
   if (targetUid) {
     const idx = entries.findIndex((entry) => entry.doc.id === targetUid);
-    if (idx !== -1) self = await formatLeaderboardUser(entries[idx].doc, idx + 1, {
-      metricKey: safeMetric,
-      metricLabel: safeMetric === 'monthlyActiveScore' ? 'Aylık Aktiflik' : 'Hesap Seviyesi',
-      metricValue: entries[idx].score
-    });
+    if (idx !== -1) self = await formatLeaderboardUser(entries[idx].doc, idx + 1, { [safeMetric]: entries[idx].score });
   }
   return { top, self };
 }
 
 async function getLeaderboardTop(field, limit = 10) {
   const inputField = cleanStr(field || '', 64);
-  const safeField = inputField;
+  const safeField = inputField === 'competitiveScore' ? 'rp' : inputField === 'seasonScore' ? 'seasonRp' : inputField;
   if (safeField === 'accountLevelScore') {
+    return leaderboardCache.remember(`top:${safeField}:${limit}`, async () => (await scanUsersByComputedMetric(safeField, limit, '')).top, 15000);
+  }
+  if (safeField === 'vipScore') {
     return leaderboardCache.remember(`top:${safeField}:${limit}`, async () => (await scanUsersByComputedMetric(safeField, limit, '')).top, 15000);
   }
   const cacheKey = `top:${safeField}:${limit}`;
   return leaderboardCache.remember(cacheKey, async () => {
     const snap = await colUsers().orderBy(safeField, 'desc').limit(limit).get();
-    const metricLabel = safeField === 'monthlyActiveScore' ? 'Aylık Aktiflik' : 'Hesap Seviyesi';
-    return Promise.all(snap.docs.map((doc, index) => formatLeaderboardUser(doc, index + 1, {
-      metricKey: safeField,
-      metricLabel,
-      metricValue: safeNum(doc.data()?.[safeField], 0)
-    })));
+    return Promise.all(snap.docs.map((doc, index) => formatLeaderboardUser(doc, index + 1)));
   }, 15000);
-}
-
-function buildDegradedLeaderboardPayload(reason = 'FIREBASE_ADMIN_UNAVAILABLE') {
-  const status = getFirebaseStatus();
-  const baseTab = (key, label, metricKey) => ({
-    key,
-    label,
-    metricKey,
-    items: [],
-    self: null
-  });
-  return {
-    ok: true,
-    schemaVersion: 1,
-    generatedAt: nowMs(),
-    degraded: true,
-    code: reason,
-    firebase: {
-      ready: !!status.ready,
-      source: status.source || null
-    },
-    tabs: {
-      level: baseTab('level', 'En Yüksek Hesap Seviyesi', 'accountLevelScore'),
-      activity: baseTab('activity', 'En Çok Aktif Oyuncular', 'monthlyActiveScore')
-    }
-  };
-}
-
-function isFirebaseAdminUnavailableError(error) {
-  return error?.code === 'FIREBASE_ADMIN_UNAVAILABLE'
-    || /FIREBASE_ADMIN_UNAVAILABLE|Firebase Admin/i.test(String(error?.message || ''));
 }
 
 async function getLeaderboardSelfEntry(uid, field) {
   if (!uid) return null;
   const inputField = cleanStr(field || '', 64);
-  const safeField = inputField;
-  if (safeField === 'accountLevelScore') {
+  const safeField = inputField === 'competitiveScore' ? 'rp' : inputField === 'seasonScore' ? 'seasonRp' : inputField;
+  if (safeField === 'accountLevelScore' || safeField === 'vipScore') {
     return (await scanUsersByComputedMetric(safeField, 10, uid)).self;
   }
 
@@ -244,8 +211,10 @@ async function getLeaderboardSelfEntry(uid, field) {
   if (!selfSnap.exists) return null;
 
   const selfData = selfSnap.data() || {};
-  const normalizedField = safeField === 'monthlyActiveScore' ? 'monthlyActiveScore' : 'accountLevelScore';
-  const currentValue = safeNum(selfData[normalizedField], 0);
+  const normalizedField = ['rp', 'seasonRp', 'monthlyActiveScore', 'chessElo', 'pistiElo'].includes(safeField) ? safeField : 'seasonRp';
+  const currentValue = (normalizedField === 'seasonRp' || normalizedField === 'rp' || normalizedField === 'monthlyActiveScore')
+    ? safeNum(selfData[normalizedField], 0)
+    : getSafeCompetitiveElo(selfData[normalizedField], COMPETITIVE_ELO_DEFAULT);
 
   let rank = 1;
   try {
@@ -253,13 +222,22 @@ async function getLeaderboardSelfEntry(uid, field) {
     rank = safeNum(higherCountSnap.data()?.count, 0) + 1;
   } catch (_) {}
 
-  return formatLeaderboardUser(selfSnap, rank, {
-    metricKey: normalizedField,
-    metricLabel: normalizedField === 'monthlyActiveScore' ? 'Aylık Aktiflik' : 'Hesap Seviyesi',
-    metricValue: currentValue
-  });
+  return formatLeaderboardUser(selfSnap, rank);
 }
 
+async function scanVipLeaderboard(limit = 10, targetUid = '') {
+  return scanUsersByComputedMetric('vipScore', limit, targetUid);
+}
+
+async function getVipLeaderboardTop(limit = 10) {
+
+  return leaderboardCache.remember(`vip:${limit}`, async () => (await scanVipLeaderboard(limit, '')).top, 15000);
+}
+
+async function getVipSelfEntry(uid = '') {
+  if (!uid) return null;
+  return (await scanVipLeaderboard(10, uid)).self;
+}
 
 function genReferralCode(uid){
   return crypto.createHash('sha256').update(uid + '|' + nowMs() + '|' + crypto.randomBytes(8).toString('hex')).digest('hex').slice(0,10).toUpperCase();
@@ -276,97 +254,166 @@ async function findPromoDocIdByNormalized(codeUpper, maxScan = 500) {
   return null;
 }
 
+// ---------------------------------------------------------
+// API UÇ NOKTALARI
+// ---------------------------------------------------------
 
+// GET /api/me - Profil verileri ve İlk Giriş/Mail Onay Ödülleri
 router.get('/', verifyAuth, async (req, res) => {
   try {
-    const bootstrap = await bootstrapAccountByAuth({
-      uid: req.user.uid,
-      email: req.user.email || '',
-      emailVerified: !!req.user.email_verified,
-      referenceId: 'api_me'
-    });
     let uData = await db.runTransaction(async (tx) => {
       const uRef = colUsers().doc(req.user.uid);
       const snap = await tx.get(uRef);
 
       let u = snap.exists
         ? (snap.data() || {})
-        : { ...(bootstrap.user || {}) };
+        : {
+            balance: 0,
+            email: req.user.email,
+            createdAt: nowMs(),
+            lastActiveAt: nowMs(),
+            lastSeen: nowMs(),
+            lastLogin: nowMs(),
+            userChangeCount: 0,
+            rp: 0,
+            rank: 0,
+            competitiveScore: 0,
+            totalRp: 0,
+            totalRank: 'Bronze',
+            totalRankKey: 'bronze',
+            totalRankClass: 'rank-bronze',
+            seasonRp: 0,
+            seasonScore: 0,
+            seasonRank: 'Bronze',
+            seasonRankKey: 'bronze',
+            seasonRankClass: 'rank-bronze',
+            monthlyActiveScore: 0,
+            totalSpentMc: 0,
+            totalRounds: 0,
+            chessElo: COMPETITIVE_ELO_DEFAULT,
+            pistiElo: COMPETITIVE_ELO_DEFAULT,
+            notificationsEnabled: true,
+            unread_messages: 0
+          };
       const updates = {};
       let isUpdated = false;
       const toast = { signup: false, email: false };
+      let balanceDelta = 0;
+      let grantedSignupReward = false;
+      let grantedEmailReward = false;
 
       if (!cleanStr(u.email) && req.user.email) { updates.email = req.user.email; u.email = req.user.email; isUpdated = true; }
+      if (u.rp === undefined || u.rp === null) { updates.rp = 0; u.rp = 0; isUpdated = true; }
+      if (u.rank === undefined || u.rank === null) { updates.rank = safeNum(u.rp, 0); u.rank = safeNum(u.rp, 0); isUpdated = true; }
+      if (u.chessElo === undefined || u.chessElo === null) { updates.chessElo = COMPETITIVE_ELO_DEFAULT; u.chessElo = COMPETITIVE_ELO_DEFAULT; isUpdated = true; }
+      if (u.pistiElo === undefined || u.pistiElo === null) { updates.pistiElo = COMPETITIVE_ELO_DEFAULT; u.pistiElo = COMPETITIVE_ELO_DEFAULT; isUpdated = true; }
+      if (u.seasonRp === undefined || u.seasonRp === null) { updates.seasonRp = 0; u.seasonRp = 0; isUpdated = true; }
       if (u.monthlyActiveScore === undefined || u.monthlyActiveScore === null) { updates.monthlyActiveScore = 0; u.monthlyActiveScore = 0; isUpdated = true; }
       if (u.totalSpentMc === undefined || u.totalSpentMc === null) { updates.totalSpentMc = 0; u.totalSpentMc = 0; isUpdated = true; }
       if (u.totalRounds === undefined || u.totalRounds === null) { updates.totalRounds = 0; u.totalRounds = 0; isUpdated = true; }
       if (u.userChangeCount === undefined || u.userChangeCount === null) { updates.userChangeCount = 0; u.userChangeCount = 0; isUpdated = true; }
       if (u.unread_messages === undefined || u.unread_messages === null) { updates.unread_messages = 0; u.unread_messages = 0; isUpdated = true; }
-      if (applyCanonicalAccountPatch(u, updates)) isUpdated = true;
+      const normalizedAccountXp = getAccountXp(u);
+      const normalizedAccountLevel = getAccountLevel({ ...u, accountXp: normalizedAccountXp });
+      if (safeNum(u.accountXp, -1) !== normalizedAccountXp) { updates.accountXp = normalizedAccountXp; u.accountXp = normalizedAccountXp; isUpdated = true; }
+      if (safeNum(u.accountLevelScore, -1) !== normalizedAccountXp) { updates.accountLevelScore = normalizedAccountXp; u.accountLevelScore = normalizedAccountXp; isUpdated = true; }
+      if (safeNum(u.level, -1) !== normalizedAccountLevel) { updates.level = normalizedAccountLevel; u.level = normalizedAccountLevel; isUpdated = true; }
+      if (safeNum(u.accountProgressionVersion, 0) !== ACCOUNT_PROGRESSION_VERSION) { updates.accountProgressionVersion = ACCOUNT_PROGRESSION_VERSION; u.accountProgressionVersion = ACCOUNT_PROGRESSION_VERSION; isUpdated = true; }
       if (u.lastActiveAt === undefined || u.lastActiveAt === null) { updates.lastActiveAt = nowMs(); u.lastActiveAt = nowMs(); isUpdated = true; }
       if (u.lastSeen === undefined || u.lastSeen === null) { updates.lastSeen = nowMs(); u.lastSeen = nowMs(); isUpdated = true; }
       if (!snap.exists) { updates.lastLogin = nowMs(); u.lastLogin = nowMs(); isUpdated = true; }
       if (cleanStr(u.fullName) && !u.fullNameLocked) { updates.fullNameLocked = true; u.fullNameLocked = true; isUpdated = true; }
+
+      if (applyNormalizedRankPatch(u, updates)) isUpdated = true;
+
+      if (!snap.exists && !u.signupRewardClaimed) {
+        balanceDelta += 50000;
+        updates.signupRewardClaimed = true;
+        u.balance = safeNum(u.balance, 0) + 50000;
+        u.signupRewardClaimed = true;
+        grantedSignupReward = true;
+        isUpdated = true;
+      }
+
+      if (req.user.email_verified && !u.emailRewardClaimed && !isDisposableEmail(req.user.email)) {
+        balanceDelta += 100000;
+        updates.emailRewardClaimed = true;
+        u.balance = safeNum(u.balance, 0) + 100000;
+        u.emailRewardClaimed = true;
+        grantedEmailReward = true;
+        isUpdated = true;
+      }
+
       if (req.user.email_verified && !u.emailRewardClaimed && isDisposableEmail(req.user.email)) {
         updates.emailRewardBlocked = true; u.emailRewardBlocked = true; isUpdated = true;
       }
+
       if (u.signupRewardClaimed && !u.signupRewardToastShown) {
         updates.signupRewardToastShown = true; u.signupRewardToastShown = true; toast.signup = true; isUpdated = true;
       }
       if (u.emailRewardClaimed && !u.emailRewardToastShown) {
         updates.emailRewardToastShown = true; u.emailRewardToastShown = true; toast.email = true; isUpdated = true;
       }
-      if (applyNormalizedRankPatch(u, updates)) isUpdated = true;
+
+      if (balanceDelta > 0) {
+        updates.balance = snap.exists ? admin.firestore.FieldValue.increment(balanceDelta) : safeNum(u.balance, 0);
+      }
 
       if (isUpdated) tx.set(uRef, snap.exists ? updates : { ...u, ...updates }, { merge: true });
-      return { u, toast };
+      return { u, toast, grantedSignupReward, grantedEmailReward };
     });
 
     Promise.allSettled([
-      touchUserActivity(req.user.uid, { scope: 'api_me', login: false })
+      touchUserActivity(req.user.uid, { scope: 'api_me', login: false }),
+      uData.grantedSignupReward ? recordRewardLedger({ uid: req.user.uid, amount: 50000, source: 'signup_reward', referenceId: 'profile_me' }) : Promise.resolve(null),
+      uData.grantedSignupReward ? createNotification({ uid: req.user.uid, type: 'reward', title: 'Hoş geldin ödülü', body: 'Kayıt bonusu olarak 50.000 MC hesabına eklendi.' }) : Promise.resolve(null),
+      uData.grantedEmailReward ? recordRewardLedger({ uid: req.user.uid, amount: 100000, source: 'email_verify_reward', referenceId: 'profile_me' }) : Promise.resolve(null),
+      uData.grantedEmailReward ? createNotification({ uid: req.user.uid, type: 'reward', title: 'E-posta doğrulama ödülü', body: 'E-posta onayı için 100.000 MC hesabına eklendi.' }) : Promise.resolve(null)
     ]).catch(() => null);
 
     const publicUsername = await resolvePublicUsername(req.user.uid, uData.u);
-    const canonical = buildCanonicalUserState(uData.u, { defaultFrame: 0 });
-    const progression = canonical.progression;
-    const rewardPolicy = buildRewardFlowOverview({ verified: !!req.user.email_verified, disposableEmail: isDisposableEmail(req.user.email) });
-    const activityMeta = getNextActivityResetMeta();
+    const progression = buildProgressionSnapshot(uData.u);
     const safeUser = {
       ...uData.u,
-      ...canonical,
       username: publicUsername,
       fullNameLocked: !!(uData.u.fullNameLocked || cleanStr(uData.u.fullName)),
       usernameChangeLimit: 3,
       usernameChangeRemaining: Math.max(0, 3 - safeNum(uData.u.userChangeCount, 0)),
+      seasonRp: safeNum(uData.u.seasonRp, 0),
+      monthlyActiveScore: safeNum(uData.u.monthlyActiveScore, 0),
+      totalSpentMc: safeNum(uData.u.totalSpentMc, 0),
+      totalRounds: safeNum(uData.u.totalRounds, 0),
+      chessElo: getSafeCompetitiveElo(uData.u.chessElo, COMPETITIVE_ELO_DEFAULT),
+      pistiElo: getSafeCompetitiveElo(uData.u.pistiElo, COMPETITIVE_ELO_DEFAULT),
       unread_messages: safeNum(uData.u.unread_messages, 0),
-      statistics: {
-        accountLevel: canonical.accountLevel,
-        accountXp: canonical.accountXp,
-        accountLevelScore: canonical.accountLevelScore,
-        monthlyActiveScore: canonical.monthlyActiveScore,
-        totalRounds: safeNum(uData.u.totalRounds, 0),
-        totalSpentMc: safeNum(uData.u.totalSpentMc, 0),
-        totalWins: safeNum(uData.u.totalWins, safeNum(uData.u.chessWins, 0) + safeNum(uData.u.pistiWins, 0) + safeNum(uData.u.crashWins, 0)),
-        totalLosses: safeNum(uData.u.totalLosses, safeNum(uData.u.chessLosses, 0) + safeNum(uData.u.pistiLosses, 0) + safeNum(uData.u.crashLosses, 0)),
-        chessWins: safeNum(uData.u.chessWins, 0),
-        chessLosses: safeNum(uData.u.chessLosses, 0),
-        pistiWins: safeNum(uData.u.pistiWins || uData.u.pisti_wins, 0),
-        pistiLosses: safeNum(uData.u.pistiLosses || uData.u.pisti_losses, 0),
-        crashRounds: safeNum(uData.u.crashRounds || uData.u.crash_rounds, 0),
-        crashWins: safeNum(uData.u.crashWins || uData.u.crash_wins, 0),
-        crashLosses: safeNum(uData.u.crashLosses || uData.u.crash_losses, 0),
-        unreadMessages: safeNum(uData.u.unread_messages, 0)
-      },
+      accountXp: progression.accountXp,
+      accountLevel: progression.accountLevel,
+      level: progression.accountLevel,
+      accountLevelScore: progression.accountLevelScore,
+      competitiveScore: progression.competitiveScore,
+      totalRank: progression.totalRank,
+      totalRankName: progression.totalRank,
+      totalRankClass: progression.totalRankClass,
+      totalRankScore: progression.totalRankScore,
+      competitiveRankName: progression.competitiveRank,
+      competitiveRankClass: progression.competitiveRankClass,
+      seasonScore: progression.seasonScore,
+      seasonPoints: progression.seasonScore,
+      seasonRank: progression.seasonRank,
+      seasonRankName: progression.seasonRank,
+      seasonRankClass: progression.seasonRankClass,
+      monthlyActivity: progression.monthlyActivity,
+      activityPassLevel: Math.max(1, Math.floor(safeNum(uData.u.monthlyActiveScore, 0) / 10) + 1),
+      vipLevel: progression.vipLevel,
+      vipBand: progression.vipBand,
+      vipName: progression.vipName,
+      vipMembershipTier: progression.vipTier,
+      vipLabel: progression.vipLabel,
+      vipProgress: progression.vipProgress,
+      rankName: progression.rank,
+      rankClass: progression.rankClass,
       progression,
       chatPolicy: CHAT_RETENTION_POLICY,
-      rewardPolicy,
-      systemOverview: {
-        periodKey: getActivityCalendarParts().periodKey,
-        periodResetLabel: activityMeta.label,
-        activityResetLabel: activityMeta.label,
-        chatPolicy: CHAT_RETENTION_POLICY,
-        rewardPolicy
-      },
       lastActiveAt: getFirestoreTimestampMs(uData.u.lastActiveAt, nowMs()),
       lastSeen: getFirestoreTimestampMs(uData.u.lastSeen || uData.u.lastActiveAt, nowMs())
     };
@@ -375,116 +422,117 @@ router.get('/', verifyAuth, async (req, res) => {
 });
 
 
-
-
-router.post('/me/activity/heartbeat', verifyAuth, async (req, res) => {
-  try {
-    const status = cleanStr(req.body?.status || 'ACTIVE', 24).toUpperCase();
-    const activity = cleanStr(req.body?.activity || 'heartbeat', 120) || 'heartbeat';
-    const page = cleanStr(req.body?.page || req.headers['x-page'] || '', 120);
-    const context = cleanStr(req.body?.context || '', 120);
-    const roomId = cleanStr(req.body?.roomId || '', 160);
-    const interactive = !!req.body?.interactive;
-    await Promise.allSettled([
-      touchUserActivity(req.user.uid, {
-        scope: 'heartbeat',
-        status,
-        activity,
-        sessionId: cleanStr(req.user?.sessionId || '', 160)
-      }),
-      touchUserPresence(req.user.uid, {
-        status,
-        activity,
-        sessionId: cleanStr(req.user?.sessionId || '', 160)
-      })
-    ]);
-    return res.json({
-      ok: true,
-      uid: cleanStr(req.user?.uid || '', 160),
-      activity: {
-        status,
-        activity,
-        page,
-        context,
-        roomId,
-        interactive,
-        touchedAt: nowMs()
-      }
-    });
-  } catch (_error) {
-    return res.status(500).json({ ok: false, error: 'Heartbeat kaydedilemedi.' });
-  }
-});
-
-router.get('/music-tiles/bootstrap', async (_req, res) => {
-  return res.json({
-    ok: true,
-    enabled: false,
-    featureFlag: 'musicTilesEnabled',
-    status: 'disabled',
-    message: 'Music Tiles şu an aktif değil.'
-  });
-});
-
 router.get('/me/active-sessions', verifyAuth, async (req, res) => {
   try {
     const sessions = await listActiveSessionsForUid(req.user.uid);
     const items = sessions.map((item) => ({
       ...item,
-      resumePath: item.gameType === 'pisti' ? '/Online Oyunlar/Pisti' : '/Online Oyunlar/Satranc',
+      resumePath: item.gameType === 'chess' ? './Online Oyunlar/Satranc.html' : './Online Oyunlar/Pisti.html',
       roomKey: `${item.gameType}:${item.roomId}`
     }));
-    return res.json({ ok: true, items, sessions: items });
+    return res.json({ ok: true, items });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: 'Aktif oturumlar yüklenemedi.' });
+    return res.status(500).json({ ok: false, error: error.message || 'Aktif oturumlar yüklenemedi.' });
   }
 });
 
-router.get('/leaderboard', tryVerifyOptionalAuth, async (req, res) => {
+// GET /api/check-username
+router.get('/check-username', async (req, res) => {
   try {
-    res.setHeader('Cache-Control', 'no-store, max-age=0');
-    if (!isFirebaseReady()) {
-      return res.json(buildDegradedLeaderboardPayload());
+    const raw = cleanStr(req.query?.username);
+    const username = raw.trim().replace(/\s+/g, ' ');
+    if (!username) return res.status(400).json({ ok: false, error: 'Kullanıcı adı boş.' });
+
+    if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(username)) {
+      return res.status(400).json({ ok: false, error: 'Kullanıcı adı geçersiz. (3-20 karakter, harf/sayı/._-)' });
     }
 
-    const uid = cleanStr(req.user?.uid || '', 160);
-    const [levelTop, activityTop, selfLevel, selfActivity] = await Promise.all([
+    if (containsBlockedUsername(username)) {
+      return res.status(400).json({ ok: false, error: 'Bu kullanıcı adı kullanılamaz.' });
+    }
+
+    const key = username.toLowerCase();
+    const snap = await db.collection('usernames').doc(key).get();
+    return res.json({ ok: true, available: !snap.exists });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: 'Kontrol hatası.' });
+  }
+});
+
+
+// POST /api/me/activity/heartbeat - aktiflik ve idle oturumu güncelle
+router.post('/me/activity/heartbeat', verifyAuth, async (req, res) => {
+  try {
+    const status = cleanStr(req.body?.status || 'IDLE', 24).toUpperCase() || 'IDLE';
+    const activity = cleanStr(req.body?.activity || 'heartbeat', 80) || 'heartbeat';
+    const interactive = req.body?.interactive === true || ['input', 'focus', 'visible', 'pageshow', 'login', 'boot'].some((token) => activity.toLowerCase().includes(token));
+
+    await Promise.allSettled([
+      interactive
+        ? touchUserActivity(req.user.uid, {
+            scope: 'heartbeat',
+            sessionId: req.user.sessionId || '',
+            status,
+            activity
+          })
+        : touchUserPresence(req.user.uid, {
+            sessionId: req.user.sessionId || '',
+            status,
+            activity
+          }),
+      interactive && req.user.sessionId
+        ? touchServerSession(req.user.sessionId, { ip: req.ip || '', userAgent: req.headers['user-agent'] || '' })
+        : Promise.resolve(false)
+    ]);
+    return res.json({ ok: true, status, activity, interactive, touchedAt: nowMs() });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: 'Aktivite güncellenemedi.' });
+  }
+});
+
+// GET /api/leaderboard
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const viewer = await tryVerifyOptionalAuth(req);
+    const [levelTop, seasonTop, activityTop, vipTop, chessTop, pistiTop, selfLevel, selfSeason, selfActivity, selfVip, selfChess, selfPisti] = await Promise.all([
       getLeaderboardTop('accountLevelScore', 5),
+      getLeaderboardTop('seasonRp', 5),
       getLeaderboardTop('monthlyActiveScore', 5),
-      uid ? getLeaderboardSelfEntry(uid, 'accountLevelScore') : Promise.resolve(null),
-      uid ? getLeaderboardSelfEntry(uid, 'monthlyActiveScore') : Promise.resolve(null)
+      getVipLeaderboardTop(5),
+      getLeaderboardTop('chessElo', 5),
+      getLeaderboardTop('pistiElo', 5),
+      viewer?.uid ? getLeaderboardSelfEntry(viewer.uid, 'accountLevelScore') : null,
+      viewer?.uid ? getLeaderboardSelfEntry(viewer.uid, 'seasonRp') : null,
+      viewer?.uid ? getLeaderboardSelfEntry(viewer.uid, 'monthlyActiveScore') : null,
+      viewer?.uid ? getVipSelfEntry(viewer.uid) : null,
+      viewer?.uid ? getLeaderboardSelfEntry(viewer.uid, 'chessElo') : null,
+      viewer?.uid ? getLeaderboardSelfEntry(viewer.uid, 'pistiElo') : null
     ]);
 
     return res.json({
       ok: true,
-      schemaVersion: 1,
-      generatedAt: nowMs(),
-      degraded: false,
-      tabs: {
-        level: {
-          key: 'level',
-          label: 'En Yüksek Hesap Seviyesi',
-          metricKey: 'accountLevelScore',
-          items: levelTop,
-          self: selfLevel
-        },
-        activity: {
-          key: 'activity',
-          label: 'En Çok Aktif Oyuncular',
-          metricKey: 'monthlyActiveScore',
-          items: activityTop,
-          self: selfActivity
-        }
+      levelTop,
+      rankTop: seasonTop,
+      seasonTop,
+      activityTop,
+      monthlyActiveTop: activityTop,
+      vipTop,
+      chessTop,
+      pistiTop,
+      self: {
+        level: selfLevel,
+        rank: selfSeason,
+        season: selfSeason,
+        activity: selfActivity,
+        vip: selfVip,
+        chess: selfChess,
+        pisti: selfPisti
       }
     });
-  } catch (error) {
-    if (isFirebaseAdminUnavailableError(error)) {
-      return res.json(buildDegradedLeaderboardPayload('FIREBASE_ADMIN_UNAVAILABLE'));
-    }
-    return res.status(500).json({ ok: false, error: 'Liderlik tablosu yüklenemedi.' });
-  }
+  } catch (error) { return res.status(500).json({ ok: false, error: 'Liderlik tablosu yüklenemedi.' }); }
 });
 
+// GET /api/user-stats/:uid
 router.get('/user-stats/:uid', verifyAuth, async (req, res) => {
   try {
     const uid = cleanStr(req.params.uid || '', 128);
@@ -497,141 +545,61 @@ router.get('/user-stats/:uid', verifyAuth, async (req, res) => {
     const progression = buildProgressionSnapshot(data);
     const chessWins = safeNum(data.chessWins, 0);
     const chessLosses = safeNum(data.chessLosses, 0);
-    const pistiWins = safeNum(data.pistiWins || data.pisti_wins, 0);
-    const pistiLosses = safeNum(data.pistiLosses || data.pisti_losses, 0);
-    const crashRounds = safeNum(data.crashRounds || data.crash_rounds, 0);
-    const crashWins = safeNum(data.crashWins || data.crash_wins, 0);
-    const crashLosses = safeNum(data.crashLosses || data.crash_losses, 0);
-    const totalWins = safeNum(data.totalWins, chessWins + pistiWins + crashWins);
-    const totalLosses = safeNum(data.totalLosses, chessLosses + pistiLosses + crashLosses);
-    const totalRounds = safeNum(data.totalRounds, totalWins + totalLosses + crashRounds);
-    const totalSpentMc = safeNum(data.totalSpentMc, 0);
-    const monthlyActiveScore = safeNum(data.monthlyActiveScore, progression.monthlyActivity);
-    const selectedFrame = getCanonicalSelectedFrame(data, { accountLevel: progression.accountLevel, defaultFrame: 0 });
-    const classicStats = data.classicStats && typeof data.classicStats === 'object' ? data.classicStats : {};
-    const classicTotals = Object.values(classicStats).reduce((acc, item) => {
-      const stat = item && typeof item === 'object' ? item : {};
-      acc.totalRuns += safeNum(stat.totalRuns, 0);
-      acc.totalScore += safeNum(stat.totalScore, 0);
-      acc.bestScore = Math.max(acc.bestScore, safeNum(stat.bestScore, 0));
-      return acc;
-    }, { totalRuns: 0, totalScore: 0, bestScore: 0 });
-    const [historySummary, recentHistory] = await Promise.all([
-      summarizeMatchHistoryForUid(uid, { sampleLimit: 120 }).catch(() => ({ totalMatches: 0, wins: 0, losses: 0, draws: 0, byGame: {} })),
-      listMatchHistoryForUid(uid, { limit: 6 }).catch(() => ({ items: [] }))
-    ]);
-    const resolvedWins = Math.max(totalWins, safeNum(historySummary.wins, 0));
-    const resolvedLosses = Math.max(totalLosses, safeNum(historySummary.losses, 0));
-    const resolvedDraws = safeNum(historySummary.draws, 0);
-    const resolvedDecidedGames = Math.max(0, resolvedWins + resolvedLosses);
-    const winRatePct = resolvedDecidedGames > 0 ? Math.round((resolvedWins / resolvedDecidedGames) * 1000) / 10 : 0;
-    const accountProgression = {
-      ...progression,
-      selectedFrame,
-      accountLevel: progression.accountLevel,
-      accountXp: progression.accountXp,
-      accountLevelScore: progression.accountLevelScore,
-      accountProgressionVersion: ACCOUNT_PROGRESSION_VERSION
-    };
+    const pistiWins = safeNum(data.pistiWins, 0);
+    const pistiLosses = safeNum(data.pistiLosses, 0);
 
     return res.json({
       ok: true,
       data: {
         uid,
         username: await resolvePublicUsername(uid, data),
-        avatar: sanitizeAvatarForStorage(data.avatar) || DEFAULT_AVATAR,
+        avatar: isAllowedAvatarValue(data.avatar) ? data.avatar : '',
         level: progression.accountLevel,
-        accountLevel: progression.accountLevel,
-        accountXp: progression.accountXp,
-        accountLevelScore: progression.accountLevelScore,
-        accountLevelProgressPct: progression.accountLevelProgressPct,
-        selectedFrame,
+        rp: safeNum(data.rp, 0),
+        competitiveScore: progression.competitiveScore,
+        totalRank: progression.totalRank,
+        totalRankClass: progression.totalRankClass,
         createdAt: getFirestoreTimestampMs(data.createdAt, nowMs()),
         lastLogin: getFirestoreTimestampMs(data.lastLogin || data.lastSeen || data.lastActiveAt, nowMs()),
         lastSeen: getFirestoreTimestampMs(data.lastSeen || data.lastActiveAt, nowMs()),
-        monthlyActiveScore,
-        progression: accountProgression,
-        totalRounds,
-        totalSpentMc,
-        totalWins: resolvedWins,
-        totalLosses: resolvedLosses,
-        totalDraws: resolvedDraws,
-        winRate: winRatePct,
-        winRatePct,
-        chessWins,
-        chessLosses,
-        pistiWins,
-        pistiLosses,
-        crashRounds,
-        crashWins,
-        crashLosses,
-        classicStats,
-        gameStats: {
-          total: { rounds: totalRounds, wins: resolvedWins, losses: resolvedLosses, draws: resolvedDraws, winRatePct },
-          chess: { wins: chessWins, losses: chessLosses, matches: chessWins + chessLosses },
-          pisti: { wins: pistiWins, losses: pistiLosses, matches: pistiWins + pistiLosses },
-          crash: { rounds: crashRounds, wins: crashWins, losses: crashLosses },
-          classic: classicTotals,
-          history: historySummary
-        },
-        recentGames: Array.isArray(recentHistory.items) ? recentHistory.items.slice(0, 6) : [],
-        statistics: {
-          accountLevel: progression.accountLevel,
-          accountXp: progression.accountXp,
-          accountLevelScore: progression.accountLevelScore,
-          accountLevelProgressPct: progression.accountLevelProgressPct,
-          selectedFrame,
-          monthlyActiveScore,
-          totalRounds,
-          totalSpentMc,
-          totalWins: resolvedWins,
-          totalLosses: resolvedLosses,
-          totalDraws: resolvedDraws,
-          winRatePct,
-          chessWins,
-          chessLosses,
-          pistiWins,
-          pistiLosses,
-          crashRounds,
-          crashWins,
-          crashLosses,
-          classicTotals,
-          unreadMessages: safeNum(data.unread_messages, 0)
-        }
+        totalRounds: safeNum(data.totalRounds, chessWins + chessLosses + pistiWins + pistiLosses),
+        totalSpentMc: safeNum(data.totalSpentMc, 0),
+        chessWins, chessLosses, pistiWins, pistiLosses,
+        chessElo: getSafeCompetitiveElo(data.chessElo, COMPETITIVE_ELO_DEFAULT),
+        pistiElo: getSafeCompetitiveElo(data.pistiElo, COMPETITIVE_ELO_DEFAULT),
+        monthlyActiveScore: safeNum(data.monthlyActiveScore, 0),
+        selectedFrame: pickUserSelectedFrame(data),
+        seasonRp: progression.seasonScore,
+        seasonScore: progression.seasonScore,
+        seasonRank: progression.seasonRank,
+        seasonRankName: progression.seasonRank,
+        seasonRankClass: progression.seasonRankClass,
+        vipLabel: progression.vipLabel,
+        vipProgress: progression.vipProgress
       }
     });
-
   } catch (error) { return res.status(500).json({ ok: false, error: 'Sunucu hatası.' }); }
 });
 
+// POST /api/profile/update
 router.post('/update', verifyAuth, profileLimiter, async (req, res) => {
   try {
     const { fullName, username, avatar, selectedFrame } = req.body || {};
     const uid = req.user.uid;
-    const bootstrap = await bootstrapAccountByAuth({
-      uid,
-      email: req.user.email || '',
-      emailVerified: !!req.user.email_verified,
-      referenceId: 'profile_update'
-    });
 
     await db.runTransaction(async (tx) => {
       const uRef = colUsers().doc(uid);
       const snap = await tx.get(uRef);
-      const u = snap.exists ? (snap.data() || {}) : { ...(bootstrap.user || {}) };
+      const u = snap.exists ? (snap.data() || {}) : { balance: 0, email: req.user.email, createdAt: nowMs(), userChangeCount: 0, rp: 0, rank: 0, competitiveScore: 0, totalRp: 0, totalRank: 'Bronze', totalRankKey: 'bronze', totalRankClass: 'rank-bronze', seasonRp: 0, seasonScore: 0, seasonRank: 'Bronze', seasonRankKey: 'bronze', seasonRankClass: 'rank-bronze', monthlyActiveScore: 0, totalSpentMc: 0, totalRounds: 0, chessElo: COMPETITIVE_ELO_DEFAULT, pistiElo: COMPETITIVE_ELO_DEFAULT };
 
       const updates = {};
       if (cleanStr(fullName) && !cleanStr(u.fullName)) { updates.fullName = cleanStr(fullName); updates.fullNameLocked = true; }
-      if (avatar !== undefined) {
-        const normalizedAvatar = sanitizeAvatarForStorage(avatar);
-        if (!normalizedAvatar) throw new Error('Geçersiz avatar seçimi.');
-        updates.avatar = normalizedAvatar;
-      }
+      if (isAllowedAvatarValue(avatar)) updates.avatar = String(avatar).trim();
 
       const numericSelectedFrame = Number(selectedFrame);
-      if (Number.isFinite(numericSelectedFrame) && numericSelectedFrame >= 0) {
-        const safeSelectedFrame = Math.max(0, Math.min(100, Math.floor(numericSelectedFrame)));
-        const maxUnlockedFrame = buildCanonicalUserState(u, { defaultFrame: 0 }).accountLevel;
+      if (Number.isFinite(numericSelectedFrame) && numericSelectedFrame > 0) {
+        const safeSelectedFrame = Math.max(1, Math.min(100, Math.floor(numericSelectedFrame)));
+        const maxUnlockedFrame = getAccountLevel(u);
         if (safeSelectedFrame > maxUnlockedFrame) throw new Error(`Bu çerçeveyi kaydetmek için en az Seviye ${safeSelectedFrame} olmalısın.`);
         updates.selectedFrame = safeSelectedFrame;
       }
@@ -659,21 +627,14 @@ router.post('/update', verifyAuth, profileLimiter, async (req, res) => {
       }
 
       const mergedUser = { ...u, ...updates };
-      const canonicalState = buildCanonicalUserState(mergedUser, { defaultFrame: 0 });
-      tx.set(uRef, { ...mergedUser, ...canonicalState, ...normalizeUserRankState({ ...mergedUser, ...canonicalState }) }, { merge: true });
+      tx.set(uRef, { ...mergedUser, ...normalizeUserRankState(mergedUser) }, { merge: true });
     });
 
-    const freshSnap = await colUsers().doc(uid).get();
-    const freshData = freshSnap.exists ? (freshSnap.data() || {}) : {};
-    const freshCanonical = buildCanonicalUserState(freshData, { defaultFrame: 0 });
-    res.json({ ok: true, selectedFrame: freshCanonical.selectedFrame, progression: freshCanonical.progression });
-  } catch (e) {
-    const message = e && e.message ? e.message : 'Profil güncellenemedi.';
-    const status = /geçersiz|kilit|seviye|kullanılamaz|doldu|kullanımda/i.test(message) ? 400 : 500;
-    return res.status(status).json({ ok: false, error: message });
-  }
+    res.json({ ok: true, selectedFrame: Number.isFinite(Number(selectedFrame)) && Number(selectedFrame) > 0 ? Math.max(1, Math.min(100, Math.floor(Number(selectedFrame)))) : undefined });
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/claim-monthly-reward
 router.post('/claim-monthly-reward', verifyAuth, async (req, res) => {
   try {
     await colUsers().doc(req.user.uid).set({ pendingReward: admin.firestore.FieldValue.delete() }, { merge: true });
@@ -681,6 +642,7 @@ router.post('/claim-monthly-reward', verifyAuth, async (req, res) => {
   } catch (error) { return res.status(500).json({ ok: false, error: 'Ödül onayı işlenemedi.' }); }
 });
 
+// POST /api/wheel/spin
 router.post('/wheel/spin', verifyAuth, async (req, res) => {
   try {
     if (!req.user.email_verified) throw new Error("Güvenlik: Çark çevirmek için e-postanızı onaylamalısınız!");
@@ -693,23 +655,18 @@ router.post('/wheel/spin', verifyAuth, async (req, res) => {
 
       const rewards = [2500, 5000, 7500, 12500, 20000, 25000, 30000, 50000];
       const rnd = crypto.randomInt(0, rewards.length);
-      const spinAt = nowMs();
-      const grant = await applyRewardGrantInTransaction(tx, {
-        uid: req.user.uid,
-        amount: rewards[rnd],
-        source: 'wheel_spin',
-        referenceId: `wheel:${req.user.uid}:${spinAt}`,
-        idempotencyKey: `wheel_spin:${req.user.uid}:${spinAt}`,
-        userPatch: { lastSpin: spinAt }
-      });
-      return { index: rnd, prize: rewards[rnd], grant };
+      tx.update(colUsers().doc(req.user.uid), { balance: admin.firestore.FieldValue.increment(rewards[rnd]), lastSpin: nowMs() });
+      return { index: rnd, prize: rewards[rnd] };
     });
-    createRewardNotificationForGrant(out.grant, { data: { source: 'wheel_spin', amount: out.prize, spinIndex: out.index } }).catch(() => null);
-    const { grant, ...response } = out;
-    res.json({ ok: true, ...response, duplicated: !!grant?.duplicated });
+    Promise.allSettled([
+      recordRewardLedger({ uid: req.user.uid, amount: out.prize, source: 'wheel_spin', referenceId: `spin:${out.index}` }),
+      createNotification({ uid: req.user.uid, type: 'reward', title: 'Günlük çark ödülü', body: `${out.prize} MC hesabına eklendi.`, data: { source: 'wheel_spin', amount: out.prize } })
+    ]).catch(() => null);
+    res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/bonus/claim
 router.post('/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
   try {
     if (!req.user.email_verified) throw new Error("Güvenlik: Promosyon kodu kullanmak için e-postanızı onaylamalısınız!");
@@ -733,32 +690,25 @@ router.post('/bonus/claim', verifyAuth, bonusLimiter, async (req, res) => {
 
       const u = uSnap.data() || {}, p = pSnap.data() || {};
       if (safeNum(p.amount, 0) <= 0) throw new Error("Kod geçersiz veya kullanılmış.");
-      if (p.active === false) throw new Error("Kod pasif durumda.");
-      if (safeNum(p.expiresAt, 0) > 0 && safeNum(p.expiresAt, 0) < nowMs()) throw new Error("Kod süresi dolmuş.");
 
       if ((u.usedPromos || []).includes(code)) throw new Error("Kod geçersiz veya kullanılmış.");
       if (safeNum(p.limitLeft, -1) === 0) throw new Error("Kod tükenmiş.");
 
-      const grant = await applyRewardGrantInTransaction(tx, {
-        uid: req.user.uid,
-        amount: p.amount,
-        source: 'promo_code',
-        referenceId: code,
-        idempotencyKey: `promo_code:${code}:${req.user.uid}`,
-        meta: { code, promoDocId },
-        userPatch: { usedPromos: admin.firestore.FieldValue.arrayUnion(code) }
-      });
+      tx.update(uRef, { balance: admin.firestore.FieldValue.increment(p.amount), usedPromos: admin.firestore.FieldValue.arrayUnion(code) });
       if (safeNum(p.limitLeft, -1) > 0) tx.update(pRef, { limitLeft: admin.firestore.FieldValue.increment(-1) });
 
-      return { amount: p.amount, code: promoDocId, grant };
+      return { amount: p.amount };
     });
 
-    createRewardNotificationForGrant(out.grant, { data: { source: 'promo_code', code, amount: out.amount } }).catch(() => null);
-    const { grant, ...response } = out;
-    res.json({ ok: true, ...response, duplicated: !!grant?.duplicated });
+    Promise.allSettled([
+      recordRewardLedger({ uid: req.user.uid, amount: out.amount, source: 'promo_code', referenceId: code }),
+      createNotification({ uid: req.user.uid, type: 'reward', title: 'Promo kod ödülü', body: `${out.amount} MC hesabına eklendi.`, data: { source: 'promo_code', code, amount: out.amount } })
+    ]).catch(() => null);
+    res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// GET /api/referral/link
 router.get('/referral/link', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -781,6 +731,7 @@ router.get('/referral/link', verifyAuth, async (req, res) => {
   } catch(e){ res.json({ ok:false, error:e.message }); }
 });
 
+// POST /api/referral/claim
 router.post('/referral/claim', verifyAuth, async (req, res) => {
   try {
     if (!req.user.email_verified) throw new Error("Güvenlik: Davet ödülü için önce e-postanızı doğrulamalısınız.");
@@ -789,8 +740,8 @@ router.post('/referral/claim', verifyAuth, async (req, res) => {
     const code = cleanStr((req.body || {}).code).toUpperCase();
     if (!/^[A-Z0-9]{6,12}$/.test(code)) throw new Error("Davet kodu geçersiz.");
 
-    const REF_INVITER_REWARD = getRewardAmount('referral_inviter', 50000);
-    const REF_INVITEE_REWARD = getRewardAmount('referral_invitee', 10000);
+    const REF_INVITER_REWARD = 50000;
+    const REF_INVITEE_REWARD = 0;
 
     const out = await db.runTransaction(async (tx) => {
       const uid = req.user.uid;
@@ -809,32 +760,25 @@ router.post('/referral/claim', verifyAuth, async (req, res) => {
 
       tx.set(uRef, { referredBy: inviterUid, referralCodeUsed: code, referralClaimedAt: nowMs() }, { merge: true });
 
+      if (REF_INVITER_REWARD > 0) {
+        tx.set(colUsers().doc(inviterUid), { balance: admin.firestore.FieldValue.increment(REF_INVITER_REWARD), referralCount: admin.firestore.FieldValue.increment(1) }, { merge: true });
+      }
+
+      if (REF_INVITEE_REWARD > 0) {
+        tx.set(uRef, { balance: admin.firestore.FieldValue.increment(REF_INVITEE_REWARD) }, { merge: true });
+      }
+
       return { inviterUid, inviterReward: REF_INVITER_REWARD, inviteeReward: REF_INVITEE_REWARD };
     });
 
-    const referralGrants = await Promise.allSettled([
-      out.inviterReward > 0 ? grantReward({
-        uid: out.inviterUid,
-        amount: out.inviterReward,
-        source: 'referral_inviter',
-        referenceId: code,
-        idempotencyKey: `referral_inviter:${code}:${out.inviterUid}:${req.user.uid}`,
-        meta: { code, claimedBy: req.user.uid },
-        userPatch: { referralCount: admin.firestore.FieldValue.increment(1) },
-        notification: { data: { code, claimedBy: req.user.uid } }
-      }) : Promise.resolve(null),
-      out.inviteeReward > 0 ? grantReward({
-        uid: req.user.uid,
-        amount: out.inviteeReward,
-        source: 'referral_invitee',
-        referenceId: code,
-        idempotencyKey: `referral_invitee:${code}:${req.user.uid}:${out.inviterUid}`,
-        meta: { code, inviterUid: out.inviterUid },
-        notification: { data: { code, inviterUid: out.inviterUid } }
-      }) : Promise.resolve(null)
-    ]);
+    Promise.allSettled([
+      out.inviterReward > 0 ? recordRewardLedger({ uid: out.inviterUid, amount: out.inviterReward, source: 'referral_inviter', referenceId: code, meta: { claimedBy: req.user.uid } }) : Promise.resolve(null),
+      out.inviterReward > 0 ? createNotification({ uid: out.inviterUid, type: 'reward', title: 'Davet ödülü', body: `Bir oyuncu davet kodunu kullandı. ${out.inviterReward} MC hesabına eklendi.`, data: { source: 'referral_inviter', amount: out.inviterReward, code, claimedBy: req.user.uid } }) : Promise.resolve(null),
+      out.inviteeReward > 0 ? recordRewardLedger({ uid: req.user.uid, amount: out.inviteeReward, source: 'referral_invitee', referenceId: code, meta: { inviterUid: out.inviterUid } }) : Promise.resolve(null),
+      out.inviteeReward > 0 ? createNotification({ uid: req.user.uid, type: 'reward', title: 'Davet hoş geldin ödülü', body: `${out.inviteeReward} MC hesabına eklendi.`, data: { source: 'referral_invitee', amount: out.inviteeReward, code, inviterUid: out.inviterUid } }) : Promise.resolve(null)
+    ]).catch(() => null);
 
-    res.json({ ok: true, ...out, rewardAudit: referralGrants.map((item) => item.status === 'fulfilled' ? { ok: true, ledgerId: item.value?.id || '', duplicated: !!item.value?.duplicated } : { ok: false, error: String(item.reason?.message || item.reason || 'grant_failed') }) });
+    res.json({ ok: true, ...out });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 

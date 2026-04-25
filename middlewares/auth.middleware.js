@@ -81,7 +81,7 @@ async function verifyAuth(req, res, next) {
         const user = {
           uid: cleanStr(session.data.uid || '', 160),
           email: cleanStr(session.data.email || '', 200),
-          email_verified: !!session.data.emailVerified,
+          email_verified: true,
           admin: false,
           claims: {}
         };
@@ -117,7 +117,7 @@ async function verifyAuth(req, res, next) {
   }
 }
 
-async function resolveOptionalAuthUser(req) {
+async function tryVerifyOptionalAuth(req) {
   const sessionToken = extractSessionToken(req);
   if (sessionToken) {
     const session = await resolveServerSession(sessionToken).catch(() => null);
@@ -125,9 +125,8 @@ async function resolveOptionalAuthUser(req) {
       return {
         uid: cleanStr(session.data.uid || '', 160),
         email: cleanStr(session.data.email || '', 200),
-        email_verified: !!session.data.emailVerified,
-        authType: 'session',
-        sessionId: cleanStr(session.id || '', 160)
+        email_verified: true,
+        authType: 'session'
       };
     }
   }
@@ -142,25 +141,9 @@ async function resolveOptionalAuthUser(req) {
   }
 }
 
-async function tryVerifyOptionalAuth(req, _res, next) {
-  try {
-    const optionalUser = await resolveOptionalAuthUser(req);
-    if (optionalUser) {
-      req.user = {
-        ...optionalUser,
-        claims: optionalUser?.claims || optionalUser || {},
-        authType: cleanStr(optionalUser.authType || 'optional', 24),
-        sessionId: cleanStr(optionalUser.sessionId || '', 160)
-      };
-    }
-  } catch (_) {}
-  return next();
-}
-
 module.exports = {
   verifyAuth,
   tryVerifyOptionalAuth,
-  resolveOptionalAuthUser,
   extractBearerToken,
   extractSessionToken
 };

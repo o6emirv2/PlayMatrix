@@ -1,28 +1,31 @@
+const PM_FIREBASE_CONFIG = Object.freeze({
+  apiKey: 'AIzaSyC81Ah46_F2his90zedODoCk07vqsd3vVs',
+  authDomain: 'playmatrix-b7df9.firebaseapp.com',
+  projectId: 'playmatrix-b7df9',
+  storageBucket: 'playmatrix-b7df9.firebasestorage.app',
+  messagingSenderId: '689686425310',
+  appId: '1:689686425310:web:01c9f797b437a770e19c4f',
+  measurementId: 'G-BL9ZP43VVW'
+});
+
 const PM_ADMIN_AUTH = (() => {
   let initialized = false;
   let auth = null;
   let currentUser = null;
-  let runtimeError = null;
   let authReadyResolve;
   const authReady = new Promise((resolve) => {
     authReadyResolve = resolve;
   });
 
-  function serializeUser(user) {
-    if (!user) return null;
-    return {
-      uid: user.uid,
-      email: user.email || '',
-      displayName: user.displayName || ''
-    };
-  }
-
   function notifyAuthState() {
     window.dispatchEvent(new CustomEvent('pm-admin-auth-state', {
       detail: {
         signedIn: !!currentUser,
-        user: serializeUser(currentUser),
-        error: runtimeError ? String(runtimeError.message || runtimeError) : ''
+        user: currentUser ? {
+          uid: currentUser.uid,
+          email: currentUser.email || '',
+          displayName: currentUser.displayName || ''
+        } : null
       }
     }));
   }
@@ -32,17 +35,12 @@ const PM_ADMIN_AUTH = (() => {
     initialized = true;
 
     try {
-      const [runtimeModule, firebaseAppModule, firebaseAuthModule] = await Promise.all([
-        import('../firebase-runtime.js'),
+      const [{ initializeApp, getApps, getApp }, { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence }] = await Promise.all([
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
       ]);
 
-      const config = await runtimeModule.loadFirebaseWebConfig({ required: true, scope: 'admin' });
-      const { initializeApp, getApps, getApp } = firebaseAppModule;
-      const { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence } = firebaseAuthModule;
-
-      const app = getApps().length ? getApp() : initializeApp(config);
+      const app = getApps().length ? getApp() : initializeApp(PM_FIREBASE_CONFIG);
       auth = getAuth(app);
 
       try {
@@ -51,20 +49,17 @@ const PM_ADMIN_AUTH = (() => {
 
       onAuthStateChanged(auth, (user) => {
         currentUser = user || null;
-        runtimeError = null;
         notifyAuthState();
-        authReadyResolve({ auth, user: currentUser, error: null });
-      }, (error) => {
+        authReadyResolve({ auth, user: currentUser });
+      }, () => {
         currentUser = null;
-        runtimeError = error || new Error('ADMIN_AUTH_STATE_ERROR');
         notifyAuthState();
-        authReadyResolve({ auth, user: null, error: runtimeError });
+        authReadyResolve({ auth, user: null });
       });
     } catch (error) {
       currentUser = null;
-      runtimeError = error || new Error('PUBLIC_FIREBASE_CONFIG_MISSING');
       notifyAuthState();
-      authReadyResolve({ auth: null, user: null, error: runtimeError });
+      authReadyResolve({ auth: null, user: null, error });
     }
 
     return authReady;
@@ -85,16 +80,12 @@ const PM_ADMIN_AUTH = (() => {
     return currentUser;
   }
 
-  function getLastError() {
-    return runtimeError;
-  }
-
   return {
+    config: PM_FIREBASE_CONFIG,
     init,
     waitForReady,
     getFreshToken,
-    getCurrentUser,
-    getLastError
+    getCurrentUser
   };
 })();
 

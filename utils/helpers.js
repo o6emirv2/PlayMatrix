@@ -1,8 +1,10 @@
+// utils/helpers.js
 'use strict';
 
 const crypto = require('crypto');
 const { USERNAME_BAD_WORD_PATTERNS } = require('../config/constants');
 
+// XSS koruması (Opsiyonel ama güvenlik için önemli)
 let xss = null;
 try {
   xss = require('xss');
@@ -10,6 +12,9 @@ try {
   console.warn("⚠️ 'xss' modülü bulunamadı. Güçlendirilmiş dahili sanitize katmanı kullanılacak.");
 }
 
+// ---------------------------------------------------------
+// TEMEL YARDIMCILAR
+// ---------------------------------------------------------
 const nowMs = () => Date.now();
 
 const safeNum = (v, d = 0) => {
@@ -36,6 +41,9 @@ function sha256Hex(input) {
   return crypto.createHash('sha256').update(String(input)).digest('hex');
 }
 
+// ---------------------------------------------------------
+// METİN TEMİZLEME VE GÜVENLİK (SANITIZE)
+// ---------------------------------------------------------
 const textSanitizer = xss
   ? new xss.FilterXSS({
       whiteList: {},
@@ -103,6 +111,9 @@ function sanitizePlainText(value, options = {}) {
 
 const cleanStr = (v, maxLen = 500) => sanitizePlainText(v, { maxLen });
 
+// ---------------------------------------------------------
+// KULLANICI ADI, KÜFÜR VE E-POSTA KONTROLLERİ
+// ---------------------------------------------------------
 const isDisposableEmail = (email) => {
   const e = String(email || '').trim().toLowerCase();
   const at = e.lastIndexOf('@');

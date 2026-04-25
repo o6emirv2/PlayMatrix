@@ -1,0 +1,4338 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
+<title>PlayMatrix - ONE BlackJack | Casino</title>
+<meta name="description" content="PlayMatrix VIP BlackJack ile gerçek casino ortamını yaşayın. %100 güvenli, donmasız, sunucu tabanlı profesyonel 21 oyunu. Hemen masaya oturun!">
+<meta name="keywords" content="blackjack, blackjack oyna, 21 oyunu, casino, playmatrix, vip casino, güvenli bahis, canlı blackjack, kart oyunu">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<meta name="theme-color" content="#0a0a0a">
+
+<meta property="og:locale" content="tr_TR">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PlayMatrix VIP BlackJack">
+<meta property="og:description" content="Gerçek kurallar, yüksek kazançlar ve kesintisiz VIP BlackJack heyecanı.">
+<meta property="og:site_name" content="PlayMatrix">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix VIP BlackJack">
+<meta name="twitter:description" content="Gerçek casino standartlarında 21 oyna. Şansını hemen dene!">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<script>
+if (window.history.replaceState) {
+    const hasQueryOrHash = !!(location.search || location.hash);
+    if (!hasQueryOrHash && location.pathname !== "/") {
+        window.history.replaceState(null, null, "/");
+    }
+}
+</script>
+
+<style>
+    :root {
+        --topbar-bg: #1a1c24;
+        --topbar-border: #2a2d3a;
+        --vip-orange: #F59E0B;
+        --vip-orange-light: #FBBF24;
+        --text-muted: #8E8E93;
+        --gold-main: #D4AF37;
+        --neon-red: #FF3366;
+        --theme-bg: #0a0a0c;
+        --table-felt: #151518;
+        --badge-yellow: #f4d03f;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    html, body {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: manipulation;
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: var(--theme-bg);
+        color: white;
+    }
+
+    #studioIntro {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at 50% 50%, #1a1a24 0%, #050505 100%);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.75s ease, visibility 0.75s ease;
+    }
+
+    .intro-logo {
+        text-align: center;
+        animation: breathe 2.4s infinite alternate;
+    }
+
+    .intro-pretitle {
+        color: var(--badge-yellow);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 5px;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        font-family: 'Orbitron';
+    }
+
+    .intro-logo h1 {
+        font-family: 'Orbitron';
+        font-weight: 900;
+        font-size: clamp(34px, 8vw, 54px);
+        letter-spacing: 3px;
+        color: #fff;
+        text-shadow: 0 8px 22px rgba(0,0,0,0.8);
+        line-height: 1.02;
+    }
+
+    .intro-logo h1 span {
+        display: inline-block;
+        margin-top: 6px;
+        color: var(--badge-yellow);
+        text-shadow: 0 0 22px rgba(244,208,63,0.3);
+    }
+
+    .intro-sub {
+        margin: 14px auto 0;
+        max-width: 360px;
+        color: #aaa;
+        font-size: 14px;
+        line-height: 1.55;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .loader-track {
+        width: min(74vw, 280px);
+        height: 4px;
+        background: #222;
+        margin-top: 32px;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .loader-fill {
+        height: 100%;
+        width: 0%;
+        background: var(--badge-yellow);
+        transition: width 0.1s linear;
+        box-shadow: 0 0 15px rgba(244,208,63,0.5);
+    }
+
+    .btn-intro-start {
+        display: none;
+        margin-top: 28px;
+        padding: 15px 40px;
+        background: var(--badge-yellow);
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        font-weight: 900;
+        font-size: 15px;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-family: 'Orbitron';
+        transition: 0.2s;
+        letter-spacing: 1px;
+    }
+
+    .btn-intro-start:active {
+        transform: scale(0.96);
+    }
+
+    @keyframes breathe {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-5px); }
+    }
+
+    .top-bar-full {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: calc(75px + env(safe-area-inset-top));
+        padding-top: env(safe-area-inset-top);
+        background: var(--topbar-bg);
+        border-bottom: 1px solid var(--topbar-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        z-index: 4000;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.6);
+        gap: 15px;
+    }
+
+    .vip-section {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+        max-width: 600px;
+    }
+
+    .vip-shield-wrap {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        background: #2b2e38;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(255,255,255,0.08);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        flex-shrink: 0;
+    }
+
+    .vip-shield-wrap i {
+        color: var(--vip-orange);
+        font-size: 20px;
+    }
+
+    .vip-shield-badge {
+        position: absolute;
+        top: -2px;
+        right: -4px;
+        background: #111;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 900;
+        padding: 2px 5px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .vip-stats-area {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .stat-row-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stat-label {
+        background: rgba(255,255,255,0.1);
+        padding: 4px 8px;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .stat-balance {
+        color: #fff;
+        font-family: 'Orbitron', monospace;
+        font-size: 14px;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stat-balance span {
+        color: #A0A5B5;
+        font-size: 11px;
+        margin-right: 4px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .stat-row-bottom {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .stat-lvl-text {
+        color: #E2E8F0;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .stat-bar-bg {
+        flex: 1;
+        height: 12px;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .stat-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: repeating-linear-gradient(-45deg, var(--vip-orange-light), var(--vip-orange-light) 8px, var(--vip-orange) 8px, var(--vip-orange) 16px);
+        border-radius: 12px;
+        transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .stat-pct {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        white-space: nowrap;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .action-icon-btn {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.08);
+        background: rgba(255,255,255,0.03);
+        color: var(--text-muted);
+        cursor: pointer;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+
+    .action-icon-btn:hover {
+        background: rgba(212,175,55,0.1);
+        color: var(--gold-main);
+        border-color: rgba(212,175,55,0.3);
+    }
+
+    .action-icon-btn.red:hover {
+        background: rgba(255,51,102,0.1);
+        color: var(--neon-red);
+        border-color: rgba(255,51,102,0.3);
+    }
+
+    @media (max-width: 480px) {
+        .top-bar-full { padding: 0 10px; gap: 10px; }
+        .vip-shield-wrap { width: 38px; height: 38px; }
+        .vip-shield-wrap i { font-size: 16px; }
+        .stat-balance { font-size: 13px; }
+        .stat-lvl-text { font-size: 10px; }
+        .stat-pct { font-size: 10px; }
+        .action-icon-btn { width: 34px; height: 34px; font-size: 14px; }
+    }
+
+    .game-container {
+        position: absolute;
+        top: calc(75px + env(safe-area-inset-top));
+        bottom: 0;
+        left: 0;
+        width: 100vw;
+        overflow: hidden;
+        z-index: 1;
+        background: radial-gradient(circle at 50% 10%, #202026 0%, #0a0a0c 80%);
+    }
+
+    
+.table-surface {
+    position: absolute;
+    bottom: -10vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160vw;
+    height: 85vh;
+    border-radius: 50% 50% 0 0 / 120px 120px 0 0;
+    background:
+        radial-gradient(circle at 50% 25%, rgba(255,255,255,0.05) 0%, transparent 60%),
+        radial-gradient(circle at 50% 10%, #2a2a35 0%, #0a0a0c 80%),
+        url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.04"/%3E%3C/svg%3E');
+    border-top: 5px solid #33333b;
+    box-shadow:
+        inset 0 40px 100px rgba(0,0,0,0.9),
+        inset 0 2px 0 rgba(255,255,255,0.1),
+        0 -15px 50px rgba(0,0,0,0.9);
+    z-index: 0;
+}
+
+
+    .dealer-title {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 12px;
+        letter-spacing: 8px;
+        font-weight: 800;
+        color: var(--badge-yellow);
+        text-shadow: 0 2px 4px #000;
+        font-family: 'Orbitron', sans-serif;
+        opacity: 0.9;
+        z-index: 5;
+        white-space: nowrap;
+    }
+
+    .shoe-area, .discard-area {
+        position: absolute;
+        top: 12%;
+        z-index: 5;
+        width: 60px;
+        height: 86px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 6px;
+        box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.6);
+        backdrop-filter: blur(2px);
+    }
+
+    .shoe-area { right: 5%; transform: rotate(-20deg); }
+    .discard-area { left: 5%; transform: rotate(20deg); }
+
+    .shoe-area::after {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 4px;
+        background: url('./cards/back.svg') center/cover;
+        opacity: 0.95;
+        box-shadow: -2px 2px 0 rgba(200,200,200,0.1), -4px 4px 0 rgba(150,150,150,0.05);
+    }
+
+    .discard-area::after {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 4px;
+        background: url('./cards/back.svg') center/cover;
+        opacity: 0.2;
+        filter: grayscale(1) brightness(0.5);
+        box-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+    }
+
+    .table-texts {
+        position: absolute;
+        top: 38%;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10%;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.4;
+    }
+
+    .table-text {
+        font-size: 11px;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.6;
+        color: #fff;
+        font-style: italic;
+        text-shadow: 0 2px 4px #000;
+    }
+
+    .betting-ring-container {
+        position: absolute;
+        top: 62.5%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        z-index: 5;
+    }
+
+    .main-ring {
+        width: 80px;
+        height: 80px;
+        border: 2px dashed rgba(255,255,255,0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .main-ring::after {
+        content: "";
+        width: 64px;
+        height: 64px;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 50%;
+        position: absolute;
+        pointer-events: none;
+    }
+
+    .side-bet-ring {
+        width: 46px;
+        height: 46px;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        font-size: 7px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.6);
+        text-align: center;
+        line-height: 1.2;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .side-bet-ring:active {
+        background: rgba(255,255,255,0.1);
+        transform: scale(0.9);
+    }
+
+    .table-chip {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 10px;
+        border: 3px dashed rgba(255,255,255,0.6);
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 0 5px 12px rgba(0,0,0,0.5);
+        font-family: 'Inter';
+        text-shadow: 1px 1px 2px #000;
+        color: #fff;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        pointer-events: none;
+        display: none;
+    }
+
+    .side-bet-ring .table-chip {
+        width: 34px;
+        height: 34px;
+        font-size: 8px;
+        border-width: 2px;
+    }
+
+    .table-chip::before {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.25);
+        pointer-events: none;
+    }
+
+    .game-area {
+        position: absolute;
+        top: 15%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .hand-box {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        min-width: 140px;
+        margin-bottom: 5px;
+    }
+
+    .score-badge {
+        background: var(--badge-yellow);
+        color: #000;
+        padding: 5px 8px;
+        border-radius: 5px;
+        font-size: 15px;
+        font-weight: 900;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 2px 3px 8px rgba(0,0,0,0.8);
+        position: absolute;
+        left: -45px;
+        z-index: 20;
+        min-width: 30px;
+        text-align: center;
+        transition: 0.3s ease;
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    .score-badge.visible {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .cards-wrapper {
+        --card-width: 66px;
+        --card-height: 96px;
+        --card-overlap: 45px;
+        display: inline-flex;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        perspective: 1000px;
+        position: relative;
+        z-index: 2;
+        isolation: isolate;
+    }
+
+    
+.card-3d {
+    width: var(--card-width);
+    height: var(--card-height);
+    position: relative;
+    flex: 0 0 auto;
+    margin-left: calc(var(--card-overlap) * -1);
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-in, filter 0.45s;
+    transform-style: preserve-3d;
+    filter: drop-shadow(15px 25px 15px rgba(0,0,0,0.6));
+}
+
+
+    .card-3d:first-child { margin-left: 0; }
+
+    .card-3d[style*="translate(0px, 0px)"] {
+        filter: drop-shadow(-3px 5px 8px rgba(0,0,0,0.8));
+    }
+
+    
+.real-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    object-fit: cover;
+    backface-visibility: hidden;
+    background: #fff;
+    border: 1px solid rgba(220,220,220,0.4);
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.2);
+}
+
+
+    .hands-container {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 30px;
+        width: 100%;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .action-area {
+        position: absolute;
+        top: 73.5%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 90%;
+        max-width: 400px;
+        z-index: 50;
+    }
+
+    .timer-circle {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: conic-gradient(var(--neon-red) var(--p, 100%), rgba(255,255,255,0.05) 0);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+        transition: background 1s linear;
+    }
+
+    .timer-circle::before {
+        content: attr(data-time);
+        position: absolute;
+        width: 44px;
+        height: 44px;
+        background: #111;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 900;
+        color: #fff;
+        font-family: 'Inter';
+    }
+
+    .controls {
+        display: none;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    
+.btn {
+    flex: 1;
+    background: linear-gradient(180deg, rgba(40,40,45,0.95), rgba(15,15,18,0.95));
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #fff;
+    padding: 15px 10px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 8px 20px rgba(0,0,0,0.6);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(5px);
+    font-family: 'Inter';
+    letter-spacing: 1px;
+}
+
+
+    .btn:hover:not(:disabled) {
+        border-color: var(--badge-yellow);
+        color: var(--badge-yellow);
+        transform: translateY(-3px);
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 12px 25px rgba(244,208,63,0.3);
+    }
+
+    .btn:active:not(:disabled) {
+        transform: translateY(2px);
+        box-shadow: inset 0 4px 8px rgba(0,0,0,0.8);
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #dealBtn {
+        width: 100%;
+        flex: none;
+        font-size: 14px;
+        padding: 16px;
+        background: rgba(15,15,18,0.95);
+        color: rgba(255,255,255,0.7);
+        display: block;
+    }
+
+    #dealBtn:not(:disabled) {
+        color: #fff;
+        background: rgba(30,30,35,0.95);
+        border-color: rgba(255,255,255,0.3);
+    }
+
+    #hitBtn {
+        animation: pulseHit 2s infinite;
+    }
+
+    @keyframes pulseHit {
+        0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); border-color: rgba(46,204,113,0.5); }
+        70% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); border-color: rgba(255,255,255,0.1); }
+        100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+    }
+
+    .chips-wrapper {
+        position: absolute;
+        bottom: calc(75px + env(safe-area-inset-bottom));
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        z-index: 60;
+        pointer-events: none;
+    }
+
+    .chips-area {
+        display: inline-flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+        max-width: 100vw;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+        pointer-events: auto;
+        cursor: grab;
+    }
+
+    .chips-area.dragging { cursor: grabbing; }
+    .chips-area::-webkit-scrollbar { display: none; }
+
+    .chip {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 11px;
+        cursor: pointer;
+        border: 3px dashed rgba(255,255,255,0.6);
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.8), 0 5px 12px rgba(0,0,0,0.5);
+        transition: transform 0.1s;
+        font-family: 'Inter';
+        text-shadow: 1px 1px 2px #000;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .chip.selected {
+        border-color: var(--badge-yellow);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(244,208,63,0.3);
+    }
+
+    .chip::before {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.25);
+        pointer-events: none;
+    }
+
+    .chip:active { transform: scale(0.85); }
+
+    .c1k { background: radial-gradient(circle, #888 30%, #333 90%); }
+    .c3k { background: radial-gradient(circle, #27ae60 30%, #145a32 90%); }
+    .c5k { background: radial-gradient(circle, #c0392b 30%, #641e16 90%); }
+    .c15k { background: radial-gradient(circle, #2980b9 30%, #154360 90%); }
+    .c20k { background: radial-gradient(circle, #8e44ad 30%, #4a235a 90%); }
+    .c50k { background: radial-gradient(circle, #2c3e50 30%, #000 90%); color: var(--badge-yellow); border-color: var(--badge-yellow); }
+    .c200k { background: radial-gradient(circle, #d35400 30%, #7e3300 90%); }
+    .c500k { background: radial-gradient(circle, #16a085 30%, #0d6050 90%); }
+
+    .bottom-hud {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: calc(75px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.7));
+        border-top: 1px solid rgba(255,255,255,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-left: 15px;
+        padding-right: 15px;
+        z-index: 4001;
+        isolation: isolate;
+    }
+
+    .hud-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .hud-texts {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .hud-texts.right { text-align: right; }
+
+    .hud-label {
+        font-size: 10px;
+        color: rgba(255,255,255,0.5);
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+
+    .hud-val {
+        font-size: 15px;
+        color: #fff;
+        font-weight: 900;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .hud-val span.curr {
+        font-size: 11px;
+        color: var(--badge-yellow);
+        font-family: 'Inter';
+    }
+
+    .circle-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: 0.15s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        position: relative;
+        z-index: 4002;
+        pointer-events: auto;
+    }
+
+    .circle-btn:active {
+        background: rgba(255,255,255,0.2);
+        transform: scale(0.9);
+    }
+
+    .fullscreen-menu {
+        position: fixed;
+        inset: 0;
+        background: #111;
+        z-index: 1000010;
+        display: none;
+        flex-direction: column;
+        transition: transform 0.3s ease;
+        transform: translateY(100%);
+        pointer-events: none;
+    }
+
+    .fullscreen-menu.open {
+        transform: translateY(0);
+        display: flex;
+        pointer-events: auto;
+    }
+
+    .fs-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        background: #151515;
+    }
+
+    .fs-header .fs-title {
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    .fs-header i {
+        font-size: 20px;
+        color: #fff;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        padding: 40px 20px;
+    }
+
+    .menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .menu-item .icon-wrap {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2px solid var(--badge-yellow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #fff;
+        transition: 0.2s;
+    }
+
+    .menu-item:active .icon-wrap {
+        background: rgba(244,208,63,0.2);
+        transform: scale(0.9);
+    }
+
+    .menu-item span {
+        font-size: 12px;
+        font-weight: 600;
+        color: #ddd;
+    }
+
+    .history-list {
+        padding: 15px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .history-item {
+        background: #181818;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+
+    .history-head {
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ccc;
+    }
+
+    .history-head i {
+        font-size: 10px;
+        margin-right: 10px;
+        transition: 0.3s;
+    }
+
+    .history-head.active i { transform: rotate(90deg); }
+    .history-head .h-amt { color: #fff; }
+
+    .history-body {
+        padding: 0 15px 15px 35px;
+        display: none;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        margin-top: 5px;
+        padding-top: 15px;
+    }
+
+    .history-item.open .history-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .h-info {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .h-info span {
+        font-size: 11px;
+        color: #888;
+        font-weight: 500;
+        display: block;
+        margin-top: 4px;
+    }
+
+    .h-totals {
+        text-align: right;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .h-totals .negative {
+        color: #fff;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .h-totals .win {
+        color: #2ecc71;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .h-totals .sub {
+        font-size: 11px;
+        color: #888;
+        font-weight: 500;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .modal-overlay.show {
+        opacity: 1;
+        display: flex;
+    }
+
+    .modal-card {
+        background: #111;
+        border: 1px solid #333;
+        width: 90%;
+        max-width: 340px;
+        border-radius: 16px;
+        padding: 25px;
+        transform: scale(0.9);
+        opacity: 0;
+        transition: 0.3s;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    }
+
+    .modal-overlay.show .modal-card {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    .modal-icon {
+        font-size: 45px;
+        margin-bottom: 12px;
+    }
+
+    .modal-card h3 {
+        color: #fff;
+        font-size: 18px;
+        font-weight: 900;
+        margin-bottom: 10px;
+    }
+
+    .modal-card p {
+        font-size: 13px;
+        color: #aaa;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        text-align: left;
+        background: #0a0a0a;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .modal-close {
+        background: var(--badge-yellow);
+        color: #000;
+        border: none;
+        width: 100%;
+        padding: 14px;
+        border-radius: 8px;
+        font-weight: 900;
+        font-size: 14px;
+        cursor: pointer;
+        text-transform: uppercase;
+    }
+
+    
+.repeat-bet-btn {
+    min-width: 170px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: linear-gradient(180deg, rgba(34,34,38,0.96), rgba(12,12,14,0.96));
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .8px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 20px rgba(0,0,0,.45);
+    text-transform: uppercase;
+}
+
+.repeat-bet-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.repeat-bet-btn:not(:disabled):active {
+    transform: translateY(1px) scale(.98);
+}
+
+#ui-insurance-text {
+    display: none;
+    font-family:'Orbitron', sans-serif;
+    font-size: 20px;
+    color:#f1c40f;
+    text-shadow:0 0 15px #f1c40f;
+    font-weight:900;
+    margin-bottom:15px;
+    animation: pulse 1s infinite;
+}
+
+.support-card {
+    width: min(92vw, 420px);
+    border-radius: 22px;
+    padding: 22px;
+    background: linear-gradient(180deg, rgba(18,18,22,0.98), rgba(8,8,10,0.98));
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06);
+    position: relative;
+    color: #fff;
+}
+
+.support-head {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+}
+
+.support-title-wrap h3 {
+    margin:0;
+    font-size:22px;
+    font-weight:900;
+    letter-spacing:.4px;
+}
+
+.support-title-wrap p {
+    margin:6px 0 0;
+    font-size:12px;
+    line-height:1.5;
+    color:rgba(255,255,255,0.68);
+    background:none;
+    padding:0;
+}
+
+.support-close-btn {
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+}
+
+.support-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.support-field, .support-field-full {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:10px;
+}
+
+.support-field-full { margin-bottom:12px; }
+
+.support-label {
+    font-size:11px;
+    color:rgba(255,255,255,0.64);
+    font-weight:800;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+}
+
+.support-input, .support-select, .support-textarea {
+    width:100%;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.04);
+    color:#fff;
+    padding:13px 14px;
+    font-size:14px;
+    outline:none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.support-select option { color:#111; }
+
+.support-input:focus, .support-select:focus, .support-textarea:focus {
+    border-color: rgba(244,208,63,0.6);
+    box-shadow: 0 0 0 3px rgba(244,208,63,0.12);
+}
+
+.support-textarea {
+    min-height: 120px;
+    resize: none;
+}
+
+.support-helper {
+    min-height:18px;
+    text-align:center;
+    font-size:12px;
+    font-weight:700;
+    margin:4px 0 12px;
+    color:#9aa0a6;
+}
+
+.support-helper.error { color:#ff6b6b; }
+.support-helper.success { color:#2ecc71; }
+
+.support-send-btn {
+    width:100%;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(180deg, #ffe56b, #f4d03f);
+    color:#111;
+    padding:15px 16px;
+    font-size:15px;
+    font-weight:900;
+    letter-spacing:.8px;
+    text-transform:uppercase;
+    box-shadow: 0 12px 24px rgba(244,208,63,0.22);
+}
+
+.support-send-btn:disabled { opacity:.6; }
+
+.hand-won {
+    filter: drop-shadow(0 0 25px rgba(244, 208, 63, 0.8));
+    transform: scale(1.05);
+    transition: all 0.5s ease;
+    z-index: 50;
+}
+.hand-lost {
+    opacity: 0.4;
+    filter: grayscale(0.8);
+    transition: all 0.5s ease;
+}
+
+
+
+    .hands-container.has-active .hand-box:not(.active) {
+        opacity: 0.5;
+        transform: scale(0.96);
+        filter: saturate(0.7) brightness(0.78);
+    }
+
+    .hand-box.active {
+        transform: scale(1.04);
+        filter: drop-shadow(0 0 28px rgba(244,208,63,0.28));
+        z-index: 25;
+    }
+
+    .table-surface.focus-mode::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(circle at var(--spot-x, 50%) var(--spot-y, 47%), rgba(244,208,63,0.22) 0%, rgba(244,208,63,0.10) 16%, rgba(0,0,0,0) 46%);
+        pointer-events: none;
+        mix-blend-mode: screen;
+    }
+
+    .table-chip.stacked-chip {
+        width: 62px;
+        height: 62px;
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        overflow: visible;
+    }
+
+    .table-chip.stacked-chip::before {
+        display: none;
+    }
+
+    .chip-stack-display {
+        position: absolute;
+        inset: 0;
+    }
+
+    .chip-stack-piece {
+        position: absolute;
+        left: 50%;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 2px dashed rgba(255,255,255,0.55);
+        box-shadow: inset 0 0 8px rgba(0,0,0,0.75), 0 4px 10px rgba(0,0,0,0.45);
+        transform: translateX(-50%);
+    }
+
+    .chip-stack-total {
+        position: absolute;
+        left: 50%;
+        bottom: -10px;
+        transform: translateX(-50%);
+        min-width: 54px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(8,8,10,0.86);
+        border: 1px solid rgba(255,255,255,0.12);
+        font-size: 9px;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: 0.3px;
+        text-align: center;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+    }
+
+    .c10k { background: radial-gradient(circle, #1f7a8c 30%, #0e3b43 90%); }
+
+    .history-body {
+        flex-direction: column;
+        gap: 14px;
+        align-items: stretch !important;
+    }
+
+    .history-topline {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .history-cards-block {
+        display: grid;
+        gap: 10px;
+    }
+
+    .history-hand-row {
+        display: grid;
+        gap: 6px;
+    }
+
+    .history-hand-label {
+        font-size: 11px;
+        color: #a6adbb;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+
+    .history-cards-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .history-mini-card {
+        width: 28px;
+        height: 40px;
+        border-radius: 5px;
+        object-fit: cover;
+        border: 1px solid rgba(255,255,255,0.18);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.35);
+        background: #fff;
+    }
+
+    .history-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .history-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #d7dde8;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .verify-toggle-btn {
+        width: 100%;
+        border: 1px solid rgba(244,208,63,0.24);
+        background: rgba(244,208,63,0.08);
+        color: var(--badge-yellow);
+        border-radius: 10px;
+        padding: 11px 14px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        cursor: pointer;
+    }
+
+    .verify-pane {
+        display: none;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        padding-top: 12px;
+        gap: 8px;
+        color: #c4c9d4;
+        font-size: 12px;
+        line-height: 1.55;
+        word-break: break-word;
+    }
+
+    .history-item.verify-open .verify-pane {
+        display: grid;
+    }
+
+    .verify-code {
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-family: 'Orbitron', monospace;
+        font-size: 10px;
+        color: #f5f7fb;
+    }
+
+    .support-context {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #aab2bf;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+        .table-surface { width: 200vw; height: 75vh; bottom: -5vh; border-radius: 50% 50% 0 0 / 100px 100px 0 0; }
+        .table-texts { top: 35%; padding: 0 5%; }
+        .betting-ring-container { top: 60.5%; }
+        .hands-container { top: 35%; }
+        .action-area { top: 72%; }
+    }
+
+    @media (max-width: 480px) {
+        .shoe-area, .discard-area { width: 50px; height: 72px; top: 16%; }
+        .main-ring { width: 70px; height: 70px; }
+        .main-ring::after { width: 56px; height: 56px; }
+        .side-bet-ring { width: 40px; height: 40px; font-size: 6px; }
+        .score-badge { font-size: 13px; padding: 4px 6px; left: -38px; min-width: 26px; }
+        .cards-wrapper { --card-width: 56px; --card-height: 80px; --card-overlap: 35px; }
+        .hand-box { min-width: 100px; }
+        .hands-container { top: 36%; }
+    }
+</style>
+  <link rel="stylesheet" href="/premium-phase5.css" />
+  <script src="/premium-phase5.js" defer></script>
+</head>
+<body>
+
+<div id="studioIntro">
+    <div class="intro-logo">
+        <div class="intro-pretitle">PLAYMATRIX CASINO</div>
+        <h1>ONE<br><span>BLACKJACK</span></h1>
+        <div class="intro-sub">Kusursuz masa dizaynı ve gerçekçi oyun deneyimi.</div>
+    </div>
+    <div class="loader-track" id="loaderTrack"><div class="loader-fill" id="loaderFill"></div></div>
+    <button id="btnEnterGame" type="button" class="btn-intro-start">MASAYA GEÇ</button>
+</div>
+
+<div id="matrixModal" class="modal-overlay">
+    <div class="modal-card">
+        <div id="matrixModalIcon" class="modal-icon"></div>
+        <h3 id="matrixModalTitle">Bilgi</h3>
+        <p id="matrixModalDesc">Mesaj içeriği</p>
+        <button type="button" class="modal-close" onclick="closeMatrixModal()">TAMAM</button>
+    </div>
+</div>
+
+<div id="mainMenu" class="fullscreen-menu">
+    <div class="fs-header">
+        <div style="width:20px"></div>
+        <span class="fs-title">MENÜ</span>
+        <i class="fa-solid fa-xmark" onclick="closeMainMenu()"></i>
+    </div>
+    <div class="menu-grid">
+        <div class="menu-item" onclick="location.href='/'">
+            <div class="icon-wrap"><i class="fa-solid fa-house"></i></div>
+            <span>Lobi</span>
+        </div>
+        <div class="menu-item" onclick="openHistoryMenu()">
+            <div class="icon-wrap"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <span>Geçmiş</span>
+        </div>
+        <div class="menu-item" onclick="openSupportModal()">
+            <div class="icon-wrap"><i class="fa-solid fa-headset"></i></div>
+            <span>Destek</span>
+        </div>
+    </div>
+</div>
+
+<div id="historyMenu" class="fullscreen-menu">
+    <div class="fs-header">
+        <i class="fa-solid fa-chevron-left" onclick="backToMainMenu()"></i>
+        <span class="fs-title">GEÇMİŞ</span>
+        <i class="fa-solid fa-xmark" onclick="closeAllMenus()"></i>
+    </div>
+    <div class="history-list" id="historyListContainer">
+        <div style="text-align:center; color:#888; padding:20px;">Yükleniyor...</div>
+    </div>
+</div>
+
+
+<div id="supportModal" class="modal-overlay" aria-hidden="true">
+    <div class="support-card">
+        <div class="support-head">
+            <div class="support-title-wrap">
+                <h3>Canlı Destek</h3>
+                <p>Talebinizi eksiksiz iletin. Oyun, bahis veya ödeme kaynaklı sorunlarda daha hızlı dönüş için ilgili bilgileri doldurun.</p>
+            </div>
+            <button type="button" class="support-close-btn" onclick="closeSupportModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="support-grid">
+            <label class="support-field">
+                <span class="support-label">Kategori</span>
+                <select id="supportCategory" class="support-select">
+                    <option value="Genel">Genel</option>
+                    <option value="Blackjack">Blackjack</option>
+                    <option value="Bahis">Bahis</option>
+                    <option value="Ödeme">Ödeme</option>
+                    <option value="Teknik">Teknik</option>
+                </select>
+            </label>
+            <label class="support-field">
+                <span class="support-label">Öncelik</span>
+                <select id="supportPriority" class="support-select">
+                    <option value="Normal">Normal</option>
+                    <option value="Yüksek">Yüksek</option>
+                    <option value="Acil">Acil</option>
+                </select>
+            </label>
+        </div>
+        <div class="support-grid">
+            <label class="support-field">
+                <span class="support-label">E-posta</span>
+                <input id="supportEmail" class="support-input" type="email" placeholder="otomatik doldurulur">
+            </label>
+            <label class="support-field">
+                <span class="support-label">Round ID</span>
+                <input id="supportRoundId" class="support-input" type="text" placeholder="isteğe bağlı">
+            </label>
+        </div>
+        <label class="support-field-full">
+            <span class="support-label">Mesaj</span>
+            <textarea id="supportMsg" class="support-textarea" rows="5" placeholder="Sorununuzu ayrıntılı şekilde yazın..."></textarea>
+        </label>
+        <div id="supportHelper" class="support-helper"></div>
+        <div id="supportContext" class="support-context"></div>
+        <button type="button" id="supportSendBtn" class="support-send-btn">Talebi Gönder</button>
+    </div>
+</div>
+
+<div id="bigWinOverlay">
+    <div class="big-win-title">BÜYÜK KAZANÇ</div>
+    <div id="bigWinMult" style="color: #fff; font-size: 26px; font-weight: 800; margin-bottom: 15px; letter-spacing: 2px;">x0 ÇARPAN!</div>
+    <div id="bigWinAmount" class="big-win-amount">0 MC</div>
+</div>
+
+<header class="top-bar-full">
+    <div class="vip-section">
+        <div class="vip-shield-wrap">
+            <i class="fa-solid fa-crown"></i>
+            <div class="vip-shield-badge" id="uiVipBadge">1</div>
+        </div>
+        <div class="vip-stats-area">
+            <div class="stat-row-top">
+                <div class="stat-label">(MC) BAKİYE</div>
+                <div class="stat-balance"><span>MC</span> <span id="ui-balance">0.00</span></div>
+            </div>
+            <div class="stat-row-bottom">
+                <div class="stat-lvl-text">Vip Seviyeniz</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" id="uiVipBar"></div>
+                </div>
+                <div class="stat-pct" id="uiVipPct">0%</div>
+            </div>
+        </div>
+    </div>
+    <div class="top-actions">
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-power-off"></i></a>
+    </div>
+</header>
+
+<main class="game-container">
+    <div class="dealer-title">LIVE DEALER STUDIO</div>
+    <div class="table-surface"></div>
+    <div class="card-shoe-container shoe-area"></div>
+    <div class="discard-area"></div>
+
+    <div class="table-texts">
+        <div class="table-text">Blackjack 2'ye 3 öder<br>Oyuncu 6<br>kartla kazanır</div>
+        <div class="table-text">Krupiye 16'ya kadar<br>kart çeker<br>ve tüm 17'lerde kalır</div>
+    </div>
+
+    <div class="betting-ring-container">
+        <div class="side-bet-ring" onclick="placeBet('bust')">
+            BUST<br>BONUS
+            <div id="chip_bust" class="table-chip"></div>
+        </div>
+        <div class="side-bet-ring" onclick="placeBet('213')">
+            21+3
+            <div id="chip_213" class="table-chip"></div>
+        </div>
+        <div class="main-ring" onclick="placeBet('main')">
+            <div id="chip_main" class="table-chip"></div>
+        </div>
+        <div class="side-bet-ring" onclick="placeBet('perfect')">
+            PERFECT<br>PAIRS
+            <div id="chip_perfect" class="table-chip"></div>
+        </div>
+        <div class="side-bet-ring" onclick="placeBet('crazy7')">
+            CRAZY<br>7
+            <div id="chip_crazy7" class="table-chip"></div>
+        </div>
+    </div>
+
+    <div class="game-area">
+        <div class="hand-box" id="dealer-hand-box">
+            <div class="score-badge" id="ui-dealerScore">0</div>
+            <div id="ui-dealerCards" class="cards-wrapper"></div>
+        </div>
+    </div>
+
+    <div class="hands-container" id="ui-playerHands"></div>
+
+    <div class="action-area">
+        <div id="ui-timer-wrap" class="timer-circle" data-time="10" style="--p:100%;"></div>
+        <div id="ui-insurance-text">SİGORTA İSTER MİSİNİZ?</div>
+
+        <div class="controls" id="controls-pregame" style="display:flex;">
+            <button id="dealBtn" type="button" class="btn" disabled>LÜTFEN BAHİS YERLEŞTİRİN</button>
+        </div>
+
+        <div class="controls" id="controls-main">
+            <button id="hitBtn" type="button" class="btn">ÇEK</button>
+            <button id="standBtn" type="button" class="btn">KAL</button>
+            <button id="doubleBtn" type="button" class="btn">2X</button>
+            <button id="splitBtn" type="button" class="btn">BÖL</button>
+            <button id="surrenderBtn" type="button" class="btn">PES</button>
+        </div>
+
+        <div class="controls" id="controls-ins">
+            <button id="insYesBtn" type="button" class="btn" style="color:#2ecc71; border-color:rgba(46,204,113,0.5);">SİGORTA AL</button>
+            <button id="insNoBtn" type="button" class="btn" style="color:#e74c3c; border-color:rgba(231,76,60,0.5);">GEÇ</button>
+        </div>
+    </div>
+
+    <div class="chips-wrapper" id="ui-chipsArea">
+        <div class="chips-area" id="chipSelector">
+            <div class="chip c1k selected" data-val="1000">1K</div>
+            <div class="chip c3k" data-val="3000">3K</div>
+            <div class="chip c5k" data-val="5000">5K</div>
+            <div class="chip c15k" data-val="15000">15K</div>
+            <div class="chip c20k" data-val="20000">20K</div>
+            <div class="chip c50k" data-val="50000">50K</div>
+            <div class="chip c200k" data-val="200000">200K</div>
+            <div class="chip c500k" data-val="500000">500K</div>
+        </div>
+    </div>
+
+    
+<div class="bottom-hud">
+    <div class="hud-section">
+        <button type="button" class="circle-btn" id="cancelBetBtn"><i class="fa-solid fa-rotate-left"></i></button>
+        <button type="button" class="repeat-bet-btn" id="repeatBetBtn"><i class="fa-solid fa-repeat"></i><span>Bahis Tekrarla</span></button>
+    </div>
+    <div class="hud-section">
+        <div class="hud-texts right">
+            <span class="hud-label">TOPLAM BAHİS</span>
+            <span class="hud-val"><span class="curr">MC</span> <span id="ui-bottom-betAmount">0</span></span>
+        </div>
+        <button type="button" class="circle-btn" id="menuBtn" aria-controls="mainMenu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
+    </div>
+</div>
+</main>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, getIdToken, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyC81Ah46_F2his90zedODoCk07vqsd3vVs",
+    authDomain: "playmatrix-b7df9.firebaseapp.com",
+    projectId: "playmatrix-b7df9",
+    storageBucket: "playmatrix-b7df9.firebasestorage.app",
+    messagingSenderId: "689686425310",
+    appId: "1:689686425310:web:01c9f797b437a770e19c4f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+window.__PM_RUNTIME = window.__PM_RUNTIME || {};
+window.__PM_RUNTIME.auth = auth;
+window.__PM_RUNTIME.signOut = signOut;
+window.__PM_RUNTIME.getIdToken = async (forceRefresh = false) => { if (!auth.currentUser) throw new Error('NO_USER'); return getIdToken(auth.currentUser, forceRefresh); };
+const API_URL = (() => {
+    const normalize = (value) => String(value || '').trim().replace(/\/+$/, '');
+    const runtimeBase = normalize(window.__PM_RUNTIME?.apiBase || window.__PLAYMATRIX_API_URL__ || '');
+    if (runtimeBase) return runtimeBase;
+    const metaBase = normalize(document.querySelector('meta[name="playmatrix-api-url"]')?.content || '');
+    if (metaBase) return metaBase;
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return "http://localhost:3000";
+    return normalize('https://emirhan-siye.onrender.com') || window.location.origin.replace(/\/+$/, '');
+})();
+window.__PM_RUNTIME = window.__PM_RUNTIME || {};
+window.__PM_RUNTIME.apiBase = API_URL;
+window.__PLAYMATRIX_API_URL__ = API_URL;
+
+const VIP_RP_TIERS = [
+    { level: 1, start: 0, end: 1000 },
+    { level: 2, start: 1000, end: 2500 },
+    { level: 3, start: 2500, end: 5000 },
+    { level: 4, start: 5000, end: 10000 },
+    { level: 5, start: 10000, end: 20000 },
+    { level: 6, start: 20000, end: 35000 },
+    { level: 7, start: 35000, end: 60000 },
+    { level: 8, start: 60000, end: 100000 },
+    { level: 9, start: 100000, end: 175000 },
+    { level: 10, start: 175000, end: 300000 },
+    { level: 11, start: 300000, end: Number.POSITIVE_INFINITY }
+];
+
+function calcVipPercentage(rp) {
+    const val = Math.max(0, Number(rp) || 0);
+    const tier = VIP_RP_TIERS.find((item) => val < item.end) || VIP_RP_TIERS[VIP_RP_TIERS.length - 1];
+    if (!Number.isFinite(tier.end)) return { pct: 100, level: tier.level };
+    const span = Math.max(1, tier.end - tier.start);
+    const pct = ((val - tier.start) / span) * 100;
+    return { pct: Math.min(Math.max(pct, 0), 100), level: tier.level };
+}
+
+document.addEventListener('dblclick', (event) => event.preventDefault(), { passive: false });
+
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300 && event.target.tagName !== 'BUTTON') {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, { passive: false });
+
+const elMatrixModal = document.getElementById('matrixModal');
+const elMatrixModalIcon = document.getElementById('matrixModalIcon');
+const elMatrixModalTitle = document.getElementById('matrixModalTitle');
+const elMatrixModalDesc = document.getElementById('matrixModalDesc');
+const elLoaderTrack = document.getElementById('loaderTrack');
+const elLoaderFill = document.getElementById('loaderFill');
+const elBtnEnterGame = document.getElementById('btnEnterGame');
+const elStudioIntro = document.getElementById('studioIntro');
+const elUiBalance = document.getElementById('ui-balance');
+const elUiBottomBalance = document.getElementById('ui-bottom-balance');
+const elRepeatBetBtn = document.getElementById('repeatBetBtn');
+const elUiBottomBetAmount = document.getElementById('ui-bottom-betAmount');
+const elDealBtn = document.getElementById('dealBtn');
+const elControlsPregame = document.getElementById('controls-pregame');
+const elControlsMain = document.getElementById('controls-main');
+const elControlsIns = document.getElementById('controls-ins');
+const elUiTimerWrap = document.getElementById('ui-timer-wrap');
+const elUiChipsArea = document.getElementById('ui-chipsArea');
+const elUiDealerCards = document.getElementById('ui-dealerCards');
+const elUiPlayerHands = document.getElementById('ui-playerHands');
+const elUiDealerScore = document.getElementById('ui-dealerScore');
+const elDoubleBtn = document.getElementById('doubleBtn');
+const elSplitBtn = document.getElementById('splitBtn');
+const elSurrenderBtn = document.getElementById('surrenderBtn');
+const chipsScroller = document.querySelector('.chips-area');
+const elSupportModal = document.getElementById('supportModal');
+const elSupportMsg = document.getElementById('supportMsg');
+const elSupportHelper = document.getElementById('supportHelper');
+const elSupportSendBtn = document.getElementById('supportSendBtn');
+const elSupportCategory = document.getElementById('supportCategory');
+const elSupportPriority = document.getElementById('supportPriority');
+const elSupportEmail = document.getElementById('supportEmail');
+const elSupportRoundId = document.getElementById('supportRoundId');
+const elSupportContext = document.getElementById('supportContext');
+const elInsuranceText = document.getElementById('ui-insurance-text');
+const elInsYesBtn = document.getElementById('insYesBtn');
+const elInsNoBtn = document.getElementById('insNoBtn');
+const elMenuBtn = document.getElementById('menuBtn');
+const elMainMenu = document.getElementById('mainMenu');
+const elHistoryMenu = document.getElementById('historyMenu');
+
+const REVEAL_DELAY_MS = 240;
+const REVEAL_FLIP_MS = 120;
+
+let userBalance = 0;
+let selectedChipVal = 1000;
+let bets = { main: 0, bust: 0, '213': 0, perfect: 0, crazy7: 0 };
+let totalBet = 0;
+let oldSeq = 0;
+let isWaitingServer = false;
+let isRevealing = false;
+let actionTimer = null;
+let timeLeft = 10;
+const maxTime = 10;
+let revealCycleId = 0;
+
+let audioCtx = null;
+let audioUnlocked = false;
+let lastConfirmedBets = null;
+let currentRoundId = '';
+let latestResolvedRoundId = '';
+let bjSocket = null;
+let bjSocketConnected = false;
+let lastProcessedStateFingerprint = '';
+let lastProcessedStateSeq = -1;
+let lastProcessedRoundFingerprint = '';
+let currentInsurancePromptMode = 'insurance';
+let balanceRefreshTimer = null;
+let balanceRefreshInFlight = false;
+let gameBooted = false;
+const sounds = {};
+const audioState = {
+    master: null,
+    fxBus: null,
+    uiBus: null,
+    ambienceBus: null,
+    compressor: null,
+    ambienceStarted: false,
+    ambienceElement: null,
+    ambienceElementSource: null,
+    ambienceGainNode: null,
+    hoverBound: false,
+    hoverThrottleTs: 0,
+    noiseBuffer: null
+};
+// DOSYALARIN SADECE SUNUCUDAN (LOCAL) ÇEKİLMESİ İÇİN ULTRA GÜVENLİ YAPI
+const AUDIO_LOCAL_ROOT = '/sfx/';
+const sfxManifest = Object.freeze({
+    chip: { files: ['chip.wav'], gain: 0.56, bus: 'ui', playbackRate: [0.975, 1.03] },
+    deal: { files: ['deal.wav'], gain: 0.82, bus: 'fx', playbackRate: [0.99, 1.03] },
+    slide: { files: ['slide.wav'], gain: 0.42, bus: 'fx', playbackRate: [0.98, 1.02] },
+    whoosh: { files: ['whoosh.wav'], gain: 0.24, bus: 'fx', playbackRate: [0.98, 1.04] },
+    win: { files: ['win.wav'], gain: 0.96, bus: 'fx', playbackRate: [1, 1] },
+    blackjack: { files: ['blackjack.wav'], gain: 1.0, bus: 'fx', playbackRate: [1, 1] },
+    bust: { files: ['bust.wav'], gain: 0.92, bus: 'fx', playbackRate: [1, 1] },
+    tick: { files: ['tick.wav'], gain: 0.18, bus: 'ui', playbackRate: [1, 1] },
+    push: { files: ['push.wav'], gain: 0.38, bus: 'fx', playbackRate: [1, 1] },
+    hover: { files: ['hover.wav'], gain: 0.12, bus: 'ui', playbackRate: [1, 1] },
+
+    // ARKA PLAN AMBİYANS SESİ (Kusursuz Loop Ayarı)
+    ambiance: { files: ['CasinoAmbiance.wav'], gain: 0.22, bus: 'ambience', playbackRate: [1, 1], loop: true },
+
+    // GELECEKTE EKLERSİN DİYE HAZIRLANMIŞ KRUPİYE (VOICEOVER) SESLERİ (İsteğe Bağlı)
+    voice_win: { files: ['voice_win.wav'], gain: 1.0, bus: 'ui', playbackRate: [1, 1] },
+    voice_bust: { files: ['voice_bust.wav'], gain: 1.0, bus: 'ui', playbackRate: [1, 1] },
+    voice_blackjack: { files: ['voice_blackjack.wav'], gain: 1.0, bus: 'ui', playbackRate: [1, 1] },
+    place_bets: { files: ['place_bets.wav'], gain: 1.0, bus: 'ui', playbackRate: [1, 1] }
+});
+
+function setMenuExpanded(isExpanded) {
+    if (elMenuBtn) {
+        elMenuBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    }
+}
+
+
+window.openMainMenu = () => {
+    if (!elMainMenu) return;
+    elMainMenu.classList.add('open');
+    if (elHistoryMenu) elHistoryMenu.classList.remove('open');
+    setMenuExpanded(true);
+};
+
+window.closeMainMenu = () => {
+    if (!elMainMenu) return;
+    elMainMenu.classList.remove('open');
+    setMenuExpanded(false);
+};
+
+window.openHistoryMenu = () => {
+    if (elMainMenu) elMainMenu.classList.remove('open');
+    if (elHistoryMenu) elHistoryMenu.classList.add('open');
+    setMenuExpanded(true);
+    loadHistory();
+};
+
+window.closeHistoryMenu = () => {
+    if (elHistoryMenu) elHistoryMenu.classList.remove('open');
+    setMenuExpanded(false);
+};
+
+window.backToMainMenu = () => {
+    if (elHistoryMenu) elHistoryMenu.classList.remove('open');
+    if (elMainMenu) elMainMenu.classList.add('open');
+    setMenuExpanded(true);
+};
+
+window.closeAllMenus = () => {
+    if (elHistoryMenu) elHistoryMenu.classList.remove('open');
+    if (elMainMenu) elMainMenu.classList.remove('open');
+    setMenuExpanded(false);
+};
+
+function setupMenuControls() {
+    if (setupMenuControls._bound) return;
+    setupMenuControls._bound = true;
+
+    if (elMenuBtn) {
+        elMenuBtn.style.zIndex = '9999';
+        elMenuBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (elMainMenu?.classList.contains('open')) window.closeMainMenu();
+            else window.openMainMenu();
+        }, { passive: false });
+    }
+
+    [elMainMenu, elHistoryMenu].filter(Boolean).forEach((menuEl) => {
+        menuEl.addEventListener('click', (event) => {
+            if (event.target === menuEl) window.closeAllMenus();
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') window.closeAllMenus();
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupMenuControls, { once: true });
+} else {
+    setupMenuControls();
+}
+window.toggleHistory = (element) => {
+    const parent = element.parentElement;
+    parent.classList.toggle('open');
+    element.classList.toggle('active');
+};
+
+window.toggleVerify = (button) => {
+    const item = button.closest('.history-item');
+    if (!item) return;
+    item.classList.toggle('verify-open');
+};
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatMc(value) {
+    return `MC ${Math.abs(Number(value) || 0).toLocaleString('tr-TR')}`;
+}
+
+function applyVipUserData(user = null) {
+    if (!user) return;
+    const rp = Number(user?.rp) || 0;
+    const vipData = calcVipPercentage(rp);
+    const bar = document.getElementById('uiVipBar');
+    const pct = document.getElementById('uiVipPct');
+    const badge = document.getElementById('uiVipBadge');
+    if (bar) bar.style.width = `${vipData.pct}%`;
+    if (pct) pct.innerText = `${vipData.pct.toFixed(1)}%`;
+    if (badge) badge.innerText = vipData.level;
+}
+
+function syncBalanceFromPayload(payload = null) {
+    if (!payload || !Number.isFinite(Number(payload?.balance))) return false;
+    userBalance = Math.max(0, Math.floor(Number(payload.balance) || 0));
+    updateUIBalances();
+    if (payload?.user) applyVipUserData(payload.user);
+    return true;
+}
+
+function scheduleBalanceRefresh(delay = 120) {
+    if (balanceRefreshTimer) {
+        clearTimeout(balanceRefreshTimer);
+    }
+    balanceRefreshTimer = setTimeout(async () => {
+        balanceRefreshTimer = null;
+        if (balanceRefreshInFlight || !auth.currentUser) return;
+        balanceRefreshInFlight = true;
+        try {
+            await fetchUserBalance();
+        } finally {
+            balanceRefreshInFlight = false;
+        }
+    }, Math.max(0, Number(delay) || 0));
+}
+
+async function requestBlackjackSync(reason = 'manual') {
+    if (!auth.currentUser) return null;
+    try {
+        const res = await fetchAPI('/api/bj/sync', 'GET');
+        syncBalanceFromPayload(res);
+        if (res?.state) handleStateSync(res.state);
+        else if (res?.state === null && oldSeq > 0 && !isWaitingServer && !isRevealing) clearBoard();
+        return res;
+    } catch (error) {
+        console.error(`Blackjack sync hatası (${reason}):`, error);
+        return null;
+    }
+}
+
+function getOrCreateClientSeed() {
+    try {
+        let seed = localStorage.getItem('pm_bj_client_seed');
+        if (!seed) {
+            seed = (globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`)
+                .replace(/-/g, '')
+                .slice(0, 24)
+                .toUpperCase();
+            localStorage.setItem('pm_bj_client_seed', seed);
+        }
+        return seed;
+    } catch {
+        return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`.slice(0, 24).toUpperCase();
+    }
+}
+
+function summarizeStateForFingerprint(state) {
+    return {
+        roundId: state?.roundId || '',
+        seq: Number(state?.seq) || 0,
+        gameState: state?.gameState || '',
+        dealerHidden: !!state?.dealerHidden,
+        currentHandIdx: Number(state?.currentHandIdx) || 0,
+        insuranceOffered: !!state?.insuranceOffered,
+        evenMoneyOffered: !!state?.evenMoneyOffered,
+        totalStake: Number(state?.totalStake) || 0,
+        message: state?.message || '',
+        result: state?.result || null,
+        dealer: (state?.dealer || []).map((card) => card ? `${card.suit || ''}${card.value || 0}` : 'X'),
+        hands: (state?.hands || []).map((hand) => ({
+            bet: Number(hand?.bet) || 0,
+            status: hand?.status || '',
+            doubled: !!hand?.doubled,
+            cards: (hand?.cards || []).map((card) => card ? `${card.suit || ''}${card.value || 0}` : 'X')
+        }))
+    };
+}
+
+function buildStateFingerprint(state) {
+    try {
+        return JSON.stringify(summarizeStateForFingerprint(state));
+    } catch {
+        return `${state?.roundId || ''}|${Number(state?.seq) || 0}|${state?.gameState || ''}`;
+    }
+}
+
+function isStaleStateSync(state) {
+    const incomingSeq = Number(state?.seq) || 0;
+    const incomingRound = String(state?.roundId || '');
+    if (!incomingSeq) return false;
+
+    if (incomingRound && currentRoundId && incomingRound === currentRoundId && incomingSeq < oldSeq) {
+        return true;
+    }
+
+    if (!incomingRound && !currentRoundId && incomingSeq < oldSeq) {
+        return true;
+    }
+
+    return false;
+}
+
+
+function applyInsurancePromptState(state) {
+    currentInsurancePromptMode = state?.evenMoneyOffered ? 'even_money' : 'insurance';
+    if (elInsuranceText) {
+        elInsuranceText.style.display = 'block';
+        elInsuranceText.textContent = currentInsurancePromptMode === 'even_money'
+            ? 'BİRE BİR (EVEN MONEY) ALMAK İSTER MİSİNİZ?'
+            : 'SİGORTA İSTER MİSİNİZ?';
+    }
+    if (elInsYesBtn) elInsYesBtn.textContent = currentInsurancePromptMode === 'even_money' ? 'BİRE BİR AL' : 'SİGORTA AL';
+    if (elInsNoBtn) elInsNoBtn.textContent = currentInsurancePromptMode === 'even_money' ? 'NORMAL OYNA' : 'GEÇ';
+}
+
+function resetInsurancePromptState() {
+    currentInsurancePromptMode = 'insurance';
+    if (elInsuranceText) {
+        elInsuranceText.textContent = 'SİGORTA İSTER MİSİNİZ?';
+        elInsuranceText.style.display = 'none';
+    }
+    if (elInsYesBtn) elInsYesBtn.textContent = 'SİGORTA AL';
+    if (elInsNoBtn) elInsNoBtn.textContent = 'GEÇ';
+}
+
+function getChipStackJitter(value, index) {
+    return ((Math.abs(Number(value) || 0) + (index * 17)) % 5) - 2;
+}
+
+function updateTableSpotlight(state) {
+    const table = document.querySelector('.table-surface');
+    if (!table) return;
+
+    if (state?.gameState !== 'playing') {
+        table.style.setProperty('--spot-x', '50%');
+        table.style.setProperty('--spot-y', '47%');
+        return;
+    }
+
+    const activeHand = document.querySelector('#ui-playerHands .hand-box.active');
+    if (!activeHand) {
+        table.style.setProperty('--spot-x', '50%');
+        table.style.setProperty('--spot-y', '47%');
+        return;
+    }
+
+    const tableRect = table.getBoundingClientRect();
+    const handRect = activeHand.getBoundingClientRect();
+    const centerX = handRect.left + (handRect.width / 2);
+    const focusY = handRect.top + (handRect.height * 0.4);
+    const xPct = Math.max(8, Math.min(92, ((centerX - tableRect.left) / Math.max(1, tableRect.width)) * 100));
+    const yPct = Math.max(18, Math.min(78, ((focusY - tableRect.top) / Math.max(1, tableRect.height)) * 100));
+
+    table.style.setProperty('--spot-x', `${xPct.toFixed(2)}%`);
+    table.style.setProperty('--spot-y', `${yPct.toFixed(2)}%`);
+}
+
+function renderHistoryCards(cards = []) {
+    if (!Array.isArray(cards) || cards.length === 0) return '<span class="history-pill">Kart verisi yok</span>';
+    return `<div class="history-cards-row">${cards.map((card) => `<img class="history-mini-card" src="${getCardImage(card)}" alt="card">`).join('')}</div>`;
+}
+
+function renderHistoryHands(hands = []) {
+    if (!Array.isArray(hands) || hands.length === 0) return '';
+    return hands.map((hand, index) => `
+        <div class="history-hand-row">
+            <div class="history-hand-label">Oyuncu Eli ${index + 1} · ${escapeHtml(hand?.status || 'playing')} · ${formatMc(hand?.bet || 0)}</div>
+            ${renderHistoryCards(hand?.cards || [])}
+        </div>`).join('');
+}
+
+function renderSideHitPills(hits = []) {
+    if (!Array.isArray(hits) || hits.length === 0) return '<span class="history-pill">Yan bahis isabeti yok</span>';
+    return hits.map((hit) => `<span class="history-pill">${escapeHtml(hit.code || 'side')} x${Number(hit.mult) || 0} · ${formatMc(hit.win || 0)}</span>`).join('');
+}
+
+function normalizedSplitValue(card) {
+    if (!card) return 0;
+    return card.value >= 10 ? 10 : card.value;
+}
+
+function canSplitCards(cards = []) {
+    return Array.isArray(cards) && cards.length === 2 && normalizedSplitValue(cards[0]) === normalizedSplitValue(cards[1]);
+}
+
+function saveRepeatBets(sourceBets) {
+    if (!sourceBets) return;
+    lastConfirmedBets = { ...sourceBets };
+    try { localStorage.setItem('pm_bj_last_bets', JSON.stringify(lastConfirmedBets)); } catch {}
+    updateRepeatBetState();
+}
+
+function restoreRepeatBets() {
+    try {
+        const raw = localStorage.getItem('pm_bj_last_bets');
+        if (raw) lastConfirmedBets = JSON.parse(raw);
+    } catch {}
+    updateRepeatBetState();
+}
+
+function updateRepeatBetState() {
+    if (!elRepeatBetBtn) return;
+    const hasRepeat = !!(lastConfirmedBets && Object.values(lastConfirmedBets).some(v => Number(v) > 0));
+    elRepeatBetBtn.disabled = !hasRepeat || isWaitingServer || isRevealing || elControlsPregame?.style.display === 'none';
+}
+
+
+async function loadHistory() {
+    const container = document.getElementById('historyListContainer');
+    if (!container) return;
+    if (!auth.currentUser) {
+        container.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Oturum bekleniyor...</div>';
+        return;
+    }
+
+    container.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Yükleniyor...</div>';
+
+    try {
+        const res = await fetchAPI('/api/bj/history');
+        const history = Array.isArray(res?.history) ? res.history : [];
+
+        if (history.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#888; padding:20px;">Henüz geçmiş bulunmuyor.</div>';
+            return;
+        }
+
+        container.innerHTML = history.map((data) => {
+            const createdAt = Number(data?.createdAt) || Date.now();
+            const date = new Date(createdAt);
+            const dateStr = date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' });
+            const timeStr = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const totalBetHistory = Number(data?.bet) || 0;
+            const totalPayoutHistory = Number(data?.win) || 0;
+            const net = Number.isFinite(Number(data?.net)) ? Number(data.net) : (totalPayoutHistory - totalBetHistory);
+
+            let colorClass = 'negative';
+            let prefix = '';
+            if (net > 0) {
+                colorClass = 'win';
+                prefix = '+';
+            } else if (net === 0) {
+                colorClass = '';
+            } else {
+                prefix = '-';
+            }
+
+            return `
+            <div class="history-item">
+                <div class="history-head" onclick="toggleHistory(this)">
+                    <div><i class="fa-solid fa-chevron-right"></i> ${escapeHtml(dateStr)}</div>
+                    <div class="h-amt ${colorClass}" ${net > 0 ? 'style="color:#2ecc71;"' : ''}>${prefix}${formatMc(net)}</div>
+                </div>
+                <div class="history-body">
+                    <div class="history-topline">
+                        <div class="h-info">${escapeHtml(data?.game || 'PlayMatrix ONE Blackjack')}<span>${escapeHtml(timeStr)} · Round ${escapeHtml(data?.roundId || '-')}</span></div>
+                        <div class="h-totals">
+                            <span class="${colorClass}" ${net > 0 ? 'style="color:#2ecc71;"' : ''}>${prefix}${formatMc(net)}</span>
+                            <span class="sub">Bahis: ${formatMc(totalBetHistory)} · Ödeme: ${formatMc(totalPayoutHistory)}</span>
+                        </div>
+                    </div>
+                    <div class="history-cards-block">
+                        ${renderHistoryHands(data?.hands || [])}
+                        <div class="history-hand-row">
+                            <div class="history-hand-label">Krupiye</div>
+                            ${renderHistoryCards(data?.dealer || [])}
+                        </div>
+                    </div>
+                    <div class="history-meta-row">
+                        <span class="history-pill">Net ${prefix}${formatMc(net)}</span>
+                        <span class="history-pill">Split ${Number(data?.splitCount) || 0}</span>
+                        ${renderSideHitPills(data?.sideBetHits || [])}
+                    </div>
+                    <button type="button" class="verify-toggle-btn" onclick="toggleVerify(this)">Doğrulama Verisini Göster</button>
+                    <div class="verify-pane">
+                        <div><strong>Client Seed</strong></div>
+                        <div class="verify-code">${escapeHtml(data?.clientSeed || '-')}</div>
+                        <div><strong>Server Seed Hash</strong></div>
+                        <div class="verify-code">${escapeHtml(data?.serverSeedHash || data?.fairHash || '-')}</div>
+                        <div><strong>Server Seed</strong></div>
+                        <div class="verify-code">${escapeHtml(data?.serverSeed || '-')}</div>
+                        <div><strong>Round Result</strong></div>
+                        <div class="verify-code">${escapeHtml(data?.message || '-')}</div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (error) {
+        console.error('History load error:', error);
+        container.innerHTML = '<div style="text-align:center; color:#ff4b4b; padding:20px;">Geçmiş yüklenemedi.</div>';
+    }
+}
+
+window.showMatrixModal = (title, message, type = 'info') => {
+    elMatrixModalTitle.innerText = title;
+
+    let cleanMessage = message;
+    if (typeof message === 'string' && message.includes('Provably Fair Hash:')) {
+        cleanMessage = message.split('<br><br><b>Provably Fair Hash:')[0];
+    }
+    elMatrixModalDesc.innerHTML = cleanMessage;
+
+    if (type === 'error') {
+        elMatrixModalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30"></i>';
+        elMatrixModalTitle.style.color = '#ff3b30';
+    } else if (type === 'success') {
+        elMatrixModalIcon.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#2ecc71"></i>';
+        elMatrixModalTitle.style.color = '#2ecc71';
+    } else if (type === 'push') {
+        elMatrixModalIcon.innerHTML = '<i class="fa-solid fa-handshake" style="color:#f4d03f"></i>';
+        elMatrixModalTitle.style.color = '#f4d03f';
+    } else {
+        elMatrixModalIcon.innerHTML = '<i class="fa-solid fa-info-circle" style="color:#f4d03f"></i>';
+        elMatrixModalTitle.style.color = '#f4d03f';
+    }
+
+    elMatrixModal.style.display = 'flex';
+    setTimeout(() => elMatrixModal.classList.add('show'), 10);
+};
+
+window.closeMatrixModal = () => {
+    elMatrixModal.classList.remove('show');
+    setTimeout(() => {
+        elMatrixModal.style.display = 'none';
+    }, 300);
+};
+
+
+function setupAudioGraph() {
+    if (!audioCtx || audioState.master) return;
+
+    const compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -22;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 3;
+    compressor.attack.value = 0.002;
+    compressor.release.value = 0.18;
+
+    const master = audioCtx.createGain();
+    master.gain.value = 0.94;
+
+    const fxBus = audioCtx.createGain();
+    fxBus.gain.value = 0.94;
+
+    const uiBus = audioCtx.createGain();
+    uiBus.gain.value = 0.86;
+
+    const ambienceBus = audioCtx.createGain();
+    ambienceBus.gain.value = 0.24;
+
+    fxBus.connect(master);
+    uiBus.connect(master);
+    ambienceBus.connect(master);
+    master.connect(compressor);
+    compressor.connect(audioCtx.destination);
+
+    audioState.master = master;
+    audioState.fxBus = fxBus;
+    audioState.uiBus = uiBus;
+    audioState.ambienceBus = ambienceBus;
+    audioState.compressor = compressor;
+}
+
+function initAndUnlockAudio() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+
+        if (!audioCtx) {
+            audioCtx = new AudioContextClass();
+            setupAudioGraph();
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioState.uiBus || audioCtx.destination);
+            if (source.start) source.start(0);
+            else if (source.noteOn) source.noteOn(0);
+        }
+
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+        }
+
+        setupAudioGraph();
+        audioUnlocked = true;
+    } catch (error) {
+        console.error('Audio unlock hatası:', error);
+    }
+}
+
+// Ses Dosyalarını Seçme Fonksiyonu
+function buildSfxCandidateUrls(name) {
+    const entry = sfxManifest[name];
+    if (!entry) return [];
+    // Sadece senin klasöründeki dosyaları alacak, CDN yedeği iptal edildi.
+    return (entry.files || []).map((file) => `${AUDIO_LOCAL_ROOT}${file}`);
+}
+
+function createAmbienceMediaElement() {
+    if (audioState.ambienceElement) return audioState.ambienceElement;
+    const url = buildSfxCandidateUrls('ambiance')[0];
+    if (!url) return null;
+
+    const media = new Audio(url);
+    media.preload = 'auto';
+    media.loop = true;
+    media.playsInline = true;
+    media.crossOrigin = 'anonymous';
+    media.setAttribute('playsinline', 'true');
+    media.setAttribute('webkit-playsinline', 'true');
+
+    media.addEventListener('ended', () => {
+        media.currentTime = 0;
+        media.play().catch(() => {});
+    });
+
+    media.addEventListener('error', (event) => {
+        console.error('Ambiyans medya elementi hata verdi:', event);
+    });
+
+    audioState.ambienceElement = media;
+    return media;
+}
+
+async function resumeAmbiencePlayback() {
+    if (!audioUnlocked) return;
+
+    if (audioCtx?.state === 'suspended') {
+        try {
+            await audioCtx.resume();
+        } catch (_) {}
+    }
+
+    const media = createAmbienceMediaElement();
+    if (!media) return;
+
+    try {
+        await media.play();
+    } catch (error) {
+        console.warn('Ambiyans tekrar başlatılamadı:', error);
+    }
+}
+
+async function fetchArrayBufferWithFallback(urls = []) {
+    let lastError = null;
+    for (const url of urls) {
+        try {
+            const res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.arrayBuffer();
+        } catch (error) {
+            lastError = error;
+        }
+    }
+    if (lastError) throw lastError;
+    throw new Error('Ses kaynağı bulunamadı');
+}
+
+async function loadSoundFiles() {
+    if (!audioCtx) return;
+    const tasks = Object.keys(sfxManifest).map(async (key) => {
+        if (key === 'ambiance') return;
+        try {
+            const buf = await fetchArrayBufferWithFallback(buildSfxCandidateUrls(key));
+            sounds[key] = await audioCtx.decodeAudioData(buf.slice(0));
+        } catch (error) {
+            console.warn(`Ses yüklenemedi, procedural fallback kullanılacak: ${key}`, error);
+        }
+    });
+    await Promise.all(tasks);
+}
+
+function getSpatialPan(targetEl) {
+    if (!targetEl) return 0;
+    const rect = targetEl.getBoundingClientRect();
+    const centerX = rect.left + (rect.width / 2);
+    const viewportCenter = (window.innerWidth || 390) / 2;
+    return Math.max(-0.95, Math.min(0.95, (centerX - viewportCenter) / viewportCenter));
+}
+
+function resolveBusNode(busName = 'fx') {
+    if (busName === 'ui') return audioState.uiBus || audioCtx?.destination;
+    if (busName === 'ambience') return audioState.ambienceBus || audioCtx?.destination;
+    return audioState.fxBus || audioCtx?.destination;
+}
+
+function connectNodeWithOptionalPan(sourceNode, gainNode, pan = 0, bus = 'fx') {
+    const targetBus = resolveBusNode(bus);
+    const supportsPan = typeof audioCtx?.createStereoPanner === 'function';
+    sourceNode.connect(gainNode);
+    if (supportsPan) {
+        const panner = audioCtx.createStereoPanner();
+        panner.pan.value = Math.max(-1, Math.min(1, Number(pan) || 0));
+        gainNode.connect(panner);
+        panner.connect(targetBus);
+    } else {
+        gainNode.connect(targetBus);
+    }
+}
+
+function getNoiseBuffer() {
+    if (!audioCtx) return null;
+    if (audioState.noiseBuffer) return audioState.noiseBuffer;
+    const length = Math.max(1, Math.floor(audioCtx.sampleRate * 2.0));
+    const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) {
+        data[i] = (Math.random() * 2 - 1) * (0.85 - ((i / length) * 0.1));
+    }
+    audioState.noiseBuffer = buffer;
+    return buffer;
+}
+
+function playNoiseBurst({ duration = 0.14, gain = 0.03, pan = 0, highpass = 250, lowpass = 4200, bus = 'fx' } = {}) {
+    if (!audioCtx || !audioUnlocked) return;
+    const now = audioCtx.currentTime;
+    const src = audioCtx.createBufferSource();
+    src.buffer = getNoiseBuffer();
+    src.loop = true;
+
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = highpass;
+
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = lowpass;
+
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), now + Math.min(0.02, duration * 0.25));
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    src.connect(hp);
+    hp.connect(lp);
+    connectNodeWithOptionalPan(lp, gainNode, pan, bus);
+    src.start(now);
+    src.stop(now + duration + 0.01);
+}
+
+function playToneSweep({ type = 'sine', from = 600, to = 300, duration = 0.12, gain = 0.03, pan = 0, bus = 'fx' } = {}) {
+    if (!audioCtx || !audioUnlocked) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(Math.max(1, from), now);
+    if (to && to !== from) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1, to), now + duration);
+    }
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), now + Math.min(0.02, duration * 0.25));
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    connectNodeWithOptionalPan(osc, gainNode, pan, bus);
+    osc.start(now);
+    osc.stop(now + duration + 0.01);
+}
+
+function playSequence(notes = [], { gain = 0.05, bus = 'fx' } = {}) {
+    if (!audioCtx || !audioUnlocked || !Array.isArray(notes) || notes.length === 0) return;
+    let cursor = audioCtx.currentTime;
+    notes.forEach((note) => {
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        const duration = Math.max(0.03, Number(note?.duration) || 0.08);
+        const freq = Math.max(30, Number(note?.freq) || 440);
+        osc.type = note?.type || 'sine';
+        osc.frequency.setValueAtTime(freq, cursor);
+        if (note?.freq2) osc.frequency.exponentialRampToValueAtTime(Math.max(30, Number(note.freq2)), cursor + duration);
+        gainNode.gain.setValueAtTime(0.0001, cursor);
+        gainNode.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain * (note?.gain ?? 1)), cursor + Math.min(0.02, duration * 0.25));
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, cursor + duration);
+        connectNodeWithOptionalPan(osc, gainNode, Number(note?.pan) || 0, bus);
+        osc.start(cursor);
+        osc.stop(cursor + duration + 0.01);
+        cursor += duration + (Number(note?.gap) || 0.018);
+    });
+}
+
+function playProceduralSfx(name, options = {}) {
+    if (!audioCtx || !audioUnlocked) return;
+    const pan = Number(options?.pan) || 0;
+    const gainMult = Math.max(0.05, Number(options?.gainMult) || 1);
+    const bus = options?.bus || (sfxManifest[name]?.bus || 'fx');
+
+    try {
+        switch (name) {
+            case 'hover':
+                playToneSweep({ type: 'sine', from: 1720, to: 1280, duration: 0.06, gain: 0.012 * gainMult, pan, bus });
+                break;
+            case 'tick':
+                playToneSweep({ type: 'square', from: 1260, to: 1180, duration: 0.085, gain: 0.028 * gainMult, pan, bus: 'ui' });
+                break;
+            case 'chip':
+                playToneSweep({ type: 'triangle', from: 960, to: 420, duration: 0.095, gain: 0.04 * gainMult, pan, bus: 'ui' });
+                playNoiseBurst({ duration: 0.055, gain: 0.008 * gainMult, pan, highpass: 1200, lowpass: 5200, bus: 'ui' });
+                break;
+            case 'deal':
+                playNoiseBurst({ duration: 0.13, gain: 0.018 * gainMult, pan, highpass: 600, lowpass: 3600, bus });
+                playToneSweep({ type: 'sawtooth', from: 410, to: 165, duration: 0.12, gain: 0.028 * gainMult, pan, bus });
+                break;
+            case 'slide':
+                playNoiseBurst({ duration: 0.16, gain: 0.015 * gainMult, pan, highpass: 380, lowpass: 2600, bus });
+                break;
+            case 'whoosh':
+                playNoiseBurst({ duration: 0.22, gain: 0.014 * gainMult, pan, highpass: 220, lowpass: 4200, bus });
+                playToneSweep({ type: 'sine', from: 820, to: 220, duration: 0.18, gain: 0.009 * gainMult, pan, bus });
+                break;
+            case 'win':
+                playSequence([
+                    { freq: 659.25, duration: 0.08, type: 'triangle' },
+                    { freq: 830.61, duration: 0.09, type: 'triangle' },
+                    { freq: 987.77, duration: 0.18, type: 'sine', gain: 1.2 }
+                ], { gain: 0.04 * gainMult, bus });
+                break;
+            case 'blackjack':
+                playSequence([
+                    { freq: 659.25, duration: 0.09, type: 'triangle' },
+                    { freq: 783.99, duration: 0.09, type: 'triangle' },
+                    { freq: 987.77, duration: 0.12, type: 'triangle' },
+                    { freq: 1318.51, duration: 0.28, type: 'sine', gain: 1.35 }
+                ], { gain: 0.05 * gainMult, bus });
+                playNoiseBurst({ duration: 0.26, gain: 0.008 * gainMult, pan: 0, highpass: 1600, lowpass: 9000, bus });
+                break;
+            case 'push':
+                playSequence([
+                    { freq: 523.25, duration: 0.09, type: 'sine' },
+                    { freq: 659.25, duration: 0.09, type: 'sine' },
+                    { freq: 587.33, duration: 0.18, type: 'sine', gain: 0.9 }
+                ], { gain: 0.028 * gainMult, bus });
+                break;
+            case 'bust':
+                playToneSweep({ type: 'square', from: 240, to: 90, duration: 0.24, gain: 0.038 * gainMult, pan: 0, bus });
+                playNoiseBurst({ duration: 0.18, gain: 0.01 * gainMult, pan: 0, highpass: 120, lowpass: 1200, bus });
+                break;
+            default:
+                break;
+        }
+    } catch (error) {
+        console.error('Procedural ses hatası:', error);
+    }
+}
+
+function playSfx(name, options = {}) {
+    if (!audioCtx || !audioUnlocked) return;
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+    }
+
+    const entry = sfxManifest[name] || {};
+    const bus = options?.bus || entry.bus || 'fx';
+    const pan = Number(options?.pan) || 0;
+    const gainMult = Math.max(0.05, Number(options?.gainMult) || 1);
+    const rates = entry.playbackRate || [1, 1];
+    const explicitRate = Number(options?.rate);
+    const minRate = Number.isFinite(explicitRate) ? explicitRate : Math.min(...rates);
+    const maxRate = Number.isFinite(explicitRate) ? explicitRate : Math.max(...rates);
+
+    if (!sounds[name]) {
+        playProceduralSfx(name, { ...options, bus, pan, gainMult });
+        return;
+    }
+
+    try {
+        const src = audioCtx.createBufferSource();
+        src.buffer = sounds[name];
+        src.playbackRate.value = minRate === maxRate ? minRate : (minRate + (Math.random() * (maxRate - minRate)));
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = Math.max(0.0001, (entry.gain || 1) * gainMult);
+
+        connectNodeWithOptionalPan(src, gainNode, pan, bus);
+        src.start(0);
+    } catch (error) {
+        console.error('Ses oynatma hatası:', error);
+        playProceduralSfx(name, { ...options, bus, pan, gainMult });
+    }
+}
+
+function playHoverSfx() {
+    const now = performance.now();
+    if ((now - audioState.hoverThrottleTs) < 55) return;
+    audioState.hoverThrottleTs = now;
+    playSfx('hover', { gainMult: 0.85, bus: 'ui' });
+}
+
+function playDealCue(item) {
+    const pan = getSpatialPan(item?.el);
+    playSfx('deal', { pan, gainMult: 1 });
+    playSfx('slide', { pan, gainMult: item?.id?.startsWith('dealer_') ? 0.8 : 0.95 });
+    if (item?.isFlip) {
+        playSfx('whoosh', { pan, gainMult: 0.7 });
+    } else if (item?.id?.startsWith('player_')) {
+        playSfx('whoosh', { pan, gainMult: 0.38, rate: 1.04 });
+    }
+}
+
+function playActionIntent(actionStr) {
+    switch (actionStr) {
+        case 'hit':
+            playSfx('whoosh', { gainMult: 0.38, rate: 1.05 });
+            break;
+        case 'stand':
+            playSfx('tick', { gainMult: 0.9, bus: 'ui' });
+            break;
+        case 'double':
+            playSfx('chip', { gainMult: 1.05, bus: 'ui' });
+            playSfx('whoosh', { gainMult: 0.45 });
+            break;
+        case 'split':
+            playSfx('chip', { gainMult: 0.95, bus: 'ui' });
+            playSfx('whoosh', { gainMult: 0.48, rate: 1.08 });
+            break;
+        case 'insurance_yes':
+            playSfx('chip', { gainMult: 0.85, bus: 'ui' });
+            break;
+        case 'insurance_no':
+            playSfx('tick', { gainMult: 0.7, bus: 'ui' });
+            break;
+        default:
+            break;
+    }
+}
+
+function attachHoverAudio() {
+    if (audioState.hoverBound) return;
+    audioState.hoverBound = true;
+    const canHover = !!window.matchMedia?.('(pointer:fine)').matches;
+    if (!canHover) return;
+
+    const hoverTargets = document.querySelectorAll('.btn, .chip, .side-bet-ring, .main-ring, .circle-btn, .menu-item, .repeat-bet-btn, .history-head, .support-send-btn, .modal-close');
+    hoverTargets.forEach((el) => {
+        el.addEventListener('pointerenter', () => playHoverSfx(), { passive: true });
+    });
+}
+
+function startAmbienceBed() {
+    if (!audioCtx || !audioUnlocked || audioState.ambienceStarted) return;
+    setupAudioGraph();
+
+    try {
+        const ambienceGain = audioCtx.createGain();
+        ambienceGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+        ambienceGain.gain.exponentialRampToValueAtTime(0.42, audioCtx.currentTime + 1.6);
+        ambienceGain.connect(resolveBusNode('ambience'));
+        audioState.ambienceGainNode = ambienceGain;
+
+        const media = createAmbienceMediaElement();
+        if (media) {
+            if (!audioState.ambienceElementSource) {
+                audioState.ambienceElementSource = audioCtx.createMediaElementSource(media);
+                audioState.ambienceElementSource.connect(ambienceGain);
+            }
+
+            media.volume = 1;
+            media.currentTime = 0;
+            media.play().catch((error) => {
+                console.warn('Ambiyans media play başarısız, buffer fallback devreye giriyor:', error);
+            });
+
+            audioState.ambienceStarted = true;
+            return;
+        }
+
+        if (sounds.ambiance) {
+            const src = audioCtx.createBufferSource();
+            src.buffer = sounds.ambiance;
+            src.loop = true;
+            src.playbackRate.value = 1;
+            src.connect(ambienceGain);
+            src.start(0);
+            audioState.ambienceStarted = true;
+            return;
+        }
+
+        const src = audioCtx.createBufferSource();
+        src.buffer = getNoiseBuffer();
+        src.loop = true;
+        src.playbackRate.value = 0.22;
+
+        const hp = audioCtx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 110;
+
+        const lp = audioCtx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 1450;
+
+        const pulse = audioCtx.createOscillator();
+        pulse.type = 'sine';
+        pulse.frequency.value = 0.09;
+
+        const pulseGain = audioCtx.createGain();
+        pulseGain.gain.value = 0.008;
+
+        pulse.connect(pulseGain);
+        pulseGain.connect(ambienceGain.gain);
+
+        src.connect(hp);
+        hp.connect(lp);
+        lp.connect(ambienceGain);
+
+        src.start();
+        pulse.start();
+
+        audioState.ambienceStarted = true;
+    } catch (error) {
+        console.error('Ambience başlatılamadı:', error);
+    }
+}
+const unlockEvents = ['touchstart', 'touchend', 'click'];
+const unlockOnTouch = () => {
+    try {
+        initAndUnlockAudio();
+    } catch (error) {
+        console.error('Audio unlock event hatası:', error);
+    }
+
+    unlockEvents.forEach((eventName) => {
+        document.removeEventListener(eventName, unlockOnTouch);
+    });
+};
+
+unlockEvents.forEach((eventName) => {
+    document.addEventListener(eventName, unlockOnTouch, { once: true, passive: true });
+});
+
+function resumeAudioIfNeeded() {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+    }
+}
+
+document.addEventListener('pointerdown', resumeAudioIfNeeded, { passive: true });
+document.addEventListener('touchstart', resumeAudioIfNeeded, { passive: true });
+window.addEventListener('focus', () => {
+    resumeAudioIfNeeded();
+    resumeAmbiencePlayback();
+    if (gameBooted) requestBlackjackSync('focus');
+});
+window.addEventListener('pageshow', () => {
+    resumeAudioIfNeeded();
+    resumeAmbiencePlayback();
+    if (gameBooted) requestBlackjackSync('pageshow');
+});
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        resumeAudioIfNeeded();
+        resumeAmbiencePlayback();
+        if (gameBooted) requestBlackjackSync('visibility');
+    }
+});
+
+let loadProg = 0;
+const loadInt = setInterval(() => {
+    loadProg += Math.random() * 20;
+
+    if (loadProg >= 100) {
+        loadProg = 100;
+        clearInterval(loadInt);
+        elLoaderTrack.style.display = 'none';
+        elBtnEnterGame.style.display = 'block';
+    }
+
+    elLoaderFill.style.width = `${loadProg}%`;
+}, 100);
+
+elBtnEnterGame.addEventListener('click', async () => {
+    if (!elBtnEnterGame || !elStudioIntro) return;
+
+    elBtnEnterGame.disabled = true;
+
+    try {
+        initAndUnlockAudio();
+        await loadSoundFiles();
+        attachHoverAudio();
+        startAmbienceBed();
+    } catch (error) {
+        console.error('Masaya geç başlatma hatası:', error);
+    }
+
+    elStudioIntro.style.opacity = '0';
+    elStudioIntro.style.pointerEvents = 'none';
+
+    setTimeout(() => {
+        elStudioIntro.style.display = 'none';
+        initGame();
+    }, 600);
+});
+
+async function fetchAPI(endpoint, method = 'GET', body = null, options = {}) {
+    if (!auth.currentUser) {
+        window.location.href = '/';
+        throw new Error('Oturum bulunamadı.');
+    }
+
+    const doRequest = async (forceRefreshToken = false) => {
+        const token = await getIdToken(auth.currentUser, forceRefreshToken);
+        const requestOptions = {
+            method,
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        };
+
+        if (body !== null && body !== undefined) {
+            requestOptions.body = JSON.stringify(body);
+        }
+
+        return fetch(`${API_URL}${endpoint}`, requestOptions);
+    };
+
+    let res = await doRequest(false);
+
+    if ((res.status === 401 || res.status === 403) && options?.retryOnAuthError !== false) {
+        try {
+            res = await doRequest(true);
+        } catch (_) {}
+    }
+
+    const rawText = await res.text();
+    let data = null;
+
+    try {
+        data = rawText ? JSON.parse(rawText) : {};
+    } catch {
+        data = { ok: res.ok, error: rawText || 'Beklenmeyen sunucu cevabı' };
+    }
+
+    if (data?.redirect || res.status === 401 || res.status === 403) {
+        window.location.href = '/';
+        throw new Error(data?.error || 'Oturum süresi doldu. Giriş ekranına yönlendiriliyorsunuz.');
+    }
+
+    if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || `Sunucu hatası (${res.status})`);
+    }
+
+    return data;
+}
+
+async function connectBjSocket() {
+    if (!auth.currentUser || !window.io) return;
+    if (bjSocket) {
+        try { bjSocket.close(); } catch {}
+        bjSocket = null;
+    }
+
+    try {
+        const token = await getIdToken(auth.currentUser);
+        bjSocket = window.io(API_URL, {
+            transports: ['websocket', 'polling'],
+            auth: { token },
+            reconnection: true,
+            reconnectionDelay: 1200
+        });
+
+        bjSocket.on('connect', () => {
+            bjSocketConnected = true;
+            bjSocket.emit('bj:join');
+            requestBlackjackSync('socket_connect');
+        });
+
+        bjSocket.on('disconnect', () => {
+            bjSocketConnected = false;
+        });
+
+        bjSocket.on('connect_error', async (error) => {
+            bjSocketConnected = false;
+            console.error('Socket bağlantı hatası:', error);
+            scheduleBalanceRefresh(180);
+            await requestBlackjackSync('socket_connect_error');
+        });
+
+        bjSocket.on('bj:error', (payload) => {
+            if (payload?.error) console.error('BJ socket error:', payload.error);
+        });
+
+        bjSocket.on('balance_update', (payload) => {
+            if (!syncBalanceFromPayload(payload)) {
+                scheduleBalanceRefresh(80);
+            }
+        });
+
+        bjSocket.on('bj:state', (payload) => {
+            if (syncBalanceFromPayload(payload)) {
+                // state ile birlikte balance geldiyse DOM anında güncellenir
+            }
+            if (payload?.state) handleStateSync(payload.state);
+            else if (payload?.state === null && oldSeq > 0 && !isWaitingServer && !isRevealing) {
+                clearBoard();
+                scheduleBalanceRefresh(50);
+            } else {
+                scheduleBalanceRefresh(120);
+            }
+        });
+    } catch (error) {
+        bjSocketConnected = false;
+        console.error('Socket bağlantı hatası:', error);
+    }
+}
+
+setInterval(() => {
+    if (auth.currentUser && !bjSocketConnected) pollState();
+}, 5000);
+
+function applyResponsiveHandLayout(container, cardCount, handCount = 1) {
+    if (!container) return;
+    const viewport = window.innerWidth || 390;
+    let cardWidth = viewport <= 480 ? 56 : 66;
+    if (cardCount >= 5) cardWidth -= 6;
+    if (cardCount >= 7) cardWidth -= 6;
+    if (handCount >= 3) cardWidth -= 5;
+    if (handCount >= 4) cardWidth -= 5;
+    cardWidth = Math.max(34, cardWidth);
+    const cardHeight = Math.round(cardWidth * 1.44);
+    const overlap = Math.round(cardWidth * (handCount >= 3 ? 0.55 : 0.65));
+    container.style.setProperty('--card-width', `${cardWidth}px`);
+    container.style.setProperty('--card-height', `${cardHeight}px`);
+    container.style.setProperty('--card-overlap', `${overlap}px`);
+}
+
+function normalizeCardStack(container) {
+    if (!container) return;
+    Array.from(container.children).forEach((cardEl, index) => {
+        cardEl.style.zIndex = String(index + 1);
+    });
+    const handCount = container.id?.startsWith('playerHandWrap_')
+        ? Math.max(1, document.querySelectorAll('#ui-playerHands .hand-box').length)
+        : 1;
+    applyResponsiveHandLayout(container, container.children.length, handCount);
+}
+
+function enableChipDragScroll(scroller) {
+    if (!scroller || !window.matchMedia('(pointer:fine)').matches) return;
+
+    let isDragging = false;
+    let moved = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+
+    scroller.addEventListener('mousedown', (event) => {
+        if (event.button !== 0) return;
+        isDragging = true;
+        moved = false;
+        startX = event.pageX;
+        startScrollLeft = scroller.scrollLeft;
+        scroller.classList.add('dragging');
+        event.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (event) => {
+        if (!isDragging) return;
+        const distance = event.pageX - startX;
+        if (Math.abs(distance) > 4) moved = true;
+        scroller.scrollLeft = startScrollLeft - distance;
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        scroller.classList.remove('dragging');
+        setTimeout(() => { moved = false; }, 0);
+    });
+
+    scroller.addEventListener('click', (event) => {
+        if (!moved) return;
+        event.preventDefault();
+        event.stopPropagation();
+    }, true);
+
+    Array.from(scroller.children).forEach((child) => {
+        child.addEventListener('dragstart', (event) => event.preventDefault());
+    });
+}
+
+function initGame() {
+    gameBooted = true;
+    enableChipDragScroll(chipsScroller);
+    restoreRepeatBets();
+    fetchUserBalance();
+    requestBlackjackSync('init');
+    pollState();
+    connectBjSocket();
+    elControlsPregame.style.display = 'flex';
+    updateDealButtonState();
+    setupMenuControls();
+}
+
+function formatCompactChipValue(value) {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)}M`;
+    if (value >= 1000) return `${Math.round(value / 1000)}K`;
+    return String(value);
+}
+
+function chipClassByDenomination(value) {
+    if (value >= 500000) return 'c500k';
+    if (value >= 200000) return 'c200k';
+    if (value >= 50000) return 'c50k';
+    if (value >= 20000) return 'c20k';
+    if (value >= 15000) return 'c15k';
+    if (value >= 10000) return 'c10k';
+    if (value >= 5000) return 'c5k';
+    if (value >= 3000) return 'c3k';
+    return 'c1k';
+}
+
+function buildChipStackPieces(value) {
+    const denominations = [500000, 200000, 50000, 20000, 10000, 5000, 3000, 1000];
+    let remaining = Number(value) || 0;
+    const pieces = [];
+
+    for (const denom of denominations) {
+        while (remaining >= denom && pieces.length < 6) {
+            pieces.push(denom);
+            remaining -= denom;
+        }
+        if (pieces.length >= 6) break;
+    }
+
+    if (pieces.length === 0) pieces.push(1000);
+    return pieces;
+}
+
+function setChipUI(type, val) {
+    const el = document.getElementById(`chip_${type}`);
+    if (!el) return;
+
+    if (val > 0) {
+        const pieces = buildChipStackPieces(val);
+        el.style.display = 'flex';
+        el.className = 'table-chip stacked-chip';
+        el.innerHTML = `
+            <div class="chip-stack-display">
+                ${pieces.map((piece, index) => `<div class="chip-stack-piece ${chipClassByDenomination(piece)}" style="bottom:${index * 5}px; left:calc(50% + ${getChipStackJitter(piece, index)}px);"></div>`).join('')}
+            </div>
+            <div class="chip-stack-total">${formatCompactChipValue(val)}</div>`;
+    } else {
+        el.style.display = 'none';
+        el.innerHTML = '';
+    }
+}
+
+function updateUIBalances() {
+    let displayBal = userBalance;
+    if (elControlsPregame.style.display !== 'none') {
+        displayBal = userBalance - totalBet;
+    }
+
+    displayBal = Math.max(0, displayBal);
+
+    const formattedBal = Math.floor(displayBal).toLocaleString('tr-TR');
+    const formattedBet = totalBet.toLocaleString('tr-TR');
+    elUiBalance.innerText = formattedBal;
+    if (elUiBottomBalance) elUiBottomBalance.innerText = formattedBal;
+    elUiBottomBetAmount.innerText = formattedBet;
+
+    setChipUI('main', bets.main);
+    setChipUI('bust', bets.bust);
+    setChipUI('213', bets['213']);
+    setChipUI('perfect', bets.perfect);
+    setChipUI('crazy7', bets.crazy7);
+
+    updateRepeatBetState();
+}
+
+async function fetchUserBalance() {
+    try {
+        const res = await fetchAPI('/api/me');
+        if (res) {
+            syncBalanceFromPayload(res);
+        }
+    } catch {
+        // sessiz
+    }
+}
+
+const fetchBalance = fetchUserBalance;
+
+async function pollState() {
+    try {
+        const res = await fetchAPI('/api/bj/state');
+        syncBalanceFromPayload(res);
+        if (res && res.state) handleStateSync(res.state);
+        else if (res?.state === null && oldSeq > 0 && !isWaitingServer && !isRevealing) clearBoard();
+    } catch {
+        // sessiz
+    }
+}
+
+function startDecisionTimer() {
+    clearDecisionTimer();
+    timeLeft = maxTime;
+    elUiTimerWrap.style.display = 'flex';
+    elUiTimerWrap.style.setProperty('--p', '100%');
+    elUiTimerWrap.setAttribute('data-time', timeLeft);
+
+    actionTimer = setInterval(() => {
+        timeLeft--;
+        const pct = (timeLeft / maxTime) * 100;
+        elUiTimerWrap.style.setProperty('--p', `${pct}%`);
+        elUiTimerWrap.setAttribute('data-time', timeLeft);
+
+        if (timeLeft <= 3 && timeLeft > 0) playSfx('tick');
+        if (timeLeft <= 0) {
+            clearDecisionTimer();
+            sendAction('stand');
+        }
+    }, 1000);
+}
+
+function clearDecisionTimer() {
+    if (actionTimer) clearInterval(actionTimer);
+    elUiTimerWrap.style.display = 'none';
+}
+
+function clearBoard() {
+    revealCycleId++;
+    isRevealing = false;
+    updateTableSpotlight(null);
+    elUiDealerCards.innerHTML = '';
+    document.querySelectorAll('.hand-box').forEach((box) => box.classList.remove('hand-won', 'hand-lost'));
+    elUiPlayerHands.innerHTML = '';
+    elUiDealerScore.innerText = '0';
+    elUiDealerScore.classList.remove('visible');
+    elUiChipsArea.style.display = 'flex';
+    elControlsPregame.style.display = 'flex';
+
+    currentRoundId = '';
+    resetInsurancePromptState();
+    bets = { main: 0, bust: 0, '213': 0, perfect: 0, crazy7: 0 };
+    totalBet = 0;
+    updateUIBalances();
+    updateDealButtonState();
+}
+
+function setBtnMessage(msg) {
+    elDealBtn.innerText = msg;
+    elDealBtn.disabled = true;
+    elDealBtn.style.color = 'rgba(255,255,255,0.7)';
+}
+
+function updateDealButtonState() {
+    if (bets.main >= 1000) {
+        elDealBtn.disabled = false;
+        elDealBtn.innerText = 'DAĞIT (BAHİS ONAY)';
+        elDealBtn.style.color = '#fff';
+    } else {
+        elDealBtn.disabled = true;
+        elDealBtn.innerText = bets.main > 0 ? 'ANA BAHİS MİN: 1K' : 'LÜTFEN BAHİS YERLEŞTİRİN';
+        elDealBtn.style.color = 'rgba(255,255,255,0.7)';
+    }
+}
+
+function svgToDataUri(svg) {
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function getCardLabel(value) {
+    const labels = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+    return labels[value] || String(value || '');
+}
+
+function getSuitMeta(suit) {
+    const map = {
+        H: { symbol: '♥', color: '#d7263d', name: 'heart' },
+        D: { symbol: '♦', color: '#d7263d', name: 'diamond' },
+        C: { symbol: '♣', color: '#111111', name: 'club' },
+        S: { symbol: '♠', color: '#111111', name: 'spade' }
+    };
+    return map[suit] || { symbol: '?', color: '#111111', name: 'unknown' };
+}
+
+function buildCardSvg(card) {
+    if (!card) {
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="220" height="320" viewBox="0 0 220 320">
+            <defs>
+                <linearGradient id="bgBack" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#18212c"/>
+                    <stop offset="100%" stop-color="#0b1118"/>
+                </linearGradient>
+                <pattern id="pat" width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="18" height="18" fill="url(#bgBack)"/>
+                    <path d="M0 9h18M9 0v18" stroke="#d4af37" stroke-opacity="0.18" stroke-width="1.2"/>
+                </pattern>
+            </defs>
+            <rect x="6" y="6" width="208" height="308" rx="16" fill="#ffffff" stroke="#d7dbe2" stroke-width="4"/>
+            <rect x="16" y="16" width="188" height="288" rx="12" fill="url(#pat)" stroke="#d4af37" stroke-opacity="0.45" stroke-width="2"/>
+            <circle cx="110" cy="160" r="52" fill="none" stroke="#d4af37" stroke-opacity="0.55" stroke-width="4"/>
+            <text x="110" y="152" text-anchor="middle" font-size="28" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#f4d03f">PLAYMATRIX</text>
+            <text x="110" y="186" text-anchor="middle" font-size="18" font-family="Arial, Helvetica, sans-serif" letter-spacing="4" fill="#ffffff">VIP</text>
+        </svg>`;
+    }
+
+    const suit = getSuitMeta(card.suit);
+    const label = getCardLabel(card.value);
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="220" height="320" viewBox="0 0 220 320">
+        <defs>
+            <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#f4f6f9"/>
+            </linearGradient>
+        </defs>
+        <rect x="6" y="6" width="208" height="308" rx="16" fill="url(#face)" stroke="#d7dbe2" stroke-width="4"/>
+        <rect x="16" y="16" width="188" height="288" rx="12" fill="none" stroke="#eef1f6" stroke-width="2"/>
+        <text x="28" y="48" font-size="34" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="${suit.color}">${label}</text>
+        <text x="29" y="78" font-size="26" font-family="Arial, Helvetica, sans-serif" fill="${suit.color}">${suit.symbol}</text>
+        <text x="192" y="280" text-anchor="end" font-size="34" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="${suit.color}">${label}</text>
+        <text x="191" y="250" text-anchor="end" font-size="26" font-family="Arial, Helvetica, sans-serif" fill="${suit.color}">${suit.symbol}</text>
+        <text x="110" y="188" text-anchor="middle" font-size="92" font-family="Arial, Helvetica, sans-serif" fill="${suit.color}">${suit.symbol}</text>
+    </svg>`;
+}
+
+function getCardImage(card) {
+    return svgToDataUri(buildCardSvg(card));
+}
+
+function calculateVisibleDOMScore(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return 0;
+
+    let t = 0;
+    let a = 0;
+
+    Array.from(container.children).forEach((el) => {
+        if (el.style.opacity === '0') return;
+        let v = parseInt(el.getAttribute('data-val') || 0, 10);
+        if (v === 0) return;
+        if (v > 10) v = 10;
+        if (v === 1) v = 11;
+        if (v === 11) a++;
+        t += v;
+    });
+
+    while (t > 21 && a > 0) {
+        t -= 10;
+        a--;
+    }
+
+    return t;
+}
+
+function refreshScores() {
+    const dScore = calculateVisibleDOMScore('ui-dealerCards');
+    elUiDealerScore.innerText = dScore;
+    if (dScore > 0) elUiDealerScore.classList.add('visible');
+    else elUiDealerScore.classList.remove('visible');
+
+    document.querySelectorAll('.hand-box').forEach((box) => {
+        if (box.id === 'dealer-hand-box') return;
+        const wrap = box.querySelector('.cards-wrapper');
+        const badge = box.querySelector('.score-badge');
+        if (wrap && badge) {
+            const s = calculateVisibleDOMScore(wrap.id);
+            badge.innerText = s;
+            if (s > 0) badge.classList.add('visible');
+            else badge.classList.remove('visible');
+        }
+    });
+}
+
+function handleStateSync(state) {
+    if (!state) return;
+
+    if (Number.isFinite(Number(state?.balance))) {
+        syncBalanceFromPayload({ balance: state.balance });
+    }
+
+    if (isStaleStateSync(state)) return;
+
+    const stateFingerprint = buildStateFingerprint(state);
+    if (stateFingerprint && stateFingerprint === lastProcessedStateFingerprint) return;
+
+    let queue = [];
+
+    if (state.seq !== oldSeq && state.seq === 1) {
+        clearDecisionTimer();
+        clearBoard();
+        elControlsPregame.style.display = 'none';
+    }
+
+    const cycleId = ++revealCycleId;
+    lastProcessedStateFingerprint = stateFingerprint;
+    lastProcessedStateSeq = Number(state?.seq) || 0;
+    lastProcessedRoundFingerprint = String(state?.roundId || '');
+    oldSeq = state.seq;
+
+    if (state.roundId) {
+        currentRoundId = state.roundId;
+        if (state.gameState === 'finished') latestResolvedRoundId = state.roundId;
+        if (elSupportRoundId) elSupportRoundId.value = state.roundId;
+    }
+
+    if (state.gameState === 'playing' || state.gameState === 'resolving') {
+        if (state.bets) {
+            bets = state.bets;
+            totalBet = Number.isFinite(Number(state?.totalStake)) ? (Number(state.totalStake) || 0) : Object.values(bets).reduce((a, b) => a + b, 0);
+            updateUIBalances();
+        }
+    }
+
+    const pArea = elUiPlayerHands;
+    while (pArea.children.length > state.hands.length) {
+        pArea.removeChild(pArea.lastChild);
+    }
+
+    pArea.classList.toggle('has-active', state.gameState === 'playing');
+    document.querySelector('.table-surface')?.classList.toggle('focus-mode', state.gameState === 'playing');
+
+    state.hands.forEach((hand, hIdx) => {
+        const boxId = `playerHandBox_${hIdx}`;
+        let box = document.getElementById(boxId);
+        let cWrap;
+
+        if (!box) {
+            box = document.createElement('div');
+            box.className = `hand-box ${(hIdx === state.currentHandIdx && state.gameState === 'playing') ? 'active' : ''}`;
+            box.id = boxId;
+
+            const badge = document.createElement('div');
+            badge.className = 'score-badge';
+            badge.innerText = '0';
+
+            cWrap = document.createElement('div');
+            cWrap.className = 'cards-wrapper';
+            cWrap.id = `playerHandWrap_${hIdx}`;
+
+            box.appendChild(badge);
+            box.appendChild(cWrap);
+            pArea.appendChild(box);
+        } else {
+            cWrap = document.getElementById(`playerHandWrap_${hIdx}`);
+            box.className = `hand-box ${(hIdx === state.currentHandIdx && state.gameState === 'playing') ? 'active' : ''}`;
+        }
+
+        const validCardIds = new Set(hand.cards.map((_, cIdx) => `player_${hIdx}_${cIdx}`));
+        Array.from(cWrap.querySelectorAll('.card-3d')).forEach((node) => {
+            if (!validCardIds.has(node.id)) node.remove();
+        });
+
+        hand.cards.forEach((card, cIdx) => {
+            const cardId = `player_${hIdx}_${cIdx}`;
+            let div = document.getElementById(cardId);
+            const expectedImg = getCardImage(card);
+            const isDoubleDownCard = !!hand.doubled && cIdx === hand.cards.length - 1;
+
+            if (!div) {
+                div = document.createElement('div');
+                div.className = 'card-3d';
+                div.id = cardId;
+                div.setAttribute('data-val', card.value);
+                div.innerHTML = `<img src="${expectedImg}" class="real-card">`;
+                div.style.opacity = '0';
+                div.style.transform = 'translate(16vw, -18vh) rotate(-14deg) scale(0.2)';
+                cWrap.appendChild(div);
+                queue.push({ el: div, id: cardId, isFlip: false, isDoubleDownCard });
+            } else {
+                const imgEl = div.querySelector('img');
+                if (imgEl && imgEl.getAttribute('src') !== expectedImg) {
+                    div.setAttribute('data-val', card.value);
+                    imgEl.setAttribute('src', expectedImg);
+                }
+            }
+
+            div.classList.toggle('double-down-card', isDoubleDownCard);
+        });
+
+        normalizeCardStack(cWrap);
+    });
+
+    updateTableSpotlight(state);
+
+    const dArea = elUiDealerCards;
+    while (dArea.children.length > state.dealer.length) {
+        dArea.removeChild(dArea.lastChild);
+    }
+
+    state.dealer.forEach((card, i) => {
+        const cardId = `dealer_${i}`;
+        const isHidden = state.dealerHidden && i === 1;
+        let div = document.getElementById(cardId);
+        const targetImg = isHidden ? getCardImage(null) : getCardImage(card);
+
+        if (!div) {
+            div = document.createElement('div');
+            div.className = 'card-3d';
+            div.id = cardId;
+            div.setAttribute('data-val', isHidden ? 0 : card.value);
+            div.innerHTML = `<img src="${targetImg}" class="real-card">`;
+            div.style.opacity = '0';
+            div.style.transform = 'translate(16vw, -18vh) rotate(-14deg) scale(0.2)';
+            dArea.appendChild(div);
+            queue.push({ el: div, id: cardId, isFlip: false, isDoubleDownCard: false });
+        } else if (!isHidden && div.getAttribute('data-val') === '0') {
+            div.setAttribute('data-val', card.value);
+            queue.push({ el: div, id: cardId, isFlip: true, img: getCardImage(card), isDoubleDownCard: false });
+        }
+    });
+
+    normalizeCardStack(dArea);
+
+    const isInitialDealPhase = !document.getElementById('player_0_0') && state.hands?.[0]?.cards?.length >= 2 && state.dealer?.length >= 2;
+
+    if (state.seq === 1 || isInitialDealPhase) {
+        const order = ['player_0_0', 'dealer_0', 'player_0_1', 'dealer_1'];
+        queue.sort((a, b) => {
+            let idxA = order.indexOf(a.id);
+            let idxB = order.indexOf(b.id);
+            if (idxA === -1) idxA = 99;
+            if (idxB === -1) idxB = 99;
+            return idxA - idxB;
+        });
+    }
+
+    processRevealQueue(queue, state, cycleId);
+    scheduleBalanceRefresh(state.gameState === 'finished' ? 0 : 120);
+}
+
+function processRevealQueue(queue, finalState, cycleId) {
+    if (cycleId !== revealCycleId) return;
+
+    if (queue.length === 0) {
+        isRevealing = false;
+        refreshScores();
+        updateTableSpotlight(finalState);
+
+        if (finalState.gameState === 'playing' && !finalState.insuranceOffered) {
+            elControlsPregame.style.display = 'none';
+            elControlsMain.style.display = 'flex';
+            elControlsIns.style.display = 'none';
+            const curHand = finalState.hands[finalState.currentHandIdx];
+            const currentHandBet = Number(curHand?.bet) || 0;
+            const canDouble = !!finalState.canDouble && userBalance >= currentHandBet;
+            const canSplit = !!finalState.canSplit && userBalance >= currentHandBet;
+            elDoubleBtn.style.display = canDouble ? 'block' : 'none';
+            elSplitBtn.style.display = canSplit ? 'block' : 'none';
+            elDoubleBtn.disabled = !canDouble;
+            elSplitBtn.disabled = !canSplit;
+            if (elSurrenderBtn) elSurrenderBtn.style.display = finalState.canSurrender ? 'block' : 'none';
+            resetInsurancePromptState();
+            startDecisionTimer();
+        } else if (finalState.insuranceOffered) {
+            applyInsurancePromptState(finalState);
+            elControlsPregame.style.display = 'none';
+            elControlsMain.style.display = 'none';
+            if (elSurrenderBtn) elSurrenderBtn.style.display = 'none';
+            elControlsIns.style.display = 'flex';
+            startDecisionTimer();
+        } else {
+            resetInsurancePromptState();
+            elControlsPregame.style.display = 'flex';
+            elControlsMain.style.display = 'none';
+            if (elSurrenderBtn) elSurrenderBtn.style.display = 'none';
+            elControlsIns.style.display = 'none';
+            setBtnMessage(finalState.message || 'OYUN BİTTİ');
+            clearDecisionTimer();
+        }
+
+        if (finalState.gameState === 'finished') {
+            scheduleBalanceRefresh(0);
+
+            const netResult = Number(finalState?.result?.net);
+            const payoutResult = Number(finalState?.result?.payout);
+            const isWin = (Number.isFinite(netResult) && netResult > 0) || finalState.message.includes('KAZANÇ') || finalState.message.includes('KAZANDINIZ');
+            const isPush = (Number.isFinite(netResult) && netResult === 0 && payoutResult > 0) || finalState.message.includes('BERABERE') || finalState.message.includes('İADE');
+
+            if (isWin) {
+                const isBlackjackWin = /BLACKJACK/i.test(finalState.message || '');
+                playSfx(isBlackjackWin ? 'blackjack' : 'win');
+                document.querySelectorAll('.hand-box').forEach((box) => {
+                    if (box.id !== 'dealer-hand-box') box.classList.add('hand-won');
+                    else box.classList.add('hand-lost');
+                });
+            } else if (isPush) {
+                playSfx('push');
+            } else {
+                playSfx('bust');
+                document.querySelectorAll('.hand-box').forEach((box) => {
+                    if (box.id !== 'dealer-hand-box') box.classList.add('hand-lost');
+                    else box.classList.add('hand-won');
+                });
+            }
+
+            showMatrixModal('OYUN SONUCU', finalState.message, isWin ? 'success' : (isPush ? 'push' : 'info'));
+            setTimeout(() => {
+                if (oldSeq === finalState.seq) clearBoard();
+            }, 5000);
+        }
+        return;
+    }
+
+    isRevealing = true;
+    clearDecisionTimer();
+    elControlsPregame.style.display = 'flex';
+    elControlsMain.style.display = 'none';
+    elControlsIns.style.display = 'none';
+    elUiChipsArea.style.display = 'none';
+    setBtnMessage('KARTLAR DAĞITILIYOR...');
+
+    const item = queue.shift();
+    item.el.classList.toggle('double-down-card', !!item.isDoubleDownCard);
+    playDealCue(item);
+
+    if (item.isFlip) {
+        item.el.style.transform = 'rotateY(90deg) scale(1.05)';
+        setTimeout(() => {
+            if (cycleId !== revealCycleId) return;
+            item.el.innerHTML = `<img src="${item.img}" class="real-card">`;
+            item.el.style.transform = 'rotateY(0deg) scale(1)';
+            refreshScores();
+        }, REVEAL_FLIP_MS);
+    } else {
+        item.el.offsetHeight;
+        item.el.style.opacity = '1';
+        if (item.isDoubleDownCard) item.el.style.transform = 'translate(25px, 0px) rotate(90deg) scale(0.9)';
+        else item.el.style.transform = 'translate(0px, 0px) rotate(0deg) scale(1)';
+        refreshScores();
+    }
+
+    setTimeout(() => processRevealQueue(queue, finalState, cycleId), REVEAL_DELAY_MS);
+}
+
+document.querySelectorAll('.chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach((c) => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedChipVal = parseInt(chip.getAttribute('data-val'), 10);
+        playSfx('chip');
+    });
+});
+
+window.placeBet = (type) => {
+    if (isWaitingServer || isRevealing || elControlsPregame.style.display === 'none') return;
+    if (totalBet + selectedChipVal > userBalance) return;
+
+    playSfx('chip');
+    bets[type] += selectedChipVal;
+    totalBet += selectedChipVal;
+    updateUIBalances();
+    updateDealButtonState();
+};
+
+elDealBtn.addEventListener('click', async () => {
+    if (bets.main < 1000) return;
+
+    clearDecisionTimer();
+    playSfx('chip', { gainMult: 0.95, bus: 'ui' });
+    playSfx('whoosh', { gainMult: 0.35, rate: 1.06 });
+    isWaitingServer = true;
+    setBtnMessage('MASA HAZIRLANIYOR...');
+    elUiChipsArea.style.display = 'none';
+
+    try {
+        saveRepeatBets(bets);
+        const payload = {
+            bet: bets.main,
+            sideBets: {
+                bb: bets.bust,
+                t3: bets['213'],
+                pp: bets.perfect,
+                c7: bets.crazy7
+            },
+            clientSeed: getOrCreateClientSeed(),
+            bets
+        };
+        const res = await fetchAPI('/api/bj/start', 'POST', payload);
+        pmRtEmitBlackJackBetPresence(totalBet || bets.main || 0);
+        syncBalanceFromPayload(res);
+        scheduleBalanceRefresh(0);
+        if (res.state) handleStateSync(res.state);
+    } catch (error) {
+        showMatrixModal('Hata', error.message, 'error');
+        clearBoard();
+    }
+
+    isWaitingServer = false;
+});
+
+async function sendAction(actionStr) {
+    if (isWaitingServer || isRevealing) return;
+
+    playActionIntent(actionStr);
+    clearDecisionTimer();
+    isWaitingServer = true;
+    elControlsMain.style.display = 'none';
+    elControlsIns.style.display = 'none';
+    elControlsPregame.style.display = 'flex';
+    setBtnMessage('BEKLENİYOR...');
+
+    try {
+        const res = await fetchAPI('/api/bj/action', 'POST', { action: actionStr, seq: oldSeq });
+        syncBalanceFromPayload(res);
+        scheduleBalanceRefresh(0);
+        if (res.state) handleStateSync(res.state);
+    } catch (error) {
+        showMatrixModal('Hata', error.message, 'error');
+        pollState();
+    }
+
+    isWaitingServer = false;
+}
+
+
+window.openSupportModal = () => {
+    closeMainMenu();
+    const autoRoundId = currentRoundId || latestResolvedRoundId || '';
+    if (elSupportRoundId) elSupportRoundId.value = autoRoundId;
+    if (elSupportContext) {
+        elSupportContext.textContent = autoRoundId
+            ? `Destek bağlamı otomatik yakalandı. Son round: ${autoRoundId}`
+            : 'Aktif veya son round bilgisi bulunamadı. Gerekirse talebinize kısa açıklama ekleyin.';
+    }
+    if (elSupportModal) {
+        elSupportModal.style.display = 'flex';
+        requestAnimationFrame(() => elSupportModal.classList.add('show'));
+    }
+};
+
+window.closeSupportModal = () => {
+    if (elSupportModal) {
+        elSupportModal.classList.remove('show');
+        setTimeout(() => { elSupportModal.style.display = 'none'; }, 220);
+    }
+};
+
+elSupportModal?.addEventListener('click', (event) => {
+    if (event.target === elSupportModal) window.closeSupportModal();
+});
+
+elSupportSendBtn?.addEventListener('click', async () => {
+    if (!elSupportMsg || !elSupportHelper) return;
+
+    const message = elSupportMsg.value.trim();
+    const payload = {
+        category: elSupportCategory?.value || 'Genel',
+        priority: elSupportPriority?.value || 'Normal',
+        email: elSupportEmail?.value?.trim() || '',
+        roundId: elSupportRoundId?.value?.trim() || '',
+        note: message
+    };
+
+    elSupportHelper.className = 'support-helper';
+    elSupportHelper.textContent = '';
+
+    if (!message) {
+        elSupportHelper.classList.add('error');
+        elSupportHelper.textContent = 'Lütfen mesaj yazın.';
+        return;
+    }
+
+    try {
+        elSupportSendBtn.disabled = true;
+        await fetchAPI('/api/support/receipt', 'POST', payload);
+        elSupportHelper.className = 'support-helper success';
+        elSupportHelper.textContent = '✅ Talebin iletildi.';
+        setTimeout(() => {
+            if (elSupportMsg) elSupportMsg.value = '';
+            if (elSupportEmail) elSupportEmail.value = auth.currentUser?.email || '';
+            if (elSupportRoundId) elSupportRoundId.value = currentRoundId || latestResolvedRoundId || '';
+            if (elSupportHelper) {
+                elSupportHelper.className = 'support-helper';
+                elSupportHelper.textContent = '';
+            }
+            window.closeSupportModal();
+        }, 700);
+    } catch (error) {
+        elSupportHelper.className = 'support-helper error';
+        elSupportHelper.textContent = error?.message || 'Şu an gönderilemedi. support@playmatrix.com.tr adresine yazabilirsiniz.';
+    } finally {
+        elSupportSendBtn.disabled = false;
+    }
+});
+
+elRepeatBetBtn?.addEventListener('click', () => {
+    if (isWaitingServer || isRevealing || elControlsPregame.style.display === 'none' || !lastConfirmedBets) return;
+    const candidate = {
+        main: Number(lastConfirmedBets.main) || 0,
+        bust: Number(lastConfirmedBets.bust) || 0,
+        '213': Number(lastConfirmedBets['213']) || 0,
+        perfect: Number(lastConfirmedBets.perfect) || 0,
+        crazy7: Number(lastConfirmedBets.crazy7) || 0
+    };
+    const candidateTotal = Object.values(candidate).reduce((sum, value) => sum + value, 0);
+    if (candidateTotal <= 0) return;
+    if (candidateTotal > userBalance) {
+        showMatrixModal('Yetersiz Bakiye', 'Önceki bahsi tekrar etmek için yeterli bakiye yok.', 'error');
+        return;
+    }
+    bets = candidate;
+    totalBet = candidateTotal;
+    updateUIBalances();
+    updateDealButtonState();
+    playSfx('chip');
+});
+
+document.getElementById('cancelBetBtn').addEventListener('click', () => {
+    if (isWaitingServer || isRevealing || totalBet === 0) return;
+    playSfx('chip');
+    bets = { main: 0, bust: 0, '213': 0, perfect: 0, crazy7: 0 };
+    totalBet = 0;
+    updateUIBalances();
+    updateDealButtonState();
+});
+
+document.getElementById('hitBtn').onclick = () => sendAction('hit');
+document.getElementById('standBtn').onclick = () => sendAction('stand');
+elDoubleBtn.onclick = () => sendAction('double');
+elSplitBtn.onclick = () => sendAction('split');
+elSurrenderBtn.onclick = () => sendAction('surrender');
+document.getElementById('insYesBtn').onclick = () => sendAction(currentInsurancePromptMode === 'even_money' ? 'even_money_yes' : 'insurance_yes');
+document.getElementById('insNoBtn').onclick = () => sendAction(currentInsurancePromptMode === 'even_money' ? 'even_money_no' : 'insurance_no');
+
+window.addEventListener('resize', () => {
+    document.querySelectorAll('.cards-wrapper').forEach((wrap) => normalizeCardStack(wrap));
+    updateTableSpotlight({ gameState: elControlsMain.style.display === 'flex' ? 'playing' : 'idle' });
+});
+
+
+const PM_REALTIME_PAGE_KEY = "blackjack";
+let pmRealtimeSocket = null;
+let pmRealtimeBootPromise = null;
+const pmRealtimeMeta = { friendCounts: { incoming: 0, accepted: 0, outgoing: 0 } };
+
+function pmRtEscape(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/[&<>'"]/g, (match) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[match] || match));
+}
+
+function pmRtNormalizeGameKey(value) {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return '';
+    if (raw === 'chess' || raw.includes('sat')) return 'chess';
+    if (raw === 'pisti' || raw.includes('pist')) return 'pisti';
+    return '';
+}
+
+function pmRtGameHref(gameKey, roomId) {
+    const safeRoomId = encodeURIComponent(String(roomId || '').trim());
+    return gameKey === 'chess'
+        ? `/Online Oyunlar/Satranc.html?joinRoom=${safeRoomId}`
+        : `/Online Oyunlar/Pisti.html?joinRoom=${safeRoomId}`;
+}
+
+function pmRtSetPendingJoin(gameKey, roomId) {
+    sessionStorage.setItem('pm_auto_join_room', String(roomId || '').trim());
+    sessionStorage.setItem('pm_auto_join_game', pmRtNormalizeGameKey(gameKey));
+    sessionStorage.setItem('pm_auto_join_at', String(Date.now()));
+}
+
+function pmRtEmitBlackJackBetPresence(amount) {
+    if (typeof pmRealtimeSocket !== 'undefined' && pmRealtimeSocket && pmRealtimeSocket.connected) {
+        pmRealtimeSocket.emit('social:set_presence', {
+            status: 'IN_GAME',
+            activity: `BlackJack Oynuyor (${Number(amount || 0).toLocaleString('tr-TR')} MC)`
+        });
+    }
+}
+
+function pmRtEnsureShell() {
+    let styleEl = document.getElementById('pmGameRealtimeStyle');
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'pmGameRealtimeStyle';
+        styleEl.textContent = `
+            .pmg-rt-stack{position:fixed;top:calc(env(safe-area-inset-top) + 86px);right:14px;display:flex;flex-direction:column;gap:12px;width:min(360px,calc(100vw - 24px));z-index:2147482500;pointer-events:none}
+            .pmg-rt-toast{pointer-events:auto;position:relative;overflow:hidden;padding:14px 14px 13px 14px;border-radius:18px;background:linear-gradient(180deg,rgba(14,18,27,.96),rgba(8,12,18,.94));border:1px solid rgba(255,255,255,.09);box-shadow:0 20px 48px rgba(0,0,0,.45);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transform:translate3d(0,-10px,0);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+            .pmg-rt-toast.show{transform:translate3d(0,0,0);opacity:1}
+            .pmg-rt-toast.is-success{border-color:rgba(0,255,163,.28)}
+            .pmg-rt-toast.is-error{border-color:rgba(255,59,48,.34)}
+            .pmg-rt-toast.is-info{border-color:rgba(212,175,55,.24)}
+            .pmg-rt-head{display:flex;align-items:flex-start;gap:12px}
+            .pmg-rt-icon{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.06);color:#d4af37;flex:0 0 auto;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+            .pmg-rt-toast.is-success .pmg-rt-icon{color:#00ffa3}
+            .pmg-rt-toast.is-error .pmg-rt-icon{color:#ff6b6b}
+            .pmg-rt-copy{min-width:0;flex:1}
+            .pmg-rt-title{font-family:'Orbitron','Inter',sans-serif;font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:#f8fafc;margin-bottom:6px}
+            .pmg-rt-msg{font-size:13px;line-height:1.5;color:rgba(229,231,235,.88);word-break:break-word}
+            .pmg-rt-close{width:34px;height:34px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#cbd5e1;cursor:pointer;flex:0 0 auto;touch-action:manipulation}
+            .pmg-rt-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+            .pmg-rt-btn{min-height:42px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);color:#f8fafc;font-weight:800;cursor:pointer;touch-action:manipulation}
+            .pmg-rt-btn.primary{background:linear-gradient(180deg,#ffe9a9,#d4af37);color:#111827;border-color:transparent}
+            .pmg-rt-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,rgba(255,255,255,.02),rgba(212,175,55,.65),rgba(0,255,163,.6));transform-origin:left center;animation:pmRtToastProgress var(--pmg-toast-duration,5200ms) linear forwards}
+            .pmg-rt-modal{position:fixed;inset:0;z-index:2147482600;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,7,12,.64);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+            .pmg-rt-modal.show{display:flex}
+            .pmg-rt-card{width:min(420px,100%);border-radius:26px;background:linear-gradient(180deg,rgba(19,25,37,.98),rgba(10,14,22,.98));border:1px solid rgba(255,255,255,.1);box-shadow:0 28px 70px rgba(0,0,0,.52);padding:20px;transform:translateY(10px) scale(.985);opacity:0;transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .22s ease}
+            .pmg-rt-modal.show .pmg-rt-card{transform:translateY(0) scale(1);opacity:1}
+            .pmg-rt-badge{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.24);color:#d4af37;font-size:22px;margin-bottom:14px}
+            .pmg-rt-card h3{margin:0 0 8px;font-family:'Orbitron','Inter',sans-serif;font-size:18px;letter-spacing:1px}
+            .pmg-rt-card p{margin:0;color:rgba(226,232,240,.84);line-height:1.65;font-size:14px}
+            @keyframes pmRtToastProgress{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+            @media (max-width:640px){.pmg-rt-stack{left:12px;right:12px;width:auto;top:calc(env(safe-area-inset-top) + 78px)}}
+        `;
+        document.head.appendChild(styleEl);
+    }
+
+    let stack = document.getElementById('pmGameRealtimeStack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'pmGameRealtimeStack';
+        stack.className = 'pmg-rt-stack';
+        document.body.appendChild(stack);
+    }
+
+    let modal = document.getElementById('pmGameRealtimeModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'pmGameRealtimeModal';
+        modal.className = 'pmg-rt-modal';
+        modal.innerHTML = '<div class="pmg-rt-card"></div>';
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) pmRtCloseModal();
+        });
+        document.body.appendChild(modal);
+    }
+
+    return { stack, modal, card: modal.querySelector('.pmg-rt-card') };
+}
+
+function pmRtToast(title, message, tone = 'info', options = {}) {
+    const { stack } = pmRtEnsureShell();
+    const toast = document.createElement('div');
+    toast.className = `pmg-rt-toast is-${tone}`;
+    toast.style.setProperty('--pmg-toast-duration', `${Math.max(1800, Number(options.duration) || 5200)}ms`);
+    toast.innerHTML = `
+        <div class="pmg-rt-head">
+            <div class="pmg-rt-icon"><i class="fa-solid ${options.iconClass || (tone === 'success' ? 'fa-circle-check' : tone === 'error' ? 'fa-triangle-exclamation' : 'fa-bell')}"></i></div>
+            <div class="pmg-rt-copy">
+                <div class="pmg-rt-title">${pmRtEscape(title || 'Bildirim')}</div>
+                <div class="pmg-rt-msg">${pmRtEscape(message || '')}</div>
+            </div>
+            <button class="pmg-rt-close" type="button" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="pmg-rt-progress"></div>
+    `;
+    const remove = () => {
+        toast.classList.remove('show');
+        window.setTimeout(() => toast.remove(), 180);
+    };
+    toast.querySelector('.pmg-rt-close').addEventListener('click', remove, { passive: true });
+    stack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    window.setTimeout(remove, Math.max(1800, Number(options.duration) || 5200));
+    return toast;
+}
+
+function pmRtCloseModal() {
+    const modal = document.getElementById('pmGameRealtimeModal');
+    if (modal) modal.classList.remove('show');
+}
+
+function pmRtPrompt(opts = {}) {
+    const { modal, card } = pmRtEnsureShell();
+    return new Promise((resolve) => {
+        const cleanup = (result) => {
+            pmRtCloseModal();
+            window.setTimeout(() => resolve(result), 120);
+        };
+
+        card.innerHTML = `
+            <div class="pmg-rt-badge"><i class="fa-solid ${opts.iconClass || 'fa-bell'}"></i></div>
+            <h3>${pmRtEscape(opts.title || 'Bildirim')}</h3>
+            <p>${pmRtEscape(opts.message || '')}</p>
+            <div class="pmg-rt-actions">
+                <button class="pmg-rt-btn" type="button" data-action="cancel">${pmRtEscape(opts.cancelText || 'Vazgeç')}</button>
+                <button class="pmg-rt-btn primary" type="button" data-action="confirm">${pmRtEscape(opts.confirmText || 'Tamam')}</button>
+            </div>
+        `;
+        card.querySelector('[data-action="cancel"]').addEventListener('click', () => cleanup(false), { passive: true });
+        card.querySelector('[data-action="confirm"]').addEventListener('click', () => cleanup(true), { passive: true });
+        modal.classList.add('show');
+    });
+}
+
+async function pmRtLoadSocketScript() {
+    if (window.io) return;
+    await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-pm-socket-loader="1"]');
+        if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = `${API_URL}/socket.io/socket.io.js`;
+        script.async = true;
+        script.dataset.pmSocketLoader = '1';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Socket istemcisi yüklenemedi.'));
+        document.head.appendChild(script);
+    });
+}
+
+async function pmRtRequest(endpoint, method = 'GET', body = null) {
+    let payload = null;
+
+    if (typeof fetchAPI === 'function') {
+        payload = await fetchAPI(endpoint, method, body);
+    } else if (typeof api === 'function') {
+        payload = await api(endpoint, method, body);
+    } else {
+        if (!auth.currentUser) throw new Error('Oturum bulunamadı.');
+        const token = await getIdToken(auth.currentUser);
+        const options = {
+            method,
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        };
+        if (body) options.body = JSON.stringify(body);
+        const res = await fetch(`${API_URL}${endpoint}`, options);
+        payload = await res.json();
+        if (!res.ok && (payload?.ok === false || payload?.error)) {
+            throw new Error(payload?.error || 'Sunucu isteği başarısız.');
+        }
+    }
+
+    if (!payload) throw new Error('Sunucu yanıt vermedi.');
+    if (payload.ok === false) throw new Error(payload.error || 'İstek başarısız.');
+    return payload;
+}
+
+async function pmRtRefreshFriendCounts(silent = true) {
+    if (!auth.currentUser) return;
+    try {
+        const payload = await pmRtRequest('/api/friends/list');
+        const counts = payload?.counts || {};
+        const nextIncoming = Number(counts.incoming || 0);
+        if (!silent && nextIncoming > Number(pmRealtimeMeta.friendCounts.incoming || 0)) {
+            pmRtToast('Yeni arkadaşlık isteği', 'Sosyal merkezde bekleyen yeni bir istek oluştu.', 'info', { iconClass: 'fa-user-plus' });
+        }
+        pmRealtimeMeta.friendCounts = {
+            incoming: nextIncoming,
+            accepted: Number(counts.accepted || 0),
+            outgoing: Number(counts.outgoing || 0)
+        };
+    } catch (_) {}
+}
+
+async function pmRtMaybeConfirmExit() {
+    if (PM_REALTIME_PAGE_KEY !== 'crash') return true;
+    try {
+        const payload = await pmRtRequest('/api/crash/active-bets');
+        if (!payload?.hasActiveBet) return true;
+        return await pmRtPrompt({
+            title: 'Aktif Crash Bahsi',
+            message: payload.hasRiskyBet
+                ? 'Şu an auto cashout tanımı olmayan aktif Crash bahsin var. Davete geçersen tur arka planda devam eder ve patlama riski sana ait olur. Yine de devam etmek istiyor musun?'
+                : 'Şu an aktif bir Crash bahsin bulunuyor. Davete geçersen tur arka planda devam eder. Devam etmek istiyor musun?',
+            confirmText: 'Yine de Geç',
+            cancelText: 'Kal',
+            iconClass: 'fa-bolt'
+        });
+    } catch (_) {
+        return true;
+    }
+}
+
+async function pmRtBeforeRedirect() {
+    if (PM_REALTIME_PAGE_KEY === 'blackjack') {
+        try {
+            if (typeof bjSocket !== 'undefined' && bjSocket) {
+                bjSocket.emit('bj:leave');
+                window.setTimeout(() => { try { bjSocket.close(); } catch (_) {} }, 60);
+            }
+        } catch (_) {}
+    }
+}
+
+async function pmRtHandleInviteResponse(data, response) {
+    try {
+        if (!data?.inviteId) return;
+        const gameKey = pmRtNormalizeGameKey(data.gameKey);
+        const roomId = String(data.roomId || '').trim();
+        if (!gameKey || !roomId) throw new Error('Davet verisi eksik.');
+
+        if (response === 'accepted') {
+            const canContinue = await pmRtMaybeConfirmExit();
+            if (!canContinue) return;
+            await pmRtRequest(gameKey === 'chess' ? '/api/chess/join' : '/api/pisti-online/join', 'POST', { roomId });
+        }
+
+        if (pmRealtimeSocket) {
+            pmRealtimeSocket.emit('game:invite_response', {
+                inviteId: data.inviteId,
+                hostUid: data.hostUid,
+                roomId,
+                gameKey,
+                response
+            });
+        }
+
+        pmRtCloseModal();
+
+        if (response === 'accepted') {
+            await pmRtBeforeRedirect();
+            pmRtSetPendingJoin(gameKey, roomId);
+            pmRtToast('Oyuna geçiliyor', `${data.hostName || 'Arkadaşın'} ile ${gameKey === 'chess' ? 'satranç' : 'pişti'} masasına bağlanıyorsun.`, 'success', { iconClass: 'fa-arrow-right' });
+            window.setTimeout(() => window.location.replace(pmRtGameHref(gameKey, roomId)), 220);
+        } else {
+            pmRtToast('Davet kapatıldı', `${data.hostName || 'Arkadaşın'} için gönderilen davet reddedildi.`, 'info', { iconClass: 'fa-xmark' });
+        }
+    } catch (error) {
+        pmRtToast('Davet başarısız', error?.message || 'Odaya katılım sağlanamadı.', 'error');
+    }
+}
+
+function pmRtShowInviteModal(payload) {
+    if (!payload?.inviteId) return;
+    const { modal, card } = pmRtEnsureShell();
+    card.innerHTML = `
+        <div class="pmg-rt-badge"><i class="fa-solid fa-gamepad"></i></div>
+        <h3>Canlı Oyun Daveti</h3>
+        <p><strong>${pmRtEscape(payload.hostName || 'Arkadaşın')}</strong> seni <strong>${pmRtEscape(payload.gameName || 'oyuna')}</strong> çağırıyor. Kabul edersen lobiye uğramadan doğrudan oyun masasına geçeceksin.</p>
+        <div class="pmg-rt-actions">
+            <button class="pmg-rt-btn" type="button" data-action="decline">Reddet</button>
+            <button class="pmg-rt-btn primary" type="button" data-action="accept">Kabul Et</button>
+        </div>
+    `;
+    card.querySelector('[data-action="decline"]').addEventListener('click', () => pmRtHandleInviteResponse(payload, 'declined'), { passive: true });
+    card.querySelector('[data-action="accept"]').addEventListener('click', () => pmRtHandleInviteResponse(payload, 'accepted'), { passive: true });
+    modal.classList.add('show');
+}
+
+async function pmRtHandleInviteAcceptedRedirect(payload) {
+    try {
+        const gameKey = pmRtNormalizeGameKey(payload?.gameKey);
+        const roomId = String(payload?.roomId || '').trim();
+        if (!gameKey || !roomId) return;
+        if (payload?.hostUid && auth.currentUser?.uid && String(payload.hostUid) !== String(auth.currentUser.uid)) return;
+        await pmRtBeforeRedirect();
+        pmRtSetPendingJoin(gameKey, roomId);
+        pmRtToast('Oyuna geçiliyor', `${payload?.guestName || 'Arkadaşın'} ile ${gameKey === 'chess' ? 'satranç' : 'pişti'} masasına bağlanıyorsun.`, 'success', { iconClass: 'fa-arrow-right' });
+        window.setTimeout(() => window.location.replace(pmRtGameHref(gameKey, roomId)), 220);
+    } catch (error) {
+        pmRtToast('Davet yönlendirme hatası', error?.message || 'Oyun odası açılamadı.', 'error');
+    }
+}
+
+function pmRtBindSocketEvents(sock) {
+    if (!sock || sock.__pmRealtimeBound) return sock;
+    sock.__pmRealtimeBound = true;
+    pmRealtimeSocket = sock;
+
+    sock.on('chat:direct_receive', (payload) => {
+        pmRtToast(payload?.username || 'Yeni özel mesaj', payload?.message || 'Bir özel mesaj aldın.', 'info', { iconClass: 'fa-envelope' });
+    });
+
+    sock.on('friends:updated', () => {
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_received', () => {
+        pmRtToast('Arkadaşlık isteği', 'Yeni bir arkadaşlık isteği geldi.', 'info', { iconClass: 'fa-user-plus' });
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_result', (payload) => {
+        pmRtToast(
+            'Arkadaşlık güncellendi',
+            payload?.accepted ? 'Gönderdiğin istek kabul edildi.' : 'Gönderdiğin istek reddedildi.',
+            payload?.accepted ? 'success' : 'info',
+            { iconClass: payload?.accepted ? 'fa-user-check' : 'fa-user-xmark' }
+        );
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('friends:request_auto_accepted', () => {
+        pmRtToast('Arkadaş eklendi', 'Karşılıklı istek bulundu ve arkadaşlık anında kuruldu.', 'success', { iconClass: 'fa-user-group' });
+        pmRtRefreshFriendCounts(true).catch(() => null);
+    });
+
+    sock.on('game:invite_receive', (payload) => {
+        pmRtToast('Oyun daveti', `${payload?.hostName || 'Arkadaşın'} seni ${payload?.gameName || 'oyuna'} çağırıyor.`, 'info', { iconClass: 'fa-gamepad', duration: 4200 });
+        pmRtShowInviteModal(payload);
+    });
+
+    sock.on('game:invite_error', (payload) => {
+        pmRtToast('Davet hatası', payload?.message || 'Davet işlenemedi.', 'error');
+    });
+
+    sock.on('game:invite_success', (payload) => {
+        pmRtHandleInviteAcceptedRedirect(payload).catch(() => null);
+    });
+
+    sock.on('game:invite_response', (payload) => {
+        const accepted = payload?.response === 'accepted';
+        const guestName = payload?.guestName || 'Arkadaşın';
+        pmRtToast(
+            accepted ? 'Davet kabul edildi' : 'Davet reddedildi',
+            accepted ? `${guestName} daveti kabul etti.` : `${guestName} daveti şu an kabul etmedi.`,
+            accepted ? 'success' : 'info',
+            { iconClass: accepted ? 'fa-circle-check' : 'fa-circle-minus' }
+        );
+        if (accepted) pmRtHandleInviteAcceptedRedirect(payload).catch(() => null);
+    });
+
+    sock.on('connect_error', (error) => {
+        if (error?.message === 'xhr poll error') return;
+        pmRtToast('Canlı bağlantı', 'Bildirim hattı geçici olarak yeniden bağlanıyor.', 'info', { iconClass: 'fa-wifi', duration: 2600 });
+    });
+
+    const setMyPresence = () => {
+        sock.emit('social:set_presence', { status: 'IN_GAME', activity: 'BlackJack Oynuyor' });
+    };
+
+    if (sock.connected) {
+        setMyPresence();
+    }
+    sock.on('connect', setMyPresence);
+
+    return sock;
+}
+
+async function initPlayMatrixRealtime() {
+    if (!auth.currentUser) {
+        disposePlayMatrixRealtime();
+        return null;
+    }
+    if (pmRealtimeBootPromise) return pmRealtimeBootPromise;
+
+    pmRealtimeBootPromise = (async () => {
+        pmRtEnsureShell();
+        await pmRtRefreshFriendCounts(true);
+        await pmRtLoadSocketScript();
+        const token = await getIdToken(auth.currentUser);
+        const sock = window.io(API_URL, {
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000
+        });
+        return pmRtBindSocketEvents(sock);
+    })();
+
+    try {
+        return await pmRealtimeBootPromise;
+    } catch (error) {
+        pmRealtimeBootPromise = null;
+        throw error;
+    }
+}
+
+function disposePlayMatrixRealtime() {
+    pmRtCloseModal();
+    if (pmRealtimeSocket) {
+        try { pmRealtimeSocket.close(); } catch (_) {}
+    }
+    pmRealtimeSocket = null;
+    pmRealtimeBootPromise = null;
+}
+
+window.addEventListener('beforeunload', () => {
+    if (pmRealtimeSocket) {
+        try { pmRealtimeSocket.close(); } catch (_) {}
+    }
+});
+
+
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        disposePlayMatrixRealtime();
+        window.location.href = '/';
+        return;
+    }
+    if (elSupportEmail && user.email) elSupportEmail.value = user.email;
+    connectBjSocket();
+    initPlayMatrixRealtime().catch(() => null);
+});
+</script>
+  <script src="/playmatrix-runtime.js" defer></script>
+</body>
+</html>

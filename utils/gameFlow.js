@@ -1,7 +1,6 @@
 'use strict';
 
 const { cleanStr, safeNum, nowMs } = require('./helpers');
-const { GAME_SETTLEMENT_STATUS } = require('../config/constants');
 
 function normalizeGameKey(value = '') {
   const raw = String(value || '').trim().toLowerCase();
@@ -76,31 +75,11 @@ function evaluateInviteRoomState(room = {}, invite = {}, targetUid = '') {
   return { ok: true, code: 'OK', message: '', status, participantUids };
 }
 
-
-
-function applySettlement(record = {}, { status = GAME_SETTLEMENT_STATUS.SETTLED, resultCode = '', reason = '', settledAt = nowMs(), actorUid = '', winnerUid = '', loserUid = '', meta = {} } = {}) {
-  record.settlementStatus = cleanStr(status || GAME_SETTLEMENT_STATUS.SETTLED, 24) || GAME_SETTLEMENT_STATUS.SETTLED;
-  record.resultCode = cleanStr(resultCode || '', 64);
-  record.resultReason = cleanStr(reason || '', 48);
-  record.settledAt = safeNum(settledAt, nowMs());
-  record.settledByUid = cleanStr(actorUid || '', 160);
-  record.resultMeta = meta && typeof meta === 'object' ? meta : {};
-  if (winnerUid !== undefined) record.winnerUid = cleanStr(winnerUid || '', 160);
-  if (loserUid !== undefined) record.loserUid = cleanStr(loserUid || '', 160);
-  return record;
-}
-
-function isRecordSettled(record = {}) {
-  return safeNum(record.settledAt, 0) > 0 || ['settled', 'cancelled', 'abandoned'].includes(cleanStr(record.settlementStatus || '', 24).toLowerCase());
-}
-
 module.exports = {
   normalizeGameKey,
   sanitizeUidList,
   buildTimelineEvent,
   appendTimelineEntry,
   bumpStateVersion,
-  evaluateInviteRoomState,
-  applySettlement,
-  isRecordSettled
+  evaluateInviteRoomState
 };

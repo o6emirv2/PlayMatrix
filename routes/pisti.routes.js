@@ -1,3 +1,4 @@
+// routes/pisti.routes.js
 'use strict';
 
 const express = require('express');
@@ -9,31 +10,16 @@ const { verifyAuth } = require('../middlewares/auth.middleware');
 const { bjActionLimiter } = require('../middlewares/rateLimiters');
 const { safeNum, cleanStr, nowMs, sha256Hex } = require('../utils/helpers');
 const { assertNoOtherActiveGame } = require('../utils/gameSession');
-const { recordRewardLedger, buildLedgerDocId } = require('../utils/rewardLedger');
+const { recordRewardLedger } = require('../utils/rewardLedger');
 const { createNotification } = require('../utils/notifications');
+const { awardRpFromSpend } = require('../utils/rpSystem');
+const { applyMatchEloUpdate } = require('../utils/eloSystem');
 const { saveMatchHistory } = require('../utils/matchHistory');
 const { buildTimelineEvent, appendTimelineEntry, bumpStateVersion } = require('../utils/gameFlow');
-const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
-const { assertGamesAllowed } = require('../utils/userRestrictions');
-const { getAccountXp, normalizeUserRankState } = require('../utils/progression');
 
 const colPisti = () => db.collection('pisti_sessions');
 const colOnlinePisti = () => db.collection('pisti_online_rooms');
 const colUsers = () => db.collection('users');
-
-function statusForPistiError(error) {
-  const message = String(error?.message || '').toLowerCase();
-  if (message.includes('bakiye yetersiz')) return 402;
-  if (message.includes('bulunamad') || message.includes('oda yok')) return 404;
-  if (message.includes('yetki') || message.includes('görüntüleme')) return 403;
-  if (message.includes('dolmuş') || message.includes('zaten') || message.includes('aktif')) return 409;
-  if (message.includes('geçersiz') || message.includes('gerekli') || message.includes('şifre') || message.includes('sifre')) return 400;
-  return 500;
-}
-
-function sendPistiError(res, error) {
-  return res.status(statusForPistiError(error)).json({ ok: false, error: error?.message || 'Pişti işlemi tamamlanamadı.' });
-}
 
 
 const PISTI_DISCONNECT_GRACE_MS = 90 * 1000;
@@ -54,124 +40,15 @@ function schedulePistiRoomRemoval(roomId = '', delayMs = PISTI_RESULT_RETENTION_
 
 
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+    if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+    const numericSelected = Number(user?.selectedFrame);
+    if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+    if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+    const numericActive = Number(user?.activeFrame);
+    if (Number.isFinite(numericActive) && numericActive > 0) return Math.floor(numericActive);
+    return 0;
 }
 
-
-
-function calculateSpendProgressReward(spendMc = 0, source = '') {
-  const spend = Math.max(0, Math.floor(safeNum(spendMc, 0)));
-  if (spend <= 0) return { xpEarned: 0, activityEarned: 0, roundsEarned: 0, spentMc: 0, source: cleanStr(source || 'GAME_SPEND', 64) };
-  let xpEarned = 0;
-  if (spend >= 200000) xpEarned = 110;
-  else if (spend >= 100000) xpEarned = 64;
-  else if (spend >= 40000) xpEarned = 36;
-  else if (spend >= 20000) xpEarned = 20;
-  else if (spend >= 10000) xpEarned = 12;
-  else if (spend >= 1000) xpEarned = 5;
-  return {
-    xpEarned,
-    activityEarned: 1,
-    roundsEarned: 1,
-    spentMc: spend,
-    source: cleanStr(source || 'PISTI_SPEND', 64) || 'PISTI_SPEND'
-  };
-}
-
-function applySpendProgression(tx, userRef, userData = {}, spendMc = 0, source = '') {
-  const reward = calculateSpendProgressReward(spendMc, source);
-  const nextUser = {
-    ...userData,
-    accountXp: Math.max(0, getAccountXp(userData) + reward.xpEarned),
-    monthlyActiveScore: Math.max(0, safeNum(userData.monthlyActiveScore, 0) + reward.activityEarned),
-    totalRounds: Math.max(0, safeNum(userData.totalRounds, 0) + reward.roundsEarned),
-    totalSpentMc: Math.max(0, safeNum(userData.totalSpentMc, 0) + reward.spentMc)
-  };
-  const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-  const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextUser.monthlyActiveScore });
-  tx.set(userRef, {
-    ...canonical,
-    ...normalized,
-    monthlyActiveScore: nextUser.monthlyActiveScore,
-    totalRounds: nextUser.totalRounds,
-    totalSpentMc: nextUser.totalSpentMc,
-    activityUpdatedAt: nowMs(),
-    lastGameProgressSource: reward.source,
-    lastGameXpEarned: reward.xpEarned
-  }, { merge: true });
-  return reward;
-}
-
-
-
-function recordPistiProgressLedger(uid = '', reward = {}, referenceId = '', meta = {}) {
-  const xpEarned = Math.max(0, Math.floor(safeNum(reward?.xpEarned, 0)));
-  if (!uid || xpEarned <= 0 || !referenceId) return;
-  recordRewardLedger({
-    uid,
-    amount: xpEarned,
-    currency: 'XP',
-    source: 'pisti_spend_progress',
-    referenceId,
-    idempotencyKey: `pisti_spend_progress:${referenceId}:${uid}`,
-    meta: { ...meta, spentMc: safeNum(reward?.spentMc, 0), activityEarned: safeNum(reward?.activityEarned, 0), roundsEarned: safeNum(reward?.roundsEarned, 0) }
-  }).catch(() => null);
-}
-
-
-async function applyPistiPotRewardsInTransaction(tx, { winners = [], reward = 0, room = {}, roomId = '', reason = 'normal_finish' } = {}) {
-  const safeReward = Math.max(0, Math.floor(safeNum(reward, 0)));
-  const safeRoomId = cleanStr(roomId || room.id || room.updatedAt || room.createdAt || '', 160);
-  const winnerUids = Array.from(new Set((Array.isArray(winners) ? winners : []).map((uid) => cleanStr(uid || '', 160)).filter(Boolean)));
-  if (!tx || !safeRoomId || safeReward <= 0 || !winnerUids.length) return [];
-
-  const grants = winnerUids.map((uid) => {
-    const stableRewardKey = `pisti_reward_${safeRoomId}_${uid}`;
-    const ledgerId = buildLedgerDocId({
-      uid,
-      currency: 'MC',
-      source: 'pisti_online_win',
-      referenceId: safeRoomId,
-      idempotencyKey: `${stableRewardKey}_ledger`
-    });
-    return {
-      uid,
-      ledgerId,
-      ledgerRef: db.collection('reward_ledger').doc(ledgerId),
-      userRef: colUsers().doc(uid),
-      stableRewardKey
-    };
-  });
-
-  const ledgerSnaps = await Promise.all(grants.map((grant) => tx.get(grant.ledgerRef)));
-  const committedAt = nowMs();
-  grants.forEach((grant, index) => {
-    if (ledgerSnaps[index]?.exists) return;
-    const meta = { mode: cleanStr(room?.mode || '', 16), reason: cleanStr(reason || 'normal_finish', 48), roomId: safeRoomId };
-    tx.set(grant.ledgerRef, {
-      uid: grant.uid,
-      amount: safeReward,
-      currency: 'MC',
-      source: 'pisti_online_win',
-      referenceId: safeRoomId,
-      meta,
-      idempotencyKey: `${grant.stableRewardKey}_ledger`,
-      policyVersion: 2,
-      status: 'committed',
-      createdAt: committedAt,
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: false });
-    tx.set(grant.userRef, {
-      balance: admin.firestore.FieldValue.increment(safeReward),
-      updatedAt: committedAt,
-      lastRewardAt: committedAt,
-      lastRewardSource: 'pisti_online_win',
-      lastRewardAmount: safeReward,
-      lastRewardLedgerId: grant.ledgerId
-    }, { merge: true });
-  });
-  return grants.map((grant, index) => ({ uid: grant.uid, ledgerId: grant.ledgerId, duplicated: !!ledgerSnaps[index]?.exists }));
-}
 
 function hashRoomPassword(password = '', roomId = '') {
   const raw = String(password || '');
@@ -181,11 +58,14 @@ function hashRoomPassword(password = '', roomId = '') {
 
 function verifyRoomPassword(room = {}, password = '', roomId = '') {
   const storedHash = cleanStr(room.passwordHash || '', 200);
-  const storedPassword = typeof room.password === 'string' ? room.password : '';
+  const legacyPassword = typeof room.password === 'string' ? room.password : '';
   if (storedHash) return storedHash === hashRoomPassword(password, roomId);
-  return storedPassword === String(password || '');
+  return legacyPassword === String(password || '');
 }
 
+// ---------------------------------------------------------
+// PİŞTİ MOTORU (KART MATEMATİĞİ)
+// ---------------------------------------------------------
 function createMultiPistiDeck(deckCount = 1) {
   const suits = ['H', 'D', 'C', 'S'];
   const vals = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'J', 'Q', 'K'];
@@ -258,7 +138,7 @@ function startGame(room) {
   room.isFirstDeal = true; room.lastCapturer = null; room.lastEvent = null;
 }
 
-async function finalizeGame(room, tx, roomId = '') {
+async function finalizeGame(room, tx) {
   if ((room.tableCards || []).length > 0 && room.lastCapturer) {
     const lastCap = (room.players || []).find(player => player.uid === room.lastCapturer);
     if (lastCap) { lastCap.cardCount = safeNum(lastCap.cardCount, 0) + room.tableCards.length; lastCap.score = safeNum(lastCap.score, 0) + calculateCardPointsMulti(room.tableCards); }
@@ -283,8 +163,18 @@ async function finalizeGame(room, tx, roomId = '') {
   const distributable = pool - rake;
   const reward = winners.length > 0 ? Math.floor(distributable / winners.length) : 0;
 
-  await applyPistiPotRewardsInTransaction(tx, { winners, reward, room, roomId, reason: 'normal_finish' });
-  return { room };
+  if (reward > 0) {
+    for (const winnerUid of winners) tx.update(colUsers().doc(winnerUid), { balance: admin.firestore.FieldValue.increment(reward) });
+  }
+
+  let eloSummary = null;
+  if ((room.players || []).length === 2) {
+    const [playerA, playerB] = room.players;
+    const scoreA = winners.includes(playerA.uid) && !winners.includes(playerB.uid) ? 1 : winners.includes(playerB.uid) && !winners.includes(playerA.uid) ? 0 : 0.5;
+    const scoreB = scoreA === 0.5 ? 0.5 : (scoreA === 1 ? 0 : 1);
+    eloSummary = await applyMatchEloUpdate(tx, playerA.uid, playerB.uid, 'pisti', scoreA, scoreB);
+  }
+  return { room, eloSummary };
 }
 
 function sanitizeOnlinePistiPlayer(player, viewerUid) {
@@ -313,7 +203,7 @@ function prepareRoomForSocket(room, viewerUid) {
   };
 }
 
-async function finalizeOnlinePistiByDisconnect(room, tx, droppedUids = [], roomId = '') {
+async function finalizeOnlinePistiByDisconnect(room, tx, droppedUids = []) {
   const droppedSet = new Set((Array.isArray(droppedUids) ? droppedUids : []).filter(Boolean));
   const remainingPlayers = (room.players || []).filter(player => !droppedSet.has(player.uid));
 
@@ -322,7 +212,7 @@ async function finalizeOnlinePistiByDisconnect(room, tx, droppedUids = [], roomI
   if (remainingPlayers.length === 0) {
     room.status = 'abandoned'; room.winner = []; applyPistiCloseWindow(room); appendTimelineEntry(room, buildTimelineEvent('match_abandoned', { gameKey: 'pisti', status: 'abandoned', reason: 'disconnect', participantUids: (room.players || []).map((player) => cleanStr(player?.uid || '', 160)) })); bumpStateVersion(room);
     for (const player of room.players || []) tx.update(colUsers().doc(player.uid), { balance: admin.firestore.FieldValue.increment(room.bet) });
-    return { room };
+    return { room, eloSummary: null };
   }
 
   room.status = 'finished'; room.winner = remainingPlayers.map(player => player.uid); applyPistiCloseWindow(room); appendTimelineEntry(room, buildTimelineEvent('match_finished', { gameKey: 'pisti', status: 'finished', reason: 'disconnect', participantUids: (room.players || []).map((player) => cleanStr(player?.uid || '', 160)), meta: { winners: room.winner } })); bumpStateVersion(room);
@@ -331,8 +221,14 @@ async function finalizeOnlinePistiByDisconnect(room, tx, droppedUids = [], roomI
   const distributable = Math.max(0, pool - rake);
   const reward = Math.floor(distributable / remainingPlayers.length);
 
-  await applyPistiPotRewardsInTransaction(tx, { winners: remainingPlayers.map((player) => player.uid), reward, room, roomId, reason: 'disconnect' });
-  return { room };
+  if (reward > 0) { for (const player of remainingPlayers) tx.update(colUsers().doc(player.uid), { balance: admin.firestore.FieldValue.increment(reward) }); }
+
+  let eloSummary = null;
+  if ((room.players || []).length === 2 && remainingPlayers.length === 1 && droppedSet.size === 1) {
+    const winnerUid = remainingPlayers[0].uid; const loserUid = (room.players || []).find(player => player.uid !== winnerUid)?.uid;
+    if (winnerUid && loserUid) eloSummary = await applyMatchEloUpdate(tx, winnerUid, loserUid, 'pisti', 1, 0);
+  }
+  return { room, eloSummary };
 }
 
 
@@ -382,6 +278,9 @@ function emitPistiRewardSideEffects(room, roomId, rewardAmount = 0, source = 'pi
   })).catch(() => null);
 }
 
+// ---------------------------------------------------------
+// ONLINE PİŞTİ ROTALARI
+// ---------------------------------------------------------
 router.get('/online/lobby', verifyAuth, async (req, res) => {
   try {
     const [waitingSnap, playingSnap] = await Promise.all([
@@ -406,7 +305,7 @@ router.get('/online/lobby', verifyAuth, async (req, res) => {
     });
     rooms.sort((a, b) => safeNum(b.createdAt, 0) - safeNum(a.createdAt, 0));
     res.json({ ok: true, rooms: rooms.slice(0, 40) });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/online/play-open', verifyAuth, async (req, res) => {
@@ -416,7 +315,6 @@ router.post('/online/play-open', verifyAuth, async (req, res) => {
     if (isNaN(bet) || bet < 1 || bet > 10000000) throw new Error('Bahis tutarı 1 ile 10.000.000 MC arasında olmalıdır.');
 
     const { maxPlayers, deckCount } = modeConfig(mode);
-    let progressReward = null;
     const snap = await colOnlinePisti().where('status', '==', 'waiting').where('isPrivate', '==', false).where('mode', '==', mode).where('bet', '==', bet).limit(5).get();
     let candidateId = null;
     for (const doc of snap.docs) {
@@ -426,23 +324,24 @@ router.post('/online/play-open', verifyAuth, async (req, res) => {
 
     const roomData = await db.runTransaction(async (tx) => {
       const uRef = colUsers().doc(uid); const uSnap = await tx.get(uRef);
-      const rRef = candidateId ? colOnlinePisti().doc(candidateId) : null;
-      const rSnap = rRef ? await tx.get(rRef) : null;
       const uBal = safeNum(uSnap.data()?.balance, 0);
       if (uBal < bet) throw new Error('Bakiye yetersiz.');
 
       tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
-      progressReward = applySpendProgression(tx, uRef, uSnap.data() || {}, bet, 'PISTI_ONLINE_BET');
+      awardRpFromSpend(tx, uRef, uSnap.data() || {}, bet, 'PISTI_ONLINE_BET', { activityScore: 0 });
 
-      if (candidateId && rRef && rSnap?.exists) {
-        const r = rSnap.data() || {};
-        if (r.status === 'waiting' && (r.players || []).length < r.maxPlayers && !(r.players || []).some(player => player.uid === uid)) {
-          const players = [...(r.players || []), { uid, username: uSnap.data()?.username || 'Oyuncu', avatar: uSnap.data()?.avatar || null, selectedFrame: pickUserSelectedFrame(uSnap.data() || {}), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 }];
-          const updated = { ...r, players, updatedAt: nowMs(), finishReason: '' };
-          appendTimelineEntry(updated, buildTimelineEvent('player_joined', { actorUid: uid, roomId: candidateId, gameKey: 'pisti', status: updated.status, participantUids: players.map((player) => cleanStr(player?.uid || '', 160)) }));
-          bumpStateVersion(updated);
-          if (players.length === r.maxPlayers) startGame(updated);
-          tx.update(rRef, updated); return { id: candidateId, ...updated };
+      if (candidateId) {
+        const rRef = colOnlinePisti().doc(candidateId); const rSnap = await tx.get(rRef);
+        if (rSnap.exists) {
+          const r = rSnap.data() || {};
+          if (r.status === 'waiting' && (r.players || []).length < r.maxPlayers && !(r.players || []).some(player => player.uid === uid)) {
+            const players = [...(r.players || []), { uid, username: uSnap.data()?.username || 'Oyuncu', avatar: uSnap.data()?.avatar || null, selectedFrame: pickUserSelectedFrame(uSnap.data() || {}), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 }];
+            const updated = { ...r, players, updatedAt: nowMs(), finishReason: '' };
+            appendTimelineEntry(updated, buildTimelineEvent('player_joined', { actorUid: uid, roomId: candidateId, gameKey: 'pisti', status: updated.status, participantUids: players.map((player) => cleanStr(player?.uid || '', 160)) }));
+            bumpStateVersion(updated);
+            if (players.length === r.maxPlayers) startGame(updated);
+            tx.update(rRef, updated); return { id: candidateId, ...updated };
+          }
         }
       }
 
@@ -452,11 +351,10 @@ router.post('/online/play-open', verifyAuth, async (req, res) => {
       tx.set(newRoomRef, newRoom); return { id: roomId, ...newRoom };
     });
 
-    recordPistiProgressLedger(uid, progressReward, `pisti_online:${roomData.id}:${uid}:open`, { mode, bet, action: 'open', roomId: roomData.id });
     res.json({ ok: true, room: prepareRoomForSocket(roomData, uid) });
     const io = req.app.get('io');
     if (io) io.to(`pisti_${roomData.id}`).emit('pisti:update', { id: roomData.id, sender: 'system' });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/online/create-private', verifyAuth, async (req, res) => {
@@ -465,29 +363,26 @@ router.post('/online/create-private', verifyAuth, async (req, res) => {
     await assertNoOtherActiveGame(uid, { allowGameType: 'pisti' });
     const { maxPlayers, deckCount } = modeConfig(req.body?.mode || '2-52');
     if (isNaN(bet) || bet < 1 || bet > 10000000) throw new Error('Bahis tutarı 1 ile 10.000.000 MC arasında olmalıdır.');
-    let progressReward = null;
 
     const roomData = await db.runTransaction(async (tx) => {
       const uRef = colUsers().doc(uid); const uSnap = await tx.get(uRef);
       if (safeNum(uSnap.data()?.balance, 0) < bet) throw new Error('Bakiye yetersiz.');
       tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-bet) });
-      progressReward = applySpendProgression(tx, uRef, uSnap.data() || {}, bet, 'PISTI_ONLINE_BET');
+      awardRpFromSpend(tx, uRef, uSnap.data() || {}, bet, 'PISTI_ONLINE_BET', { activityScore: 0 });
 
       const newRoomRef = colOnlinePisti().doc();
       const roomId = newRoomRef.id;
-      const newRoom = { mode: req.body?.mode || '2-52', maxPlayers, deckCount, bet, isPrivate: true, roomName: req.body?.roomName || 'Özel Oda', passwordHash: hashRoomPassword(req.body?.password || '', roomId), players: [{ uid, username: uSnap.data()?.username || 'Oyuncu', avatar: uSnap.data()?.avatar || null, selectedFrame: pickUserSelectedFrame(uSnap.data() || {}), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 }], tableCards: [], deck: [], turn: 0, status: 'waiting', finishReason: '', cleanupAt: 0, resumeAvailableUntil: 0, createdAt: nowMs(), updatedAt: nowMs(), stateVersion: 1, timeline: [buildTimelineEvent('room_created', { actorUid: uid, roomId, gameKey: 'pisti', status: 'waiting', participantUids: [uid], meta: { mode: req.body?.mode || '2-52', bet, private: true } })] };
+      const newRoom = { mode: req.body?.mode || '2-52', maxPlayers, deckCount, bet, isPrivate: true, roomName: req.body?.roomName || 'VIP Oda', passwordHash: hashRoomPassword(req.body?.password || '', roomId), players: [{ uid, username: uSnap.data()?.username || 'Oyuncu', avatar: uSnap.data()?.avatar || null, selectedFrame: pickUserSelectedFrame(uSnap.data() || {}), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 }], tableCards: [], deck: [], turn: 0, status: 'waiting', finishReason: '', cleanupAt: 0, resumeAvailableUntil: 0, createdAt: nowMs(), updatedAt: nowMs(), stateVersion: 1, timeline: [buildTimelineEvent('room_created', { actorUid: uid, roomId, gameKey: 'pisti', status: 'waiting', participantUids: [uid], meta: { mode: req.body?.mode || '2-52', bet, private: true } })] };
       tx.set(newRoomRef, newRoom); return { id: roomId, ...newRoom };
     });
-    recordPistiProgressLedger(uid, progressReward, `pisti_online:${roomData.id}:${uid}:private`, { mode: req.body?.mode || '2-52', bet, action: 'private' });
     res.json({ ok: true, room: prepareRoomForSocket(roomData, uid) });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/online/join', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid; const roomId = req.body?.roomId;
     await assertNoOtherActiveGame(uid, { allowGameType: 'pisti', allowRoomId: roomId || '' });
-    let progressReward = null;
     const roomData = await db.runTransaction(async (tx) => {
       const uRef = colUsers().doc(uid); const uSnap = await tx.get(uRef);
       const rRef = colOnlinePisti().doc(roomId); const rSnap = await tx.get(rRef);
@@ -507,7 +402,7 @@ router.post('/online/join', verifyAuth, async (req, res) => {
       if (safeNum(uSnap.data()?.balance, 0) < r.bet) throw new Error('Bakiye yetersiz.');
 
       tx.update(uRef, { balance: admin.firestore.FieldValue.increment(-r.bet) });
-      progressReward = applySpendProgression(tx, uRef, uSnap.data() || {}, r.bet, 'PISTI_ONLINE_JOIN');
+      awardRpFromSpend(tx, uRef, uSnap.data() || {}, r.bet, 'PISTI_ONLINE_JOIN', { activityScore: 0 });
 
       const players = [...(r.players || []), { uid, username: uSnap.data()?.username || 'Oyuncu', avatar: uSnap.data()?.avatar || null, selectedFrame: pickUserSelectedFrame(uSnap.data() || {}), score: 0, cardCount: 0, hand: [], lastPing: nowMs(), processingUntil: 0 }];
       const updated = { ...r, players, updatedAt: nowMs(), finishReason: '' };
@@ -517,11 +412,10 @@ router.post('/online/join', verifyAuth, async (req, res) => {
       tx.update(rRef, updated); return { id: roomId, ...updated };
     });
 
-    recordPistiProgressLedger(uid, progressReward, `pisti_online:${roomData.id}:${uid}:join`, { bet: safeNum(roomData?.bet, 0), action: 'join', roomId: roomData.id });
     res.json({ ok: true, room: prepareRoomForSocket(roomData, uid) });
     const io = req.app.get('io');
     if (io && roomData.status === 'playing') io.to(`pisti_${roomData.id}`).emit('pisti:update', { id: roomData.id, sender: 'system' });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/online/leave', verifyAuth, async (req, res) => {
@@ -534,15 +428,15 @@ router.post('/online/leave', verifyAuth, async (req, res) => {
       if (!rSnap.exists) return null;
 
       const r = rSnap.data() || {};
-      if (r.status === 'finished' || r.status === 'abandoned') return { room: { id: roomId, ...r } };
+      if (r.status === 'finished' || r.status === 'abandoned') return { room: { id: roomId, ...r }, eloSummary: null };
       const isPlayer = (r.players || []).some(player => player.uid === uid);
       if (!isPlayer) return null;
 
       if (r.status === 'waiting') {
         tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(r.bet) });
         const remaining = (r.players || []).filter(player => player.uid !== uid);
-        if (remaining.length === 0) { tx.delete(rRef); return { deleted: true }; }
-        r.players = remaining; r.updatedAt = nowMs(); appendTimelineEntry(r, buildTimelineEvent('player_left', { actorUid: uid, roomId, gameKey: 'pisti', status: r.status, reason: 'leave', participantUids: remaining.map((player) => cleanStr(player?.uid || '', 160)) })); bumpStateVersion(r); tx.update(rRef, r); return { room: { id: roomId, ...r } };
+        if (remaining.length === 0) { tx.delete(rRef); return { deleted: true, eloSummary: null }; }
+        r.players = remaining; r.updatedAt = nowMs(); appendTimelineEntry(r, buildTimelineEvent('player_left', { actorUid: uid, roomId, gameKey: 'pisti', status: r.status, reason: 'leave', participantUids: remaining.map((player) => cleanStr(player?.uid || '', 160)) })); bumpStateVersion(r); tx.update(rRef, r); return { room: { id: roomId, ...r }, eloSummary: null };
       }
 
       const now = nowMs(); const droppedUids = [];
@@ -551,8 +445,8 @@ router.post('/online/leave', verifyAuth, async (req, res) => {
         if (now - safeNum(player.lastPing, 0) > PISTI_DISCONNECT_GRACE_MS) droppedUids.push(player.uid);
       }
 
-      const finalized = await finalizeOnlinePistiByDisconnect(r, tx, droppedUids, roomId);
-      tx.update(rRef, finalized.room); return { room: { id: roomId, ...finalized.room } };
+      const finalized = await finalizeOnlinePistiByDisconnect(r, tx, droppedUids);
+      tx.update(rRef, finalized.room); return { room: { id: roomId, ...finalized.room }, eloSummary: finalized.eloSummary };
     });
 
     if (result?.room && ['finished', 'abandoned'].includes(cleanStr(result.room.status || '', 24))) {
@@ -562,9 +456,16 @@ router.post('/online/leave', verifyAuth, async (req, res) => {
     }
 
     const io = req.app.get('io');
+    if (result?.eloSummary?.applied && io) {
+        const { buildEloSocketPayload } = require('../utils/eloSystem');
+        [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+            const payload = buildEloSocketPayload(result.eloSummary, u);
+            if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+        });
+    }
     if (io && result && !result.deleted) io.to(`pisti_${roomId}`).emit('pisti:update', { id: roomId, sender: 'system' });
     res.json({ ok: true, room: result && !result.deleted ? prepareRoomForSocket(result.room, uid) : null });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.get('/online/state/:id', verifyAuth, async (req, res) => {
@@ -575,7 +476,7 @@ router.get('/online/state/:id', verifyAuth, async (req, res) => {
     const isPlayerInRoom = (room.players || []).some(player => player.uid === req.user.uid);
     if (!isPlayerInRoom) throw new Error('Bu odanın durumunu görüntüleme yetkiniz yok.');
     res.json({ ok: true, room: prepareRoomForSocket(room, req.user.uid) });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/online/ping', verifyAuth, async (req, res) => {
@@ -586,7 +487,7 @@ router.post('/online/ping', verifyAuth, async (req, res) => {
       if (!snap.exists) throw new Error('Oda Yok');
       const r = snap.data() || {};
 
-      if (r.status === 'finished' || r.status === 'abandoned') return { room: { id: roomId, ...r } };
+      if (r.status === 'finished' || r.status === 'abandoned') return { room: { id: roomId, ...r }, eloSummary: null };
       const now = nowMs(); const droppedUids = [];
       const nextPlayers = (r.players || []).map(player => {
         const nextPlayer = { ...player };
@@ -597,11 +498,11 @@ router.post('/online/ping', verifyAuth, async (req, res) => {
 
       r.players = nextPlayers; r.updatedAt = now;
       if (r.status === 'playing' && droppedUids.length > 0) {
-        const finalized = await finalizeOnlinePistiByDisconnect(r, tx, droppedUids, roomId);
-        tx.update(rRef, finalized.room); return { room: { id: roomId, ...finalized.room } };
+        const finalized = await finalizeOnlinePistiByDisconnect(r, tx, droppedUids);
+        tx.update(rRef, finalized.room); return { room: { id: roomId, ...finalized.room }, eloSummary: finalized.eloSummary };
       }
 
-      tx.update(rRef, { players: r.players, updatedAt: now }); return { room: { id: roomId, ...r } };
+      tx.update(rRef, { players: r.players, updatedAt: now }); return { room: { id: roomId, ...r }, eloSummary: null };
     });
 
     if (result?.room && ['finished', 'abandoned'].includes(cleanStr(result.room.status || '', 24))) {
@@ -611,6 +512,13 @@ router.post('/online/ping', verifyAuth, async (req, res) => {
     }
 
     const io = req.app.get('io');
+    if (result?.eloSummary?.applied && io) {
+        const { buildEloSocketPayload } = require('../utils/eloSystem');
+        [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+            const payload = buildEloSocketPayload(result.eloSummary, u);
+            if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+        });
+    }
     const room = result?.room || null;
 
     if (room && (room.status === 'finished' || room.status === 'abandoned')) {
@@ -619,7 +527,7 @@ router.post('/online/ping', verifyAuth, async (req, res) => {
     }
 
     res.json({ ok: true, status: room?.status, room: prepareRoomForSocket(room, uid) });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
 router.post('/online/play', verifyAuth, async (req, res) => {
@@ -656,12 +564,12 @@ router.post('/online/play', verifyAuth, async (req, res) => {
 
       r.turn = (r.turn + 1) % r.players.length; dealIfNeeded(r);
 
+      let eloSummary = null;
       if ((r.players || []).every(pl => (pl.hand || []).length === 0) && (!Array.isArray(r.deck) || r.deck.length === 0)) {
-        const finalized = await finalizeGame(r, tx, roomId);
-        Object.assign(r, finalized.room);
+        const finalized = await finalizeGame(r, tx); eloSummary = finalized.eloSummary;
       }
 
-      r.updatedAt = nowMs(); bumpStateVersion(r); tx.update(rRef, r); return { room: { id: roomId, ...r } };
+      r.updatedAt = nowMs(); bumpStateVersion(r); tx.update(rRef, r); return { room: { id: roomId, ...r }, eloSummary };
     });
 
     if (result?.room?.status === 'finished') {
@@ -671,13 +579,23 @@ router.post('/online/play', verifyAuth, async (req, res) => {
     }
 
     const io = req.app.get('io');
+    if (result?.eloSummary?.applied && io) {
+        const { buildEloSocketPayload } = require('../utils/eloSystem');
+        [result.eloSummary.playerA?.uid, result.eloSummary.playerB?.uid].filter(Boolean).forEach((u) => {
+            const payload = buildEloSocketPayload(result.eloSummary, u);
+            if (payload) io.to(`user_${u}`).emit('game:elo_update', payload);
+        });
+    }
     if (result.room.status === 'finished') schedulePistiRoomRemoval(roomId, PISTI_RESULT_RETENTION_MS);
     if (io) io.to(`pisti_${roomId}`).emit('pisti:update', { id: roomId, sender: uid });
 
     res.json({ ok: true, room: prepareRoomForSocket(result.room, uid) });
-  } catch (e) { return sendPistiError(res, e); }
+  } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// ---------------------------------------------------------
+// TEK KİŞİLİK PİŞTİ (Bota Karşı)
+// ---------------------------------------------------------
 function createPistiDeck() {
     const suits = ["H", "D", "C", "S"]; 
     const vals = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "0", "J", "Q", "K"]; 
@@ -719,7 +637,6 @@ router.post('/start', verifyAuth, async (req, res) => {
     try {
         const uid = req.user.uid; const bet = safeNum(req.body.bet, 0);
         if (isNaN(bet) || bet < 1 || bet > 10000000) throw new Error('Bahis tutarı 1 ile 10.000.000 MC arasında olmalıdır.');
-        let progressReward = null;
         const { session, balanceAfter } = await db.runTransaction(async (tx) => {
             const existing = await tx.get(colPisti().doc(uid));
             if (existing.exists && existing.data().status === 'playing') throw new Error('Devam eden oyununuz var.');
@@ -727,7 +644,7 @@ router.post('/start', verifyAuth, async (req, res) => {
             const userBal = safeNum(uSnap.data()?.balance, 0);
             if (userBal < bet) throw new Error('Bakiye yetersiz.');
             tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(-bet) });
-            progressReward = applySpendProgression(tx, colUsers().doc(uid), uSnap.data() || {}, bet, 'PISTI_BET');
+            awardRpFromSpend(tx, colUsers().doc(uid), uSnap.data()||{}, bet, 'PISTI_BET');
             const balanceAfter = userBal - bet;
             const deck = createPistiDeck();
             const tableCards = [deck.pop(), deck.pop(), deck.pop(), deck.pop()];

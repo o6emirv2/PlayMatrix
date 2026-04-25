@@ -5,11 +5,13 @@ const express = require('express');
 const { db } = require('../config/firebase');
 const { verifyAuth } = require('../middlewares/auth.middleware');
 const { cleanStr, safeNum } = require('../utils/helpers');
+
 const { touchUserActivity, IDLE_TIMEOUT_MS } = require('../utils/activity');
 
 const router = express.Router();
 const colChess = () => db.collection('chess_rooms');
 const colOnlinePisti = () => db.collection('pisti_online_rooms');
+const colBjHistory = () => db.collection('bj_history');
 const colMatchHistory = () => db.collection('match_history');
 
 async function findLiveSession(uid) {
@@ -32,13 +34,12 @@ async function findLiveSession(uid) {
       session: {
         gameType: 'chess',
         roomId: chessDoc.id,
-        gamePath: '/Online Oyunlar/Satranc',
+        gamePath: '/Online Oyunlar/Satranc.html',
         role: cleanStr(data.host?.uid || '', 160) === uid ? 'host' : 'guest',
         status: cleanStr(data.status || '', 24)
       }
     };
   }
-
 
   const pistiDoc = pistiSnap.docs.find((doc) => {
     const data = doc.data() || {};
@@ -54,7 +55,7 @@ async function findLiveSession(uid) {
       session: {
         gameType: 'pisti',
         roomId: pistiDoc.id,
-        gamePath: '/Online Oyunlar/Pisti',
+        gamePath: '/Online Oyunlar/Pisti.html',
         role: roleIndex === 0 ? 'host' : 'guest',
         status: cleanStr(data.status || '', 24)
       }
@@ -75,12 +76,14 @@ router.get('/me/live-session', verifyAuth, async (req, res) => {
 
 router.get('/me/match-history', verifyAuth, async (req, res) => {
   try {
-    const [customSnap] = await Promise.all([
-      colMatchHistory().where('participants', 'array-contains', req.user.uid).orderBy('createdAt', 'desc').limit(30).get().catch(() => ({ docs: [] }))
+    const [customSnap, bjSnap] = await Promise.all([
+      colMatchHistory().where('participants', 'array-contains', req.user.uid).orderBy('createdAt', 'desc').limit(30).get().catch(() => ({ docs: [] })),
+      colBjHistory().where('uid', '==', req.user.uid).orderBy('createdAt', 'desc').limit(20).get().catch(() => ({ docs: [] }))
     ]);
 
     const matchHistory = customSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }));
-    const combined = [...matchHistory]
+    const bjHistory = bjSnap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}), gameType: 'blackjack' }));
+    const combined = [...matchHistory, ...bjHistory]
       .sort((a, b) => safeNum(b.createdAt, 0) - safeNum(a.createdAt, 0))
       .slice(0, 40);
 

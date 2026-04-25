@@ -1,126 +1,28 @@
+// routes/crash.routes.js
 'use strict';
 
 const express = require('express');
 const router = express.Router();
 const { db, admin } = require('../config/firebase');
 const { verifyAuth } = require('../middlewares/auth.middleware');
-const { safeNum, safeFloat, nowMs, clamp, cleanStr } = require('../utils/helpers');
+const { safeNum, safeFloat, nowMs, clamp } = require('../utils/helpers');
+const { awardRpFromSpend } = require('../utils/rpSystem');
 const { engineState } = require('../engines/crashEngine');
-const { CRASH_MIN_BET, CRASH_MIN_AUTO, CRASH_MAX_MULTIPLIER, GAME_RESULT_CODES, GAME_SETTLEMENT_STATUS } = require('../config/constants');
-const { getCanonicalSelectedFrame, buildCanonicalUserState } = require('../utils/accountState');
-const { assertGamesAllowed } = require('../utils/userRestrictions');
-const { recordGameAudit } = require('../utils/gameAudit');
-const { getAccountXp, normalizeUserRankState } = require('../utils/progression');
-const { saveMatchHistory } = require('../utils/matchHistory');
-const { recordRewardLedger } = require('../utils/rewardLedger');
+const { CRASH_MIN_AUTO, CRASH_MAX_MULTIPLIER } = require('../config/constants');
 
 const colUsers = () => db.collection('users');
-const colCrashBets = () => db.collection('crash_bets');
 
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+  if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+  const numericSelected = Number(user?.selectedFrame);
+  if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+  if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+  const numericActive = Number(user?.activeFrame);
+  if (Number.isFinite(numericActive) && numericActive > 0) return Math.floor(numericActive);
+  return 0;
 }
 
-
-
-function calculateSpendProgressReward(spendMc = 0, source = '') {
-  const spend = Math.max(0, Math.floor(safeNum(spendMc, 0)));
-  if (spend <= 0) return { xpEarned: 0, activityEarned: 0, roundsEarned: 0, spentMc: 0, source: cleanStr(source || 'GAME_SPEND', 64) };
-  let xpEarned = 0;
-  if (spend >= 200000) xpEarned = 120;
-  else if (spend >= 100000) xpEarned = 72;
-  else if (spend >= 40000) xpEarned = 42;
-  else if (spend >= 20000) xpEarned = 24;
-  else if (spend >= 10000) xpEarned = 14;
-  else if (spend >= 1000) xpEarned = 6;
-  return {
-    xpEarned,
-    activityEarned: 1,
-    roundsEarned: 1,
-    spentMc: spend,
-    source: cleanStr(source || 'GAME_SPEND', 64) || 'GAME_SPEND'
-  };
-}
-
-function applySpendProgression(tx, userRef, userData = {}, spendMc = 0, source = '') {
-  const reward = calculateSpendProgressReward(spendMc, source);
-  const nextUser = {
-    ...userData,
-    accountXp: Math.max(0, getAccountXp(userData) + reward.xpEarned),
-    monthlyActiveScore: Math.max(0, safeNum(userData.monthlyActiveScore, 0) + reward.activityEarned),
-    totalRounds: Math.max(0, safeNum(userData.totalRounds, 0) + reward.roundsEarned),
-    totalSpentMc: Math.max(0, safeNum(userData.totalSpentMc, 0) + reward.spentMc)
-  };
-  const canonical = buildCanonicalUserState(nextUser, { defaultFrame: 0 });
-  const normalized = normalizeUserRankState({ ...nextUser, ...canonical, monthlyActiveScore: nextUser.monthlyActiveScore });
-  tx.set(userRef, {
-    ...canonical,
-    ...normalized,
-    monthlyActiveScore: nextUser.monthlyActiveScore,
-    totalRounds: nextUser.totalRounds,
-    totalSpentMc: nextUser.totalSpentMc,
-    activityUpdatedAt: nowMs(),
-    lastGameProgressSource: reward.source,
-    lastGameXpEarned: reward.xpEarned
-  }, { merge: true });
-  return reward;
-}
-
-function describeCrashOutcomeLabel(resultCode = '') {
-  if (resultCode === GAME_RESULT_CODES.CRASH_CASHOUT_AUTO) return 'auto_cashout';
-  if (resultCode === GAME_RESULT_CODES.CRASH_CASHOUT_MANUAL) return 'cashout';
-  if (resultCode === GAME_RESULT_CODES.CRASH_CRASHED_LOSS) return 'crashed_loss';
-  return 'unknown';
-}
-
-function buildCrashHistoryEntry({ betId = '', uid = '', roomId = '', roundId = '', amount = 0, payout = 0, resultCode = '', crashPoint = 0, cashoutMult = 0, createdAt = 0 } = {}) {
-  const safeBetId = cleanStr(betId || '', 180);
-  if (!safeBetId || !uid) return null;
-  const rewardMc = Math.floor(safeNum(payout, 0));
-  const stakeMc = Math.floor(safeNum(amount, 0));
-  const netMc = rewardMc - stakeMc;
-  return {
-    id: `crash_${safeBetId}`,
-    gameType: 'crash',
-    roomId: cleanStr(roomId || roundId || safeBetId, 160),
-    status: 'finished',
-    result: describeCrashOutcomeLabel(resultCode),
-    winnerUid: netMc > 0 ? cleanStr(uid || '', 160) : '',
-    loserUid: netMc < 0 ? cleanStr(uid || '', 160) : '',
-    participants: [cleanStr(uid || '', 160)].filter(Boolean),
-    rewards: { mc: rewardMc, stakeMc, netMc },
-    meta: {
-      resultCode: cleanStr(resultCode || '', 64),
-      roundId: cleanStr(roundId || '', 160),
-      crashPoint: safeFloat(crashPoint),
-      cashoutMult: safeFloat(cashoutMult)
-    },
-    createdAt: safeNum(createdAt, nowMs())
-  };
-}
-
-async function persistCrashAudit({ uid = '', betId = '', roundId = '', eventType = '', resultCode = '', amount = 0, payout = 0, meta = {}, idempotencyKey = '' } = {}) {
-  if (!uid || !betId || !eventType) return null;
-  return recordGameAudit({
-    gameType: 'crash',
-    entityType: 'bet',
-    entityId: betId,
-    roomId: roundId,
-    roundId,
-    betId,
-    eventType,
-    resultCode,
-    reason: cleanStr(meta?.reason || '', 48),
-    status: resultCode === GAME_RESULT_CODES.CRASH_BET_PLACED ? GAME_SETTLEMENT_STATUS.ACTIVE : GAME_SETTLEMENT_STATUS.SETTLED,
-    actorUid: uid,
-    subjectUid: uid,
-    amount,
-    payout,
-    meta,
-    idempotencyKey
-  }).catch(() => null);
-}
-
+// GET /api/crash/active-bets
 router.get('/active-bets', verifyAuth, async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -147,219 +49,107 @@ router.get('/active-bets', verifyAuth, async (req, res) => {
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/crash/bet
 router.post('/bet', verifyAuth, async (req, res) => {
   try {
-    const uid = req.user.uid;
-    const guardSnap = await colUsers().doc(uid).get();
-    assertGamesAllowed(guardSnap.data() || {});
-    const box = safeNum(req.body.box, 0);
-    const amount = safeFloat(req.body.amount);
-    const autoCashout = engineState.normalizeAutoCashout(req.body.autoCashout);
-    const autoCashoutEnabled = autoCashout > 0 && autoCashout >= CRASH_MIN_AUTO;
+      const uid = req.user.uid;
+      const box = safeNum(req.body.box, 0);
+      const amount = safeFloat(req.body.amount);
+      const autoCashout = engineState.normalizeAutoCashout(req.body.autoCashout);
+      const autoCashoutEnabled = autoCashout > 0 && autoCashout >= CRASH_MIN_AUTO;
 
-    if (box !== 1 && box !== 2) throw new Error('Geçersiz kutu.');
-    if (isNaN(amount) || amount < CRASH_MIN_BET || amount > 10000000) throw new Error(`Katılım tutarı ${CRASH_MIN_BET} ile 10.000.000 MC arasında olmalıdır.`);
+      if (box !== 1 && box !== 2) throw new Error('Geçersiz kutu.');
+      if (isNaN(amount) || amount < 1 || amount > 10000000) throw new Error('Bahis tutarı 1 ile 10.000.000 MC arasında olmalıdır.');
 
-    const currentRoundId = String(engineState.crashState.roundId || '');
-    const betId = `${currentRoundId}_${uid}_${box}`;
-    let uData;
-    let progressReward = null;
+      const currentRoundId = engineState.crashState.roundId;
+      const betId = `${currentRoundId}_${uid}_${box}`;
+      let uData; let rpEarned = 0;
 
-    await db.runTransaction(async (tx) => {
-      if (engineState.crashState.phase !== 'COUNTDOWN') throw new Error('Katılım penceresi kapandı, bir sonraki turu bekleyin.');
+      await db.runTransaction(async (tx) => {
+          if (engineState.crashState.phase !== 'COUNTDOWN') throw new Error('Bahisler kapandı, bir sonraki eli bekleyin.');
+          
+          const betSnap = await tx.get(db.collection('crash_bets').doc(betId));
+          if (betSnap.exists) throw new Error('Bu kutuya zaten bahis yapıldı.');
 
-      const betRef = colCrashBets().doc(betId);
-      const betSnap = await tx.get(betRef);
-      if (betSnap.exists) throw new Error('Bu kutu için tur kaydı zaten alındı.');
+          const userRef = colUsers().doc(uid);
+          const uSnap = await tx.get(userRef);
+          if (!uSnap.exists) throw new Error('Kullanıcı bulunamadı.');
 
-      const userRef = colUsers().doc(uid);
-      const uSnap = await tx.get(userRef);
-      if (!uSnap.exists) throw new Error('Kullanıcı bulunamadı.');
+          uData = uSnap.data();
+          if (safeFloat(uData.balance) < amount) throw new Error('Bakiye yetersiz.');
 
-      uData = uSnap.data() || {};
-      if (safeFloat(uData.balance) < amount) throw new Error('Bakiye yetersiz.');
+          tx.update(userRef, { balance: admin.firestore.FieldValue.increment(-amount) });
+          rpEarned += awardRpFromSpend(tx, userRef, uData, amount, 'CRASH_BET');
 
-      tx.update(userRef, { balance: admin.firestore.FieldValue.increment(-amount) });
-      progressReward = applySpendProgression(tx, userRef, uData, amount, 'CRASH_BET');
-
-      tx.set(betRef, {
-        uid,
-        username: uData.username || 'Oyuncu',
-        box,
-        amount,
-        autoCashout,
-        autoCashoutEnabled,
-        cashed: false,
-        win: 0,
-        roundId: currentRoundId,
-        createdAt: nowMs(),
-        updatedAt: nowMs(),
-        status: 'active',
-        settlementStatus: GAME_SETTLEMENT_STATUS.ACTIVE,
-        resultCode: 'pending',
-        resultReason: '',
-        settledAt: 0,
-        cashoutSource: ''
+          tx.set(db.collection('crash_bets').doc(betId), {
+              uid, username: uData.username || 'Oyuncu', box, amount, autoCashout,
+              autoCashoutEnabled, cashed: false, win: 0, roundId: currentRoundId, createdAt: nowMs()
+          });
       });
-    });
 
-    if (progressReward?.xpEarned > 0) {
-      recordRewardLedger({
-        uid,
-        amount: progressReward.xpEarned,
-        currency: 'XP',
-        source: 'crash_spend_progress',
-        referenceId: betId,
-        idempotencyKey: 'crash_spend_progress:' + betId,
-        meta: { amount, roundId: currentRoundId, box, spentMc: progressReward.spentMc, resultCode: GAME_RESULT_CODES.CRASH_BET_PLACED }
-      }).catch(() => null);
-    }
+      if (!engineState.crashState.players[uid]) engineState.crashState.players[uid] = {};
 
-    if (!engineState.crashState.players[uid]) engineState.crashState.players[uid] = {};
+      engineState.crashState.players[uid][`box${box}`] = {
+          uid, username: uData.username || 'Oyuncu', avatar: uData.avatar || '',
+          selectedFrame: pickUserSelectedFrame(uData || {}), betId, bet: amount,
+          autoCashout, autoCashoutEnabled, cashed: false, cashingOut: false,
+          win: 0, cashoutMult: 0, box
+      };
 
-    engineState.crashState.players[uid][`box${box}`] = {
-      uid,
-      username: uData.username || 'Oyuncu',
-      avatar: uData.avatar || '',
-      selectedFrame: pickUserSelectedFrame(uData || {}),
-      betId,
-      bet: amount,
-      autoCashout,
-      autoCashoutEnabled,
-      cashed: false,
-      cashingOut: false,
-      win: 0,
-      cashoutMult: 0,
-      box,
-      roundId: currentRoundId
-    };
-
-    engineState.triggerUpdate();
-
-    persistCrashAudit({
-      uid,
-      betId,
-      roundId: currentRoundId,
-      eventType: 'bet_placed',
-      resultCode: GAME_RESULT_CODES.CRASH_BET_PLACED,
-      amount,
-      payout: 0,
-      meta: { box, autoCashout, autoCashoutEnabled, reason: 'bet_placed' },
-      idempotencyKey: `crash:${betId}:bet_placed`
-    });
-    res.json({ ok: true });
+      engineState.triggerUpdate();
+      
+      const io = req.app.get('io');
+      if (io && rpEarned > 0) io.to(`user_${uid}`).emit('user:rp_earned', { earned: rpEarned });
+      res.json({ ok: true });
   } catch (e) { res.json({ ok: false, error: e.message }); }
 });
 
+// POST /api/crash/cashout
 router.post('/cashout', verifyAuth, async (req, res) => {
   try {
-    const uid = req.user.uid;
-    const guardSnap = await colUsers().doc(uid).get();
-    assertGamesAllowed(guardSnap.data() || {});
-    const box = safeNum(req.body.box, 0);
+      const uid = req.user.uid;
+      const box = safeNum(req.body.box, 0);
 
-    if (engineState.crashState.phase !== 'FLYING') {
-      throw new Error(engineState.crashState.phase === 'CRASHED' ? 'Çok geç, tur sona erdi.' : 'Şu an çıkış alınamaz.');
-    }
-
-    const pBet = engineState.crashState.players[uid] && engineState.crashState.players[uid][`box${box}`];
-    if (!pBet) throw new Error('Aktif tur kaydınız bulunmuyor.');
-    if (pBet.cashed || pBet.cashingOut) throw new Error('Bu tur için çıkış işlemi zaten tamamlandı.');
-
-    pBet.cashingOut = true;
-
-    const elapsedMs = nowMs() - engineState.crashState.startTime;
-    const exactCurrentMult = safeFloat(clamp(Math.max(1.00, Math.pow(Math.E, 0.00008 * Math.max(0, elapsedMs))), 1.00, CRASH_MAX_MULTIPLIER));
-
-    if (exactCurrentMult >= engineState.crashState.crashPoint) {
-      pBet.cashingOut = false;
-      throw new Error('Çok geç, uçak patladı!');
-    }
-
-    const finalWin = safeFloat(pBet.bet * exactCurrentMult);
-    const settledAt = nowMs();
-
-    const settlement = await db.runTransaction(async (tx) => {
-      const betRef = colCrashBets().doc(pBet.betId);
-      const betSnap = await tx.get(betRef);
-      if (!betSnap.exists) throw new Error('Aktif tur kaydı bulunmuyor.');
-
-      const betDoc = betSnap.data() || {};
-      const currentSettlement = cleanStr(betDoc.settlementStatus || '', 24);
-      const alreadySettled = safeNum(betDoc.settledAt, 0) > 0 || currentSettlement === GAME_SETTLEMENT_STATUS.SETTLED || betDoc.cashed === true;
-      if (alreadySettled) {
-        return {
-          duplicated: true,
-          resultCode: cleanStr(betDoc.resultCode || '', 64),
-          winAmount: safeFloat(betDoc.win || 0),
-          cashoutMult: safeFloat(betDoc.cashoutMult || 0),
-          cashoutSource: cleanStr(betDoc.cashoutSource || '', 32)
-        };
+      if (engineState.crashState.phase !== 'FLYING') {
+          throw new Error(engineState.crashState.phase === 'CRASHED' ? 'Çok geç, uçak patladı!' : 'Şu an bozdurulamaz.');
       }
 
-      if (cleanStr(betDoc.uid || '', 160) !== uid || safeNum(betDoc.box, 0) !== box) throw new Error('Tur kaydı doğrulanamadı.');
-      if (cleanStr(betDoc.roundId || '', 160) !== String(pBet.roundId || engineState.crashState.roundId || '')) throw new Error('Tur eşleşmesi doğrulanamadı.');
+      const pBet = engineState.crashState.players[uid] && engineState.crashState.players[uid][`box${box}`];
+      if (!pBet) throw new Error('Aktif bahisiniz bulunmuyor.');
+      if (pBet.cashed || pBet.cashingOut) throw new Error('Bu bahsi zaten çektiniz.');
 
-      tx.update(betRef, {
-        cashed: true,
-        win: finalWin,
-        cashoutMult: exactCurrentMult,
-        updatedAt: settledAt,
-        status: 'settled',
-        settlementStatus: GAME_SETTLEMENT_STATUS.SETTLED,
-        resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_MANUAL,
-        resultReason: 'cashout_manual',
-        settledAt,
-        cashoutSource: 'manual'
-      });
-      tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(finalWin) });
-      return { duplicated: false, resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_MANUAL, winAmount: finalWin, cashoutMult: exactCurrentMult, cashoutSource: 'manual' };
-    });
+      pBet.cashingOut = true; 
 
-    pBet.cashingOut = false;
-    pBet.cashed = true;
-    pBet.win = settlement.winAmount;
-    pBet.cashoutMult = settlement.cashoutMult;
-    engineState.triggerUpdate();
+      const elapsedMs = nowMs() - engineState.crashState.startTime;
+      const exactCurrentMult = safeFloat(clamp(Math.max(1.00, Math.pow(Math.E, 0.00008 * Math.max(0, elapsedMs))), 1.00, CRASH_MAX_MULTIPLIER));
 
-    if (settlement.resultCode === GAME_RESULT_CODES.CRASH_CRASHED_LOSS) throw new Error('Çok geç, tur sona erdi.');
+      if (exactCurrentMult >= engineState.crashState.crashPoint) {
+          pBet.cashingOut = false;
+          throw new Error('Çok geç, uçak patladı!');
+      }
 
-    if (!settlement.duplicated) {
-      const historyEntry = buildCrashHistoryEntry({
-        betId: pBet.betId,
-        uid,
-        roundId: String(pBet.roundId || engineState.crashState.roundId || ''),
-        amount: pBet.bet,
-        payout: settlement.winAmount,
-        resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_MANUAL,
-        cashoutMult: settlement.cashoutMult,
-        createdAt: settledAt
-      });
-      if (historyEntry) saveMatchHistory(historyEntry).catch(() => null);
-      persistCrashAudit({
-        uid,
-        betId: pBet.betId,
-        roundId: String(pBet.roundId || engineState.crashState.roundId || ''),
-        eventType: 'bet_settled',
-        resultCode: GAME_RESULT_CODES.CRASH_CASHOUT_MANUAL,
-        amount: pBet.bet,
-        payout: settlement.winAmount,
-        meta: { box, cashoutMult: settlement.cashoutMult, reason: 'cashout_manual' },
-        idempotencyKey: `crash:${pBet.betId}:cashout_manual`
-      });
-    }
-    res.json({ ok: true, winAmount: settlement.winAmount, cashoutMult: settlement.cashoutMult, duplicated: !!settlement.duplicated });
-  } catch (e) {
-    const uid = req.user?.uid;
-    const box = safeNum(req.body?.box, 0);
-    const pBet = uid && engineState.crashState.players[uid] && engineState.crashState.players[uid][`box${box}`];
-
-    if (pBet) {
-      pBet.cashingOut = false;
-      if (!pBet.cashed) { pBet.win = 0; pBet.cashoutMult = 0; }
+      const finalWin = safeFloat(pBet.bet * exactCurrentMult);
+      pBet.cashed = true; pBet.win = finalWin; pBet.cashoutMult = exactCurrentMult; 
       engineState.triggerUpdate();
-    }
-    res.json({ ok: false, error: e.message });
+
+      await db.runTransaction(async (tx) => {
+          tx.update(db.collection('crash_bets').doc(pBet.betId), { cashed: true, win: finalWin, cashoutMult: exactCurrentMult });
+          tx.update(colUsers().doc(uid), { balance: admin.firestore.FieldValue.increment(finalWin) });
+      });
+
+      pBet.cashingOut = false;
+      res.json({ ok: true, winAmount: finalWin });
+  } catch (e) {
+      const uid = req.user?.uid;
+      const box = safeNum(req.body?.box, 0);
+      const pBet = uid && engineState.crashState.players[uid] && engineState.crashState.players[uid][`box${box}`];
+
+      if (pBet) {
+          pBet.cashingOut = false;
+          if (!pBet.cashed) { pBet.win = 0; pBet.cashoutMult = 0; }
+          engineState.triggerUpdate();
+      }
+      res.json({ ok: false, error: e.message });
   }
 });
 

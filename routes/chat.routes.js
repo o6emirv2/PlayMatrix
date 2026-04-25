@@ -19,9 +19,7 @@ const {
   listConversationDocs
 } = require('../utils/socialKit');
 const { captureError } = require('../utils/errorMonitor');
-const { CHAT_RETENTION_POLICY, DIRECT_MESSAGE_EDIT_WINDOW_MS } = require('../config/constants');
-
-const colChatReports = () => db.collection('chat_reports');
+const { CHAT_RETENTION_POLICY } = require('../config/constants');
 
 
 function encodeCursor(payload = {}) {
@@ -43,39 +41,21 @@ function decodeCursor(value = '') {
 }
 
 
-function buildMessageLifecycle(data = {}) {
-  const deletedAt = safeNum(data.deletedAt, 0);
-  const deletionMode = cleanStr(data.deletionMode || '', 32) || (deletedAt > 0 ? CHAT_RETENTION_POLICY.deleteModes.manual : '');
-  const isDeleted = deletedAt > 0;
-  return {
-    deleted: isDeleted,
-    deletedAt,
-    deletionMode,
-    deletedBy: cleanStr(data.deletedBy || '', 160),
-    deletedLabel: deletionMode === CHAT_RETENTION_POLICY.deleteModes.retention ? CHAT_RETENTION_POLICY.cleanupLabel : (isDeleted ? CHAT_RETENTION_POLICY.manualDeleteLabel : ''),
-    expiresAt: safeNum(data.expiresAt, 0)
-  };
-}
-
 function normalizeMessage(doc, metaByUid = {}, meUid = '', peerUid = '') {
   const data = doc.data() || {};
   const sender = cleanStr(data.sender || '', 160);
-  const lifecycle = buildMessageLifecycle(data);
+  const isDeleted = !!data.deletedAt;
   const senderMeta = metaByUid?.[sender] || metaByUid?.default || {};
   return {
     id: doc.id,
     sender,
     toUid: sender === meUid ? peerUid : meUid,
-    text: lifecycle.deleted ? '' : cleanStr(data.text || '', 280),
+    text: isDeleted ? '' : cleanStr(data.text || '', 280),
     status: cleanStr(data.status || 'sent', 24) || 'sent',
     createdAt: safeNum(data.createdAt, 0),
     editedAt: safeNum(data.editedAt, 0),
-    deletedAt: lifecycle.deletedAt,
-    deleted: lifecycle.deleted,
-    deletionMode: lifecycle.deletionMode,
-    deletedBy: lifecycle.deletedBy,
-    deletedLabel: lifecycle.deletedLabel,
-    expiresAt: lifecycle.expiresAt,
+    deletedAt: safeNum(data.deletedAt, 0),
+    deleted: isDeleted,
     username: senderMeta.username || 'Oyuncu',
     avatar: senderMeta.avatar || '',
     selectedFrame: pickUserSelectedFrame(senderMeta)
@@ -104,42 +84,18 @@ async function rebuildConversationSummary(chatId = '') {
   if (!safeChatId) return null;
   const chatRef = colChats().doc(safeChatId);
   const snap = await chatRef.collection('messages').orderBy('createdAt', 'desc').limit(40).get().catch(() => ({ docs: [] }));
-  const latestDoc = (snap.docs || [])[0] || null;
   const latestVisible = (snap.docs || []).find((doc) => !safeNum(doc.data()?.deletedAt, 0));
-  const latestData = latestDoc?.data?.() || {};
-  const latestLifecycle = buildMessageLifecycle(latestData);
   const payload = latestVisible
     ? {
         lastMessage: cleanStr(latestVisible.data()?.text || '', 280),
         lastUpdatedAt: safeNum(latestVisible.data()?.editedAt || latestVisible.data()?.createdAt, nowMs()),
-        lastMessageSender: cleanStr(latestVisible.data()?.sender || '', 160),
-        lastMessageState: 'visible',
-        lastMessageDeletedLabel: '',
-        lastMessageDeletedAt: 0,
-        lastMessageDeletionMode: '',
-        lastMessageEditedAt: safeNum(latestVisible.data()?.editedAt, 0)
+        lastMessageSender: cleanStr(latestVisible.data()?.sender || '', 160)
       }
-    : latestDoc
-      ? {
-          lastMessage: latestLifecycle.deletedLabel || 'Son mesaj silindi',
-          lastUpdatedAt: safeNum(latestData.editedAt || latestData.deletedAt || latestData.createdAt, nowMs()),
-          lastMessageSender: cleanStr(latestData.sender || '', 160),
-          lastMessageState: latestLifecycle.deleted ? 'deleted' : 'hidden',
-          lastMessageDeletedLabel: latestLifecycle.deletedLabel,
-          lastMessageDeletedAt: latestLifecycle.deletedAt,
-          lastMessageDeletionMode: latestLifecycle.deletionMode,
-          lastMessageEditedAt: safeNum(latestData.editedAt, 0)
-        }
-      : {
-          lastMessage: '',
-          lastUpdatedAt: nowMs(),
-          lastMessageSender: '',
-          lastMessageState: 'empty',
-          lastMessageDeletedLabel: '',
-          lastMessageDeletedAt: 0,
-          lastMessageDeletionMode: '',
-          lastMessageEditedAt: 0
-        };
+    : {
+        lastMessage: '',
+        lastUpdatedAt: nowMs(),
+        lastMessageSender: ''
+      };
   await chatRef.set(payload, { merge: true });
   return payload;
 }
@@ -173,10 +129,6 @@ async function decorateConversation(uid, doc) {
     lastMessage: cleanStr(data.lastMessage || '', 280),
     lastUpdatedAt: safeNum(data.lastUpdatedAt?.toMillis?.() || data.lastUpdatedAt, 0),
     lastMessageSender: cleanStr(data.lastMessageSender || '', 160),
-    lastMessageState: cleanStr(data.lastMessageState || 'visible', 24) || 'visible',
-    lastMessageDeletedLabel: cleanStr(data.lastMessageDeletedLabel || '', 120),
-    lastMessageDeletedAt: safeNum(data.lastMessageDeletedAt, 0),
-    lastMessageDeletionMode: cleanStr(data.lastMessageDeletionMode || '', 32),
     flags: flags.mine,
     blockedByPeer: flags.theirs.blocked
   };
@@ -221,8 +173,6 @@ router.get('/chat/direct/search', verifyAuth, async (req, res) => {
 
     let chatIds = [];
     if (targetUid) {
-      if (targetUid === uid) return res.status(400).json({ ok: false, error: 'Geçersiz konuşma.' });
-      await assertDmAllowed(uid, targetUid);
       chatIds = [getPersistentDirectChatId(uid, targetUid)];
     } else {
       const page = await listConversationDocs(uid, scanChats, { scanLimit: Math.max(scanChats * 5, 160) });
@@ -238,11 +188,9 @@ router.get('/chat/direct/search', verifyAuth, async (req, res) => {
       const snap = await query.get().catch(() => ({ docs: [] }));
       snap.docs.forEach((doc) => {
         const data = doc.data() || {};
-        const lifecycle = buildMessageLifecycle(data);
-        const text = lifecycle.deleted ? '' : cleanStr(data.text || '', 280);
+        const text = cleanStr(data.text || '', 280);
         const createdAt = safeNum(data.createdAt, 0);
-        const status = cleanStr(data.status || 'sent', 24);
-        if (lifecycle.deleted || status === 'deleted' || !text) return;
+        if (!text || !!data.deletedAt) return;
         if (!text.toLowerCase().includes(q)) return;
         if (cursorCreatedAt > 0) {
           if (createdAt > cursorCreatedAt) return;
@@ -287,7 +235,7 @@ router.post('/chat/direct/edit', verifyAuth, profileLimiter, async (req, res) =>
     const data = snap.data() || {};
     if (cleanStr(data.sender || '', 160) !== uid) throw new Error('Sadece kendi mesajınızı düzenleyebilirsiniz.');
     if (safeNum(data.deletedAt, 0) > 0) throw new Error('Silinmiş mesaj düzenlenemez.');
-    if (nowMs() - safeNum(data.createdAt, 0) > DIRECT_MESSAGE_EDIT_WINDOW_MS) throw new Error('Mesaj düzenleme süresi doldu.');
+    if (nowMs() - safeNum(data.createdAt, 0) > 24 * 60 * 60 * 1000) throw new Error('Mesaj düzenleme süresi doldu.');
 
     const editedAt = nowMs();
     await ref.set({ text, editedAt, status: 'edited' }, { merge: true });
@@ -317,49 +265,13 @@ router.post('/chat/direct/delete', verifyAuth, profileLimiter, async (req, res) 
     if (cleanStr(data.sender || '', 160) !== uid) throw new Error('Sadece kendi mesajınızı silebilirsiniz.');
 
     const deletedAt = nowMs();
-    await ref.set({ text: '', deletedAt, deletedBy: uid, deletionMode: CHAT_RETENTION_POLICY.deleteModes.manual, status: 'deleted' }, { merge: true });
+    await ref.set({ text: '', deletedAt, status: 'deleted' }, { merge: true });
     await rebuildConversationSummary(chatId);
-    const deletedPayload = { chatId, messageId, byUid: uid, targetUid, deletedAt, deletionMode: CHAT_RETENTION_POLICY.deleteModes.manual, deletedLabel: CHAT_RETENTION_POLICY.manualDeleteLabel };
-    req.app.get('io')?.to(`user_${targetUid}`).emit('chat:dm_deleted', deletedPayload);
-    req.app.get('io')?.to(`user_${uid}`).emit('chat:dm_deleted', deletedPayload);
+    req.app.get('io')?.to(`user_${targetUid}`).emit('chat:dm_deleted', { chatId, messageId, byUid: uid, deletedAt });
+    req.app.get('io')?.to(`user_${uid}`).emit('chat:dm_deleted', { chatId, messageId, byUid: uid, deletedAt });
     return res.json({ ok: true });
   } catch (error) {
     return res.status(400).json({ ok: false, error: error.message || 'Mesaj silinemedi.' });
-  }
-});
-
-
-router.post('/chat/report', verifyAuth, profileLimiter, async (req, res) => {
-  try {
-    const uid = req.user.uid;
-    const targetUid = cleanStr(req.body?.targetUid || '', 160);
-    const messageId = cleanStr(req.body?.messageId || '', 180);
-    const context = cleanStr(req.body?.context || 'dm', 24).toLowerCase();
-    const reason = cleanStr(req.body?.reason || '', 48).toLowerCase();
-    const details = cleanStr(req.body?.details || '', 280);
-    const allowedReasons = new Set(['spam', 'hakaret', 'tehdit', 'rahatsiz_etme', 'dolandiricilik', 'diger']);
-    if (!targetUid || targetUid === uid) throw new Error('Geçersiz hedef.');
-    if (!messageId) throw new Error('Mesaj kaydı eksik.');
-    if (!['dm', 'global'].includes(context)) throw new Error('Geçersiz kapsam.');
-    if (!allowedReasons.has(reason)) throw new Error('Geçersiz rapor nedeni.');
-    if (context === 'dm') await assertDmAllowed(uid, targetUid).catch(() => null);
-
-    const createdAt = nowMs();
-    const reportRef = colChatReports().doc();
-    await reportRef.set({
-      uid,
-      targetUid,
-      messageId,
-      context,
-      reason,
-      details,
-      status: 'open',
-      createdAt,
-      updatedAt: createdAt
-    }, { merge: false });
-    return res.json({ ok: true, reportId: reportRef.id, status: 'open' });
-  } catch (error) {
-    return res.status(400).json({ ok: false, error: error.message || 'Mesaj raporu oluşturulamadı.' });
   }
 });
 
@@ -474,7 +386,7 @@ router.get('/chat/direct/history', verifyAuth, async (req, res) => {
     const items = pageDocs.map((doc) => normalizeMessage(doc, metaMap, uid, targetUid)).reverse();
     const last = pageDocs[pageDocs.length - 1];
     const nextCursor = hasMore && last ? encodeCursor({ createdAt: safeNum(last.data()?.createdAt, 0), messageId: last.id }) : '';
-    return res.json({ ok: true, chatId, items, nextCursor, policy: CHAT_RETENTION_POLICY });
+    return res.json({ ok: true, chatId, items, nextCursor });
   } catch (error) {
     return res.status(400).json({ ok: false, error: error.message || 'Geçmiş yüklenemedi.' });
   }

@@ -2,7 +2,6 @@
 
 const { db } = require('../config/firebase');
 const { cleanStr, safeNum, nowMs } = require('./helpers');
-const { getCanonicalSelectedFrame } = require('./accountState');
 
 const colUsers = () => db.collection('users');
 const colUsernames = () => db.collection('usernames');
@@ -17,7 +16,13 @@ function getFirestoreTimestampMs(value, fallback = 0) {
 }
 
 function pickUserSelectedFrame(user = {}) {
-  return getCanonicalSelectedFrame(user, { defaultFrame: 0 });
+  if (typeof user?.selectedFrame === 'string' && user.selectedFrame.trim()) return user.selectedFrame.trim();
+  const numericSelected = Number(user?.selectedFrame);
+  if (Number.isFinite(numericSelected) && numericSelected > 0) return Math.floor(numericSelected);
+  if (typeof user?.activeFrameClass === 'string' && user.activeFrameClass.trim()) return user.activeFrameClass.trim();
+  const numericActive = Number(user?.activeFrame);
+  if (Number.isFinite(numericActive) && numericActive > 0) return Math.floor(numericActive);
+  return 0;
 }
 
 function sanitizeStoredUsername(value = '') {
