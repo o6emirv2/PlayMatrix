@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta name="playmatrix-api-url" content="" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<title>PlayMatrix - Snake Pro | Yılan Oyunu</title>
+<meta name="description" content="PlayMatrix Snake Pro ile nostaljiye dön! Klasik yılan oyununu modern ve hızlandırılmış versiyonuyla oyna, en yüksek skoru yap, reflekslerini test et. Ücretsiz tarayıcı oyunu.">
+<meta name="keywords" content="yılan oyunu, snake oyna, klasik snake oyunu, nokia yılan oyunu, retro oyunlar, PlayMatrix, ücretsiz beceri oyunu, tarayıcı oyunları">
+<meta name="author" content="PlayMatrix Global">
+<meta name="robots" content="index, follow">
+<meta name="language" content="Turkish">
+<meta name="theme-color" content="#03050a">
+<link rel="canonical" href="https://playmatrix.com.tr/classic-games/snake-pro">
+
+<meta property="og:title" content="PlayMatrix Snake Pro | Klasik Yılan Oyunu">
+<meta property="og:description" content="Nostaljik yeşil ekran, hızlanan oyun yapısı ve elmalar... En uzun yılanı sen yapabilir misin? Hemen oyna!">
+<meta property="og:image" content="https://playmatrix.com.tr/assets/snake-promo.jpg">
+<meta property="og:url" content="https://playmatrix.com.tr/classic-games/snake-pro">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PlayMatrix">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PlayMatrix Snake Pro Oyna">
+<meta name="twitter:description" content="Klasik yılan oyunu deneyimini ücretsiz olarak telefonunda veya bilgisayarında yaşa.">
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <script src="/assets/games/classic/SnakePro.phase4-script-1.js"></script>
+
+  <script src="/assets/games/classic/SnakePro.phase4-script-2.js"></script>
+
+<link rel="stylesheet" href="/assets/games/classic/SnakePro.phase4-1.css" />
+  <link rel="stylesheet" href="/public/avatar-frame.css" />
+  <link rel="stylesheet" href="/public/shell-enhancements.css" />
+  <script src="/public/avatar-frame.js" defer></script>
+  <script src="/public/shell-enhancements.js" defer></script>
+  <link rel="stylesheet" href="/public/css/phase4-inline.css" />
+</head>
+<body>
+
+<h1 class="sr-only">PlayMatrix Snake Pro - Retro Nostaljik Yılan Oyunu</h1>
+
+<header class="top-bar" id="guestHeader">
+    <a href="/" class="back-btn" aria-label="Ana Sayfaya Dön">GERİ</a>
+    <div class="brand">Snake Pro</div>
+    <div class="pm-csp-inline-bcce8b88d2"></div>
+</header>
+
+<header class="top-bar-full" id="levelHeader">
+    <div class="account-level-section">
+        <div class="level-badge-wrap">
+            <i class="fa-solid fa-layer-group"></i>
+            <div class="level-badge-indicator" id="uiAccountLevelBadge">1</div>
+        </div>
+        
+        <div class="level-stats-area">
+            <div class="stat-row-top">
+                <div class="stat-label">(MC) BAKİYE</div>
+                <div class="stat-balance"><span>MC</span> <span id="ui-balance">0.00</span></div>
+            </div>
+            <div class="stat-row-bottom">
+                <div class="stat-lvl-text">Hesap Seviyeniz</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" id="uiAccountLevelBar"></div>
+                </div>
+                <div class="stat-pct" id="uiAccountLevelPct">0%</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="top-actions">
+        <a href="/" class="action-icon-btn red"><i class="fa-solid fa-power-off"></i></a>
+    </div>
+</header>
+
+<main class="main-container">
+    <div class="console" aria-label="Oyun Konsolu">
+        
+        <div class="score-panel" aria-live="polite">
+            <span>SCORE:<span id="score">0</span></span>
+            <span>BEST:<span id="high">0</span></span>
+        </div>
+
+        <div class="screen-container">
+            <canvas id="game" width="300" height="300" aria-label="Yılan Oyunu Alanı"></canvas>
+            
+            <div id="startup" class="overlay" role="button" aria-label="Oyunu Başlat">
+                <div class="pm-csp-inline-b794ace7dd">SNAKE PRO</div>
+                <div class="blink pm-csp-inline-5eb19b99d8">BAŞLAMAK İÇİN DOKUN</div>
+            </div>
+
+            <div id="gameover" class="overlay pm-csp-inline-6b99de8b69" role="button" aria-label="Tekrar Oyna">
+                <div class="pm-csp-inline-641ef7b92f">EYVAH!</div>
+                <div id="finalScore" class="pm-csp-inline-c403b9eb32"></div>
+                <div class="blink pm-csp-inline-d1ab5f2526">TEKRAR DENE</div>
+            </div>
+        </div>
+
+        <div class="controls" aria-label="Yön Kontrolleri">
+            <button class="btn btn-up" id="btn-UP" aria-label="Yukarı Git">↑</button>
+            <button class="btn btn-left" id="btn-LEFT" aria-label="Sola Git">←</button>
+            <button class="btn btn-down" id="btn-DOWN" aria-label="Aşağı Git">↓</button>
+            <button class="btn btn-right" id="btn-RIGHT" aria-label="Sağa Git">→</button>
+        </div>
+    </div>
+</main>
+
+<script src="/assets/games/classic/SnakePro.phase4-script-3.js"></script>
+
+<script src="/public/playmatrix-static-runtime.js"></script>
+  <script src="/public/playmatrix-api.js"></script>
+<script type="module" src="/assets/games/classic/SnakePro.phase4-module-1.js"></script>
+
+  <script src="/public/playmatrix-runtime.js" defer></script>
+</body>
+</html>

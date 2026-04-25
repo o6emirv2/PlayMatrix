@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta name="playmatrix-api-url" content="" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PlayMatrix Admin Giriş</title>
+  <link rel="stylesheet" href="./matrix-auth.css" />
+  <link rel="stylesheet" href="index.phase4-1.css" />
+  <script src="../playmatrix-static-runtime.js"></script>
+  <script src="../playmatrix-api.js"></script>
+  <script src="./admin-auth.js"></script>
+  <link rel="stylesheet" href="../shell-enhancements.css" />
+  <link rel="stylesheet" href="../css/phase4-inline.css" />
+  <script src="../shell-enhancements.js" defer></script>
+</head>
+<body class="matrix-auth-body">
+  <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+  <main class="gate-stage" aria-live="polite">
+    <section class="gate-shell">
+      <header class="gate-brandbar">
+        <div class="gate-brand">
+          <img src="../../logo.png" alt="PlayMatrix" />
+          <div>
+            <span class="gate-kicker">PLAYMATRIX</span>
+            <h1>ADMIN KONTROL MERKEZİ</h1>
+          </div>
+        </div>
+        <div class="gate-chip">MATRIX EDITION</div>
+      </header>
+
+      <div class="gate-progress" id="stepProgress" data-step="1" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="gate-viewport">
+        <section class="gate-step is-active" data-step="1">
+          <div class="step-badge">ADIM 1</div>
+          <div class="step-icon" aria-hidden="true">✦</div>
+          <h2>YÖNETİCİ HESABI<br/>DOĞRULANIYOR</h2>
+          <p>Aktif oturumdaki yönetici hesabı otomatik algılanır ve güvenlik adımlarına kontrollü biçimde geçilir.</p>
+          <label class="gate-field">
+            <span>Algılanan yönetici e-postası</span>
+            <div class="field-shell success-shell">
+              <input id="adminEmail" type="email" autocomplete="off" spellcheck="false" placeholder="Oturumdan otomatik algılanıyor" readonly />
+              <b class="field-check" aria-hidden="true">✓</b>
+            </div>
+          </label>
+          <div class="status" id="emailStatus"></div>
+          <button type="button" class="ghost-btn" id="retryEmail">YENİDEN ALGILA</button>
+          <div class="legal-warning">Yalnızca yetkili ekip hesapları bu adımları tamamlayabilir.</div>
+        </section>
+
+        <section class="gate-step" data-step="2">
+          <div class="step-badge">ADIM 2</div>
+          <div class="step-icon shield" aria-hidden="true">⬡</div>
+          <h2>ŞİFRE DOĞRULAMA</h2>
+          <p>İkinci faktör şifresi doğru girildiği anda operatör doğrulamasına geçilir.</p>
+          <label class="gate-field">
+            <span>Admin Panel Şifresi</span>
+            <div class="field-shell">
+              <input id="adminPassword" type="password" autocomplete="off" spellcheck="false" placeholder="Şifre" />
+              <b class="field-check" aria-hidden="true">✓</b>
+            </div>
+          </label>
+          <div class="status" id="passwordStatus"></div>
+          <button type="button" class="ghost-btn" id="retryPassword">SIFIRLA</button>
+          <div class="legal-warning">Yalnızca yetkili ekip hesapları bu adımları tamamlayabilir.</div>
+        </section>
+
+        <section class="gate-step" data-step="3">
+          <div class="step-badge">ADIM 3</div>
+          <div class="step-icon fingerprint" aria-hidden="true">◉</div>
+          <h2>SON DOĞRULAMA</h2>
+          <p>Son doğrulama tamamlandığında güvenli yönetici oturumu başlatılır ve panel açılır.</p>
+          <label class="gate-field">
+            <span>Yönetici doğrulama adı</span>
+            <div class="field-shell">
+              <input id="adminName" type="text" autocomplete="off" spellcheck="false" placeholder="Yönetici doğrulama adı" />
+              <b class="field-check" aria-hidden="true">✓</b>
+            </div>
+          </label>
+          <div class="status" id="nameStatus"></div>
+          <button type="button" class="ghost-btn" id="retryName">SIFIRLA</button>
+          <div class="legal-warning">Yalnızca yetkili ekip hesapları bu adımları tamamlayabilir.</div>
+        </section>
+
+        <section class="gate-step" data-step="4">
+          <div class="step-badge">ADIM 4</div>
+          <div class="final-shell">
+            <div class="final-key" aria-hidden="true">⌁</div>
+            <h2>YÖNETİCİ OTURUMU HAZIR</h2>
+            <p>Güvenli erişim anahtarı oluşturuldu.</p>
+            <strong>PANEL HAZIRLANIYOR</strong>
+            <small>Kontrol merkezi hazırlanıyor.</small>
+            <div class="final-spinner" aria-hidden="true"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./matrix-auth.js"></script>
+</body>
+</html>
