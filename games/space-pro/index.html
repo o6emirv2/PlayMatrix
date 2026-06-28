@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.90, maximum-scale=0.90, minimum-scale=0.90, user-scalable=no, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <title>PlayMatrix - Space Pro | Uzay Savaşı Oyunu</title>
+    <meta name="description" content="PlayMatrix Space Pro ile uzayın derinliklerinde savaşmaya hazır ol! Düşman gemilerini yok et, boss savaşlarını kazan ve en yüksek skoru elde et. Ücretsiz uzay oyunu.">
+    <meta name="keywords" content="uzay oyunu, space shooter oyna, retro oyunlar, uçak oyunu, PlayMatrix, ücretsiz beceri oyunu, tarayıcı oyunları, uzay gemisi oyunu">
+    <meta name="author" content="PlayMatrix Global">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Turkish">
+    <meta name="theme-color" content="#020205">
+    <link rel="canonical" href="https://playmatrix.com.tr/games/space-pro" />
+
+    <meta property="og:title" content="PlayMatrix Space Pro | Uzay Savaşı">
+    <meta property="og:description" content="Uzaylı istilasına karşı galaksiyi koru! Roketlerini güçlendir ve bossları yok et. Hemen oyna!">
+    <meta property="og:image" content="https://playmatrix.com.tr/assets/spacepro-promo.jpg">
+    <meta property="og:url" content="https://playmatrix.com.tr/games/space-pro" />
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PlayMatrix">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PlayMatrix Space Pro Oyna">
+    <meta name="twitter:description" content="Galaksinin sana ihtiyacı var! Klasik retro uzay savaşı oyununu ücretsiz oyna.">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+
+
+    
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-pm-action="audio.init" data-pm-args="[]" data-game="space">
+
+<h1 class="sr-only">PlayMatrix Space Pro - Uzay Savaşı Oyunu</h1>
+
+<header class="top-bar" id="guestHeader" hidden aria-hidden="true"></header>
+
+<header class="top-bar-full pm-classic-crash-topbar" id="levelHeader" data-game-title="SPACE PRO">
+    <div class="account-level-section">
+        <div class="pm-game-topbar-avatar-host" id="uiAccountAvatarHost" aria-label="Hesap avatarı"></div>
+        <div class="level-badge-wrap">
+            <i class="fa-solid fa-layer-group"></i>
+            <div class="level-badge-indicator" id="uiAccountLevelBadge">1</div>
+        </div>
+
+        <div class="level-stats-area">
+            <div class="stat-row-top">
+                <div class="stat-label">SPACE PRO</div>
+                <div class="stat-balance"><span>MC</span> <span id="uiBalance">0.00</span></div>
+            </div>
+            <div class="stat-row-bottom">
+                <div class="stat-lvl-text">Hesap Seviyeniz</div>
+                <div class="stat-bar-bg">
+                    <div class="stat-bar-fill" id="uiAccountLevelBar"></div>
+                </div>
+                <div class="stat-pct" id="uiAccountLevelPct">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="top-actions">
+        <a href="/" class="action-icon-btn" aria-label="Ana sayfaya dön"><i class="fa-solid fa-house"></i></a>
+        <a href="/" class="action-icon-btn red" aria-label="Oyundan çık"><i class="fa-solid fa-power-off"></i></a>
+    </div>
+</header>
+
+<main id="mainWrapper">
+    <div id="game-container">
+        <div class="ui-overlay" aria-live="polite">
+            <div class="stat-box" id="scoreUI" aria-label="Mevcut Skor">SCORE: 000</div>
+            <div class="stat-box" id="highScoreUI" aria-label="En Yüksek Skor">BEST: 000</div>
+        </div>
+        
+        <div class="game-over-screen" id="gameOver" aria-live="assertive">
+            <h1>MISSION FAILED</h1>
+            <p id="finalScore" class="pm-csp-inline-8d22f322d2">FINAL SCORE: 0</p>
+            <button id="restartBtn" aria-label="Oyunu Tekrar Başlat">TEKRAR OYNA</button>
+        </div>
+        
+        <canvas id="game" aria-label="Uzay Savaşı Oyun Alanı"></canvas>
+    </div>
+
+    <div class="controls" aria-label="Gemi Kontrolleri">
+        <div class="btn" id="leftBtn" role="button" aria-label="Sola Git">←</div>
+        <div class="btn" id="rightBtn" role="button" aria-label="Sağa Git">→</div>
+    </div>
+</main>
+
+
+  <script src="/public/playmatrix-static-runtime.js?v=pm-20260603-professional-fix2"></script>
+  <script src="/public/playmatrix-api.js"></script>
+  <script src="/public/playmatrix-runtime.js?v=pm-20260603-professional-fix2"></script>
+  <link rel="stylesheet" href="/public/avatar-frame.css?v=pmv21-game-topbar" />
+  <script src="/public/avatar-registry.js"></script>
+  <script src="/public/avatar-frame.js?v=xxxl5-frame-fit-20260508"></script>
+  <script type="module">import { initPlayMatrixOnlineCore } from '/public/pm-online-core.js?v=pm-20260603-professional-fix2'; initPlayMatrixOnlineCore().then(() => { window.dispatchEvent(new Event('pm:online-core-ready')); window.__PM_GAME_ACCOUNT_SYNC__?.refresh?.({ force:true, timeoutMs:9000 }); }).catch(() => null);</script>
+  <script src="/public/game-topbar-sync.js"></script><script src="script.js?v=pm-20260603-professional-fix2" defer></script>
+</body>
+</html>
