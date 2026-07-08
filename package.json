@@ -1,33 +1,33 @@
 {
   "name": "playmatrix-clean-production",
-  "version": "10.0.0",
+  "version": "15.0.0",
   "private": true,
   "type": "commonjs",
-  "description": "PlayMatrix production build - modular backend, restored online games, market, XP and runtime memory architecture",
+  "description": "PlayMatrix production build - seven active games including Matrix Siege: Mini Ordu",
   "main": "server.js",
   "engines": {
-    "node": "20.19.5",
-    "npm": "10.8.2"
+    "node": "22.x"
   },
   "scripts": {
     "start": "node server.js",
     "check:server": "node --check server.js",
     "build": "npm run check:server && npm run check:routes && npm run check:browser",
-    "check:browser": "node --input-type=module --check < script.js && node --input-type=module --check < public/js/home/app.js && node --input-type=module --check < public/js/home/game-catalog.js && node --input-type=module --check < public/js/home/modal/modal-registry.js && node --input-type=module --check < public/js/home/tools/message-map.js && node --input-type=module --check < public/playmatrix-api.js && node --input-type=module --check < public/firebase-runtime.js && node --input-type=module --check < admin/matrix-dashboard.js && node --input-type=module --check < public/js/home/home-core.js && node --input-type=module --check < public/js/games/crash/index.js && node --input-type=module --check < games/chess/script.js && node --input-type=module --check < games/pisti/script.js && node --input-type=module --check < games/snake-pro/script.js && node --input-type=module --check < games/space-pro/script.js && node --input-type=module --check < games/pattern-master/script.js && node --input-type=module --check < public/avatar-frame.js && node --input-type=module --check < public/game-topbar-sync.js && node --input-type=module --check < public/playmatrix-runtime.js",
-    "check:routes": "node --check server/routes/admin.routes.js && node --check server/routes/promo.routes.js && node --check server/routes/wheel.routes.js && node --check server/games/crash/index.js && node --check server/games/chess/index.js && node --check server/games/pisti/index.js && node --check server/games/classicEngine.js && node --check server/core/recentActivityService.js && node --check server/core/wheelRightsService.js"
+    "check:browser": "node --input-type=module --check < script.js && node --input-type=module --check < public/js/home/app.js && node --input-type=module --check < public/js/home/game-catalog.js && node --input-type=module --check < public/js/home/modal/modal-registry.js && node --input-type=module --check < public/js/home/tools/message-map.js && node --input-type=module --check < public/playmatrix-api.js && node --input-type=module --check < public/firebase-runtime.js && node --input-type=module --check < admin/matrix-dashboard.js && node --input-type=module --check < public/js/home/home-core.js && node --input-type=module --check < public/js/games/crash/index.js && node --input-type=module --check < games/chess/script.js && node --input-type=module --check < games/pisti/script.js && node --input-type=module --check < games/snake-pro/script.js && node --input-type=module --check < games/space-pro/script.js && node --input-type=module --check < games/pattern-master/script.js && node --input-type=module --check < public/avatar-frame.js && node --input-type=module --check < public/game-topbar-sync.js && node --input-type=module --check < public/playmatrix-runtime.js && node --input-type=module --check < public/dob-picker.js && node --input-type=module --check < games/matrix-siege/script.js && node --check public/js/games/matrix-siege/simulation-core.js",
+    "check:routes": "node --check server/routes/admin.routes.js && node --check server/routes/promo.routes.js && node --check server/routes/wheel.routes.js && node --check server/games/crash/index.js && node --check server/games/chess/index.js && node --check server/games/pisti/index.js && node --check server/games/classicEngine.js && node --check server/core/recentActivityService.js && node --check server/core/wheelRightsService.js && node --check server/core/userSessionService.js && node --check server/core/maintenanceService.js && node --check server/routes/auth.routes.js && node --check server/core/security.js && node --check server/games/matrix-siege/index.js && node --check server/games/matrix-siege/config-service.js"
   },
   "dependencies": {
-    "compression": "^1.7.4",
-    "express": "^4.18.3",
-    "express-rate-limit": "^7.2.0",
-    "firebase-admin": "^13.10.0",
-    "helmet": "^8.1.0",
-    "socket.io": "^4.7.5",
-    "cors": "^2.8.5"
+    "compression": "1.8.1",
+    "express": "4.22.2",
+    "express-rate-limit": "7.5.1",
+    "firebase-admin": "13.10.0",
+    "helmet": "8.2.0",
+    "socket.io": "4.8.3",
+    "cors": "2.8.6",
+    "redis": "4.7.1"
   },
   "overrides": {
-    "ws": "^8.20.1",
-    "@tootallnate/once": "^3.0.1"
-  },
-  "packageManager": "npm@10.8.2"
+    "uuid": "11.1.1",
+    "ws": "8.21.0",
+    "@tootallnate/once": "3.0.1"
+  }
 }

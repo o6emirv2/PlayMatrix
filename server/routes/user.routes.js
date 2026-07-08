@@ -3,6 +3,7 @@ const { requireAuth } = require('../core/security');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const { migrateUserProfile } = require('../core/legacyMigrationService');
 const { getProgression } = require('../core/progressionService');
+const { normalizeAvatarSelection } = require('../core/avatarCatalogService');
 
 const router = express.Router();
 
@@ -48,9 +49,9 @@ router.post('/user/frame', requireAuth, async (req, res) => {
 });
 
 router.post('/user/avatar', requireAuth, async (req, res) => {
-  const avatar = String(req.body.avatar || '').slice(0, 1000);
+  const avatar = normalizeAvatarSelection(req.body.avatar || '');
   const { db } = initFirebaseAdmin();
-  if (db) await db.collection('users').doc(req.user.uid).set({ avatar, marketAvatarId: '', selectedAvatar: '', cosmeticSlots: { avatar: { source: 'normal', itemId: 'custom-avatar', updatedAt: Date.now() } }, updatedAt: Date.now() }, { merge: true });
+  if (db) await db.collection('users').doc(req.user.uid).set({ avatar, marketAvatarId: '', selectedAvatar: '', cosmeticSlots: { avatar: { source: 'normal', itemId: 'prepared-avatar', updatedAt: Date.now() } }, updatedAt: Date.now() }, { merge: true });
   res.json({ ok: true, avatar });
 });
 

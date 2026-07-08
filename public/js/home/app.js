@@ -1,11 +1,11 @@
-import './auth-modal.js?v=pm-final-mobile-v21';
-import './game-catalog.js?v=pm-final-mobile-v21';
-import './leaderboard.js?v=pm-final-mobile-v21';
-import './profile-panel.js?v=pm-final-mobile-v21';
-import './reward-ui.js?v=pm-final-mobile-v21';
-import './market.js?v=pm-final-mobile-v21';
-import './wheel.js?v=pm-final-mobile-v21';
-import { getHomeRuntime } from './widget-contract.js?v=pm-final-mobile-v21';
+import './auth-modal.js?v=pm-v15-matrix-siege';
+import './game-catalog.js?v=pm-v15-matrix-siege';
+import './leaderboard.js?v=pm-v15-matrix-siege';
+import './profile-panel.js?v=pm-v15-matrix-siege';
+import './reward-ui.js?v=pm-v15-matrix-siege';
+import './market.js?v=pm-v15-matrix-siege';
+import './wheel.js?v=pm-v15-matrix-siege';
+import { getHomeRuntime } from './widget-contract.js?v=pm-v15-matrix-siege';
 
 let booted = false;
 

@@ -1,13 +1,13 @@
 import { PM_CURRENT_FIREBASE_PROJECT_ID, cloneCurrentFirebasePublicConfig, matchesCurrentFirebasePublicConfig } from './firebase-public-contract.js';
 const PM_PUBLIC_RUNTIME_ENDPOINT = '/api/public/runtime-config';
-const PM_PUBLIC_RUNTIME_CACHE_KEY = 'pm_public_runtime_cache_v4';
+const PM_PUBLIC_RUNTIME_CACHE_KEY = 'pm_public_runtime_cache_v5';
 
 let runtimeCache = null;
 let runtimePromise = null;
 
-function fetchWithTimeout(resource, options = {}, timeoutMs = 3500) {
+function fetchWithTimeout(resource, options = {}, timeoutMs = 8000) {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), Math.max(1000, Number(timeoutMs) || 3500));
+  const timer = window.setTimeout(() => controller.abort(), Math.max(1500, Number(timeoutMs) || 8000));
   return fetch(resource, { ...options, signal: controller.signal }).finally(() => window.clearTimeout(timer));
 }
 
@@ -47,7 +47,12 @@ function readMetaContent(name) {
 }
 
 function hasUsableFirebaseConfig(config = null) {
-  return !!(config && typeof config === 'object' && config.apiKey && config.authDomain && config.projectId && config.appId);
+  return !!(config && typeof config === 'object' && String(config.apiKey || '').trim() && config.authDomain && config.projectId && config.appId);
+}
+
+function fallbackFirebaseConfig() {
+  const fallback = cloneCurrentFirebasePublicConfig();
+  return hasUsableFirebaseConfig(fallback) ? fallback : null;
 }
 
 function assertCurrentFirebaseContract(config = null, source = 'runtime') {
@@ -86,7 +91,7 @@ function readStaticRuntimeConfig() {
     : null;
   if (!source) return null;
   const expectedFirebaseProjectId = readExpectedFirebaseProjectId(source);
-  const firebase = sanitizeFirebaseConfig(source.firebase || null, expectedFirebaseProjectId) || cloneCurrentFirebasePublicConfig();
+  const firebase = sanitizeFirebaseConfig(source.firebase || null, expectedFirebaseProjectId) || fallbackFirebaseConfig();
   const apiBase = normalizeBase(source.apiBase || window.__PM_RUNTIME?.apiBase || window.__PLAYMATRIX_API_URL__ || readMetaContent('playmatrix-api-url') || '');
   if (!apiBase && !firebase) return null;
   return {
@@ -94,13 +99,15 @@ function readStaticRuntimeConfig() {
     apiBase,
     expectedFirebaseProjectId,
     firebase,
-    firebaseReady: !!firebase,
+    firebaseReady: hasUsableFirebaseConfig(firebase),
     source: source.source || 'static-runtime-fallback'
   };
 }
 
 function getEndpointCandidates() {
   const list = [];
+  // Render ENV ile tanımlanan backend ilk sıradadır. Production custom domain
+  // yalnızca gerçekten API servis ediyorsa yedek aday olarak kullanılır.
   pushUnique(list, window.__PM_RUNTIME?.apiBase);
   pushUnique(list, readStaticRuntimeConfig()?.apiBase);
   pushUnique(list, window.__PLAYMATRIX_API_URL__);
@@ -112,8 +119,8 @@ function getEndpointCandidates() {
     }
   } catch (_) {}
 
-  pushUnique(list, window.location.origin);
   pushUnique(list, 'https://emirhan-siye.onrender.com');
+  pushUnique(list, window.location.origin);
   return list;
 }
 
@@ -121,15 +128,24 @@ function normalizeRuntime(payload = {}) {
   const runtime = payload?.runtime && typeof payload.runtime === 'object' ? payload.runtime : payload;
   const staticRuntime = readStaticRuntimeConfig();
   const expectedFirebaseProjectId = String(PM_CURRENT_FIREBASE_PROJECT_ID || runtime?.expectedFirebaseProjectId || staticRuntime?.expectedFirebaseProjectId || readExpectedFirebaseProjectId(staticRuntime) || '').trim();
-  const firebase = sanitizeFirebaseConfig(runtime?.firebase || null, expectedFirebaseProjectId) || sanitizeFirebaseConfig(staticRuntime?.firebase || null, expectedFirebaseProjectId) || cloneCurrentFirebasePublicConfig();
-  const apiBase = normalizeBase(runtime?.apiBase || window.__PM_RUNTIME?.apiBase || staticRuntime?.apiBase || window.__PLAYMATRIX_API_URL__ || readMetaContent('playmatrix-api-url') || (!isProductionHost() ? window.location.origin : ''));
+  const firebase = sanitizeFirebaseConfig(runtime?.firebase || null, expectedFirebaseProjectId)
+    || sanitizeFirebaseConfig(staticRuntime?.firebase || null, expectedFirebaseProjectId)
+    || fallbackFirebaseConfig();
+  const apiBase = normalizeBase(
+    runtime?.apiBase
+    || window.__PM_RUNTIME?.apiBase
+    || staticRuntime?.apiBase
+    || window.__PLAYMATRIX_API_URL__
+    || readMetaContent('playmatrix-api-url')
+    || window.location.origin
+  );
   return {
     ...cloneObject(staticRuntime || {}),
     ...cloneObject(runtime || {}),
     apiBase,
     expectedFirebaseProjectId,
     firebase,
-    firebaseReady: !!firebase
+    firebaseReady: hasUsableFirebaseConfig(firebase)
   };
 }
 
@@ -177,18 +193,32 @@ function applyRuntime(runtime = {}) {
 async function requestRuntime(endpoint, timeoutMs) {
   const response = await fetchWithTimeout(endpoint, {
     method: 'GET',
-    credentials: 'omit',
+    credentials: 'include',
     cache: 'no-store',
     headers: { Accept: 'application/json' }
   }, timeoutMs);
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload?.ok === false) {
-    throw new Error(payload?.error || `PUBLIC_RUNTIME_HTTP_${response.status}`);
+  const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+  if (!contentType.includes('application/json')) {
+    const error = new Error('PUBLIC_RUNTIME_NOT_JSON');
+    error.code = 'PUBLIC_RUNTIME_NOT_JSON';
+    throw error;
   }
-  return applyRuntime(payload);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload || payload?.ok !== true) {
+    const error = new Error(payload?.error || `PUBLIC_RUNTIME_HTTP_${response.status}`);
+    error.code = payload?.code || payload?.error || `PUBLIC_RUNTIME_HTTP_${response.status}`;
+    throw error;
+  }
+  const runtime = applyRuntime(payload);
+  if (!runtime?.firebaseReady || !hasUsableFirebaseConfig(runtime.firebase)) {
+    const error = new Error('PUBLIC_FIREBASE_CONFIG_MISSING');
+    error.code = 'PUBLIC_FIREBASE_CONFIG_MISSING';
+    throw error;
+  }
+  return runtime;
 }
 
-async function fetchRuntimeConfig(force = false, timeoutMs = 3500) {
+async function fetchRuntimeConfig(force = false, timeoutMs = 8000) {
   if (!force && runtimeCache) return cloneObject(runtimeCache);
   if (!force && runtimePromise) return runtimePromise;
 
@@ -238,21 +268,28 @@ export async function loadPublicRuntimeConfig(options = {}) {
 
 export async function loadFirebaseWebConfig(options = {}) {
   let runtime = null;
-  try {
-    runtime = await loadPublicRuntimeConfig(options);
-  } catch (error) {
-    if (options.required === false) return sanitizeFirebaseConfig(readStaticRuntimeConfig()?.firebase || null) || cloneCurrentFirebasePublicConfig();
-    const staticConfig = sanitizeFirebaseConfig(readStaticRuntimeConfig()?.firebase || null) || cloneCurrentFirebasePublicConfig();
-    if (staticConfig) return staticConfig;
-    throw error;
+  let lastError = null;
+  const attempts = options.force ? [true] : [false, true];
+  for (const force of attempts) {
+    try {
+      runtime = await loadPublicRuntimeConfig({ ...options, force, timeoutMs: options.timeoutMs || 8000 });
+      const config = sanitizeFirebaseConfig(runtime?.firebase || null)
+        || sanitizeFirebaseConfig(readStaticRuntimeConfig()?.firebase || null)
+        || fallbackFirebaseConfig();
+      if (config) {
+        assertCurrentFirebaseContract(config, options.scope || 'firebase-runtime');
+        return config;
+      }
+      lastError = Object.assign(new Error('PUBLIC_FIREBASE_CONFIG_MISSING'), { code: 'PUBLIC_FIREBASE_CONFIG_MISSING' });
+    } catch (error) {
+      lastError = error;
+      runtimeCache = null;
+    }
   }
-  const config = sanitizeFirebaseConfig(runtime?.firebase || null) || sanitizeFirebaseConfig(readStaticRuntimeConfig()?.firebase || null) || cloneCurrentFirebasePublicConfig();
-  if (config) {
-    assertCurrentFirebaseContract(config, options.scope || 'firebase-runtime');
-    return config;
-  }
+  const staticConfig = sanitizeFirebaseConfig(readStaticRuntimeConfig()?.firebase || null) || fallbackFirebaseConfig();
+  if (staticConfig) return staticConfig;
   if (options.required === false) return null;
-  throw new Error('PUBLIC_FIREBASE_CONFIG_MISSING');
+  throw lastError || Object.assign(new Error('PUBLIC_FIREBASE_CONFIG_MISSING'), { code: 'PUBLIC_FIREBASE_CONFIG_MISSING' });
 }
 
 export function getCachedPublicRuntimeConfig() {

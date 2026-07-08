@@ -1,5 +1,5 @@
-import { bootHomeApplication } from '/public/js/home/app.js?v=pm-final-mobile-v21';
-import { HOME_GAME_ROUTES } from '/public/js/home/game-catalog.js?v=pm-final-mobile-v21';
+import { bootHomeApplication } from '/public/js/home/app.js?v=pm-v15-matrix-siege';
+import { HOME_GAME_ROUTES } from '/public/js/home/game-catalog.js?v=pm-v15-matrix-siege';
 
 window.__PLAYMATRIX_ROUTES__ = HOME_GAME_ROUTES;
 const PLAYMATRIX_BACKEND_ORIGIN = 'https://emirhan-siye.onrender.com';

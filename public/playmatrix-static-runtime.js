@@ -5,15 +5,7 @@
   const PUBLIC_API_BASE = 'https://emirhan-siye.onrender.com';
   const PUBLIC_BASE_URL = 'https://playmatrix.com.tr';
   const EXPECTED_FIREBASE_PROJECT_ID = 'playmatrixpro-b18b7';
-  const PUBLIC_FIREBASE_CONFIG = Object.freeze({
-    apiKey: 'AIzaSyANhKrb7zuSzXouFq03Q_oWQJCQUglCNhE',
-    authDomain: 'playmatrixpro-b18b7.firebaseapp.com',
-    projectId: 'playmatrixpro-b18b7',
-    storageBucket: 'playmatrixpro-b18b7.firebasestorage.app',
-    messagingSenderId: '401147567674',
-    appId: '1:401147567674:web:37f609d8527e61a72c5f03',
-    measurementId: 'G-HEDD2B0T9H'
-  });
+  const PUBLIC_FIREBASE_CONFIG = null;
 
   function normalizeBase(value) {
     return String(value || '').trim().replace(/\/+$/, '').replace(/\/api$/i, '');
@@ -21,12 +13,57 @@
 
 
   const PM_USER_MESSAGE_MAP = Object.freeze({
+    SUCCESS: 'İşlem başarıyla tamamlandı.',
+    UNKNOWN_ERROR: 'İşlem şu anda tamamlanamadı. Lütfen tekrar deneyin.',
+    SESSION_EXPIRED: 'Oturumunun süresi doldu. Lütfen tekrar giriş yap.',
+    SESSION_CONFLICT: 'Hesabın başka bir cihazda açıldığı için bu oturum kapatıldı.',
+    ACTIVE_GAME_LOGIN_BLOCKED: 'Aktif oyunun devam ederken başka bir cihazdan giriş yapılamaz.',
+    ADMIN_AUTH_REQUIRED: 'Devam etmek için yönetici girişi gerekiyor.',
+    ADMIN_REAUTH_REQUIRED: 'Bu işlem için yönetici doğrulaması gerekiyor.',
+    FORBIDDEN: 'Bu işlemi yapmak için yetkin bulunmuyor.',
+    RATE_LIMITED: 'Çok fazla deneme yapıldı. Bir süre sonra tekrar dene.',
+    CSRF_REQUIRED: 'Güvenlik doğrulaması yenilendi. Lütfen işlemi tekrar dene.',
+    VALIDATION_ERROR: 'Bilgileri kontrol edip tekrar dene.',
     AUTH_REQUIRED: 'Devam etmek için giriş yapman gerekiyor.',
     AUTH_INVALID: 'Devam etmek için giriş yapman gerekiyor.',
     SESSION_REQUIRED: 'Devam etmek için giriş yapman gerekiyor.',
     SESSION_INVALID: 'Oturumun yenilendi. Lütfen tekrar giriş yap.',
     EMAIL_VERIFICATION_REQUIRED: 'Bu işlem için e-posta adresini doğrulaman gerekiyor.',
+    EMAIL_ALREADY_EXISTS: 'Bu e-posta adresi zaten kullanılıyor.',
+    AGE_REQUIRED: 'Devam etmek için doğum tarihini eklemen gerekiyor.',
+    AGE_RESTRICTED: 'Devam edebilmek için 16 yaşından büyük olmalısınız.',
+    DATE_OF_BIRTH_REQUIRED: 'Doğum tarihi alanını eksiksiz seçmelisiniz.',
+    ACCOUNT_LOCKED: 'Hesabın şu anda kilitli. Destek ile iletişime geçebilirsin.',
+    ACCOUNT_BANNED: 'Hesabınla oyunlara erişim kısıtlandı.',
+    ACCOUNT_DELETION_PENDING: 'Hesap silme talebin aktif. Devam etmek için talebi iptal edebilirsin.',
+    MAINTENANCE_ACTIVE: 'Sistem şu anda bakımda. Lütfen daha sonra tekrar dene.',
+    GAME_MAINTENANCE_ACTIVE: 'Bu oyun şu anda bakımda. Lütfen daha sonra tekrar dene.',
+    MARKET_CLOSED: 'Market şu anda çevrim dışı.',
+    PROMO_CLOSED: 'Promo sistemi şu anda kapalı.',
+    WHEEL_CLOSED: 'Çark şu anda kapalı.',
+    REDIS_UNAVAILABLE: 'Sistem şu anda güvenli işlem moduna geçemedi. Lütfen biraz sonra tekrar dene.',
+    ECONOMY_LOCKED: 'Ekonomi işlemi şu anda güvenli şekilde tamamlanamadı. Lütfen tekrar dene.',
+    GAME_STATE_UNAVAILABLE: 'Oyun durumu şu anda yüklenemedi. Lütfen tekrar dene.',
+    CRASH_ROUND_UNAVAILABLE: 'Crash tur durumu şu anda yüklenemedi. Lütfen tekrar dene.',
+    MATCHMAKING_COOLDOWN: 'Eşleşme için kısa bir süre beklemen gerekiyor.',
+    PAYLOAD_TOO_LARGE: 'Gönderilen oyun verisi çok büyük. Lütfen oyunu yeniden başlat.',
+    ANTI_CHEAT_REJECTED: 'Skorun doğrulanırken bir sorun oluştu. Lütfen oyunu tekrar başlat.',
+    EVENT_TIMELINE_REQUIRED: 'Oyun verisi eksik. Lütfen oyunu yeniden başlat.',
+    EVENT_TIMELINE_INVALID: 'Oyun verisi doğrulanamadı. Lütfen oyunu yeniden başlat.',
+    IDEMPOTENCY_REPLAY: 'Bu işlem daha önce işlendi.',
+    INVALID_IDEMPOTENCY_KEY: 'İşlem doğrulanamadı. Lütfen tekrar dene.',
+    CASHOUT_ALREADY_PROCESSED: 'Bu çıkış işlemi daha önce tamamlandı.',
     INSUFFICIENT_BALANCE: 'Bakiyen bu işlem için yeterli değil.',
+    MARKET_ITEM_NOT_OWNED: 'Bu ürün hesabında bulunmuyor.',
+    MARKET_STOCK_UNAVAILABLE: 'Bu ürünün stoğu şu anda tükendi.',
+    PUBLIC_RUNTIME_CONFIG_UNAVAILABLE: 'Bağlantı ayarları yüklenemedi. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONFIG_MISSING: 'Giriş sistemi şu anda hazırlanamadı. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONTRACT_MISMATCH: 'Giriş sistemi doğrulanamadı. Lütfen tekrar dene.',
+    SESSION_SYNC_FAILED: 'Oturum bağlantısı kurulamadı. Lütfen tekrar dene.',
+    AUTH_UNAVAILABLE: 'Giriş sistemi şu anda kullanılamıyor. Lütfen tekrar dene.',
+    SESSION_SECRET_MISSING: 'Oturum güvenliği şu anda hazırlanamadı. Lütfen tekrar dene.',
+    LEADERBOARD_UNAVAILABLE: 'Liderlik verileri şu anda alınamadı. Liste otomatik olarak tekrar denenecek.',
+    RECENT_WINNERS_UNAVAILABLE: 'Son kazanan verileri şu anda alınamadı. Liste otomatik olarak tekrar denenecek.',
     NETWORK_ERROR: 'Bağlantı kurulamadı. Lütfen internet bağlantını kontrol edip tekrar dene.',
     REQUEST_TIMEOUT: 'İstek zaman aşımına uğradı. Lütfen tekrar dene.',
     LOAD_FAILED: 'İçerik şu anda yüklenemedi. Lütfen tekrar dene.',
@@ -34,19 +71,23 @@
     MARKET_LOAD_FAILED: 'Market şu anda yüklenemedi. Lütfen tekrar dene.',
     ITEM_UNAVAILABLE: 'Bu ürün şu anda satın alınamaz. Lütfen marketi yenileyip tekrar dene.',
     ITEM_NOT_FOUND: 'Bu ürün şu anda satın alınamaz. Lütfen marketi yenileyip tekrar dene.',
+    PROMO_INVALID: 'Bu promo kodu geçerli değil veya süresi dolmuş.',
     PROMO_NOT_FOUND: 'Bu promo kodu geçerli değil veya süresi dolmuş.',
     PROMO_INACTIVE: 'Bu promo kodu geçerli değil veya süresi dolmuş.',
     PROMO_EXPIRED: 'Bu promo kodu geçerli değil veya süresi dolmuş.',
     PROMO_LIMIT_REACHED: 'Bu promo kodunun kullanım limiti dolmuş.',
     PROMO_ALREADY_CLAIMED: 'Bu promo kodunu daha önce kullandın.',
+    WHEEL_ALREADY_USED: 'Bugünkü çark hakkını kullandın. Yarın tekrar deneyebilirsin.',
     WHEEL_ALREADY_SPUN: 'Bugünkü çark hakkını kullandın. Yarın tekrar deneyebilirsin.',
     WHEEL_ALREADY_CLAIMED_TODAY: 'Bugünkü çark hakkını kullandın. Yarın tekrar deneyebilirsin.',
     ROOM_NOT_FOUND: 'Oda bulunamadı. Lütfen lobiye dönüp tekrar dene.',
+    ROOM_LOCKED: 'Bu oda şu anda kullanılamıyor. Lütfen başka bir oda seç.',
+    RECONNECT_TIMEOUT: 'Yeniden bağlanma süresi doldu.',
     ROOM_CLOSED: 'Oda kapandı. Lütfen lobiye dön.',
     RUN_NOT_FOUND: 'Oyun oturumu yenilendi. Lütfen oyunu tekrar başlat.',
     RUN_TOKEN_INVALID: 'Oyun oturumu doğrulanamadı. Lütfen oyunu tekrar başlat.',
     RUN_TOKEN_REQUIRED: 'Oyun oturumu doğrulanamadı. Lütfen oyunu tekrar başlat.',
-    INTERNAL_ERROR: 'İşlem şu anda tamamlanamadı. Lütfen biraz sonra tekrar dene.',
+    INTERNAL_ERROR: 'İşlem şu anda tamamlanamadı. Lütfen tekrar deneyin.',
     PERMISSION_DENIED: 'Bu işlemi yapmak için yetkin bulunmuyor.'
   });
 
@@ -75,13 +116,13 @@
 
   const apiBase = normalizeBase(PUBLIC_API_BASE);
   const runtime = Object.freeze({
-    version: 9,
+    version: 14,
     environment: 'production',
     publicBaseUrl: normalizeBase(PUBLIC_BASE_URL),
     apiBase,
     expectedFirebaseProjectId: EXPECTED_FIREBASE_PROJECT_ID,
     firebase: PUBLIC_FIREBASE_CONFIG,
-    firebaseReady: true,
+    firebaseReady: !!PUBLIC_FIREBASE_CONFIG,
     source: 'static-public-firebase-render-contract'
   });
 
@@ -92,7 +133,7 @@
   }
   window.__PM_RUNTIME.expectedFirebaseProjectId = EXPECTED_FIREBASE_PROJECT_ID;
   window.__PM_RUNTIME.firebase = PUBLIC_FIREBASE_CONFIG;
-  window.__PM_RUNTIME.firebaseReady = true;
+  window.__PM_RUNTIME.firebaseReady = !!PUBLIC_FIREBASE_CONFIG;
   window.__PLAYMATRIX_API_URL__ = normalizeBase(window.__PM_RUNTIME.apiBase || window.__PLAYMATRIX_API_URL__ || apiBase);
 
   const reportedClientErrors = new Map();

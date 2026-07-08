@@ -89,7 +89,7 @@ const env = {
   adminEmails: split(process.env.ADMIN_EMAILS).map((email) => email.toLowerCase()),
   adminUids: split(process.env.ADMIN_UIDS).map((uid) => String(uid).trim()),
   runtimeLog: {
-    max: toInt(process.env.RUNTIME_LOG_MAX, 1500, { min: 100, max: 5000 }),
+    max: toInt(process.env.RUNTIME_LOG_MAX, 3000, { min: 100, max: 5000 }),
     retentionHours: toInt(process.env.RUNTIME_LOG_RETENTION_HOURS, 168, { min: 1, max: 168 }),
     duplicateWindowMs: toInt(process.env.RUNTIME_LOG_DUPLICATE_WINDOW_MS, 60000, { min: 5000, max: 600000 })
   },
@@ -98,19 +98,38 @@ const env = {
     cspReportOnly: process.env.SECURITY_CSP_REPORT_ONLY !== '0',
     cspStrict: process.env.SECURITY_CSP_STRICT === '1'
   },
+  redis: {
+    url: process.env.REDIS_URL || '',
+    requiredInProduction: process.env.REDIS_REQUIRED_IN_PRODUCTION !== '0'
+  },
+  session: {
+    secretSource: process.env.SESSION_SECRET || process.env.ADMIN_PANEL_SECOND_FACTOR_HASH_HEX || process.env.FIREBASE_KEY || '',
+    ttlMs: toInt(process.env.SESSION_TTL_MS, 7 * 86400000, { min: 3600000, max: 7 * 86400000 })
+  },
   ttl: {
     matchQueueMs: toInt(process.env.MATCH_QUEUE_TTL_MS, 120000, { min: 30000, max: 900000 }),
     socketConnectionMs: toInt(process.env.SOCKET_CONNECTION_TTL_MS, 180000, { min: 30000, max: 900000 }),
-    notificationReceiptMs: 30 * 86400000
+    notificationReceiptMs: 30 * 86400000,
+    idempotencyLockMs: toInt(process.env.REDIS_IDEMPOTENCY_LOCK_TTL_MS, 24 * 3600000, { min: 60000, max: 7 * 86400000 }),
+    crashRoundStateMs: toInt(process.env.REDIS_CRASH_ROUND_TTL_MS, 3600000, { min: 60000, max: 24 * 3600000 }),
+    bettingRoomStateMs: toInt(process.env.REDIS_BET_ROOM_TTL_MS, 2 * 3600000, { min: 60000, max: 24 * 3600000 })
   }
 };
 
 function publicRuntimeConfig() {
+  const firebaseReady = !!(
+    env.firebase.publicConfig.apiKey
+    && env.firebase.publicConfig.authDomain
+    && env.firebase.publicConfig.projectId
+    && env.firebase.publicConfig.appId
+  );
   return {
     apiBase: env.publicApiBase,
     canonicalOrigin: env.canonicalOrigin,
     publicBaseUrl: env.publicBaseUrl,
+    expectedFirebaseProjectId: env.firebase.publicConfig.projectId,
     firebase: env.firebase.publicConfig,
+    firebaseReady,
     source: 'render-env'
   };
 }
@@ -120,7 +139,9 @@ function safeStartupReport() {
   const warnings = [];
   if (!env.firebase.serviceAccount) warnings.push('FIREBASE_KEY_MISSING_ADMIN_DISABLED');
   if (!env.firebase.publicConfig.apiKey) warnings.push('PUBLIC_FIREBASE_API_KEY_MISSING');
+  if (env.redis.requiredInProduction && env.nodeEnv === 'production' && !env.redis.url) warnings.push('REDIS_URL_MISSING_CRITICAL_RUNTIME_DISABLED');
   if (!env.adminEmails.length && !env.adminUids.length) warnings.push('ADMIN_ALLOWLIST_MISSING');
+  if (!env.session.secretSource) warnings.push('SESSION_SECRET_MISSING_USER_SESSION_FALLBACK_DISABLED');
   if (!env.allowedOrigins.includes(DEFAULT_PUBLIC_BASE_URL)) missing.push('ALLOWED_ORIGIN_PLAYMATRIX_MISSING');
   if (!env.allowedOrigins.includes(DEFAULT_WWW_BASE_URL)) missing.push('ALLOWED_ORIGIN_WWW_MISSING');
   if (!env.allowedOrigins.includes(DEFAULT_BACKEND_ORIGIN)) missing.push('ALLOWED_ORIGIN_RENDER_MISSING');
@@ -133,6 +154,7 @@ function safeStartupReport() {
     allowedOrigins: env.allowedOrigins,
     firebaseProjectId: env.firebase.projectId,
     runtimeLog: env.runtimeLog,
+    redisConfigured: !!env.redis.url,
     missing,
     warnings
   };

@@ -4,6 +4,13 @@
   let runToken = '';
   let startedAt = 0;
   let startPromise = null;
+  let eventTimeline = [];
+  function recordEvent(type, detail = {}) {
+    const at = Math.max(0, Date.now() - (startedAt || Date.now()));
+    const safeDetail = detail && typeof detail === 'object' ? detail : { value: detail };
+    eventTimeline.push({ t: at, type: String(type || 'event').slice(0, 48), ...safeDetail });
+    if (eventTimeline.length > 600) eventTimeline = eventTimeline.slice(-600);
+  }
   const apiBase = () => String(window.__PM_API__?.getApiBaseSync?.() || window.__PLAYMATRIX_API_URL__ || window.location.origin || '').replace(/\/+$/, '').replace(/\/api$/i, '');
   async function authToken() {
     try { if (window.__PM_RUNTIME?.getIdToken) return await window.__PM_RUNTIME.getIdToken(false); } catch (_) {}
@@ -19,7 +26,7 @@
   }
   async function requestGame(path, body = null) {
     if (window.__PM_ONLINE_CORE__?.requestWithAuth) {
-      return window.__PM_ONLINE_CORE__.requestWithAuth(path, { method: body == null ? 'GET' : 'POST', body, timeoutMs: 9000, retries: 1, allowSessionFallback: false });
+      return window.__PM_ONLINE_CORE__.requestWithAuth(path, { method: body == null ? 'GET' : 'POST', body, timeoutMs: 9000, retries: 1, allowSessionFallback: true });
     }
     if (window.__PM_ONLINE_CORE__?.waitForAuthReady) await window.__PM_ONLINE_CORE__.waitForAuthReady(7000).catch(() => null);
     if (window.__PM_API__?.ensureApiBase) await window.__PM_API__.ensureApiBase().catch(() => null);
@@ -61,10 +68,12 @@
     startedAt = Date.now();
     runId = '';
     runToken = '';
+    eventTimeline = [];
     startPromise = requestGame(`/api/games/${gameKey}/start`).then((payload) => {
       runId = String(payload?.runId || '').trim();
       runToken = String(payload?.runToken || '').trim();
       if (!runId || !runToken) throw new Error('CLASSIC_RUN_TOKEN_MISSING');
+      recordEvent('start', { game: gameKey });
       return runId;
     }).catch((error) => {
       runId = '';
@@ -79,7 +88,9 @@
   async function finishRun(score) {
     await ensureRunStarted();
     const durationMs = Math.max(0, Date.now() - (startedAt || Number(sessionStorage.pmClassicStartedAt || Date.now())));
-    return requestGame(`/api/games/${gameKey}/submit`, { runId, runToken, score: Math.max(0, Math.floor(Number(score) || 0)), durationMs }).then((payload) => {
+    const safeScore = Math.max(0, Math.floor(Number(score) || 0));
+    recordEvent('finish', { score: safeScore, durationMs });
+    return requestGame(`/api/games/${gameKey}/submit`, { runId, runToken, score: safeScore, durationMs, eventTimeline: eventTimeline.slice(0, 600) }).then((payload) => {
       try {
         if (payload?.ok && payload?.progression && window.__PM_GAME_ACCOUNT_SYNC__) {
           window.__PM_GAME_ACCOUNT_SYNC__.notifyMutation({
@@ -105,7 +116,8 @@
     canPlay: () => { const rt = window.__PM_RUNTIME || {}; const core = window.__PM_ONLINE_CORE__; return !!(rt.auth?.currentUser || rt.currentUser || rt.user || core?.auth?.currentUser || core?.waitForAuthReady); },
     redirectToLogin: () => { window.location.href = '/#login'; },
     beginRun,
-    finishRun
+    finishRun,
+    recordEvent
   };
 })();
 
@@ -218,7 +230,7 @@ async function startGame() {
     document.getElementById("score").innerText = "0";
     document.getElementById("startup").style.display = "none";
     document.getElementById("gameover").style.display = "none";
-    try { if (window.__PM_CLASSIC__?.beginRun) await window.__PM_CLASSIC__.beginRun(); } catch (error) {
+    try { if (window.__PM_CLASSIC__?.beginRun) await window.__PM_CLASSIC__.beginRun(); window.__PM_CLASSIC__?.recordEvent?.('game-ready', { direction: 'RIGHT' }); } catch (error) {
         const startup = document.getElementById('startup');
         if (startup) {
             startup.style.display = 'flex';
@@ -261,6 +273,7 @@ function update() {
 
     if (head.x === food.x && head.y === food.y) {
         score += food.value;
+        window.__PM_CLASSIC__?.recordEvent?.('food', { value: food.value, score });
         document.getElementById("score").innerText = score;
         
         if(food.type === '🍎') sounds.eatRed(); else sounds.eatGreen();
@@ -290,6 +303,7 @@ function draw() {
 
 function endGame() {
     started = false;
+    window.__PM_CLASSIC__?.recordEvent?.('game-over', { score, length: snake?.length || 0 });
     sounds.dead();
     if (score > getHigh()) localStorage.setItem("snake_pro_best", score);
     document.getElementById("high").innerText = getHigh();
@@ -313,6 +327,7 @@ function moveAction(dir) {
     if (dir === "DOWN" && direction !== "UP") nextDirection = "DOWN";
     if (dir === "LEFT" && direction !== "RIGHT") nextDirection = "LEFT";
     if (dir === "RIGHT" && direction !== "LEFT") nextDirection = "RIGHT";
+    if (nextDirection === dir) window.__PM_CLASSIC__?.recordEvent?.('direction', { dir });
 }
 
 document.addEventListener("keydown", e => {

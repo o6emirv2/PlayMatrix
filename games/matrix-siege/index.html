@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#04110d">
+  <title>Matrix Siege: Mini Ordu | PlayMatrix</title>
+  <link rel="stylesheet" href="/public/avatar-frame.css?v=pm-v15-matrix-siege">
+  <link rel="stylesheet" href="/public/shell-enhancements.css?v=pm-v15-matrix-siege">
+  <link rel="stylesheet" href="/games/matrix-siege/style.css?v=pm-v15-matrix-siege">
+</head>
+<body data-game="matrix-siege">
+  <div class="ms-app" id="matrixSiegeApp">
+    <header class="ms-topbar">
+      <a class="ms-icon-button" href="/" aria-label="AnaSayfa"><span>‹</span></a>
+      <div id="uiAccountAvatarHost" class="pm-game-topbar-avatar-host ms-avatar-host" aria-label="Hesap avatarı"></div>
+      <div class="ms-topbar-copy">
+        <strong>MATRIX SIEGE</strong>
+        <span id="msStageTitle">Mini Ordu</span>
+      </div>
+      <div class="ms-topbar-stats">
+        <span><b id="uiAccountLevelBadge">1</b> LVL</span>
+        <span><b id="msCrystalCount">0</b> Kristal</span>
+      </div>
+      <button class="ms-icon-button" id="msSoundBtn" type="button" aria-label="Sesi aç veya kapat">♫</button>
+      <button class="ms-icon-button" id="msPauseBtn" type="button" aria-label="Oyunu duraklat">Ⅱ</button>
+    </header>
+
+    <section class="ms-status-strip" id="msStatusStrip" aria-live="polite">
+      <span class="ms-pulse"></span><span id="msStatusText">Sistem hazırlanıyor…</span>
+    </section>
+
+    <main class="ms-main">
+      <section class="ms-mission-card">
+        <div><small>GÜNLÜK GÖREV</small><strong id="msMissionTitle">Görevler yükleniyor</strong></div>
+        <div class="ms-mission-progress"><span id="msMissionProgress">0 / 0</span><i id="msMissionBar"></i><button id="msMissionClaimBtn" type="button" disabled>ÖDÜLÜ AL</button></div>
+      </section>
+
+      <section class="ms-stage-card">
+        <button id="msPrevStage" type="button" aria-label="Önceki bölüm">‹</button>
+        <div><small id="msWorldLabel">NEON OVA</small><strong id="msStageLabel">Bölüm 1</strong><span id="msStageStars">☆☆☆</span></div>
+        <button id="msNextStage" type="button" aria-label="Sonraki bölüm">›</button>
+      </section>
+
+      <section class="ms-battle-shell" id="msBattleShell">
+        <div class="ms-base-bars">
+          <div class="ms-base-bar is-player"><span>PLAYMATRIX ÜSSÜ</span><div><i id="msPlayerBaseBar"></i></div><b id="msPlayerBaseHp">1000</b></div>
+          <div class="ms-base-bar is-enemy"><span>DÜŞMAN ÇEKİRDEĞİ</span><div><i id="msEnemyBaseBar"></i></div><b id="msEnemyBaseHp">1000</b></div>
+        </div>
+        <canvas id="msCanvas" width="720" height="760" aria-label="Matrix Siege savaş alanı"></canvas>
+        <div class="ms-battle-overlay" id="msBattleOverlay">
+          <div class="ms-overlay-card">
+            <span class="ms-overlay-icon">⬡</span>
+            <h1>MATRIX SIEGE</h1>
+            <p id="msOverlayText">Enerjini yönet, birliklerini üret ve düşman çekirdeğini yok et.</p>
+            <button id="msStartBtn" type="button">BÖLÜMÜ BAŞLAT</button>
+            <button id="msTutorialBtn" class="is-secondary" type="button">NASIL OYNANIR?</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="ms-energy-panel">
+        <div class="ms-energy-head"><strong>ENERJİ</strong><span><b id="msEnergyValue">3.0</b> / <b id="msEnergyMax">10</b></span></div>
+        <div class="ms-energy-track"><i id="msEnergyBar"></i></div>
+        <div class="ms-speed-row"><button id="msSpeedBtn" type="button">1× HIZ</button><button id="msWorkshopBtn" type="button">BİRLİK ATÖLYESİ</button><span id="msTimer">02:00</span></div>
+      </section>
+
+      <section class="ms-unit-bar" id="msUnitBar" aria-label="Birlik kartları"></section>
+    </main>
+  </div>
+
+  <div class="ms-modal" id="msResultModal" hidden>
+    <div class="ms-modal-card">
+      <span class="ms-result-emblem" id="msResultEmblem">✦</span>
+      <h2 id="msResultTitle">Bölüm Tamamlandı</h2>
+      <p id="msResultText"></p>
+      <div class="ms-result-grid">
+        <div><small>YILDIZ</small><strong id="msResultStars">0</strong></div>
+        <div><small>XP</small><strong id="msResultXp">0</strong></div>
+        <div><small>KRİSTAL</small><strong id="msResultCrystals">0</strong></div>
+      </div>
+      <button id="msNextBattleBtn" type="button">DEVAM ET</button>
+      <button id="msRetryBtn" class="is-secondary" type="button">TEKRAR OYNA</button>
+    </div>
+  </div>
+
+  <div class="ms-modal" id="msTutorialModal" hidden>
+    <div class="ms-modal-card is-tutorial">
+      <button class="ms-modal-close" id="msTutorialClose" type="button" aria-label="Kapat">×</button>
+      <h2>Komutan Eğitimi</h2>
+      <ol>
+        <li>Enerji zamanla dolar.</li>
+        <li>Alt kartlardan birlik üret.</li>
+        <li>Birlikler otomatik ilerler ve savaşır.</li>
+        <li>Düşman çekirdeğini yok ederek yıldız ve XP kazan.</li>
+        <li>2× hız sonucu değiştirmez; yalnızca savaşı hızlandırır.</li>
+      </ol>
+    </div>
+  </div>
+
+
+  <div class="ms-modal" id="msWorkshopModal" hidden>
+    <div class="ms-modal-card is-workshop">
+      <button class="ms-modal-close" id="msWorkshopClose" type="button" aria-label="Kapat">×</button>
+      <h2>Birlik Atölyesi</h2>
+      <p>Teknoloji Kristali kullanarak birliklerini kalıcı olarak geliştir.</p>
+      <div class="ms-workshop-list" id="msWorkshopList"></div>
+    </div>
+  </div>
+
+  <script src="/public/playmatrix-api.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/firebase-public-contract.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/firebase-runtime.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/avatar-registry.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/avatar-frame.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/pm-online-core.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/game-topbar-sync.js?v=pm-v15-matrix-siege"></script>
+  <script src="/public/js/games/matrix-siege/simulation-core.js?v=pm-v15-matrix-siege"></script>
+  <script src="/games/matrix-siege/script.js?v=pm-v15-matrix-siege"></script>
+</body>
+</html>

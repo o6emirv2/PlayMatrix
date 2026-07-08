@@ -1,4 +1,4 @@
-import { loadFirebaseWebConfig } from '../../firebase-runtime.js';
+import { loadFirebaseWebConfig } from '../../firebase-runtime.js?v=pm-v15-matrix-siege';
 import { HOME_GAMES, installGameRouteNormalizer, loadHomeMaintenanceState, isGameInMaintenance } from './game-catalog.js';
 import { AVATAR_CATEGORIES, DEFAULT_AVATAR, AVATAR_FALLBACK, normalizeAvatarUrl } from '../../data/avatar-catalog.js';
 import { createAvatarPicker } from '../profile/avatar-picker.js';
@@ -46,7 +46,7 @@ function versionedPublicAsset(path = '') {
 }
 function gameImageUrl(game = {}) {
   const key = safeText(game.key || game.name).toLowerCase();
-  const fixed = { crash:'/public/assets/home/games/crash.jpg', satranc:'/public/assets/home/games/chess.jpg', chess:'/public/assets/home/games/chess.jpg', pisti:'/public/assets/home/games/pisti.jpg', patternmaster:'/public/assets/home/games/pattern-master.jpg', pattern:'/public/assets/home/games/pattern-master.jpg', spacepro:'/public/assets/home/games/space-pro.jpg', space:'/public/assets/home/games/space-pro.jpg', snakepro:'/public/assets/home/games/snake-pro.jpg', snake:'/public/assets/home/games/snake-pro.jpg' };
+  const fixed = { crash:'/public/assets/home/games/crash.jpg', satranc:'/public/assets/home/games/chess.jpg', chess:'/public/assets/home/games/chess.jpg', pisti:'/public/assets/home/games/pisti.jpg', patternmaster:'/public/assets/home/games/pattern-master.jpg', pattern:'/public/assets/home/games/pattern-master.jpg', spacepro:'/public/assets/home/games/space-pro.jpg', space:'/public/assets/home/games/space-pro.jpg', snakepro:'/public/assets/home/games/snake-pro.jpg', snake:'/public/assets/home/games/snake-pro.jpg', matrixsiege:'/public/assets/home/games/matrix-siege.svg', 'matrix-siege':'/public/assets/home/games/matrix-siege.svg' };
   return versionedPublicAsset(fixed[key] || game.image || '');
 }
 function splitFullName(value = '') {
@@ -147,16 +147,18 @@ let pmBodyScrollTouchHandler = null;
 let leaderboardPayload = null;
 let leaderboardTab = 'level';
 const LEADERBOARD_LIMIT = 20;
-const LEADERBOARD_CACHE_MS = 60 * 1000;
+const HOME_LIVE_REFRESH_MS = 15 * 1000;
+const LEADERBOARD_CACHE_MS = HOME_LIVE_REFRESH_MS;
 let leaderboardLoadedAt = 0;
 let leaderboardLoading = false;
-let leaderboardActiveRefreshTimer = 0;
-let leaderboardBackgroundRefreshTimer = 0;
 let homeWinnersPayload = [];
 let homeWinnersLoadedAt = 0;
 let homeWinnersLoading = false;
-let homeWinnersRefreshTimer = 0;
-const HOME_WINNERS_CACHE_MS = 45 * 1000;
+const HOME_WINNERS_CACHE_MS = HOME_LIVE_REFRESH_MS;
+let homeLiveRefreshTimer = 0;
+let homeLiveRefreshPromise = null;
+let homeLiveRefreshLifecycleBound = false;
+let homeLiveRefreshLastAt = 0;
 let notificationsLoaded = false;
 let accountMemoryLoaded = false;
 let gameFilter = 'all';
@@ -448,7 +450,13 @@ function userErrorText(error, fallback = 'İşlem tamamlanamadı.') {
     'auth/invalid-email': 'E-posta formatı geçersiz.',
     'auth/network-request-failed': 'Ağ bağlantısı kurulamadı.',
     'auth/requires-recent-login': 'Güvenlik için tekrar giriş yapıp işlemi yeniden dene.',
-    'auth/too-many-requests': 'Çok fazla deneme yapıldı. Bir süre sonra tekrar dene.'
+    'auth/too-many-requests': 'Çok fazla deneme yapıldı. Bir süre sonra tekrar dene.',
+    PUBLIC_RUNTIME_CONFIG_UNAVAILABLE: 'Bağlantı ayarları yüklenemedi. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONFIG_MISSING: 'Giriş sistemi şu anda hazırlanamadı. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONTRACT_MISMATCH: 'Giriş sistemi doğrulanamadı. Lütfen tekrar dene.',
+    SESSION_SYNC_FAILED: 'Oturum bağlantısı kurulamadı. Lütfen tekrar dene.',
+    AUTH_UNAVAILABLE: 'Giriş sistemi şu anda kullanılamıyor. Lütfen tekrar dene.',
+    SESSION_SECRET_MISSING: 'Oturum güvenliği şu anda hazırlanamadı. Lütfen tekrar dene.'
   };
   if (map[code]) return map[code];
   const mapped = normalizeUserFacingMessage(code, fallback);
@@ -991,6 +999,10 @@ function normalizeProfile(raw = {}) {
   return {
     uid: safeText(user.uid || auth.currentUser?.uid || ''),
     email,
+    dateOfBirth: safeText(user.dateOfBirth || ''),
+    age: Math.max(0, Math.trunc(toNumber(user.age || ageFromDateOfBirth(user.dateOfBirth || ''), 0))),
+    ageVerified: !!(user.ageVerified && user.dateOfBirth) || (!!user.dateOfBirth && ageFromDateOfBirth(user.dateOfBirth) >= 16),
+    ageLocked: !!user.ageLocked,
     firstName,
     lastName,
     fullName,
@@ -1175,9 +1187,9 @@ async function bootFirebase(options = {}) {
   const shouldReport = options.reportOnError !== false;
   bootPromise = (async () => {
     try {
-      const config = await loadFirebaseWebConfig({ required: false, scope: 'home', timeoutMs: 4200 });
-      if (!config) return false;
-      const { appModule, authModule, mode, version } = await importHesapSdk(options.timeoutMs || 7500);
+      const config = await loadFirebaseWebConfig({ required: true, scope: 'home', timeoutMs: 10000 });
+      if (!config) throw Object.assign(new Error('PUBLIC_FIREBASE_CONFIG_MISSING'), { code: 'PUBLIC_FIREBASE_CONFIG_MISSING' });
+      const { appModule, authModule, mode, version } = await importHesapSdk(options.timeoutMs || 10000);
       initializeApp = appModule.initializeApp;
       getAuth = authModule.getAuth;
       firebaseSetPersistence = authModule.setPersistence || null;
@@ -1229,38 +1241,114 @@ async function getToken(force = false) {
   return firebaseGetIdToken(auth.currentUser, force);
 }
 
+let backendSessionSyncPromise = null;
+async function syncBackendSession(forceToken = false, rememberOverride = null) {
+  if (!auth?.currentUser) return null;
+  if (backendSessionSyncPromise && !forceToken) return backendSessionSyncPromise;
+  backendSessionSyncPromise = (async () => {
+    const remember = typeof rememberOverride === 'boolean' ? rememberOverride : rememberFlagFromStoredPersistence();
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const api = window.__PM_API__;
+      try {
+        if (api?.ensureApiBase) await api.ensureApiBase({ force: attempt > 0 });
+        const token = await getToken(!!forceToken || attempt > 0);
+        const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), attempt === 0 ? 10000 : 14000);
+        let response;
+        try {
+          response = await fetch(url, {
+            method: 'POST', credentials: 'include', cache: 'no-store', signal: controller.signal,
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'X-PlayMatrix-Client': 'home-session' },
+            body: JSON.stringify({ remember, persistence: remember ? 'local' : 'session' })
+          });
+        } finally {
+          window.clearTimeout(timer);
+        }
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        const payload = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+        if (!response.ok || payload?.ok === false || !payload?.data?.user?.uid) {
+          throw markApiError(new Error(payload?.code || payload?.error || 'SESSION_SYNC_FAILED'), { path:'/api/auth/session', status:response.status, payload });
+        }
+        return payload.data || payload;
+      } catch (error) {
+        lastError = error;
+        try { api?.invalidateApiBase?.(); } catch (_) {}
+        if (attempt === 0) await sleep(180);
+      }
+    }
+    throw lastError || Object.assign(new Error('SESSION_SYNC_FAILED'), { code: 'SESSION_SYNC_FAILED' });
+  })().finally(() => { backendSessionSyncPromise = null; });
+  return backendSessionSyncPromise;
+}
+
+function scheduleBackendSessionRecovery(remember = rememberFlagFromStoredPersistence()) {
+  window.setTimeout(() => {
+    if (!auth?.currentUser) return;
+    syncBackendSession(true, remember).catch((error) => report('home.auth.session.recovery', error, { severity: 'warning' }));
+  }, 700);
+}
+
+async function clearBackendSession() {
+  try {
+    const api = window.__PM_API__;
+    if (api?.ensureApiBase) await api.ensureApiBase();
+    const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
+    await fetch(url, { method:'DELETE', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'X-PlayMatrix-Client':'home-session' } });
+  } catch (_) {}
+}
+
 async function apiFetch(path, options = {}, needsAuth = true, sessionRetry = true) {
   const api = window.__PM_API__;
-  if (api?.ensureApiBase) await api.ensureApiBase();
-  const url = api?.buildUrl ? api.buildUrl(path) : `${String(window.__PLAYMATRIX_API_URL__ || '').replace(/\/+$/, '')}${path}`;
-  const { timeoutMs = 9000, signal, headers: optionHeaders, ...fetchOptions } = options || {};
-  const headers = new Headers(optionHeaders || {});
-  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-  if (options.body !== undefined && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (needsAuth) headers.set('Authorization', `Bearer ${await getToken(!!options.forceAuthToken)}`);
-  if (!headers.has('X-PlayMatrix-Client')) headers.set('X-PlayMatrix-Client', 'home');
-  if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', window.__PM_API__?.requestId?.('home') || `home_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), Math.max(2500, Number(timeoutMs) || 9000));
-  let response;
-  try {
-    response = await fetch(url, {
-      credentials: 'include',
-      cache: 'no-store',
-      ...fetchOptions,
-      headers,
-      signal: signal || controller.signal,
-      body: options.body instanceof FormData ? options.body : options.body !== undefined ? JSON.stringify(options.body) : undefined
-    });
-  } finally {
-    window.clearTimeout(timer);
+  const { timeoutMs = 12000, signal, headers: optionHeaders, forceAuthToken, ...fetchOptions } = options || {};
+  const maxAttempts = sessionRetry ? 2 : 2;
+  let lastError = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (api?.ensureApiBase) await api.ensureApiBase({ force: attempt > 0 });
+    const url = api?.buildUrl ? api.buildUrl(path) : `${String(window.__PLAYMATRIX_API_URL__ || '').replace(/\/+$/, '')}${path}`;
+    const headers = new Headers(optionHeaders || {});
+    if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+    if (options.body !== undefined && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    if (needsAuth) headers.set('Authorization', `Bearer ${await getToken(!!forceAuthToken || attempt > 0)}`);
+    if (!headers.has('X-PlayMatrix-Client')) headers.set('X-PlayMatrix-Client', 'home');
+    if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', window.__PM_API__?.requestId?.('home') || `home_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), Math.max(4000, Number(timeoutMs) || 12000));
+    try {
+      const response = await fetch(url, {
+        credentials: 'include',
+        cache: 'no-store',
+        ...fetchOptions,
+        headers,
+        signal: signal || controller.signal,
+        body: options.body instanceof FormData ? options.body : options.body !== undefined ? JSON.stringify(options.body) : undefined
+      });
+      const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+      const payload = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+      const authProblem = isAuthProblem(payload, response.status);
+      if (!response.ok || payload?.ok === false || !contentType.includes('application/json')) {
+        const error = markApiError(new Error(payload?.code || payload?.error || `HTTP_${response.status}`), { path, status: response.status, payload, authProblem });
+        if (needsAuth && sessionRetry && authProblem && attempt === 0 && auth?.currentUser) {
+          await syncBackendSession(true).catch(() => null);
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+      return payload;
+    } catch (error) {
+      lastError = error;
+      const text = String(error?.name || error?.code || error?.message || '').toLowerCase();
+      const retryable = /abort|timeout|network|failed to fetch|load failed|typeerror/.test(text);
+      if (!retryable || attempt + 1 >= maxAttempts) throw error;
+      try { api?.invalidateApiBase?.(); } catch (_) {}
+      await sleep(160);
+    } finally {
+      window.clearTimeout(timer);
+    }
   }
-  const payload = await response.json().catch(() => ({}));
-  const authProblem = isAuthProblem(payload, response.status);
-  if (!response.ok || payload?.ok === false) {
-    throw markApiError(new Error(payload?.error || `HTTP_${response.status}`), { path, status: response.status, payload, authProblem });
-  }
-  return payload;
+  throw lastError || Object.assign(new Error('REQUEST_FAILED'), { code: 'REQUEST_FAILED' });
 }
 
 async function loadProfile() {
@@ -1357,6 +1445,10 @@ function renderProfile() {
   setValue('profileUsername', p.username || '');
   setValue('profileEmail', p.email || '');
   const emailInput = $('profileEmail'); if (emailInput) { emailInput.readOnly = true; emailInput.disabled = true; emailInput.classList.add('is-locked'); }
+  setDobFields('profile', p.dateOfBirth || '');
+  lockDobFields('profile', !!p.dateOfBirth);
+  syncDobSummary('profile');
+  setText('profileDobHelp', p.dateOfBirth ? `Doğum tarihi kayıtlı: ${String(p.dateOfBirth).slice(8,10)}.${String(p.dateOfBirth).slice(5,7)}.${String(p.dateOfBirth).slice(0,4)} · Yaş: ${p.age || ageFromDateOfBirth(p.dateOfBirth)}` : 'Eski hesaplarda doğum tarihi eklenene kadar oyun, market, çark ve promo kilitlenir.');
   setValue('emailCurrentValue', p.email || '');
   setText('accountEmailSecurityText', p.emailVerified ? 'E-posta doğrulandı. E-posta değiştirme akışını güvenli bağlantıyla başlatabilirsin.' : 'E-posta doğrulanmadı. Ödül ve güvenlik işlemleri için doğrulama bağlantısı gönder.');
   setText('profileUsernameQuota', `Kullanıcı adı değişim hakkı: ${Math.max(0, p.usernameChangesLeft ?? 0)}/${Math.max(0, p.usernameChangeLimit ?? 3)}`);
@@ -1707,7 +1799,7 @@ function renderAccountHistoryList(hostId, items = [], emptyText = 'Sonuç buluna
   }));
 }
 
-const ACCOUNT_GAME_HISTORY_KEYS = Object.freeze(['crash', 'chess', 'satranc', 'satranç', 'pisti', 'pişti', 'pattern', 'pattern-master', 'snake', 'snake-pro', 'space', 'space-pro']);
+const ACCOUNT_GAME_HISTORY_KEYS = Object.freeze(['crash', 'chess', 'satranc', 'satranç', 'pisti', 'pişti', 'pattern', 'pattern-master', 'snake', 'snake-pro', 'space', 'space-pro', 'matrix-siege', 'matrixsiege']);
 const ACCOUNT_NON_GAME_HISTORY_RE = /çark|wheel|promo|promosyon|market|profil|avatar|çerçeve|frame|bakiye|ödül|odul|email|e-posta|şifre|sifre/i;
 const ACCOUNT_TRANSACTION_HISTORY_RE = /çark|wheel|promo|promosyon|market|satın alma|satin alma|iade|profil|avatar|çerçeve|frame|rozet|istatistik|tema|isim efekti|bakiye|ödül|odul|email|e-posta|şifre|sifre|hesap/i;
 
@@ -2361,7 +2453,7 @@ function setAuthMode(mode = 'login') {
 function readStoredAuthPersistenceMode() {
   try { if (localStorage.getItem('pm_login_persistence') === 'local') return 'local'; } catch (_) {}
   try { if (sessionStorage.getItem('pm_login_persistence') === 'session') return 'session'; } catch (_) {}
-  return '';
+  return 'session';
 }
 
 function rememberFlagFromStoredPersistence() {
@@ -2405,6 +2497,117 @@ function authToastError(title = 'Hesap erişimi', message = '') {
   showToast(safeTitle, clean, 'error');
 }
 
+
+function populateDateOfBirthSelects(prefix = 'register') {
+  const day = $(`${prefix}BirthDay`);
+  const month = $(`${prefix}BirthMonth`);
+  const year = $(`${prefix}BirthYear`);
+  if (!day || !month || !year) return;
+  const current = {
+    day: String(day.value || ''),
+    month: String(month.value || ''),
+    year: String(year.value || '')
+  };
+  const fill = (select, placeholder, items) => {
+    if (!select) return;
+    select.replaceChildren();
+    const first = document.createElement('option');
+    first.value = '';
+    first.textContent = placeholder;
+    select.appendChild(first);
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => {
+      const opt = document.createElement('option');
+      opt.value = String(item.value);
+      opt.textContent = String(item.label);
+      fragment.appendChild(opt);
+    });
+    select.appendChild(fragment);
+  };
+  fill(day, 'Gün', Array.from({ length: 31 }, (_, index) => ({ value: index + 1, label: String(index + 1).padStart(2, '0') })));
+  fill(month, 'Ay', ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'].map((label, index) => ({ value: index + 1, label })));
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 120;
+  const years = [];
+  for (let y = currentYear; y >= minYear; y -= 1) years.push({ value: y, label: y });
+  fill(year, 'Yıl', years);
+  if (current.day) day.value = current.day;
+  if (current.month) month.value = current.month;
+  if (current.year) year.value = current.year;
+  day.dataset.pmDobReady = month.dataset.pmDobReady = year.dataset.pmDobReady = 'true';
+}
+function pad2(value) { return String(value).padStart(2, '0'); }
+function buildDateOfBirth(day, month, year) {
+  const d = Math.trunc(Number(day) || 0);
+  const m = Math.trunc(Number(month) || 0);
+  const y = Math.trunc(Number(year) || 0);
+  if (!d || !m || !y) return '';
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return '';
+  return `${y}-${pad2(m)}-${pad2(d)}`;
+}
+function ageFromDateOfBirth(value = '') {
+  const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return 0;
+  const now = new Date();
+  let age = now.getUTCFullYear() - Number(m[1]);
+  const monthDelta = (now.getUTCMonth() + 1) - Number(m[2]);
+  if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < Number(m[3]))) age -= 1;
+  return Math.max(0, age);
+}
+function readDobFields(prefix = 'register') {
+  if (window.PMDobPicker?.getValue) return window.PMDobPicker.getValue(prefix);
+  const birthDay = safeText($(`${prefix}BirthDay`)?.value || '');
+  const birthMonth = safeText($(`${prefix}BirthMonth`)?.value || '');
+  const birthYear = safeText($(`${prefix}BirthYear`)?.value || '');
+  const dateOfBirth = buildDateOfBirth(birthDay, birthMonth, birthYear);
+  const age = ageFromDateOfBirth(dateOfBirth);
+  return { birthDay, birthMonth, birthYear, dateOfBirth, age, ageVerified: !!dateOfBirth && age >= 16 };
+}
+function setDobFields(prefix = 'profile', value = '') {
+  if (window.PMDobPicker?.setValue) { window.PMDobPicker.setValue(prefix, value); return; }
+  populateDateOfBirthSelects(prefix);
+  const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  setValue(`${prefix}BirthYear`, m ? String(Number(m[1])) : '');
+  setValue(`${prefix}BirthMonth`, m ? String(Number(m[2])) : '');
+  setValue(`${prefix}BirthDay`, m ? String(Number(m[3])) : '');
+}
+function lockDobFields(prefix = 'profile', locked = false) {
+  if (window.PMDobPicker?.lock) { window.PMDobPicker.lock(prefix, locked); return; }
+  [`${prefix}BirthDay`, `${prefix}BirthMonth`, `${prefix}BirthYear`].forEach((id) => {
+    const node = $(id); if (node) node.disabled = !!locked;
+  });
+  const openBtn = $(`${prefix}DobOpenBtn`); if (openBtn) openBtn.disabled = !!locked;
+}
+function formatDobDisplay(dateOfBirth = '') {
+  if (window.PMDobPicker?.formatDisplay) return window.PMDobPicker.formatDisplay(dateOfBirth);
+  const m = String(dateOfBirth || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
+}
+function syncDobSummary(prefix = 'register') {
+  if (window.PMDobPicker?.sync) { window.PMDobPicker.sync(prefix); return readDobFields(prefix); }
+  return readDobFields(prefix);
+}
+function openDobPopup(target = 'register') {
+  if (target === 'profile' && safeText(currentProfile?.dateOfBirth || '')) {
+    const formatted = formatDobDisplay(currentProfile.dateOfBirth);
+    setHelp('profileDobHelp', `Doğum tarihin kayıtlıdır: ${formatted}. Bu bilgi yalnızca admin tarafından değiştirilebilir.`, 'success');
+    showToast('Doğum tarihi', 'Doğum tarihin kayıtlı. Güvenlik nedeniyle tekrar değiştirilemez.', 'info');
+    return;
+  }
+  window.PMDobPicker?.open?.(target);
+}
+function closeDobPopup() { window.PMDobPicker?.close?.(); }
+function applyDobPopupSelection() { window.PMDobPicker?.apply?.(); }
+function bindDobPopupControls() { window.PMDobPicker?.init?.(); }
+function setupDateOfBirthFields() {
+  populateDateOfBirthSelects('register');
+  populateDateOfBirthSelects('profile');
+  window.PMDobPicker?.init?.();
+  syncDobSummary('register');
+  syncDobSummary('profile');
+}
+
 function readAuthValues(mode = currentAuthMode) {
   const safeMode = mode === 'register' ? 'register' : 'login';
   if (safeMode === 'register') {
@@ -2416,7 +2619,10 @@ function readAuthValues(mode = currentAuthMode) {
       email: safeText($('registerEmail')?.value || '').toLowerCase(),
       password: $('registerPassword')?.value || '',
       repeatPassword: $('registerPasswordRepeat')?.value || '',
-      termsAccepted: !!$('registerTermsAccepted')?.checked
+      ...readDobFields('register'),
+      termsAccepted: !!$('registerTermsAccepted')?.checked,
+      kvkkAccepted: !!$('registerKvkkAccepted')?.checked,
+      mcNoticeAccepted: !!$('registerMcNoticeAccepted')?.checked
     };
   }
   return {
@@ -2625,7 +2831,7 @@ function winnerTypeMeta(source = '') {
   if (/wheel|çark|cark|spin/.test(key)) return { type: 'wheel', badge: 'Çark', icon: 'fa-dharmachakra', title: 'Günlük Çark' };
   if (/market|store|mağaza|magaza|purchase|satın|satin/.test(key)) return { type: 'market', badge: 'Market', icon: 'fa-store', title: 'Market İşlemi' };
   if (/level|seviye|xp/.test(key)) return { type: 'level', badge: 'Seviye', icon: 'fa-star', title: 'Seviye Gelişimi' };
-  if (/crash|chess|satranç|satranc|pisti|pişti|pattern|space|snake|game|oyun|win|kazanç|kazanc/.test(key)) return { type: 'game', badge: 'Oyun', icon: 'fa-trophy', title: 'Oyun Kazancı' };
+  if (/crash|chess|satranç|satranc|pisti|pişti|pattern|space|snake|matrix|siege|game|oyun|win|kazanç|kazanc/.test(key)) return { type: 'game', badge: 'Oyun', icon: 'fa-trophy', title: 'Oyun Kazancı' };
   return { type: 'activity', badge: 'Canlı', icon: 'fa-bolt', title: 'Canlı Akış' };
 }
 
@@ -2644,7 +2850,7 @@ function isProfileOnlyActivity(item = {}) {
   ].filter(Boolean).join(' ')).toLocaleLowerCase('tr-TR');
   if (!key) return false;
   const isProfileChange = /(profile|profil|avatar|frame|çerçeve|cerceve|account|hesap|appearance|settings|ayar)/.test(key);
-  const isRewardOrGame = /(promo|promosyon|wheel|çark|cark|market|store|purchase|satın|satin|crash|chess|satranç|satranc|pisti|pişti|pattern|space|snake|game|oyun|win|winner|kazanç|kazanc|reward|ödül|odul|xp|level|seviye|mc)/.test(key);
+  const isRewardOrGame = /(promo|promosyon|wheel|çark|cark|market|store|purchase|satın|satin|crash|chess|satranç|satranc|pisti|pişti|pattern|space|snake|matrix|siege|game|oyun|win|winner|kazanç|kazanc|reward|ödül|odul|xp|level|seviye|mc)/.test(key);
   return isProfileChange && !isRewardOrGame;
 }
 
@@ -2775,37 +2981,90 @@ async function loadHomeRecentWinners({ force = false } = {}) {
     return homeWinnersPayload;
   }
   homeWinnersLoading = true;
-  const endpoint = '/api/home/recent-activities?limit=5';
+  const endpoints = ['/api/home/recent-activities?limit=5', '/api/home/recent-winners?limit=5'];
   const softFallbackTimer = window.setTimeout(() => {
     if (!homeWinnersLoading) return;
-    host.innerHTML = '<div class="winners-empty-final"><i class="fa-solid fa-trophy"></i><strong>Kazanan akışı bekleniyor.</strong><span>Yeni oyun kazancı, promo veya çark ödülü geldiğinde burada görünecek.</span></div>';
-  }, 900);
-  host.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Kazanan verileri hazırlanıyor.</div>';
+    host.innerHTML = '<div class="winners-empty-final"><i class="fa-solid fa-trophy"></i><strong>Kazanan verileri hazırlanıyor.</strong><span>Bağlantı kurulduğunda liste otomatik yenilenecek.</span></div>';
+  }, 1600);
+  if (!homeWinnersPayload.length) host.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Kazanan verileri hazırlanıyor.</div>';
   let payload = null;
   let lastError = null;
-  try {
-    payload = await apiFetch(endpoint, { timeoutMs: 1200 }, false, false);
-  } catch (error) {
-    lastError = error;
-    payload = { items: [] };
-  }
-  if (lastError && !/load failed|failed to fetch|network|abort|timeout/i.test(String(lastError?.message || lastError || ''))) {
-    report('home.recentWinners.load', lastError, { endpoint, status: lastError?.status || 0 });
+  for (const endpoint of endpoints) {
+    try {
+      payload = await apiFetch(endpoint, { timeoutMs: 10000 }, false, true);
+      if (payload?.ok !== false) break;
+    } catch (error) {
+      lastError = error;
+    }
   }
   window.clearTimeout(softFallbackTimer);
   homeWinnersLoading = false;
+  if (!payload) {
+    if (lastError && !/load failed|failed to fetch|network|abort|timeout/i.test(String(lastError?.message || lastError || ''))) {
+      report('home.recentWinners.load', lastError, { endpoint: endpoints.join(','), status: lastError?.status || 0 });
+    }
+    if (homeWinnersPayload.length) renderHomeRecentWinners(homeWinnersPayload);
+    else host.innerHTML = '<div class="winners-empty-final"><i class="fa-solid fa-rotate"></i><strong>Kazanan verileri şu anda alınamadı.</strong><span>Liste 15 saniye içinde otomatik olarak tekrar denenecek.</span></div>';
+    return homeWinnersPayload;
+  }
   homeWinnersPayload = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.activities) ? payload.activities : Array.isArray(payload?.winners) ? payload.winners : [];
   homeWinnersLoadedAt = Date.now();
   renderHomeRecentWinners(homeWinnersPayload);
   return homeWinnersPayload;
 }
 
-function startHomeWinnersRefresh() {
-  window.clearInterval(homeWinnersRefreshTimer);
-  homeWinnersRefreshTimer = window.setInterval(() => {
-    if (document.hidden) return;
-    loadHomeRecentWinners({ force: true }).catch((error) => report('home.recentWinners.refresh', error));
-  }, 45 * 1000);
+function isHomeLiveRefreshAllowed() {
+  const path = String(window.location.pathname || '/').replace(/\/+$/, '') || '/';
+  const isHomePath = path === '/' || /\/index\.html$/i.test(path);
+  return isHomePath && !document.hidden && document.visibilityState !== 'hidden';
+}
+
+async function refreshHomeLivePanels(reason = 'interval') {
+  if (!isHomeLiveRefreshAllowed()) return null;
+  if (homeLiveRefreshPromise) return homeLiveRefreshPromise;
+  homeLiveRefreshPromise = Promise.allSettled([
+    loadLeaderboard({ force: true, reason }),
+    loadHomeRecentWinners({ force: true, reason })
+  ]).finally(() => {
+    homeLiveRefreshLastAt = Date.now();
+    homeLiveRefreshPromise = null;
+  });
+  return homeLiveRefreshPromise;
+}
+
+function stopHomeLiveRefresh() {
+  if (homeLiveRefreshTimer) window.clearInterval(homeLiveRefreshTimer);
+  homeLiveRefreshTimer = 0;
+}
+
+function startHomeLiveRefresh({ immediate = false, reason = 'start' } = {}) {
+  stopHomeLiveRefresh();
+  if (!isHomeLiveRefreshAllowed()) return;
+  if (immediate) refreshHomeLivePanels(reason).catch((error) => report('home.liveRefresh.immediate', error));
+  homeLiveRefreshTimer = window.setInterval(() => {
+    if (!isHomeLiveRefreshAllowed()) {
+      stopHomeLiveRefresh();
+      return;
+    }
+    refreshHomeLivePanels('interval-15s').catch((error) => report('home.liveRefresh.interval', error));
+  }, HOME_LIVE_REFRESH_MS);
+}
+
+function bindHomeLiveRefreshLifecycle() {
+  if (homeLiveRefreshLifecycleBound) return;
+  homeLiveRefreshLifecycleBound = true;
+  const resume = (reason) => {
+    startHomeLiveRefresh({ immediate: true, reason });
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopHomeLiveRefresh();
+    else resume('visibility-return');
+  }, { passive: true });
+  window.addEventListener('pageshow', () => resume('pageshow-return'), { passive: true });
+  window.addEventListener('focus', () => {
+    if (Date.now() - homeLiveRefreshLastAt >= HOME_LIVE_REFRESH_MS) resume('window-focus');
+  }, { passive: true });
+  window.addEventListener('pagehide', stopHomeLiveRefresh, { passive: true });
 }
 
 function gameRgb(game) {
@@ -2878,9 +3137,10 @@ function createGameCard(game) {
 }
 
 async function openGame(game) {
-  const statusText = String(game?.status || game?.state || '').toLowerCase();
+  const statusText = String(game?.status || game?.state || '').trim().toLocaleLowerCase('tr-TR');
   const maintenanceMessage = 'Bu oyun şu an bakımda. Daha sonra tekrar deneyin.';
-  if (game?.maintenance === true || game?.disabled === true || game?.access === 'disabled' || /bakım|bakim|maintenance|kapalı|kapali/.test(statusText)) {
+  const explicitMaintenanceState = ['bakım', 'bakim', 'maintenance', 'maintenance_active'].includes(statusText);
+  if (game?.maintenance === true || game?.disabled === true || game?.access === 'disabled' || explicitMaintenanceState) {
     showToast(game?.name || 'Oyun', maintenanceMessage, 'warning');
     return;
   }
@@ -2966,48 +3226,33 @@ async function loadLeaderboard(options = {}) {
     return leaderboardPayload;
   }
   leaderboardLoading = true;
-  let fallbackRendered = false;
   const softFallbackTimer = window.setTimeout(() => {
     if (!leaderboardLoading || !area) return;
-    fallbackRendered = true;
-    area.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik verisi hazırlanıyor.</strong><span>Veri gecikirse Yenile butonuyla tekrar deneyebilirsin.</span></div>';
-  }, 1000);
-  if (area) area.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Liderlik verileri hazırlanıyor.</div>';
+    area.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik verileri hazırlanıyor.</strong><span>Bağlantı kurulduğunda sıralama otomatik yenilenecek.</span></div>';
+  }, 1600);
+  if (area && !leaderboardPayload) area.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Liderlik verileri hazırlanıyor.</div>';
   try {
-    leaderboardPayload = await apiFetch('/api/leaderboard?limit=10', { timeoutMs: 2600 }, false);
+    const nextPayload = await apiFetch('/api/leaderboard?limit=10', { timeoutMs: 12000 }, false, true);
+    if (!nextPayload?.tabs || typeof nextPayload.tabs !== 'object') throw Object.assign(new Error('LEADERBOARD_INVALID_RESPONSE'), { code: 'LEADERBOARD_INVALID_RESPONSE' });
+    leaderboardPayload = nextPayload;
     leaderboardLoadedAt = Date.now();
   } catch (error) {
-    leaderboardPayload = fallbackLeaderboardPayload();
-    leaderboardLoadedAt = Date.now();
+    if (!leaderboardPayload) leaderboardPayload = null;
     if (!/load failed|failed to fetch|network|abort|timeout/i.test(String(error?.message || error || ''))) {
       report('home.leaderboard.load', error, {
         reason: 'Liderlik API cevabı beklenen JSON sözleşmesini döndürmedi.',
-        solution: '/api/leaderboard route çıktısı ve Render API sağlığı kontrol edilmeli.'
+        solution: '/api/leaderboard route çıktısı ve API bağlantısı kontrol edilmeli.'
       });
+    }
+    if (!leaderboardPayload && area) {
+      area.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-rotate"></i><strong>Liderlik verileri şu anda alınamadı.</strong><span>Sıralama 15 saniye içinde otomatik olarak tekrar denenecek.</span></div>';
     }
   } finally {
     window.clearTimeout(softFallbackTimer);
     leaderboardLoading = false;
   }
-  renderLeaderboard();
+  if (leaderboardPayload) renderLeaderboard();
   return leaderboardPayload;
-}
-
-function startLeaderboardAutoRefresh() {
-  window.clearInterval(leaderboardActiveRefreshTimer);
-  window.clearInterval(leaderboardBackgroundRefreshTimer);
-  leaderboardBackgroundRefreshTimer = 0;
-  leaderboardActiveRefreshTimer = window.setInterval(() => {
-    if (document.hidden) return;
-    if (activeSheet && activeSheet !== 'leaderboard') return;
-    loadLeaderboard({ force: true, reason: 'active-60s' }).catch((error) => report('home.leaderboard.activeRefresh', error));
-  }, 60 * 1000);
-  if (!leaderboardVisibilityRefreshBound) {
-    leaderboardVisibilityRefreshBound = true;
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) loadLeaderboard({ force: true, reason: 'visibility' }).catch((error) => report('home.leaderboard.visibilityRefresh', error));
-    }, { passive: true });
-  }
 }
 
 function normalizeLeaderboardItem(item = {}, index = 0) {
@@ -4028,10 +4273,21 @@ async function saveProfile() {
     if (!existingFirst) body.firstName = firstName;
     if (!existingLast) body.lastName = lastName;
     if (!safeText(currentProfile?.fullName || '')) body.fullName = joinName(firstName, lastName);
+    if (!safeText(currentProfile?.dateOfBirth || '')) {
+      const dob = readDobFields('profile');
+      if (!dob.dateOfBirth) { setHelp('profileDobHelp', 'Doğum tarihi alanını eksiksiz seçmelisiniz.', 'error'); return; }
+      if (!dob.ageVerified) { setHelp('profileDobHelp', 'Devam edebilmek için 16 yaşından büyük olmalısınız.', 'error'); return; }
+      Object.assign(body, { dateOfBirth: dob.dateOfBirth, birthDay: dob.birthDay, birthMonth: dob.birthMonth, birthYear: dob.birthYear });
+    }
     const payload = await apiFetch('/api/profile/update', { method: 'POST', body }, true);
     currentProfile = normalizeProfile(payload.user || payload.profile || payload);
+    if (currentProfile?.dateOfBirth) {
+      setDobFields('profile', currentProfile.dateOfBirth);
+      lockDobFields('profile', true);
+    }
     renderProfile();
-      setHelp('usernameHelp', 'Profil kaydedildi.', 'success');
+    if (currentProfile?.dateOfBirth) setHelp('profileDobHelp', `Doğum tarihi kayıtlı: ${formatDobDisplay(currentProfile.dateOfBirth)} · Yaş: ${currentProfile.age || ageFromDateOfBirth(currentProfile.dateOfBirth)}. Bu bilgi yalnızca admin tarafından değiştirilebilir.`, 'success');
+    setHelp('usernameHelp', 'Profil kaydedildi.', 'success');
     showToast('Hesabım', 'Profil güncellendi.', 'success');
   } catch (error) {
     setHelp('usernameHelp', userErrorText(error, 'Profil kaydedilemedi.'), 'error');
@@ -4221,7 +4477,11 @@ async function handleAuthSubmit(mode = currentAuthMode) {
     if (!isValidPersonNameInput(values.firstName) || !isValidPersonNameInput(values.lastName)) { authToastError('Kayıt Ol', PERSON_NAME_RULE_MESSAGE); return; }
     if (!passwordRuleState(values.password).ok) { authToastError('Kayıt Ol', PASSWORD_RULE_MESSAGE); return; }
     if (values.password !== values.repeatPassword) { authToastError('Kayıt Ol', 'Şifre ve şifre tekrarı eşleşmiyor.'); return; }
+    if (!values.dateOfBirth) { authToastError('Kayıt Ol', 'Doğum tarihi alanını eksiksiz seçmelisiniz.'); return; }
+    if (!values.ageVerified) { authToastError('Kayıt Ol', 'Devam edebilmek için 16 yaşından büyük olmalısınız.'); return; }
     if (!values.termsAccepted) { authToastError('Kayıt Ol', 'Devam etmek için kullanım şartlarını kabul etmelisin.'); return; }
+    if (!values.kvkkAccepted) { authToastError('Kayıt Ol', 'Devam etmek için KVKK ve Gizlilik metnini kabul etmelisin.'); return; }
+    if (!values.mcNoticeAccepted) { authToastError('Kayıt Ol', 'MC’nin gerçek para karşılığı olmayan sanal puan olduğunu kabul etmelisin.'); return; }
   }
 
   setButtonBusy(submitBtn, true, safeMode === 'register' ? 'HESAP OLUŞTURULUYOR' : 'OTURUM AÇILIYOR');
@@ -4230,7 +4490,8 @@ async function handleAuthSubmit(mode = currentAuthMode) {
     clearAuthRequiredLock();
     const ready = await bootFirebase({ reportOnError: true });
     if (!ready) throw new Error('hazır değil.');
-    await applyFirebaseAuthPersistence(safeMode === 'login' ? !!values.remember : false);
+    const rememberLogin = safeMode === 'login' ? !!values.remember : true;
+    await applyFirebaseAuthPersistence(rememberLogin);
     let credential;
     if (safeMode === 'register') {
       const registerUsernameState = usernameValidationState(values.username);
@@ -4244,9 +4505,15 @@ async function handleAuthSubmit(mode = currentAuthMode) {
       credential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       try { await firebaseUpdateProfile?.(credential.user, { displayName: values.username }); } catch (_) {}
       try { await sendEmailVerification(credential.user); } catch (_) {}
-      currentProfile = normalizeProfile({ uid: credential.user.uid, email: credential.user.email, username: values.username, firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), avatar: fallbackAvatar });
+      currentProfile = normalizeProfile({ uid: credential.user.uid, email: credential.user.email, username: values.username, firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), avatar: fallbackAvatar, dateOfBirth: values.dateOfBirth, ageVerified: true });
       try {
-        await apiFetch('/api/profile/update', { method: 'POST', body: { firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), username: values.username, avatar: fallbackAvatar, selectedFrame: 0 } }, true);
+        await syncBackendSession(true, rememberLogin);
+      } catch (sessionError) {
+        report('home.auth.session.register', sessionError, { severity: 'warning' });
+        scheduleBackendSessionRecovery(rememberLogin);
+      }
+      try {
+        await apiFetch('/api/profile/update', { method: 'POST', body: { firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), username: values.username, avatar: fallbackAvatar, selectedFrame: 0, dateOfBirth: values.dateOfBirth, birthDay: values.birthDay, birthMonth: values.birthMonth, birthYear: values.birthYear, acceptedTerms: true, acceptedKvkk: true, acceptedMcVirtualPoints: true } }, true);
         showToast('Kayıt tamamlandı', 'Hesabın oluşturuldu. E-posta doğrulama bağlantısını kontrol et.', 'success');
       } catch (profileError) {
         report('home.auth.register.profile.update', profileError);
@@ -4259,9 +4526,15 @@ async function handleAuthSubmit(mode = currentAuthMode) {
         email = resolved.email;
       }
       credential = await signInWithEmailAndPassword(auth, email, values.password);
-      showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
+      try {
+        await syncBackendSession(true, rememberLogin);
+      } catch (sessionError) {
+        report('home.auth.session.login', sessionError, { severity: 'warning' });
+        scheduleBackendSessionRecovery(rememberLogin);
+      }
     }
     await loadProfile();
+    if (safeMode === 'login') showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
     closeSheet(true);
   } catch (error) {
     authToastError(safeMode === 'register' ? 'Kayıt Ol' : 'Hesap erişimi', userErrorText(error, safeMode === 'register' ? 'Kayıt işlemi tamamlanamadı. Bilgileri kontrol edip tekrar dene.' : 'Giriş işlemi tamamlanamadı. Bilgileri kontrol edip tekrar dene.'));
@@ -4294,6 +4567,7 @@ async function handleForgotPassword() {
 async function logout() {
   toggleDropdown(false);
   clearAuthRequiredLock();
+  await clearBackendSession();
   try { if (firebaseReady && signOutFirebase) await signOutFirebase(auth); } catch (error) { report('home.logout.firebase', error); }
   currentProfile = blankProfile();
   renderProfile();
@@ -4389,6 +4663,7 @@ function setupRegisterTermsVisualState() {
 function bindEvents() {
   setupPasswordVisibilityToggles();
   setupRegisterTermsVisualState();
+  setupDateOfBirthFields();
   $('brandHome')?.addEventListener('click', () => location.hash = '#home');
   bindHomeQuickRail();
   $('loginBtn')?.addEventListener('click', () => { setAuthMode('login'); openSheet('auth'); });
@@ -4406,7 +4681,9 @@ function bindEvents() {
   $('forgotPasswordInlineBtn')?.addEventListener('click', () => openSheet('forgot'));
   $('forgotSubmitBtn')?.addEventListener('click', handleForgotPassword);
   ['loginIdentifier', 'loginPassword'].forEach((id) => $(id)?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); handleAuthSubmit('login'); } }));
-  ['registerEmail', 'registerPassword', 'registerPasswordRepeat', 'registerUsername', 'registerFirstName', 'registerLastName'].forEach((id) => $(id)?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); handleAuthSubmit('register'); } }));
+  ['registerEmail', 'registerPassword', 'registerPasswordRepeat', 'registerUsername', 'registerFirstName', 'registerLastName', 'registerBirthDay', 'registerBirthMonth', 'registerBirthYear'].forEach((id) => $(id)?.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); handleAuthSubmit('register'); } }));
+  ['registerBirthDay', 'registerBirthMonth', 'registerBirthYear'].forEach((id) => $(id)?.addEventListener('change', () => syncDobSummary('register')));
+  ['profileBirthDay', 'profileBirthMonth', 'profileBirthYear'].forEach((id) => $(id)?.addEventListener('change', () => syncDobSummary('profile')));
   $('forgotEmail')?.addEventListener('keydown', (event) => { if (event.key === 'Enter') handleForgotPassword(); });
   $('logoutDropdownBtn')?.addEventListener('click', logout);
   $('navProfileItem')?.addEventListener('click', () => { toggleDropdown(false); ensureAuthThen('Hesabım') && openSheet('profile'); });
@@ -4607,6 +4884,8 @@ async function handleHomeAuthStateChange(user) {
   notificationPayload = { system: [], personal: [] };
   accountMemoryPayload = { transactions: [], games: [] };
   if (user && firebaseReload) await firebaseReload(user).catch(() => null);
+  if (user) await syncBackendSession(false).catch((error) => report('home.auth.session.sync', error, { severity:'warning' }));
+  else await clearBackendSession();
   await loadProfile();
   renderNotifications();
   renderAccountMemory();
@@ -4652,9 +4931,13 @@ async function boot() {
     const params = new URLSearchParams(window.location.search || '');
     const maintenanceGame = params.get('pm_maintenance') || '';
     if (maintenanceGame) {
-      showToast('Bakım modu', 'Bu oyun şu an bakımda. Daha sonra tekrar deneyin.', 'warning');
-      const cleanUrl = `${window.location.pathname || '/'}${window.location.hash || ''}`;
-      window.history.replaceState({}, document.title, cleanUrl);
+      Promise.resolve(loadHomeMaintenanceState({ force: true })).then(() => {
+        const route = `/games/${String(maintenanceGame).replace(/[^a-z0-9-]/gi, '')}`;
+        if (isGameInMaintenance(route)) showToast('Bakım modu', 'Bu oyun şu an bakımda. Daha sonra tekrar deneyin.', 'warning');
+      }).catch(() => null).finally(() => {
+        const cleanUrl = `${window.location.pathname || '/'}${window.location.hash || ''}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+      });
     }
   } catch (_) {}
   renderGames();
@@ -4665,10 +4948,8 @@ async function boot() {
   renderAccountMemory();
   renderWheelRewards(DEFAULT_WHEEL_PRIZES);
   setWheelLockedState(false);
-  startLeaderboardAutoRefresh();
-  startHomeWinnersRefresh();
-  loadHomeRecentWinners({ force: true }).catch((error) => report('home.recentWinners.boot', error));
-  loadLeaderboard({ force: true, reason: 'boot' }).catch((error) => report('home.leaderboard.boot', error));
+  bindHomeLiveRefreshLifecycle();
+  startHomeLiveRefresh({ immediate: true, reason: 'boot' });
   const leaderboardArea = $('leaderboardListArea');
   if (leaderboardArea && !leaderboardLoading && !leaderboardPayload) leaderboardArea.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik tablosu hazır.</strong><span>Sıralama düzenli olarak güncellenir. En güncel sonuçları görmek için Yenile butonunu kullanabilirsin.</span></div>';
   window.__PM_RUNTIME = { auth, user: auth.currentUser };

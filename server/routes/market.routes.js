@@ -1,5 +1,6 @@
 const express = require('express');
 const { requireAuth, requireAdmin } = require('../core/security');
+const { requireAgeGate } = require('../core/ageGateService');
 const { requireAdminReauth, writeAdminAudit } = require('../core/adminReauthService');
 const { listMarketItems, decorateMarketItemsForUser, upsertMarketItem, purchaseItem, equipItem, refundItem, getMarketStatus, setMarketStatus, ensureMarketEnabled } = require('../core/marketService');
 const { runtimeStore } = require('../core/runtimeStore');
@@ -45,22 +46,22 @@ function dispatchMarketAdminNotification(req, { uid = '', systemTitle = '', syst
   return sent;
 }
 
-router.get('/market/status', requireAuth, async (req, res) => {
+router.get('/market/status', requireAuth, requireAgeGate, async (req, res) => {
   const status = await getMarketStatus();
   res.json({ ok: true, enabled: status.enabled !== false, status });
 });
-router.get('/market/items', requireAuth, async (req, res) => {
+router.get('/market/items', requireAuth, requireAgeGate, async (req, res) => {
   res.set('Cache-Control', 'private, max-age=3, stale-while-revalidate=15');
   const marketState = await ensureMarketEnabled();
   if (!marketState.ok) return res.status(503).json(marketState);
   const items = await decorateMarketItemsForUser((await listMarketItems()).filter((item) => item.active !== false && item.visible !== false), req.user.uid);
   res.json({ ok: true, enabled: true, items, ownedIds: items.filter((item) => item.owned).map((item) => item.id), equippedItemId: items.find((item) => item.equipped)?.id || '' });
 });
-router.post('/market/purchase', requireAuth, requireVerifiedEmailForMarket, async (req, res) => {
+router.post('/market/purchase', requireAuth, requireAgeGate, requireVerifiedEmailForMarket, async (req, res) => {
   const result = await purchaseItem({ uid: req.user.uid, itemId: req.body.itemId, idempotencyKey: req.headers['idempotency-key'] || req.body.idempotencyKey });
   res.status(result.ok ? 200 : result.error === 'MARKET_OFFLINE' ? 503 : 400).json(result);
 });
-router.post('/market/equip', requireAuth, requireVerifiedEmailForMarket, async (req, res) => {
+router.post('/market/equip', requireAuth, requireAgeGate, requireVerifiedEmailForMarket, async (req, res) => {
   const result = await equipItem({ uid: req.user.uid, itemId: req.body.itemId });
   res.status(result.ok ? 200 : result.error === 'MARKET_OFFLINE' ? 503 : 400).json(result);
 });

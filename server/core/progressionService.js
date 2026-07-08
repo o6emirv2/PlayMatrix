@@ -1,5 +1,5 @@
 const MAX_LEVEL = 100;
-const MAX_XP = 4000000000000000n;
+const MAX_XP = 4000000000000n;
 const FIRST_STEP_XP = 250n;
 
 function normalizeXpBigInt(value = 0) {
@@ -107,8 +107,8 @@ function getProgression(xpValue = 0) {
     accountLevel: level,
     currentXp: safeNumber(xp),
     accountLevelProgressPct: Math.max(0, Math.min(100, progressPercent)),
-    version: 'playmatrix-progression-v2-protocol-4q',
-    accountProgressionVersion: 'playmatrix-progression-v2-protocol-4q',
+    version: 'playmatrix-progression-final-protocol-4t',
+    accountProgressionVersion: 'playmatrix-progression-final-protocol-4t',
     accountLevelCurveMode: 'PM_V2_PROTOCOL_NORMALIZED_SEGMENTED_CURVE',
     curveMode: 'PM_V2_PROTOCOL_NORMALIZED_SEGMENTED_CURVE'
   };

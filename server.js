@@ -9,13 +9,15 @@ const { Server } = require('socket.io');
 const env = require('./server/config/env');
 const { corsOptions } = require('./server/config/cors');
 const firebase = require('./server/config/firebaseAdmin');
-const { apiLimiter } = require('./server/core/security');
+const { apiLimiter, requireAuth, requireAdmin } = require('./server/core/security');
 const { routeData } = require('./server/core/smartDataRouter');
 const { runtimeStore } = require('./server/core/runtimeStore');
 const { runSafeFirestoreCleanup } = require('./server/core/firestoreCleanupService');
 const { addAdminLog, sanitizeRuntimeLogPayload } = require('./server/admin/adminRuntimeLogStore');
 const createClientErrorsRouter = require('./server/routes/client-errors.routes');
 const { listRecentActivities } = require('./server/core/recentActivityService');
+const { normalizeMaintenanceGames, normalizeGameSlug: normalizeMaintenanceGameSlug, isGameMaintenanceActive } = require('./server/core/maintenanceService');
+const { authenticateSocketRequest } = require('./server/core/userSessionService');
 
 function safeErrorMessage(error, fallback = 'SERVER_ERROR') {
   return String(error?.message || error || fallback)
@@ -49,8 +51,18 @@ process.on('uncaughtException', (error) => reportProcessFailure('UNCAUGHT_EXCEPT
 const fb = firebase.initFirebaseAdmin();
 const app = express();
 app.set('trust proxy', 1);
+app.set('etag', 'strong');
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin(origin, callback) { const allowed = !origin || env.allowedOrigins.includes(env.normalizeOrigin(origin)); callback(null, allowed); }, credentials: true } });
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+server.requestTimeout = 30_000;
+const io = new Server(server, {
+  cors: { origin(origin, callback) { const allowed = !origin || env.allowedOrigins.includes(env.normalizeOrigin(origin)); callback(null, allowed); }, credentials: true },
+  pingInterval: Math.max(10_000, Number(process.env.SOCKET_PING_INTERVAL_MS || 25_000)),
+  pingTimeout: Math.max(20_000, Number(process.env.SOCKET_STALE_TIMEOUT_MS || 70_000) - Number(process.env.SOCKET_PING_INTERVAL_MS || 25_000)),
+  perMessageDeflate: false,
+  httpCompression: true
+});
 
 app.disable('x-powered-by');
 
@@ -94,7 +106,7 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   frameguard: { action: 'sameorigin' }
 }));
-app.use(compression());
+app.use(compression({ threshold: 1024 }));
 
 app.use((req, res, next) => {
   const inbound = String(req.headers['x-request-id'] || '').replace(/[^a-zA-Z0-9_.:-]/g, '').slice(0, 80);
@@ -108,13 +120,6 @@ app.options('/api/*', cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
-function normalizeMaintenanceGames(data = {}) {
-  const src = data && typeof data === 'object' && data.games && typeof data.games === 'object' ? data.games : data;
-  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
-  const out = {};
-  keys.forEach((key) => { out[key] = !!src?.[key]; });
-  return out;
-}
 function maintenanceGamesRaw() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
   return normalizeMaintenanceGames(stored?.games || stored || {});
@@ -125,7 +130,7 @@ async function getMaintenanceGames({ force = false } = {}) {
   const cached = maintenanceGamesRaw();
   const hasCacheSnapshot = maintenanceReadAt > 0 && cached && typeof cached === 'object';
   const cacheAge = Date.now() - Number(maintenanceReadAt || 0);
-  if (!force && hasCacheSnapshot && cacheAge < 2500) return cached;
+  if (!force && hasCacheSnapshot && cacheAge < 15000) return cached;
   const db = fb?.db;
   if (!db) return cached;
   if (!force && maintenanceReadPromise) return maintenanceReadPromise;
@@ -150,21 +155,8 @@ async function getMaintenanceGames({ force = false } = {}) {
     .finally(() => { maintenanceReadPromise = null; });
   return maintenanceReadPromise;
 }
-function normalizeGameSlugForMaintenance(value = '') {
-  const raw = String(value || '').toLowerCase().replace(/\.html(?:$|[?#])/i, '').replace(/\/$/, '');
-  if (/chess|satranc|satranç/.test(raw)) return 'chess';
-  if (/crash/.test(raw)) return 'crash';
-  if (/pisti|pişti/.test(raw)) return 'pisti';
-  if (/snake/.test(raw)) return 'snake-pro';
-  if (/space/.test(raw)) return 'space-pro';
-  if (/pattern/.test(raw)) return 'pattern-master';
-  return '';
-}
-function isMaintenanceBlockedFromGames(games = {}, gameKey = '') {
-  const key = normalizeGameSlugForMaintenance(gameKey) || String(gameKey || '').toLowerCase();
-  const classicKeys = new Set(['pattern-master', 'space-pro', 'snake-pro']);
-  return !!games.general || !!games.system || !!games[key] || (!!games.classic && classicKeys.has(key));
-}
+function normalizeGameSlugForMaintenance(value = '') { return normalizeMaintenanceGameSlug(value); }
+function isMaintenanceBlockedFromGames(games = {}, gameKey = '') { return isGameMaintenanceActive(games, gameKey); }
 function isMaintenanceBlockedRaw(gameKey = '') {
   return isMaintenanceBlockedFromGames(maintenanceGamesRaw(), gameKey);
 }
@@ -177,7 +169,7 @@ async function maintenanceRedirectMiddleware(req, res, next) {
     const pathValue = String(req.path || req.originalUrl || '').toLowerCase();
     const gameKey = normalizeGameSlugForMaintenance(pathValue);
     if (!gameKey) return next();
-    const isGamePage = /^\/games\//i.test(pathValue) || /^\/(crash|chess|satranc|satranç|pisti|pişti|snake|snake-pro|space|space-pro|pattern-master|patternmaster)(?:\/|\.html|$)/i.test(pathValue) || /online%20oyunlar|online oyunlar/i.test(pathValue);
+    const isGamePage = /^\/games\//i.test(pathValue) || /^\/(crash|chess|satranc|satranç|pisti|pişti|snake|snake-pro|space|space-pro|pattern-master|patternmaster|matrix-siege|matrixsiege)(?:\/|\.html|$)/i.test(pathValue) || /online%20oyunlar|online oyunlar/i.test(pathValue);
     if (!isGamePage) return next();
     if (await isMaintenanceBlockedAsync(gameKey)) return res.redirect(302, `/?pm_maintenance=${encodeURIComponent(gameKey)}`);
     return next();
@@ -228,6 +220,7 @@ function apiGameFromUrl(value = '') {
   if (/\/api\/games\/(?:snake|snake-pro)(?:[/?#]|$)/.test(url)) return 'snake-pro';
   if (/\/api\/games\/(?:space|space-pro)(?:[/?#]|$)/.test(url)) return 'space-pro';
   if (/\/api\/games\/pattern-master(?:[/?#]|$)/.test(url)) return 'pattern-master';
+  if (/\/api\/(?:games\/)?matrix-siege(?:[/?#]|$)/.test(url)) return 'matrix-siege';
   return '';
 }
 
@@ -400,33 +393,60 @@ app.use((req, res, next) => {
 });
 
 const startupReport = env.safeStartupReport();
-if (startupReport.missing.length || startupReport.warnings.length) {
+if (startupReport.missing.length) {
   addAdminLog('env.startup.warning', {
-    level: startupReport.missing.length ? 'error' : 'warning',
+    level: 'error',
     source: 'server',
     category: 'env',
-    code: startupReport.missing.length ? 'ENV_REQUIRED_VALUE_MISSING' : 'ENV_OPTIONAL_WARNING',
-    message: 'Render ENV kontrol raporu uyarı üretti.',
+    code: 'ENV_REQUIRED_VALUE_MISSING',
+    message: 'Zorunlu Render ENV kontrolü tamamlanamadı.',
     safeContext: startupReport
   });
-  if (process.env.RENDER_VERBOSE_ENV === '1') console.warn('[env:startup:warning]', JSON.stringify({ missing: startupReport.missing, warnings: startupReport.warnings }));
+  console.error('[env:startup:error]', JSON.stringify({ missing: startupReport.missing }));
+} else if (startupReport.warnings.length && (process.env.RENDER_ENV_WARNING_LOGS === '1' || process.env.RENDER_VERBOSE_ENV === '1')) {
+  addAdminLog('env.startup.info', {
+    level: 'info',
+    source: 'server',
+    category: 'env',
+    code: 'ENV_OPTIONAL_CHECK_NOTICE',
+    message: 'Render ENV opsiyonel kontrol notu üretildi.',
+    safeContext: startupReport
+  });
+  if (process.env.RENDER_VERBOSE_ENV === '1') console.warn('[env:startup:notice]', JSON.stringify({ warnings: startupReport.warnings }));
 }
 app.use('/api', apiLimiter);
+function setFrontendCacheHeaders(res, filePath = '') {
+  const lower = String(filePath || '').toLowerCase();
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (lower.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    return;
+  }
+  if (/\.(?:js|css)$/i.test(lower)) {
+    res.setHeader('Cache-Control', env.nodeEnv === 'production' ? 'public, max-age=300, stale-while-revalidate=86400' : 'no-store, max-age=0');
+    return;
+  }
+  if (/\.(?:woff2?|ttf)$/i.test(lower)) {
+    res.setHeader('Cache-Control', env.nodeEnv === 'production' ? 'public, max-age=604800, immutable' : 'no-store, max-age=0');
+    return;
+  }
+  if (/\.(?:png|jpe?g|webp|svg|gif|ico|avif|mp3|wav|ogg)$/i.test(lower)) {
+    res.setHeader('Cache-Control', env.nodeEnv === 'production' ? 'public, max-age=86400, stale-while-revalidate=604800' : 'no-store, max-age=0');
+  }
+}
 const staticOptions = Object.freeze({
   extensions: ['html'],
-  maxAge: env.nodeEnv === 'production' ? '15m' : 0,
+  maxAge: env.nodeEnv === 'production' ? '7d' : 0,
   redirect: false,
   dotfiles: 'ignore',
   fallthrough: true,
-  setHeaders(res, filePath) {
-    const lower = String(filePath || '').toLowerCase();
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    if (lower.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, max-age=0');
-    else if (/\.(?:js|css)$/i.test(lower)) res.setHeader('Cache-Control', 'no-cache, max-age=0, must-revalidate');
-  }
+  setHeaders: setFrontendCacheHeaders
 });
 function sendRootFile(fileName) {
-  return (_req, res) => res.sendFile(path.join(__dirname, fileName));
+  return (_req, res) => {
+    setFrontendCacheHeaders(res, fileName);
+    return res.sendFile(path.join(__dirname, fileName));
+  };
 }
 app.get(['/', '/index.html'], sendRootFile('index.html'));
 app.get('/style.css', sendRootFile('style.css'));
@@ -435,9 +455,31 @@ app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions)
 app.use('/admin', express.static(path.join(__dirname, 'admin'), staticOptions));
 app.use('/games', express.static(path.join(__dirname, 'games'), staticOptions));
 
-function healthPayload() { return { ok:true, service:'playmatrix', env:env.nodeEnv, firebaseEnabled: !!fb.enabled, time:Date.now() }; }
-app.get('/healthz', (_req,res)=>res.json(healthPayload()));
-app.get('/api/healthz', (_req,res)=>res.json(healthPayload()));
+function publicHealthPayload() { return { ok: true }; }
+function adminHealthPayload() { return { ok:true, service:'playmatrix', env:env.nodeEnv, firebaseEnabled: !!fb.enabled, redisConfigured: !!env.redis?.url, runtimeLog: env.runtimeLog, time:Date.now() }; }
+app.get('/health', (_req,res)=>res.json(publicHealthPayload()));
+app.get('/api/health', (_req,res)=>res.json(publicHealthPayload()));
+app.get('/api/v1/health', (_req,res)=>res.json(publicHealthPayload()));
+app.get('/healthz', (_req,res)=>res.json(publicHealthPayload()));
+app.get('/api/healthz', (_req,res)=>res.json(publicHealthPayload()));
+app.get('/api/v1/admin/health', requireAuth, requireAdmin, (_req,res)=>res.json({ ok: true, data: adminHealthPayload(), message: '', code: 'SUCCESS' }));
+function normalizeApiCode(value, ok = false) {
+  const raw = String(value || (ok ? 'SUCCESS' : 'UNKNOWN_ERROR')).trim();
+  return raw ? raw.toUpperCase().replace(/[^A-Z0-9_]+/g, '_').slice(0, 80) : (ok ? 'SUCCESS' : 'UNKNOWN_ERROR');
+}
+function standardApiV1Response(_req, res, next) {
+  const json = res.json.bind(res);
+  res.json = (payload = {}) => {
+    if (!payload || typeof payload !== 'object' || Buffer.isBuffer(payload)) return json(payload);
+    const hasStandard = Object.prototype.hasOwnProperty.call(payload, 'ok') && Object.prototype.hasOwnProperty.call(payload, 'data') && Object.prototype.hasOwnProperty.call(payload, 'code');
+    if (hasStandard) return json(payload);
+    const ok = payload.ok !== false;
+    const code = normalizeApiCode(payload.code || payload.error || payload.reason || payload.discarded, ok);
+    const data = ok ? (payload.data !== undefined ? payload.data : payload) : (payload.data !== undefined ? payload.data : null);
+    return json({ ok, data, message: '', code });
+  };
+  next();
+}
 
 app.use('/api', async (req, res, next) => {
   try {
@@ -451,20 +493,25 @@ app.use('/api', async (req, res, next) => {
     return next();
   }
 });
-app.use(['/api/market','/api/marketplace'], maintenanceFor('market'));
-app.use(['/api/wheel'], maintenanceFor('wheel'));
-app.use(['/api/promo'], maintenanceFor('promo'));
+app.use(['/api/market','/api/marketplace','/api/v1/market','/api/v1/marketplace'], maintenanceFor('market'));
+app.use(['/api/wheel','/api/v1/wheel'], maintenanceFor('wheel'));
+app.use(['/api/promo','/api/v1/promo'], maintenanceFor('promo'));
 
-app.use('/api', require('./server/routes/auth.routes'));
-app.use('/api', require('./server/routes/user.routes'));
-app.use('/api', require('./server/routes/admin.routes'));
-app.use('/api', require('./server/routes/economy.routes'));
-app.use('/api', require('./server/routes/notification.routes'));
-app.use('/api', require('./server/routes/email.routes'));
-app.use('/api', require('./server/routes/market.routes'));
-app.use('/api', require('./server/routes/wheel.routes'));
-app.use('/api', require('./server/routes/promo.routes'));
-app.use('/api', require('./server/routes/compat.routes'));
+const apiRouters = [
+  require('./server/routes/auth.routes'),
+  require('./server/routes/user.routes'),
+  require('./server/routes/admin.routes'),
+  require('./server/routes/economy.routes'),
+  require('./server/routes/notification.routes'),
+  require('./server/routes/email.routes'),
+  require('./server/routes/market.routes'),
+  require('./server/routes/wheel.routes'),
+  require('./server/routes/promo.routes'),
+  require('./server/routes/compat.routes')
+];
+apiRouters.forEach((router) => app.use('/api', router));
+app.use('/api/v1', standardApiV1Response);
+apiRouters.forEach((router) => app.use('/api/v1', router));
 
 function maintenanceSnapshot() {
   return maintenanceGamesRaw();
@@ -504,12 +551,13 @@ const startupMaintenanceReady = hydrateMaintenanceFromFirestore();
 const crashGame = require('./server/games/crash');
 const chessGame = require('./server/games/chess');
 const pistiGame = require('./server/games/pisti');
-app.use(['/api/games/crash','/api/crash'], maintenanceFor('crash'), crashGame.router);
-app.use(['/api/games/chess','/api/chess'], maintenanceFor('chess'), chessGame.router);
-app.use(['/api/games/pisti','/api/pisti-online'], maintenanceFor('pisti'), pistiGame.router);
-app.use(['/api/games/snake-pro','/api/games/snake'], maintenanceFor('snake-pro'), require('./server/games/snake-pro').router);
-app.use(['/api/games/space-pro','/api/games/space'], maintenanceFor('space-pro'), require('./server/games/space-pro').router);
-app.use('/api/games/pattern-master', maintenanceFor('pattern-master'), require('./server/games/pattern-master').router);
+app.use(['/api/games/crash','/api/crash','/api/v1/games/crash','/api/v1/crash'], maintenanceFor('crash'), crashGame.router);
+app.use(['/api/games/chess','/api/chess','/api/v1/games/chess','/api/v1/chess'], maintenanceFor('chess'), chessGame.router);
+app.use(['/api/games/pisti','/api/pisti-online','/api/v1/games/pisti','/api/v1/pisti-online'], maintenanceFor('pisti'), pistiGame.router);
+app.use(['/api/games/snake-pro','/api/games/snake','/api/v1/games/snake-pro','/api/v1/games/snake'], maintenanceFor('snake-pro'), require('./server/games/snake-pro').router);
+app.use(['/api/games/space-pro','/api/games/space','/api/v1/games/space-pro','/api/v1/games/space'], maintenanceFor('space-pro'), require('./server/games/space-pro').router);
+app.use(['/api/games/pattern-master','/api/v1/games/pattern-master'], maintenanceFor('pattern-master'), require('./server/games/pattern-master').router);
+app.use(['/api/games/matrix-siege','/api/v1/games/matrix-siege'], maintenanceFor('matrix-siege'), require('./server/games/matrix-siege').router);
 
 function sanitizeClientStack(value = '') {
   return String(value || '')
@@ -557,9 +605,9 @@ async function captureClientError(req, res) {
   const payload = normalizeClientErrorPayload(req.body || {}, req);
   const game = String(payload.game || resolveGameScopeFromPath(`${payload.path || ''} ${payload.source || ''} ${payload.scope || ''} ${payload.endpoint || ''}`)).toLowerCase();
   const sourceText = `${payload.path || ''} ${payload.source || ''} ${payload.scope || ''} ${payload.endpoint || ''}`.toLowerCase();
-  const isKnownScope = game === 'chess' || game === 'crash' || game === 'home' || game === 'pisti' || game === 'snake-pro' || game === 'space-pro' || game === 'pattern-master' || game === 'admin' || sourceText.includes('/games/chess') || sourceText.includes('/api/chess') || sourceText.includes('/games/crash') || sourceText.includes('/api/crash') || sourceText.includes('/games/pisti') || sourceText.includes('/api/pisti') || sourceText.includes('pisti') || sourceText.includes('/public/js/games/crash/index.js') || sourceText.includes('crash-app') || sourceText.includes('satranc') || sourceText.includes('/api/wheel') || sourceText.includes('/api/promo') || sourceText.includes('/api/market') || sourceText.includes('/api/leaderboard') || sourceText.includes('/api/account') || sourceText.includes('/api/notifications') || sourceText.includes('home-core') || sourceText.includes('script.js') || sourceText.includes('/index.html') || sourceText.includes('anasayfa');
+  const isKnownScope = game === 'chess' || game === 'crash' || game === 'home' || game === 'pisti' || game === 'snake-pro' || game === 'space-pro' || game === 'pattern-master' || game === 'matrix-siege' || game === 'admin' || sourceText.includes('/games/chess') || sourceText.includes('/api/chess') || sourceText.includes('/games/crash') || sourceText.includes('/api/crash') || sourceText.includes('/games/pisti') || sourceText.includes('/api/pisti') || sourceText.includes('pisti') || sourceText.includes('/public/js/games/crash/index.js') || sourceText.includes('crash-app') || sourceText.includes('satranc') || sourceText.includes('/api/wheel') || sourceText.includes('/api/promo') || sourceText.includes('/api/market') || sourceText.includes('/api/leaderboard') || sourceText.includes('/api/account') || sourceText.includes('/api/notifications') || sourceText.includes('home-core') || sourceText.includes('script.js') || sourceText.includes('/index.html') || sourceText.includes('anasayfa');
   if (!isKnownScope) return res.status(202).json({ ok:true, discarded:'unknown-scope' });
-  const normalizedGame = game === 'crash' || sourceText.includes('crash') ? 'crash' : (game === 'chess' || sourceText.includes('chess') || sourceText.includes('satranc')) ? 'chess' : (game === 'pisti' || sourceText.includes('pisti') || sourceText.includes('pişti')) ? 'pisti' : (game === 'snake-pro' || sourceText.includes('snake')) ? 'snake-pro' : (game === 'space-pro' || sourceText.includes('space')) ? 'space-pro' : (game === 'pattern-master' || sourceText.includes('pattern')) ? 'pattern-master' : game === 'admin' ? 'admin' : 'home';
+  const normalizedGame = game === 'crash' || sourceText.includes('crash') ? 'crash' : (game === 'chess' || sourceText.includes('chess') || sourceText.includes('satranc')) ? 'chess' : (game === 'pisti' || sourceText.includes('pisti') || sourceText.includes('pişti')) ? 'pisti' : (game === 'snake-pro' || sourceText.includes('snake')) ? 'snake-pro' : (game === 'space-pro' || sourceText.includes('space')) ? 'space-pro' : (game === 'pattern-master' || sourceText.includes('pattern')) ? 'pattern-master' : (game === 'matrix-siege' || sourceText.includes('matrix-siege')) ? 'matrix-siege' : game === 'admin' ? 'admin' : 'home';
   const message = String(payload.message || payload.error || '').trim();
   const code = String(payload.code || message).toUpperCase();
   const scope = String(payload.scope || payload.category || 'client.error');
@@ -614,7 +662,7 @@ async function captureClientError(req, res) {
     status,
     userAgent: payload.userAgent,
     sanitizedStack: payload.sanitizedStack,
-    area: normalizedGame === 'chess' ? 'Satranç Frontend' : normalizedGame === 'crash' ? 'Crash Frontend' : normalizedGame === 'pisti' ? 'Pişti Frontend' : normalizedGame === 'snake-pro' ? 'Snake Pro Frontend' : normalizedGame === 'space-pro' ? 'Space Pro Frontend' : normalizedGame === 'pattern-master' ? 'Pattern Master Frontend' : normalizedGame === 'admin' ? 'Admin Frontend' : 'AnaSayfa Frontend',
+    area: normalizedGame === 'chess' ? 'Satranç Frontend' : normalizedGame === 'crash' ? 'Crash Frontend' : normalizedGame === 'pisti' ? 'Pişti Frontend' : normalizedGame === 'snake-pro' ? 'Snake Pro Frontend' : normalizedGame === 'space-pro' ? 'Space Pro Frontend' : normalizedGame === 'pattern-master' ? 'Pattern Master Frontend' : normalizedGame === 'matrix-siege' ? 'Matrix Siege Frontend' : normalizedGame === 'admin' ? 'Admin Frontend' : 'AnaSayfa Frontend',
     error: String(payload.message || payload.error || 'Frontend hata kaydı').slice(0, 400),
     reason: String(payload.reason || `Kaynak: ${String(payload.source || payload.endpoint || 'bilinmiyor').slice(0, 180)}${payload.line ? `:${payload.line}` : ''}`).slice(0, 400),
     solution: String(payload.solution || 'İlgili ekran ve işlem adımları güvenli hata detayıyla kontrol edilmeli.').slice(0, 400),
@@ -634,6 +682,8 @@ async function captureClientError(req, res) {
             ? 'SPACE_CLIENT_ERROR'
             : normalizedGame === 'pattern-master'
               ? 'PATTERN_CLIENT_ERROR'
+              : normalizedGame === 'matrix-siege'
+                ? 'MATRIX_SIEGE_CLIENT_ERROR'
               : normalizedGame === 'admin'
                 ? 'ADMIN_CLIENT_ERROR'
                 : 'HOME_CLIENT_ERROR';
@@ -686,10 +736,14 @@ function renderMemoryRecentWinners(limit = 5) {
     .slice(0, safeLimit);
 }
 app.get('/api/home/recent-winners', (req, res) => {
-  res.json({ ok: true, memoryOnly: true, items: renderMemoryRecentWinners(req.query.limit || 5) });
+  const items = renderMemoryRecentWinners(req.query.limit || 5);
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.json({ ok: true, memoryOnly: true, generatedAt: Date.now(), items, activities: items });
 });
 app.get('/api/home/recent-activities', (req, res) => {
-  res.json({ ok: true, memoryOnly: true, activities: renderMemoryRecentWinners(req.query.limit || 5) });
+  const items = renderMemoryRecentWinners(req.query.limit || 5);
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.json({ ok: true, memoryOnly: true, generatedAt: Date.now(), items, activities: items });
 });
 
 app.use('/api', createClientErrorsRouter(captureClientError));
@@ -725,24 +779,16 @@ for (const [from, to] of Object.entries(legacyGameAliases)) app.get(from, (_req,
 function sanitizeSocketText(value = '', max = 500) { return String(value || '').trim().replace(/[<>]/g, '').slice(0, max); }
 async function authenticateSocket(socket) {
   if (socket.data?.pmUid) return socket.data;
-  const token = String(socket.handshake?.auth?.token || socket.handshake?.headers?.authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) return socket.data || {};
-  try {
-    const latest = firebase.initFirebaseAdmin();
-    if (!latest.auth) return socket.data || {};
-    const decoded = await latest.auth.verifyIdToken(token);
-    const uid = String(decoded.uid || '');
-    if (!uid) {
-      socket.emit('pm:auth_error', { ok:false, error:'AUTH_REQUIRED' });
-      return socket.data || {};
-    }
-    socket.data.pmUid = uid;
-    socket.data.pmEmail = String(decoded.email || '');
-    if (socket.data.pmUid) socket.join(`user:${socket.data.pmUid}`);
-  } catch (_error) {
-    socket.emit('pm:auth_error', { ok:false, error:'BAD_TOKEN' });
+  const session = await authenticateSocketRequest(socket);
+  if (!session?.uid) {
+    socket.emit('pm:auth_error', { ok:false, error: session?.code || 'AUTH_REQUIRED' });
+    return socket.data || {};
   }
-  return socket.data || {};
+  socket.data.pmUid = String(session.uid);
+  socket.data.pmEmail = String(session.email || '');
+  socket.data.pmSessionId = String(session.sid || '');
+  socket.join(`user:${socket.data.pmUid}`);
+  return socket.data;
 }
 
 io.on('connection', socket => {
@@ -870,7 +916,14 @@ app.use((err, req, res, next) => {
 
 const port = Number(process.env.PORT || 3000);
 async function startServer() {
-  await startupMaintenanceReady.catch((error) => console.warn('[maintenance:startup:hydrate:failed]', error?.message || error));
+  const maintenanceTimeout = new Promise((resolve) => {
+    const timer = setTimeout(resolve, 2500);
+    timer.unref?.();
+  });
+  await Promise.race([
+    startupMaintenanceReady.catch((error) => console.warn('[maintenance:startup:hydrate:failed]', error?.message || error)),
+    maintenanceTimeout
+  ]);
   return server.listen(port, () => console.log(`[playmatrix] listening on ${port}`));
 }
 if (require.main === module) startServer();

@@ -6,7 +6,9 @@ const { getProgression, normalizeXpBigInt } = require('../core/progressionServic
 const { requireAuth } = require('../core/security');
 const { recordRecentActivity, displayGameName } = require('../core/recentActivityService');
 
-const DAILY_CLASSIC_XP_CAP = 10_000;
+const DAILY_CLASSIC_XP_CAP = 100_000;
+const EVENT_TIMELINE_MAX_ITEMS = 600;
+const EVENT_TIMELINE_MAX_BYTES = 32768;
 const RUN_TTL_MS = 6 * 3600000;
 const DONE_TTL_MS = 30 * 86400000;
 
@@ -33,7 +35,22 @@ function msUntilIstanbulNextDay() {
   return Math.max(60_000, nextIstanbulMidnightUtc - now + 10_000);
 }
 
-function calculateXp(game, score, durationMs, metrics = {}) {
+function validateEventTimeline(value = null) {
+  const encodedSize = Buffer.byteLength(JSON.stringify(value || []), 'utf8');
+  if (encodedSize > EVENT_TIMELINE_MAX_BYTES) return { ok: false, code: 'PAYLOAD_TOO_LARGE', suspiciousReasons: ['TIMELINE_PAYLOAD_TOO_LARGE'] };
+  const timeline = Array.isArray(value) ? value.slice(0, EVENT_TIMELINE_MAX_ITEMS) : [];
+  if (!timeline.length) return { ok: false, code: 'EVENT_TIMELINE_REQUIRED', suspiciousReasons: ['EVENT_TIMELINE_REQUIRED'] };
+  let lastTs = -1;
+  for (const event of timeline) {
+    const ts = Number(event?.t ?? event?.time ?? event?.at ?? 0);
+    if (!Number.isFinite(ts) || ts < 0) return { ok: false, code: 'EVENT_TIMELINE_INVALID', suspiciousReasons: ['EVENT_TIMELINE_INVALID'] };
+    if (ts < lastTs) return { ok: false, code: 'EVENT_TIMELINE_ORDER_INVALID', suspiciousReasons: ['EVENT_TIMELINE_ORDER_INVALID'] };
+    lastTs = ts;
+  }
+  return { ok: true, eventCount: timeline.length, payloadBytes: encodedSize };
+}
+
+function calculateXp(game, score, durationMs, metrics = {}, timelineResult = { ok: true }) {
   const cfg = gameConfig(game);
   const safeScore = Math.max(0, Math.min(cfg.maxScore, Math.trunc(Number(score) || 0)));
   const safeDuration = Math.max(0, Math.trunc(Number(durationMs) || 0));
@@ -43,6 +60,7 @@ function calculateXp(game, score, durationMs, metrics = {}) {
   if (safeDuration < cfg.minDurationMs && safeScore > 0) suspiciousReasons.push('DURATION_TOO_SHORT');
   if (scorePerMinute > cfg.maxScorePerMinute) suspiciousReasons.push('SCORE_SPEED_TOO_HIGH');
   if (safeScore >= cfg.maxScore) suspiciousReasons.push('SCORE_CLAMPED_TO_MAX');
+  if (!timelineResult.ok) suspiciousReasons.push(...(timelineResult.suspiciousReasons || ['EVENT_TIMELINE_INVALID']));
   const metricBonus = Math.max(0, Math.trunc(Number(metrics?.combo || metrics?.level || metrics?.survivalSeconds || metrics?.foodCount || 0) || 0));
   const rawXp = Math.floor((safeScore * cfg.xpPerPoint) + Math.min(metricBonus, cfg.maxXpPerRun / 4));
   const xp = suspiciousReasons.length ? 0 : Math.min(cfg.maxXpPerRun, Math.max(0, rawXp));
@@ -136,7 +154,9 @@ function createClassicRouter(game) {
     const backendDurationMs = Math.max(0, Date.now() - Number(run.startedAt || Date.now()));
     const clientDurationMs = Math.max(0, Math.trunc(Number(req.body?.durationMs || 0)));
     const durationMs = Math.max(backendDurationMs, clientDurationMs);
-    const calc = calculateXp(game, req.body.score, durationMs, req.body.metrics || {});
+    const timelineResult = validateEventTimeline(req.body.eventTimeline || req.body.timeline || req.body.events || null);
+    if (!timelineResult.ok && timelineResult.code === 'PAYLOAD_TOO_LARGE') return res.status(413).json({ ok: false, error: 'PAYLOAD_TOO_LARGE', code: 'PAYLOAD_TOO_LARGE', message: 'Oyun sonucu çok büyük. Lütfen oyunu tekrar başlat.' });
+    const calc = calculateXp(game, req.body.score, durationMs, req.body.metrics || {}, timelineResult);
     let progression = getProgression(0);
     let xpAwarded = 0;
     let capInfo = { dailyCap: DAILY_CLASSIC_XP_CAP, remainingDailyXp: DAILY_CLASSIC_XP_CAP };
@@ -171,7 +191,8 @@ function createClassicRouter(game) {
           const gameStats = mergeClassicStats(data.gameStats || {}, game, calc.score);
           tx.set(userRef, { xp: progression.xp, accountXp: progression.xp, accountLevel: progression.accountLevel, level: progression.accountLevel, accountLevelProgressPct: progression.progressPercent, progression, gameStats, monthlyActiveScore: Math.max(0, Number(data.monthlyActiveScore || 0)) + 1, updatedAt: Date.now() }, { merge: true });
           tx.set(dailyRef, { uid, dateKey, usedXp: usedDaily + xpAwarded, dailyCap: DAILY_CLASSIC_XP_CAP, updatedAt: Date.now(), expiresAt: Date.now() + 3 * 86400000 }, { merge: true });
-          tx.set(runRef, { uid, game, score: calc.score, durationMs: calc.durationMs, xp: xpAwarded, requestedXp: calc.xp, levelPoints: xpAwarded, suspicious: calc.suspicious, suspiciousReasons: calc.suspiciousReasons, progression, capInfo, at: Date.now() }, { merge: false });
+          tx.set(runRef, { uid, game, score: calc.score, durationMs: calc.durationMs, xp: xpAwarded, requestedXp: calc.xp, levelPoints: xpAwarded, suspicious: calc.suspicious, suspiciousReasons: calc.suspiciousReasons, eventTimeline: { ok: timelineResult.ok, eventCount: timelineResult.eventCount || 0, payloadBytes: timelineResult.payloadBytes || 0 }, progression, capInfo, at: Date.now() }, { merge: false });
+          if (xpAwarded > 0) tx.set(db.collection('ledger').doc(`classic_xp_${runId}`), { uid, operationType: `classic-xp:${game}`, type: 'classic-xp', amount: xpAwarded, idempotencyKey: runId, createdAt: Date.now(), at: Date.now() }, { merge: false });
         });
       } else {
         const key = `xp:${uid}`;
@@ -188,7 +209,7 @@ function createClassicRouter(game) {
       progression = getProgression(0);
     }
 
-    const result = { game, runId, score: calc.score, durationMs: calc.durationMs, xpAwarded, levelPoints: xpAwarded, requestedXp: calc.xp, suspicious: calc.suspicious, suspiciousReasons: calc.suspiciousReasons, progression, capInfo, dailyClassicXpCap: DAILY_CLASSIC_XP_CAP, maxXpPerRun: calc.maxXpPerRun, authRequiredForXp: false };
+    const result = { game, runId, score: calc.score, durationMs: calc.durationMs, xpAwarded, levelPoints: xpAwarded, requestedXp: calc.xp, suspicious: calc.suspicious, suspiciousReasons: calc.suspiciousReasons, eventTimeline: { ok: timelineResult.ok, eventCount: timelineResult.eventCount || 0, payloadBytes: timelineResult.payloadBytes || 0 }, progression, capInfo, dailyClassicXpCap: DAILY_CLASSIC_XP_CAP, maxXpPerRun: calc.maxXpPerRun, authRequiredForXp: false };
     const currentMemoryStats = runtimeStore.temporary.get(`gameStats:${uid}`) || {};
     runtimeStore.temporary.set(`gameStats:${uid}`, mergeClassicStats(currentMemoryStats, game, calc.score), 30 * 86400000);
     pushClassicGameMemory(uid, game, calc.score, result.xpAwarded, progression, capInfo);

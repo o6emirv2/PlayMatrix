@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { requireAuth, requireAdmin } = require('../core/security');
+const { requireAgeGate } = require('../core/ageGateService');
 const { requireAdminReauth, writeAdminAudit } = require('../core/adminReauthService');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const { creditBalance } = require('../core/economyService');
@@ -172,14 +173,14 @@ router.post('/admin/promo', requireAuth, requireAdmin, requireAdminReauth, async
   try { await writeAdminAudit(req, 'promo.create', { code, rewards: rewardInfo.rewards.map((x) => x.type) }); } catch (_) {}
   res.json({ ok:true, promo: payload });
 });
-router.get('/promo/status', requireAuth, (_req, res) => {
+router.get('/promo/status', requireAuth, requireAgeGate, (_req, res) => {
   const stored = runtimeStore.temporary.get('admin:maintenance');
   const games = stored?.games || stored || {};
   const active = !(games.general || games.system || games.promo);
   res.json({ ok: true, enabled: active, active, source: 'maintenance-runtime' });
 });
 
-router.post('/promo/claim', requireAuth, async (req, res) => {
+router.post('/promo/claim', requireAuth, requireAgeGate, async (req, res) => {
   if (!isEmailVerified(req.user)) return res.status(403).json({ ok:false, error:'EMAIL_VERIFICATION_REQUIRED' });
   const uid = req.user.uid;
   const code = normalizeCode(req.body.code);

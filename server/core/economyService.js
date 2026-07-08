@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const { runtimeStore } = require('./runtimeStore');
+const env = require('../config/env');
+const { requireRedisReady, setLock } = require('./redisClient');
 
 const DEFAULT_BALANCE = 50000;
 function clampAmount(value, { min = -1_000_000_000, max = 1_000_000_000 } = {}) {
@@ -21,6 +23,12 @@ async function mutateBalance({ uid, amount, reason = 'economy', idempotencyKey =
   const safeAmount = clampAmount(amount);
   if (!safeAmount) return { ok: true, amount: 0, balance: await readBalance(uid), reason };
   const key = String(idempotencyKey || `${uid}:${reason}:${crypto.randomUUID()}`);
+  const redisGate = await requireRedisReady();
+  if (!redisGate.ok) return redisGate;
+  if (env.redis?.url) {
+    const locked = await setLock(`pm:idempotency:${uid}:economy:${key}`, env.ttl.idempotencyLockMs).catch(() => false);
+    if (!locked) return { ok: true, duplicate: true, balance: await readBalance(uid), code: 'IDEMPOTENCY_REPLAY' };
+  }
   const idemMemoryKey = `idem:economy:${key}`;
   if (runtimeStore.temporary.get(idemMemoryKey)) return { ok: true, duplicate: true, balance: await readBalance(uid) };
   const { db, admin } = initFirebaseAdmin();
@@ -43,10 +51,10 @@ async function mutateBalance({ uid, amount, reason = 'economy', idempotencyKey =
     if (safeAmount < 0 && current + safeAmount < 0) throw Object.assign(new Error('INSUFFICIENT_BALANCE'), { statusCode: 409, balance: current });
     const balance = Math.max(0, current + safeAmount);
     tx.set(userRef, { balance, updatedAt: Date.now() }, { merge: true });
-    const auditId = `economy_${crypto.randomUUID()}`;
-    const audit = { uid, amount: safeAmount, reason, balanceAfter: balance, metadata, at: Date.now() };
-    tx.set(db.collection('audit').doc(auditId), audit, { merge: false });
-    output = { ok: true, uid, amount: safeAmount, balance, reason, auditId };
+    const ledgerId = `ledger_${crypto.randomUUID()}`;
+    const ledger = { uid, operationType: reason, type: reason, amount: safeAmount, balanceAfter: balance, idempotencyKey: key, createdAt: Date.now(), at: Date.now() };
+    tx.set(db.collection('ledger').doc(ledgerId), ledger, { merge: false });
+    output = { ok: true, uid, amount: safeAmount, balance, reason, ledgerId };
     tx.set(idemRef, { key, type: 'economy', uid, createdAt: Date.now(), result: output }, { merge: false });
   });
   runtimeStore.temporary.set(idemMemoryKey, true, 3600000);

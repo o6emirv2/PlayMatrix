@@ -16,6 +16,7 @@
     if (path.includes('/snake-pro')) return 'snakeTopbar';
     if (path.includes('/space-pro')) return 'spaceTopbar';
     if (path.includes('/pattern-master')) return 'patternTopbar';
+    if (path.includes('/matrix-siege')) return 'matrixSiegeTopbar';
     return 'homeTopbar';
   }
 

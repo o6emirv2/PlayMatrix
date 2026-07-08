@@ -61,7 +61,7 @@
 })();
 
 window.__PLAYMATRIX_ROUTE_NORMALIZER_DISABLED__ = true;
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-20260603-professional-fix2";
+import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v15-matrix-siege";
 
     const core = await initPlayMatrixOnlineCore();
     const auth = core.auth;
@@ -1039,6 +1039,11 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
         EXTENSION_REJECTED: 'Süre uzatma reddedildi. Oda sonucu işleniyor.',
         STATE_VERSION_MISMATCH:'Oyun verisi yenilendi. Lütfen hamleni tekrar seç.',
         AUTH_REQUIRED:'Devam etmek için giriş yapman gerekiyor.',
+        AUTH_INVALID:'Oturumun yenilenemedi. Lütfen tekrar giriş yap.',
+        DATE_OF_BIRTH_REQUIRED:'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
+        AGE_REQUIRED:'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
+        AGE_RESTRICTED:'Bu oyun yalnızca 16 yaş ve üzeri kullanıcılar içindir.',
+        ACCOUNT_LOCKED:'Hesabın geçici olarak kilitli. Destek ekibiyle iletişime geç.',
         SOCKET_TIMEOUT:'Bağlantı gecikti. Hamle tekrar deneniyor.',
         SOCKET_OFFLINE:'Canlı bağlantı yenileniyor. Lütfen birkaç saniye bekle.',
         BOT_ROOM_NOT_JOINABLE:'Bot odasına başka oyuncu katılamaz.',
@@ -1049,7 +1054,8 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
         DAILY_LIMIT_REACHED:'Bugünkü ücretsiz oyun hakkını kullandın. Yarın tekrar oynayabilirsin.'
       };
       for (const [key, message] of Object.entries(map)) if (raw.includes(key)) return message;
-      if (status === 401 || status === 403) return 'Devam etmek için giriş yapman gerekiyor.';
+      if (status === 401) return 'Devam etmek için giriş yapman gerekiyor.';
+      if (status === 403) return 'Bu işlem için hesabın uygun değil. Hesap bilgilerini kontrol et.';
       if (status === 404) return 'Oda bulunamadı. Yeni oda kurabilir veya lobiyi yenileyebilirsin.';
       if (status === 409) return 'Oda durumu değişti. Lütfen lobiyi yenileyip tekrar dene.';
       if (/TIMEOUT|NETWORK|LOAD FAILED|FAILED TO FETCH/i.test(raw)) return 'Bağlantı yenileniyor. Lütfen birkaç saniye sonra tekrar dene.';

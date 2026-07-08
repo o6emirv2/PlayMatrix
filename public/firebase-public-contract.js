@@ -1,7 +1,7 @@
 export const PM_CURRENT_FIREBASE_PROJECT_ID = 'playmatrixpro-b18b7';
 
 export const PM_CURRENT_FIREBASE_PUBLIC_CONFIG = Object.freeze({
-  apiKey: 'AIzaSyANhKrb7zuSzXouFq03Q_oWQJCQUglCNhE',
+  apiKey: '',
   authDomain: 'playmatrixpro-b18b7.firebaseapp.com',
   projectId: PM_CURRENT_FIREBASE_PROJECT_ID,
   storageBucket: 'playmatrixpro-b18b7.firebasestorage.app',
@@ -25,11 +25,11 @@ export function normalizeFirebaseWebConfig(config = null) {
     appId: String(config.appId || '').trim(),
     measurementId: String(config.measurementId || '').trim()
   };
-  return clean.apiKey && clean.authDomain && clean.projectId && clean.appId ? clean : null;
+  return clean.authDomain && clean.projectId && clean.appId ? clean : null;
 }
 
 export function matchesCurrentFirebasePublicConfig(config = null) {
   const normalized = normalizeFirebaseWebConfig(config);
   if (!normalized) return false;
-  return Object.entries(PM_CURRENT_FIREBASE_PUBLIC_CONFIG).every(([key, expected]) => String(normalized[key] || '').trim() === expected);
+  return Object.entries(PM_CURRENT_FIREBASE_PUBLIC_CONFIG).every(([key, expected]) => !expected || String(normalized[key] || '').trim() === expected);
 }

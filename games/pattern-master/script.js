@@ -4,6 +4,13 @@
   let runToken = '';
   let startedAt = 0;
   let startPromise = null;
+  let eventTimeline = [];
+  function recordEvent(type, detail = {}) {
+    const at = Math.max(0, Date.now() - (startedAt || Date.now()));
+    const safeDetail = detail && typeof detail === 'object' ? detail : { value: detail };
+    eventTimeline.push({ t: at, type: String(type || 'event').slice(0, 48), ...safeDetail });
+    if (eventTimeline.length > 600) eventTimeline = eventTimeline.slice(-600);
+  }
   const apiBase = () => String(window.__PM_API__?.getApiBaseSync?.() || window.__PLAYMATRIX_API_URL__ || window.location.origin || '').replace(/\/+$/, '').replace(/\/api$/i, '');
   async function authToken() {
     try { if (window.__PM_RUNTIME?.getIdToken) return await window.__PM_RUNTIME.getIdToken(false); } catch (_) {}
@@ -19,7 +26,7 @@
   }
   async function requestGame(path, body = null) {
     if (window.__PM_ONLINE_CORE__?.requestWithAuth) {
-      return window.__PM_ONLINE_CORE__.requestWithAuth(path, { method: body == null ? 'GET' : 'POST', body, timeoutMs: 9000, retries: 1, allowSessionFallback: false });
+      return window.__PM_ONLINE_CORE__.requestWithAuth(path, { method: body == null ? 'GET' : 'POST', body, timeoutMs: 9000, retries: 1, allowSessionFallback: true });
     }
     if (window.__PM_ONLINE_CORE__?.waitForAuthReady) await window.__PM_ONLINE_CORE__.waitForAuthReady(7000).catch(() => null);
     if (window.__PM_API__?.ensureApiBase) await window.__PM_API__.ensureApiBase().catch(() => null);
@@ -61,10 +68,12 @@
     startedAt = Date.now();
     runId = '';
     runToken = '';
+    eventTimeline = [];
     startPromise = requestGame(`/api/games/${gameKey}/start`).then((payload) => {
       runId = String(payload?.runId || '').trim();
       runToken = String(payload?.runToken || '').trim();
       if (!runId || !runToken) throw new Error('CLASSIC_RUN_TOKEN_MISSING');
+      recordEvent('start', { game: gameKey });
       return runId;
     }).catch((error) => {
       runId = '';
@@ -79,7 +88,9 @@
   async function finishRun(score) {
     await ensureRunStarted();
     const durationMs = Math.max(0, Date.now() - (startedAt || Number(sessionStorage.pmClassicStartedAt || Date.now())));
-    return requestGame(`/api/games/${gameKey}/submit`, { runId, runToken, score: Math.max(0, Math.floor(Number(score) || 0)), durationMs }).then((payload) => {
+    const safeScore = Math.max(0, Math.floor(Number(score) || 0));
+    recordEvent('finish', { score: safeScore, durationMs });
+    return requestGame(`/api/games/${gameKey}/submit`, { runId, runToken, score: safeScore, durationMs, eventTimeline: eventTimeline.slice(0, 600) }).then((payload) => {
       try {
         if (payload?.ok && payload?.progression && window.__PM_GAME_ACCOUNT_SYNC__) {
           window.__PM_GAME_ACCOUNT_SYNC__.notifyMutation({
@@ -105,7 +116,8 @@
     canPlay: () => { const rt = window.__PM_RUNTIME || {}; const core = window.__PM_ONLINE_CORE__; return !!(rt.auth?.currentUser || rt.currentUser || rt.user || core?.auth?.currentUser || core?.waitForAuthReady); },
     redirectToLogin: () => { window.location.href = '/#login'; },
     beginRun,
-    finishRun
+    finishRun,
+    recordEvent
   };
 })();
 
@@ -210,7 +222,7 @@ const buttons = document.querySelectorAll(".btn");
         level = 1;
         combo = 0;
         speed = 800;
-        try { if (window.__PM_CLASSIC__?.beginRun) await window.__PM_CLASSIC__.beginRun(); } catch (error) { gameActive = false; startBtn.classList.remove('hidden'); statusEl.innerText = userClassicMessage(error); return; }
+        try { if (window.__PM_CLASSIC__?.beginRun) await window.__PM_CLASSIC__.beginRun(); window.__PM_CLASSIC__?.recordEvent?.('game-ready', { level: 1 }); } catch (error) { gameActive = false; startBtn.classList.remove('hidden'); statusEl.innerText = userClassicMessage(error); return; }
         nextRound();
     }
 
@@ -240,6 +252,7 @@ const buttons = document.querySelectorAll(".btn");
         
         playBeep(150, 0.4);
         const finalClassicScore = Math.max(0, level - 1);
+        window.__PM_CLASSIC__?.recordEvent?.('game-over', { score: finalClassicScore, combo });
         statusEl.innerText = "BİTTİ!";
         
         if (finalClassicScore > highScore) {
@@ -269,6 +282,7 @@ const buttons = document.querySelectorAll(".btn");
             btn.classList.add("ripple");
 
             const dir = btn.dataset.dir;
+            window.__PM_CLASSIC__?.recordEvent?.('input', { dir, index: playerIndex, level });
             playBeep(500, 0.1);
 
             if (dir === pattern[playerIndex]) {

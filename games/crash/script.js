@@ -61,7 +61,7 @@
   }
 })();
 
-import('/public/js/games/crash/index.js?v=pm-20260603-professional-fix2').catch((error) => {
+import('/public/js/games/crash/index.js?v=pm-v15-matrix-siege').catch((error) => {
   try {
     window.__PM_REPORT_CLIENT_ERROR__?.('crash.module.import', error, { source: 'games/crash/script.js', game: 'crash', severity: 'error' });
   } catch (_) {}
