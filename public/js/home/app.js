@@ -1,11 +1,11 @@
-import './auth-modal.js?v=pm-v12-production-fix';
-import './game-catalog.js?v=pm-v12-production-fix';
-import './leaderboard.js?v=pm-v12-production-fix';
-import './profile-panel.js?v=pm-v12-production-fix';
-import './reward-ui.js?v=pm-v12-production-fix';
-import './market.js?v=pm-v12-production-fix';
-import './wheel.js?v=pm-v12-production-fix';
-import { getHomeRuntime } from './widget-contract.js?v=pm-v12-production-fix';
+import './auth-modal.js?v=pm-v13-live-refresh-session-speed';
+import './game-catalog.js?v=pm-v13-live-refresh-session-speed';
+import './leaderboard.js?v=pm-v13-live-refresh-session-speed';
+import './profile-panel.js?v=pm-v13-live-refresh-session-speed';
+import './reward-ui.js?v=pm-v13-live-refresh-session-speed';
+import './market.js?v=pm-v13-live-refresh-session-speed';
+import './wheel.js?v=pm-v13-live-refresh-session-speed';
+import { getHomeRuntime } from './widget-contract.js?v=pm-v13-live-refresh-session-speed';
 
 let booted = false;
 

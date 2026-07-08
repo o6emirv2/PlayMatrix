@@ -51,8 +51,18 @@ process.on('uncaughtException', (error) => reportProcessFailure('UNCAUGHT_EXCEPT
 const fb = firebase.initFirebaseAdmin();
 const app = express();
 app.set('trust proxy', 1);
+app.set('etag', 'strong');
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin(origin, callback) { const allowed = !origin || env.allowedOrigins.includes(env.normalizeOrigin(origin)); callback(null, allowed); }, credentials: true } });
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+server.requestTimeout = 30_000;
+const io = new Server(server, {
+  cors: { origin(origin, callback) { const allowed = !origin || env.allowedOrigins.includes(env.normalizeOrigin(origin)); callback(null, allowed); }, credentials: true },
+  pingInterval: Math.max(10_000, Number(process.env.SOCKET_PING_INTERVAL_MS || 25_000)),
+  pingTimeout: Math.max(20_000, Number(process.env.SOCKET_STALE_TIMEOUT_MS || 70_000) - Number(process.env.SOCKET_PING_INTERVAL_MS || 25_000)),
+  perMessageDeflate: false,
+  httpCompression: true
+});
 
 app.disable('x-powered-by');
 
@@ -96,7 +106,7 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   frameguard: { action: 'sameorigin' }
 }));
-app.use(compression());
+app.use(compression({ threshold: 1024 }));
 
 app.use((req, res, next) => {
   const inbound = String(req.headers['x-request-id'] || '').replace(/[^a-zA-Z0-9_.:-]/g, '').slice(0, 80);
@@ -120,7 +130,7 @@ async function getMaintenanceGames({ force = false } = {}) {
   const cached = maintenanceGamesRaw();
   const hasCacheSnapshot = maintenanceReadAt > 0 && cached && typeof cached === 'object';
   const cacheAge = Date.now() - Number(maintenanceReadAt || 0);
-  if (!force && hasCacheSnapshot && cacheAge < 2500) return cached;
+  if (!force && hasCacheSnapshot && cacheAge < 15000) return cached;
   const db = fb?.db;
   if (!db) return cached;
   if (!force && maintenanceReadPromise) return maintenanceReadPromise;
@@ -404,21 +414,38 @@ if (startupReport.missing.length) {
   if (process.env.RENDER_VERBOSE_ENV === '1') console.warn('[env:startup:notice]', JSON.stringify({ warnings: startupReport.warnings }));
 }
 app.use('/api', apiLimiter);
+function setFrontendCacheHeaders(res, filePath = '') {
+  const lower = String(filePath || '').toLowerCase();
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  if (lower.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    return;
+  }
+  if (/\.(?:js|css)$/i.test(lower)) {
+    res.setHeader('Cache-Control', env.nodeEnv === 'production' ? 'public, max-age=300, stale-while-revalidate=86400' : 'no-store, max-age=0');
+    return;
+  }
+  if (/\.(?:woff2?|ttf)$/i.test(lower)) {
+    res.setHeader('Cache-Control', env.nodeEnv === 'production' ? 'public, max-age=604800, immutable' : 'no-store, max-age=0');
+    return;
+  }
+  if (/\.(?:png|jpe?g|webp|svg|gif|ico|avif|mp3|wav|ogg)$/i.test(lower)) {
+    res.setHeader('Cache-Control', env.nodeEnv === 'production' ? 'public, max-age=86400, stale-while-revalidate=604800' : 'no-store, max-age=0');
+  }
+}
 const staticOptions = Object.freeze({
   extensions: ['html'],
-  maxAge: env.nodeEnv === 'production' ? '15m' : 0,
+  maxAge: env.nodeEnv === 'production' ? '7d' : 0,
   redirect: false,
   dotfiles: 'ignore',
   fallthrough: true,
-  setHeaders(res, filePath) {
-    const lower = String(filePath || '').toLowerCase();
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    if (lower.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, max-age=0');
-    else if (/\.(?:js|css)$/i.test(lower)) res.setHeader('Cache-Control', 'no-cache, max-age=0, must-revalidate');
-  }
+  setHeaders: setFrontendCacheHeaders
 });
 function sendRootFile(fileName) {
-  return (_req, res) => res.sendFile(path.join(__dirname, fileName));
+  return (_req, res) => {
+    setFrontendCacheHeaders(res, fileName);
+    return res.sendFile(path.join(__dirname, fileName));
+  };
 }
 app.get(['/', '/index.html'], sendRootFile('index.html'));
 app.get('/style.css', sendRootFile('style.css'));
@@ -705,9 +732,11 @@ function renderMemoryRecentWinners(limit = 5) {
     .slice(0, safeLimit);
 }
 app.get('/api/home/recent-winners', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.json({ ok: true, memoryOnly: true, items: renderMemoryRecentWinners(req.query.limit || 5) });
 });
 app.get('/api/home/recent-activities', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.json({ ok: true, memoryOnly: true, activities: renderMemoryRecentWinners(req.query.limit || 5) });
 });
 
@@ -881,7 +910,14 @@ app.use((err, req, res, next) => {
 
 const port = Number(process.env.PORT || 3000);
 async function startServer() {
-  await startupMaintenanceReady.catch((error) => console.warn('[maintenance:startup:hydrate:failed]', error?.message || error));
+  const maintenanceTimeout = new Promise((resolve) => {
+    const timer = setTimeout(resolve, 2500);
+    timer.unref?.();
+  });
+  await Promise.race([
+    startupMaintenanceReady.catch((error) => console.warn('[maintenance:startup:hydrate:failed]', error?.message || error)),
+    maintenanceTimeout
+  ]);
   return server.listen(port, () => console.log(`[playmatrix] listening on ${port}`));
 }
 if (require.main === module) startServer();

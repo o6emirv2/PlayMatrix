@@ -107,15 +107,18 @@ function cookieSecurity(req = null) {
     sameSite: host.includes('onrender.com') ? 'None' : 'Lax'
   };
 }
-function sessionCookie(token, req = null) {
+function sessionCookie(token, req = null, { remember = false } = {}) {
   const security = cookieSecurity(req);
   const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(token)}`,
     'Path=/',
     'HttpOnly',
-    `Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`,
     `SameSite=${security.sameSite}`
   ];
+  if (remember) {
+    parts.push(`Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`);
+    parts.push(`Expires=${new Date(Date.now() + SESSION_TTL_MS).toUTCString()}`);
+  }
   if (security.secure) parts.push('Secure');
   return parts.join('; ');
 }
@@ -125,7 +128,7 @@ function clearSessionCookie(req = null) {
   if (security.secure) parts.push('Secure');
   return parts.join('; ');
 }
-async function createSessionFromIdToken(idToken = '') {
+async function createSessionFromIdToken(idToken = '', { remember = false } = {}) {
   const token = String(idToken || '').trim();
   if (!token) return { ok: false, code: 'AUTH_REQUIRED' };
   const { auth } = initFirebaseAdmin();
@@ -139,6 +142,7 @@ async function createSessionFromIdToken(idToken = '') {
     emailVerified: !!decoded.email_verified,
     iat: now,
     exp: now + SESSION_TTL_MS,
+    remember: !!remember,
     sid: crypto.randomBytes(24).toString('base64url')
   };
   if (!payload.uid) return { ok: false, code: 'AUTH_REQUIRED' };

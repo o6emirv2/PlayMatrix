@@ -61,7 +61,7 @@
 })();
 
 window.__PLAYMATRIX_ROUTE_NORMALIZER_DISABLED__ = true;
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v12-production-fix";
+import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v13-live-refresh-session-speed";
 
     const core = await initPlayMatrixOnlineCore();
     const auth = core.auth;

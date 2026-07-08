@@ -48,11 +48,12 @@ async function fetchServerSession(core, { force = false } = {}) {
   })().finally(() => { serverSessionPromise = null; });
   return serverSessionPromise;
 }
-async function syncServerSession(core, { forceToken = false } = {}) {
+async function syncServerSession(core, { forceToken = false, remember = rememberLoginEnabled() } = {}) {
   if (!core?.auth?.currentUser) return fetchServerSession(core).catch(() => null);
   const base = await core.ensureApiBaseReady();
   const idToken = await core.getIdToken(!!forceToken);
-  const response = await fetch(`${base}/api/auth/session`, { method:'POST', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'Content-Type':'application/json', Authorization:`Bearer ${idToken}`, 'x-playmatrix-client':'web-session' }, body:'{}' });
+  const persistent = !!remember;
+  const response = await fetch(`${base}/api/auth/session`, { method:'POST', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'Content-Type':'application/json', Authorization:`Bearer ${idToken}`, 'x-playmatrix-client':'web-session' }, body:JSON.stringify({ remember:persistent, persistence:persistent ? 'local' : 'session' }) });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload?.ok === false) throw buildError('Oturum doğrulanamadı.', payload?.code || payload?.error || 'SESSION_SYNC_FAILED', { status:response.status, payload });
   const data = payload.data || payload;
@@ -292,7 +293,11 @@ function normalizeAuthListenerArgs(maybeAuthOrHandler, maybeHandler, maybeError,
 function readStoredAuthPersistenceMode() {
   try { if (window.localStorage?.getItem('pm_login_persistence') === 'local') return 'local'; } catch (_) {}
   try { if (window.sessionStorage?.getItem('pm_login_persistence') === 'session') return 'session'; } catch (_) {}
-  return 'local';
+  return 'session';
+}
+
+function rememberLoginEnabled() {
+  return readStoredAuthPersistenceMode() === 'local';
 }
 
 async function applyStoredAuthPersistence(authModule, auth) {

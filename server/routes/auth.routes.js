@@ -8,10 +8,11 @@ router.post('/auth/session', strictLimiter, async (req, res) => {
   try {
     const bearer = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
     const idToken = bearer || String(req.body?.idToken || '').trim();
-    const created = await createSessionFromIdToken(idToken);
+    const remember = req.body?.remember === true || String(req.body?.persistence || '').toLowerCase() === 'local';
+    const created = await createSessionFromIdToken(idToken, { remember });
     if (!created.ok) return res.status(created.code === 'SESSION_SECRET_MISSING' ? 503 : 401).json({ ok:false, data:null, message:'', code:created.code, error:created.code });
-    res.setHeader('Set-Cookie', sessionCookie(created.token, req));
-    return res.json({ ok:true, data:{ user:{ uid:created.user.uid, email:created.user.email, emailVerified:created.user.emailVerified }, expiresAt:created.user.exp }, message:'', code:'SUCCESS' });
+    res.setHeader('Set-Cookie', sessionCookie(created.token, req, { remember }));
+    return res.json({ ok:true, data:{ user:{ uid:created.user.uid, email:created.user.email, emailVerified:created.user.emailVerified }, expiresAt:created.user.exp, remember }, message:'', code:'SUCCESS' });
   } catch (_) {
     return res.status(401).json({ ok:false, data:null, message:'', code:'AUTH_INVALID', error:'AUTH_INVALID' });
   }
@@ -19,7 +20,7 @@ router.post('/auth/session', strictLimiter, async (req, res) => {
 router.get('/auth/session', async (req, res) => {
   const session = await verifyUserSession(req).catch(() => ({ ok:false, code:'SESSION_INVALID' }));
   if (!session.ok) return res.status(401).json({ ok:false, data:null, message:'', code:session.code || 'SESSION_INVALID', error:session.code || 'SESSION_INVALID' });
-  return res.json({ ok:true, data:{ user:{ uid:session.uid, email:session.email, emailVerified:session.emailVerified }, expiresAt:session.exp }, message:'', code:'SUCCESS' });
+  return res.json({ ok:true, data:{ user:{ uid:session.uid, email:session.email, emailVerified:session.emailVerified }, expiresAt:session.exp, remember:!!session.remember }, message:'', code:'SUCCESS' });
 });
 router.delete('/auth/session', async (req, res) => {
   const session = await verifyUserSession(req).catch(() => null);

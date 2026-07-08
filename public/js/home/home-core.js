@@ -147,16 +147,18 @@ let pmBodyScrollTouchHandler = null;
 let leaderboardPayload = null;
 let leaderboardTab = 'level';
 const LEADERBOARD_LIMIT = 20;
-const LEADERBOARD_CACHE_MS = 60 * 1000;
+const HOME_LIVE_REFRESH_MS = 15 * 1000;
+const LEADERBOARD_CACHE_MS = HOME_LIVE_REFRESH_MS;
 let leaderboardLoadedAt = 0;
 let leaderboardLoading = false;
-let leaderboardActiveRefreshTimer = 0;
-let leaderboardBackgroundRefreshTimer = 0;
 let homeWinnersPayload = [];
 let homeWinnersLoadedAt = 0;
 let homeWinnersLoading = false;
-let homeWinnersRefreshTimer = 0;
-const HOME_WINNERS_CACHE_MS = 45 * 1000;
+const HOME_WINNERS_CACHE_MS = HOME_LIVE_REFRESH_MS;
+let homeLiveRefreshTimer = 0;
+let homeLiveRefreshPromise = null;
+let homeLiveRefreshLifecycleBound = false;
+let homeLiveRefreshLastAt = 0;
 let notificationsLoaded = false;
 let accountMemoryLoaded = false;
 let gameFilter = 'all';
@@ -1234,7 +1236,7 @@ async function getToken(force = false) {
 }
 
 let backendSessionSyncPromise = null;
-async function syncBackendSession(forceToken = false) {
+async function syncBackendSession(forceToken = false, rememberOverride = null) {
   if (!auth?.currentUser) return null;
   if (backendSessionSyncPromise && !forceToken) return backendSessionSyncPromise;
   backendSessionSyncPromise = (async () => {
@@ -1242,10 +1244,11 @@ async function syncBackendSession(forceToken = false) {
     const api = window.__PM_API__;
     if (api?.ensureApiBase) await api.ensureApiBase();
     const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
+    const remember = typeof rememberOverride === 'boolean' ? rememberOverride : rememberFlagFromStoredPersistence();
     const response = await fetch(url, {
       method: 'POST', credentials: 'include', cache: 'no-store',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'X-PlayMatrix-Client': 'home-session' },
-      body: '{}'
+      body: JSON.stringify({ remember, persistence: remember ? 'local' : 'session' })
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload?.ok === false) throw markApiError(new Error('SESSION_SYNC_FAILED'), { path:'/api/auth/session', status:response.status, payload });
@@ -2398,7 +2401,7 @@ function setAuthMode(mode = 'login') {
 function readStoredAuthPersistenceMode() {
   try { if (localStorage.getItem('pm_login_persistence') === 'local') return 'local'; } catch (_) {}
   try { if (sessionStorage.getItem('pm_login_persistence') === 'session') return 'session'; } catch (_) {}
-  return 'local';
+  return 'session';
 }
 
 function rememberFlagFromStoredPersistence() {
@@ -2951,12 +2954,58 @@ async function loadHomeRecentWinners({ force = false } = {}) {
   return homeWinnersPayload;
 }
 
-function startHomeWinnersRefresh() {
-  window.clearInterval(homeWinnersRefreshTimer);
-  homeWinnersRefreshTimer = window.setInterval(() => {
-    if (document.hidden) return;
-    loadHomeRecentWinners({ force: true }).catch((error) => report('home.recentWinners.refresh', error));
-  }, 45 * 1000);
+function isHomeLiveRefreshAllowed() {
+  const path = String(window.location.pathname || '/').replace(/\/+$/, '') || '/';
+  const isHomePath = path === '/' || /\/index\.html$/i.test(path);
+  return isHomePath && !document.hidden && document.visibilityState !== 'hidden';
+}
+
+async function refreshHomeLivePanels(reason = 'interval') {
+  if (!isHomeLiveRefreshAllowed()) return null;
+  if (homeLiveRefreshPromise) return homeLiveRefreshPromise;
+  homeLiveRefreshPromise = Promise.allSettled([
+    loadLeaderboard({ force: true, reason }),
+    loadHomeRecentWinners({ force: true, reason })
+  ]).finally(() => {
+    homeLiveRefreshLastAt = Date.now();
+    homeLiveRefreshPromise = null;
+  });
+  return homeLiveRefreshPromise;
+}
+
+function stopHomeLiveRefresh() {
+  if (homeLiveRefreshTimer) window.clearInterval(homeLiveRefreshTimer);
+  homeLiveRefreshTimer = 0;
+}
+
+function startHomeLiveRefresh({ immediate = false, reason = 'start' } = {}) {
+  stopHomeLiveRefresh();
+  if (!isHomeLiveRefreshAllowed()) return;
+  if (immediate) refreshHomeLivePanels(reason).catch((error) => report('home.liveRefresh.immediate', error));
+  homeLiveRefreshTimer = window.setInterval(() => {
+    if (!isHomeLiveRefreshAllowed()) {
+      stopHomeLiveRefresh();
+      return;
+    }
+    refreshHomeLivePanels('interval-15s').catch((error) => report('home.liveRefresh.interval', error));
+  }, HOME_LIVE_REFRESH_MS);
+}
+
+function bindHomeLiveRefreshLifecycle() {
+  if (homeLiveRefreshLifecycleBound) return;
+  homeLiveRefreshLifecycleBound = true;
+  const resume = (reason) => {
+    startHomeLiveRefresh({ immediate: true, reason });
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopHomeLiveRefresh();
+    else resume('visibility-return');
+  }, { passive: true });
+  window.addEventListener('pageshow', () => resume('pageshow-return'), { passive: true });
+  window.addEventListener('focus', () => {
+    if (Date.now() - homeLiveRefreshLastAt >= HOME_LIVE_REFRESH_MS) resume('window-focus');
+  }, { passive: true });
+  window.addEventListener('pagehide', stopHomeLiveRefresh, { passive: true });
 }
 
 function gameRgb(game) {
@@ -3143,23 +3192,6 @@ async function loadLeaderboard(options = {}) {
   }
   renderLeaderboard();
   return leaderboardPayload;
-}
-
-function startLeaderboardAutoRefresh() {
-  window.clearInterval(leaderboardActiveRefreshTimer);
-  window.clearInterval(leaderboardBackgroundRefreshTimer);
-  leaderboardBackgroundRefreshTimer = 0;
-  leaderboardActiveRefreshTimer = window.setInterval(() => {
-    if (document.hidden) return;
-    if (activeSheet && activeSheet !== 'leaderboard') return;
-    loadLeaderboard({ force: true, reason: 'active-60s' }).catch((error) => report('home.leaderboard.activeRefresh', error));
-  }, 60 * 1000);
-  if (!leaderboardVisibilityRefreshBound) {
-    leaderboardVisibilityRefreshBound = true;
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) loadLeaderboard({ force: true, reason: 'visibility' }).catch((error) => report('home.leaderboard.visibilityRefresh', error));
-    }, { passive: true });
-  }
 }
 
 function normalizeLeaderboardItem(item = {}, index = 0) {
@@ -4397,7 +4429,8 @@ async function handleAuthSubmit(mode = currentAuthMode) {
     clearAuthRequiredLock();
     const ready = await bootFirebase({ reportOnError: true });
     if (!ready) throw new Error('hazır değil.');
-    await applyFirebaseAuthPersistence(true);
+    const rememberLogin = safeMode === 'login' ? !!values.remember : true;
+    await applyFirebaseAuthPersistence(rememberLogin);
     let credential;
     if (safeMode === 'register') {
       const registerUsernameState = usernameValidationState(values.username);
@@ -4412,7 +4445,7 @@ async function handleAuthSubmit(mode = currentAuthMode) {
       try { await firebaseUpdateProfile?.(credential.user, { displayName: values.username }); } catch (_) {}
       try { await sendEmailVerification(credential.user); } catch (_) {}
       currentProfile = normalizeProfile({ uid: credential.user.uid, email: credential.user.email, username: values.username, firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), avatar: fallbackAvatar, dateOfBirth: values.dateOfBirth, ageVerified: true });
-      await syncBackendSession(true);
+      await syncBackendSession(true, rememberLogin);
       try {
         await apiFetch('/api/profile/update', { method: 'POST', body: { firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), username: values.username, avatar: fallbackAvatar, selectedFrame: 0, dateOfBirth: values.dateOfBirth, birthDay: values.birthDay, birthMonth: values.birthMonth, birthYear: values.birthYear, acceptedTerms: true, acceptedKvkk: true, acceptedMcVirtualPoints: true } }, true);
         showToast('Kayıt tamamlandı', 'Hesabın oluşturuldu. E-posta doğrulama bağlantısını kontrol et.', 'success');
@@ -4427,7 +4460,7 @@ async function handleAuthSubmit(mode = currentAuthMode) {
         email = resolved.email;
       }
       credential = await signInWithEmailAndPassword(auth, email, values.password);
-      await syncBackendSession(true);
+      await syncBackendSession(true, rememberLogin);
       showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
     }
     await loadProfile();
@@ -4844,10 +4877,8 @@ async function boot() {
   renderAccountMemory();
   renderWheelRewards(DEFAULT_WHEEL_PRIZES);
   setWheelLockedState(false);
-  startLeaderboardAutoRefresh();
-  startHomeWinnersRefresh();
-  loadHomeRecentWinners({ force: true }).catch((error) => report('home.recentWinners.boot', error));
-  loadLeaderboard({ force: true, reason: 'boot' }).catch((error) => report('home.leaderboard.boot', error));
+  bindHomeLiveRefreshLifecycle();
+  startHomeLiveRefresh({ immediate: true, reason: 'boot' });
   const leaderboardArea = $('leaderboardListArea');
   if (leaderboardArea && !leaderboardLoading && !leaderboardPayload) leaderboardArea.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik tablosu hazır.</strong><span>Sıralama düzenli olarak güncellenir. En güncel sonuçları görmek için Yenile butonunu kullanabilirsin.</span></div>';
   window.__PM_RUNTIME = { auth, user: auth.currentUser };

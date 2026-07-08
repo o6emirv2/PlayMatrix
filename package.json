@@ -1,6 +1,6 @@
 {
   "name": "playmatrix-clean-production",
-  "version": "12.0.0",
+  "version": "13.0.0",
   "private": true,
   "type": "commonjs",
   "description": "PlayMatrix production build - modular backend, restored online games, market, XP and runtime memory architecture",

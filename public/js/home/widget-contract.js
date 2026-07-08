@@ -1,4 +1,4 @@
-import './home-core.js?v=pm-v12-production-fix';
+import './home-core.js?v=pm-v13-live-refresh-session-speed';
 
 export function getHomeRuntime() {
   return window.PlayMatrixHome || null;
