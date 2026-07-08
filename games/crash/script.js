@@ -61,7 +61,7 @@
   }
 })();
 
-import('/public/js/games/crash/index.js?v=pm-v11-runtime-fix').catch((error) => {
+import('/public/js/games/crash/index.js?v=pm-v12-production-fix').catch((error) => {
   try {
     window.__PM_REPORT_CLIENT_ERROR__?.('crash.module.import', error, { source: 'games/crash/script.js', game: 'crash', severity: 'error' });
   } catch (_) {}

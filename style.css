@@ -1708,3 +1708,110 @@ body[data-pm-page="home"].pm-body-scroll-locked{
   .pm-dob-selects--fallback,
   .pm-dob-popup-selects { gap: 7px; }
 }
+
+/* PLAYMATRIX V12 — merkezi doğum tarihi takvimi */
+.pm-dob-selects--fallback {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+body.pm-dob-open { overflow: hidden !important; touch-action: none; }
+.pm-dob-calendar-card { max-width: 520px; }
+.pm-dob-calendar-toolbar {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(92px, .72fr) 44px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.pm-dob-calendar-toolbar button,
+.pm-dob-calendar-toolbar select {
+  min-height: 46px;
+  border: 1px solid rgba(255, 209, 92, .24);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(42, 47, 58, .98), rgba(22, 25, 31, .98));
+  color: #f8fafc;
+  font: inherit;
+  font-weight: 800;
+  outline: none;
+}
+.pm-dob-calendar-toolbar button {
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pm-dob-calendar-toolbar button:active { transform: scale(.96); }
+.pm-dob-calendar-toolbar select { padding: 0 12px; appearance: auto; }
+.pm-dob-calendar-weekdays,
+.pm-dob-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+.pm-dob-calendar-weekdays {
+  margin: 0 0 6px;
+  padding: 8px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, .10);
+}
+.pm-dob-calendar-weekdays span {
+  text-align: center;
+  color: rgba(226, 232, 240, .72);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .02em;
+}
+.pm-dob-calendar-day {
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #f8fafc;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .14s ease, background .14s ease, border-color .14s ease, color .14s ease;
+}
+.pm-dob-calendar-day:hover,
+.pm-dob-calendar-day:focus-visible {
+  border-color: rgba(255, 209, 92, .55);
+  background: rgba(255, 209, 92, .10);
+  outline: none;
+}
+.pm-dob-calendar-day.is-selected {
+  color: #111827;
+  background: linear-gradient(135deg, #ffe79c, #d6aa3f);
+  border-color: rgba(255, 237, 175, .92);
+  box-shadow: 0 8px 22px rgba(214, 170, 63, .28);
+}
+.pm-dob-calendar-day.is-outside { color: rgba(226, 232, 240, .28); }
+.pm-dob-calendar-day.is-disabled,
+.pm-dob-calendar-day:disabled {
+  color: rgba(148, 163, 184, .22);
+  cursor: not-allowed;
+  background: transparent;
+  border-color: transparent;
+}
+.pm-dob-popup-actions #dobPopupApplyBtn:disabled {
+  opacity: .48;
+  cursor: not-allowed;
+  filter: grayscale(.55);
+}
+.pm-dob-open-card.is-locked .pm-dob-open-copy small::after {
+  content: ' Yalnızca admin değiştirebilir.';
+}
+@media (max-width: 520px) {
+  .pm-dob-popup { align-items: flex-end; padding: 8px; }
+  .pm-dob-calendar-card { width: 100%; max-height: calc(100dvh - 14px); border-radius: 26px 26px 20px 20px; overflow: auto; }
+  .pm-dob-calendar-toolbar { grid-template-columns: 40px minmax(0, 1fr) 88px 40px; gap: 6px; }
+  .pm-dob-calendar-toolbar button, .pm-dob-calendar-toolbar select { min-height: 44px; border-radius: 12px; }
+  .pm-dob-calendar-grid { gap: 3px; }
+  .pm-dob-calendar-day { border-radius: 10px; font-size: .86rem; }
+}

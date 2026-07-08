@@ -106,6 +106,7 @@ function readStaticRuntimeConfig() {
 
 function getEndpointCandidates() {
   const list = [];
+  if (isProductionHost()) pushUnique(list, window.location.origin);
   pushUnique(list, window.__PM_RUNTIME?.apiBase);
   pushUnique(list, readStaticRuntimeConfig()?.apiBase);
   pushUnique(list, window.__PLAYMATRIX_API_URL__);
@@ -127,7 +128,7 @@ function normalizeRuntime(payload = {}) {
   const staticRuntime = readStaticRuntimeConfig();
   const expectedFirebaseProjectId = String(PM_CURRENT_FIREBASE_PROJECT_ID || runtime?.expectedFirebaseProjectId || staticRuntime?.expectedFirebaseProjectId || readExpectedFirebaseProjectId(staticRuntime) || '').trim();
   const firebase = sanitizeFirebaseConfig(runtime?.firebase || null, expectedFirebaseProjectId) || sanitizeFirebaseConfig(staticRuntime?.firebase || null, expectedFirebaseProjectId) || fallbackFirebaseConfig();
-  const apiBase = normalizeBase(runtime?.apiBase || window.__PM_RUNTIME?.apiBase || staticRuntime?.apiBase || window.__PLAYMATRIX_API_URL__ || readMetaContent('playmatrix-api-url') || (!isProductionHost() ? window.location.origin : ''));
+  const apiBase = normalizeBase((isProductionHost() ? window.location.origin : '') || runtime?.apiBase || window.__PM_RUNTIME?.apiBase || staticRuntime?.apiBase || window.__PLAYMATRIX_API_URL__ || readMetaContent('playmatrix-api-url') || window.location.origin);
   return {
     ...cloneObject(staticRuntime || {}),
     ...cloneObject(runtime || {}),
@@ -182,7 +183,7 @@ function applyRuntime(runtime = {}) {
 async function requestRuntime(endpoint, timeoutMs) {
   const response = await fetchWithTimeout(endpoint, {
     method: 'GET',
-    credentials: 'omit',
+    credentials: 'include',
     cache: 'no-store',
     headers: { Accept: 'application/json' }
   }, timeoutMs);

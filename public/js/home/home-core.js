@@ -1233,6 +1233,35 @@ async function getToken(force = false) {
   return firebaseGetIdToken(auth.currentUser, force);
 }
 
+let backendSessionSyncPromise = null;
+async function syncBackendSession(forceToken = false) {
+  if (!auth?.currentUser) return null;
+  if (backendSessionSyncPromise && !forceToken) return backendSessionSyncPromise;
+  backendSessionSyncPromise = (async () => {
+    const token = await getToken(!!forceToken);
+    const api = window.__PM_API__;
+    if (api?.ensureApiBase) await api.ensureApiBase();
+    const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
+    const response = await fetch(url, {
+      method: 'POST', credentials: 'include', cache: 'no-store',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'X-PlayMatrix-Client': 'home-session' },
+      body: '{}'
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) throw markApiError(new Error('SESSION_SYNC_FAILED'), { path:'/api/auth/session', status:response.status, payload });
+    return payload.data || payload;
+  })().finally(() => { backendSessionSyncPromise = null; });
+  return backendSessionSyncPromise;
+}
+async function clearBackendSession() {
+  try {
+    const api = window.__PM_API__;
+    if (api?.ensureApiBase) await api.ensureApiBase();
+    const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
+    await fetch(url, { method:'DELETE', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'X-PlayMatrix-Client':'home-session' } });
+  } catch (_) {}
+}
+
 async function apiFetch(path, options = {}, needsAuth = true, sessionRetry = true) {
   const api = window.__PM_API__;
   if (api?.ensureApiBase) await api.ensureApiBase();
@@ -2472,6 +2501,7 @@ function ageFromDateOfBirth(value = '') {
   return Math.max(0, age);
 }
 function readDobFields(prefix = 'register') {
+  if (window.PMDobPicker?.getValue) return window.PMDobPicker.getValue(prefix);
   const birthDay = safeText($(`${prefix}BirthDay`)?.value || '');
   const birthMonth = safeText($(`${prefix}BirthMonth`)?.value || '');
   const birthYear = safeText($(`${prefix}BirthYear`)?.value || '');
@@ -2480,6 +2510,7 @@ function readDobFields(prefix = 'register') {
   return { birthDay, birthMonth, birthYear, dateOfBirth, age, ageVerified: !!dateOfBirth && age >= 16 };
 }
 function setDobFields(prefix = 'profile', value = '') {
+  if (window.PMDobPicker?.setValue) { window.PMDobPicker.setValue(prefix, value); return; }
   populateDateOfBirthSelects(prefix);
   const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   setValue(`${prefix}BirthYear`, m ? String(Number(m[1])) : '');
@@ -2487,139 +2518,37 @@ function setDobFields(prefix = 'profile', value = '') {
   setValue(`${prefix}BirthDay`, m ? String(Number(m[3])) : '');
 }
 function lockDobFields(prefix = 'profile', locked = false) {
+  if (window.PMDobPicker?.lock) { window.PMDobPicker.lock(prefix, locked); return; }
   [`${prefix}BirthDay`, `${prefix}BirthMonth`, `${prefix}BirthYear`].forEach((id) => {
-    const node = $(id);
-    if (!node) return;
-    node.disabled = !!locked;
-    node.classList.toggle('is-locked', !!locked);
+    const node = $(id); if (node) node.disabled = !!locked;
   });
-  const openBtn = $(`${prefix}DobOpenBtn`);
-  if (openBtn) {
-    openBtn.disabled = !!locked;
-    openBtn.classList.toggle('is-locked', !!locked);
-  }
+  const openBtn = $(`${prefix}DobOpenBtn`); if (openBtn) openBtn.disabled = !!locked;
 }
-
 function formatDobDisplay(dateOfBirth = '') {
+  if (window.PMDobPicker?.formatDisplay) return window.PMDobPicker.formatDisplay(dateOfBirth);
   const m = String(dateOfBirth || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return '';
-  return `${m[3]}.${m[2]}.${m[1]}`;
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
 }
-
 function syncDobSummary(prefix = 'register') {
-  const dob = readDobFields(prefix);
-  const summary = $(`${prefix}DobSummary`);
-  const openBtn = $(`${prefix}DobOpenBtn`);
-  const formatted = formatDobDisplay(dob.dateOfBirth);
-  if (summary) {
-    if (formatted) summary.textContent = `${formatted} · Yaş: ${dob.age}`;
-    else summary.textContent = prefix === 'profile' ? 'Doğum tarihini ekle' : 'Doğum tarihini seç';
-  }
-  if (openBtn) {
-    openBtn.classList.toggle('is-complete', !!formatted && dob.ageVerified);
-    openBtn.classList.toggle('is-warning', !!formatted && !dob.ageVerified);
-  }
-  return dob;
-}
-
-let activeDobTarget = 'register';
-function copySelectOptions(fromId, toId) {
-  const from = $(fromId);
-  const to = $(toId);
-  if (!from || !to) return;
-  to.replaceChildren(...Array.from(from.options).map((option) => option.cloneNode(true)));
-}
-function hydrateDobPopupOptions() {
-  const ensurePopupSource = 'register';
-  populateDateOfBirthSelects(ensurePopupSource);
-  copySelectOptions('registerBirthDay', 'dobPopupBirthDay');
-  copySelectOptions('registerBirthMonth', 'dobPopupBirthMonth');
-  copySelectOptions('registerBirthYear', 'dobPopupBirthYear');
-  ['dobPopupBirthDay', 'dobPopupBirthMonth', 'dobPopupBirthYear'].forEach((id) => {
-    const node = $(id);
-    if (node) node.disabled = false;
-  });
-}
-function setDobPopupInfo(message = '', tone = '') {
-  const info = $('dobPopupInfo');
-  if (!info) return;
-  info.textContent = message || 'Doğum tarihin kullanıcıya açık gösterilmez; güvenlik ve uygunluk kontrolü için kullanılır.';
-  info.dataset.tone = tone || '';
+  if (window.PMDobPicker?.sync) { window.PMDobPicker.sync(prefix); return readDobFields(prefix); }
+  return readDobFields(prefix);
 }
 function openDobPopup(target = 'register') {
-  activeDobTarget = target === 'profile' ? 'profile' : 'register';
-  if (activeDobTarget === 'profile' && safeText(currentProfile?.dateOfBirth || '')) {
+  if (target === 'profile' && safeText(currentProfile?.dateOfBirth || '')) {
     const formatted = formatDobDisplay(currentProfile.dateOfBirth);
-    setHelp('profileDobHelp', `Doğum tarihin kayıtlıdır: ${formatted}. Bu bilgi yalnızca destek üzerinden değiştirilebilir.`, 'success');
+    setHelp('profileDobHelp', `Doğum tarihin kayıtlıdır: ${formatted}. Bu bilgi yalnızca admin tarafından değiştirilebilir.`, 'success');
     showToast('Doğum tarihi', 'Doğum tarihin kayıtlı. Güvenlik nedeniyle tekrar değiştirilemez.', 'info');
     return;
   }
-  hydrateDobPopupOptions();
-  const current = readDobFields(activeDobTarget);
-  setValue('dobPopupBirthDay', current.birthDay || '');
-  setValue('dobPopupBirthMonth', current.birthMonth || '');
-  setValue('dobPopupBirthYear', current.birthYear || '');
-  setDobPopupInfo(activeDobTarget === 'profile' ? 'Doğum tarihi kaydedildikten sonra yalnızca destek üzerinden değiştirilebilir.' : 'Devam edebilmek için 16 yaşından büyük olmalısın.');
-  const popup = $('dobPopup');
-  if (!popup) return;
-  popup.classList.add('is-open');
-  popup.setAttribute('aria-hidden', 'false');
-  try { $('dobPopupBirthDay')?.focus?.({ preventScroll: true }); } catch (_) {}
+  window.PMDobPicker?.open?.(target);
 }
-function closeDobPopup() {
-  const popup = $('dobPopup');
-  if (!popup) return;
-  popup.classList.remove('is-open');
-  popup.setAttribute('aria-hidden', 'true');
-}
-function applyDobPopupSelection() {
-  const day = safeText($('dobPopupBirthDay')?.value || '');
-  const month = safeText($('dobPopupBirthMonth')?.value || '');
-  const year = safeText($('dobPopupBirthYear')?.value || '');
-  const dateOfBirth = buildDateOfBirth(day, month, year);
-  const age = ageFromDateOfBirth(dateOfBirth);
-  if (!dateOfBirth) { setDobPopupInfo('Doğum tarihi alanını eksiksiz ve geçerli seçmelisiniz.', 'error'); return; }
-  if (age < 16) { setDobPopupInfo('Devam edebilmek için 16 yaşından büyük olmalısınız.', 'error'); return; }
-  setValue(`${activeDobTarget}BirthDay`, day);
-  setValue(`${activeDobTarget}BirthMonth`, month);
-  setValue(`${activeDobTarget}BirthYear`, year);
-  syncDobSummary(activeDobTarget);
-  if (activeDobTarget === 'profile') setHelp('profileDobHelp', `Seçilen doğum tarihi: ${formatDobDisplay(dateOfBirth)} · Yaş: ${age}. Kaydet butonuna basarak hesabına ekleyebilirsin.`, 'success');
-  else setHelp('authHelp', '', '');
-  closeDobPopup();
-}
-function bindDobPopupControls() {
-  ['register', 'profile'].forEach((target) => {
-    const button = $(`${target}DobOpenBtn`);
-    if (button && button.dataset.pmDobPopupBound !== 'true') {
-      button.dataset.pmDobPopupBound = 'true';
-      button.addEventListener('click', (event) => { event.preventDefault(); openDobPopup(target); });
-    }
-  });
-  ['dobPopupCloseBtn', 'dobPopupCancelBtn', 'dobPopupBackdrop'].forEach((id) => {
-    const node = $(id);
-    if (node && node.dataset.pmDobPopupBound !== 'true') {
-      node.dataset.pmDobPopupBound = 'true';
-      node.addEventListener('click', (event) => { event.preventDefault(); closeDobPopup(); });
-    }
-  });
-  const save = $('dobPopupSaveBtn');
-  if (save && save.dataset.pmDobPopupBound !== 'true') {
-    save.dataset.pmDobPopupBound = 'true';
-    save.addEventListener('click', (event) => { event.preventDefault(); applyDobPopupSelection(); });
-  }
-  ['dobPopupBirthDay', 'dobPopupBirthMonth', 'dobPopupBirthYear'].forEach((id) => $(id)?.addEventListener('change', () => {
-    const dateOfBirth = buildDateOfBirth($('dobPopupBirthDay')?.value, $('dobPopupBirthMonth')?.value, $('dobPopupBirthYear')?.value);
-    const age = ageFromDateOfBirth(dateOfBirth);
-    if (!dateOfBirth) setDobPopupInfo('Doğum tarihi alanını eksiksiz seçmelisiniz.', '');
-    else if (age < 16) setDobPopupInfo('Devam edebilmek için 16 yaşından büyük olmalısınız.', 'error');
-    else setDobPopupInfo(`Seçilen tarih: ${formatDobDisplay(dateOfBirth)} · Yaş: ${age}`, 'success');
-  }));
-}
+function closeDobPopup() { window.PMDobPicker?.close?.(); }
+function applyDobPopupSelection() { window.PMDobPicker?.apply?.(); }
+function bindDobPopupControls() { window.PMDobPicker?.init?.(); }
 function setupDateOfBirthFields() {
   populateDateOfBirthSelects('register');
   populateDateOfBirthSelects('profile');
-  bindDobPopupControls();
+  window.PMDobPicker?.init?.();
   syncDobSummary('register');
   syncDobSummary('profile');
 }
@@ -3100,9 +3029,10 @@ function createGameCard(game) {
 }
 
 async function openGame(game) {
-  const statusText = String(game?.status || game?.state || '').toLowerCase();
+  const statusText = String(game?.status || game?.state || '').trim().toLocaleLowerCase('tr-TR');
   const maintenanceMessage = 'Bu oyun şu an bakımda. Daha sonra tekrar deneyin.';
-  if (game?.maintenance === true || game?.disabled === true || game?.access === 'disabled' || /bakım|bakim|maintenance|kapalı|kapali/.test(statusText)) {
+  const explicitMaintenanceState = ['bakım', 'bakim', 'maintenance', 'maintenance_active'].includes(statusText);
+  if (game?.maintenance === true || game?.disabled === true || game?.access === 'disabled' || explicitMaintenanceState) {
     showToast(game?.name || 'Oyun', maintenanceMessage, 'warning');
     return;
   }
@@ -4263,7 +4193,7 @@ async function saveProfile() {
       lockDobFields('profile', true);
     }
     renderProfile();
-    if (currentProfile?.dateOfBirth) setHelp('profileDobHelp', `Doğum tarihi kayıtlı: ${formatDobDisplay(currentProfile.dateOfBirth)} · Yaş: ${currentProfile.age || ageFromDateOfBirth(currentProfile.dateOfBirth)}. Bu bilgi yalnızca destek üzerinden değiştirilebilir.`, 'success');
+    if (currentProfile?.dateOfBirth) setHelp('profileDobHelp', `Doğum tarihi kayıtlı: ${formatDobDisplay(currentProfile.dateOfBirth)} · Yaş: ${currentProfile.age || ageFromDateOfBirth(currentProfile.dateOfBirth)}. Bu bilgi yalnızca admin tarafından değiştirilebilir.`, 'success');
     setHelp('usernameHelp', 'Profil kaydedildi.', 'success');
     showToast('Hesabım', 'Profil güncellendi.', 'success');
   } catch (error) {
@@ -4482,6 +4412,7 @@ async function handleAuthSubmit(mode = currentAuthMode) {
       try { await firebaseUpdateProfile?.(credential.user, { displayName: values.username }); } catch (_) {}
       try { await sendEmailVerification(credential.user); } catch (_) {}
       currentProfile = normalizeProfile({ uid: credential.user.uid, email: credential.user.email, username: values.username, firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), avatar: fallbackAvatar, dateOfBirth: values.dateOfBirth, ageVerified: true });
+      await syncBackendSession(true);
       try {
         await apiFetch('/api/profile/update', { method: 'POST', body: { firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), username: values.username, avatar: fallbackAvatar, selectedFrame: 0, dateOfBirth: values.dateOfBirth, birthDay: values.birthDay, birthMonth: values.birthMonth, birthYear: values.birthYear, acceptedTerms: true, acceptedKvkk: true, acceptedMcVirtualPoints: true } }, true);
         showToast('Kayıt tamamlandı', 'Hesabın oluşturuldu. E-posta doğrulama bağlantısını kontrol et.', 'success');
@@ -4496,6 +4427,7 @@ async function handleAuthSubmit(mode = currentAuthMode) {
         email = resolved.email;
       }
       credential = await signInWithEmailAndPassword(auth, email, values.password);
+      await syncBackendSession(true);
       showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
     }
     await loadProfile();
@@ -4531,6 +4463,7 @@ async function handleForgotPassword() {
 async function logout() {
   toggleDropdown(false);
   clearAuthRequiredLock();
+  await clearBackendSession();
   try { if (firebaseReady && signOutFirebase) await signOutFirebase(auth); } catch (error) { report('home.logout.firebase', error); }
   currentProfile = blankProfile();
   renderProfile();
@@ -4847,6 +4780,8 @@ async function handleHomeAuthStateChange(user) {
   notificationPayload = { system: [], personal: [] };
   accountMemoryPayload = { transactions: [], games: [] };
   if (user && firebaseReload) await firebaseReload(user).catch(() => null);
+  if (user) await syncBackendSession(false).catch((error) => report('home.auth.session.sync', error, { severity:'warning' }));
+  else await clearBackendSession();
   await loadProfile();
   renderNotifications();
   renderAccountMemory();
@@ -4892,9 +4827,13 @@ async function boot() {
     const params = new URLSearchParams(window.location.search || '');
     const maintenanceGame = params.get('pm_maintenance') || '';
     if (maintenanceGame) {
-      showToast('Bakım modu', 'Bu oyun şu an bakımda. Daha sonra tekrar deneyin.', 'warning');
-      const cleanUrl = `${window.location.pathname || '/'}${window.location.hash || ''}`;
-      window.history.replaceState({}, document.title, cleanUrl);
+      Promise.resolve(loadHomeMaintenanceState({ force: true })).then(() => {
+        const route = `/games/${String(maintenanceGame).replace(/[^a-z0-9-]/gi, '')}`;
+        if (isGameInMaintenance(route)) showToast('Bakım modu', 'Bu oyun şu an bakımda. Daha sonra tekrar deneyin.', 'warning');
+      }).catch(() => null).finally(() => {
+        const cleanUrl = `${window.location.pathname || '/'}${window.location.hash || ''}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+      });
     }
   } catch (_) {}
   renderGames();

@@ -29,9 +29,44 @@ function isAuthRequiredLocked(core) {
   try { if (window.localStorage?.getItem(PM_AUTH_REQUIRED_UID_KEY) === uid) return true; } catch (_) {}
   return false;
 }
-function readServerSessionToken() { return ''; }
-function writeServerSessionToken() { return ''; }
-function clearServerSessionToken() { return ''; }
+let serverSessionCache = null;
+let serverSessionPromise = null;
+function readServerSessionToken() { return serverSessionCache?.user?.uid ? 'http-only-session' : ''; }
+function writeServerSessionToken() { return readServerSessionToken(); }
+function clearServerSessionToken() { serverSessionCache = null; return ''; }
+async function fetchServerSession(core, { force = false } = {}) {
+  if (!force && serverSessionCache?.user?.uid && Number(serverSessionCache.expiresAt || 0) > Date.now() + 30000) return serverSessionCache;
+  if (!force && serverSessionPromise) return serverSessionPromise;
+  serverSessionPromise = (async () => {
+    const base = await core.ensureApiBaseReady();
+    const response = await fetch(`${base}/api/auth/session`, { method:'GET', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'x-playmatrix-client':'web-session' } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) { serverSessionCache = null; return null; }
+    const data = payload.data || payload;
+    serverSessionCache = data?.user?.uid ? data : null;
+    return serverSessionCache;
+  })().finally(() => { serverSessionPromise = null; });
+  return serverSessionPromise;
+}
+async function syncServerSession(core, { forceToken = false } = {}) {
+  if (!core?.auth?.currentUser) return fetchServerSession(core).catch(() => null);
+  const base = await core.ensureApiBaseReady();
+  const idToken = await core.getIdToken(!!forceToken);
+  const response = await fetch(`${base}/api/auth/session`, { method:'POST', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'Content-Type':'application/json', Authorization:`Bearer ${idToken}`, 'x-playmatrix-client':'web-session' }, body:'{}' });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.ok === false) throw buildError('Oturum doğrulanamadı.', payload?.code || payload?.error || 'SESSION_SYNC_FAILED', { status:response.status, payload });
+  const data = payload.data || payload;
+  serverSessionCache = data?.user?.uid ? data : null;
+  clearAuthRequiredLock();
+  return serverSessionCache;
+}
+async function clearServerSession(core) {
+  try {
+    const base = await core.ensureApiBaseReady();
+    await fetch(`${base}/api/auth/session`, { method:'DELETE', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'x-playmatrix-client':'web-session' } });
+  } catch (_) {}
+  serverSessionCache = null;
+}
 function isAuthError(payload, status) {
   const code = String(payload?.code || payload?.error || '').toUpperCase();
   return (code === 'AUTH_REQUIRED' || code === 'AUTH_INVALID') ? 'required' : '';
@@ -85,6 +120,8 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
   }
 
   const base = await core.ensureApiBaseReady();
+  if (core?.auth?.currentUser) await syncServerSession(core).catch(() => null);
+  else if (allowSessionFallback) await fetchServerSession(core).catch(() => null);
   let lastAuthError = null;
   const getOptionalToken = async (refresh = false) => {
     try {
@@ -118,7 +155,10 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
       if (authProblem === 'required' && isAuthRequiredLocked(core)) {
         throw buildError('Devam etmek için giriş yapman gerekiyor.', 'AUTH_REQUIRED', { status: response.status, payload });
       }
-      if ((response.status === 401 || response.status === 403) && token && attempt < retries) return attemptRequest(attempt + 1, true);
+      if ((response.status === 401 || response.status === 403) && token && attempt < retries) {
+        await syncServerSession(core, { forceToken: true }).catch(() => null);
+        return attemptRequest(attempt + 1, true);
+      }
       if (!response.ok || payload?.ok === false) {
         const message = sanitizeOnlineUserMessage(payload?.error || (lastAuthError?.message && !token ? lastAuthError.message : 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.'));
         throw buildError(message, payload?.code || `HTTP_${response.status}`, { status: response.status, payload });
@@ -321,6 +361,9 @@ function createUnavailableCore(runtime, setupError) {
   core.readServerSessionToken = readServerSessionToken;
   core.writeServerSessionToken = writeServerSessionToken;
   core.clearServerSessionToken = clearServerSessionToken;
+  core.fetchServerSession = (options = {}) => fetchServerSession(core, options);
+  core.syncServerSession = (options = {}) => syncServerSession(core, options);
+  core.clearServerSession = () => clearServerSession(core);
   runtime.auth = auth;
   runtime.signOut = core.signOut;
   runtime.getIdToken = core.getIdToken;
@@ -386,7 +429,9 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
       return normalized;
     },
     async waitForAuthReady(timeoutMs = 15000) {
-      if (auth.currentUser) return auth.currentUser;
+      if (auth.currentUser) { await syncServerSession(core).catch(() => null); return auth.currentUser; }
+      const existingSession = await fetchServerSession(core).catch(() => null);
+      if (existingSession?.user?.uid) return { ...existingSession.user, sessionFallback: true };
       return new Promise((resolve, reject) => {
         let settled = false;
         let initialAuthSettled = false;
@@ -401,8 +446,11 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
         const timer = window.setTimeout(() => finish(reject, buildError('Oturum doğrulanamadı.', 'AUTH_TIMEOUT')), Math.max(1500, Number(timeoutMs) || 15000));
         unsub = authModule.onAuthStateChanged(auth, (user) => {
           initialAuthSettled = true;
-          if (user) return finish(resolve, user);
-          return finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
+          if (user) { syncServerSession(core).catch(() => null); return finish(resolve, user); }
+          fetchServerSession(core).then((session) => {
+            if (session?.user?.uid) finish(resolve, { ...session.user, sessionFallback:true });
+            else finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
+          }).catch(() => finish(reject, buildError('Oturum bulunamadı.', 'NO_USER')));
         }, (error) => finish(reject, buildError(error?.message || 'Oturum dinleyicisi başlatılamadı.', error?.code || 'AUTH_LISTENER_FAILED', { cause: error })));
         window.setTimeout(() => {
           if (!settled && initialAuthSettled && !auth.currentUser) finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
@@ -444,13 +492,16 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
     async createAuthedSocket(existingSocket = null, { authPayload = {}, transports = ['websocket', 'polling'], reconnection = true, reconnectionAttempts = 6, timeout = 6000, extraOptions = {} } = {}) {
       const base = await core.ensureApiBaseReady();
       const ioFactory = await core.ensureSocketClientReady();
-      const token = await core.getIdToken(true).catch(() => core.getIdToken(false));
+      const token = await core.getIdToken(true).catch(() => core.getIdToken(false).catch(() => ''));
+      if (token) await syncServerSession(core).catch(() => null);
+      else await fetchServerSession(core).catch(() => null);
       if (existingSocket) {
         try { existingSocket.removeAllListeners?.(); } catch (_) {}
         try { existingSocket.disconnect?.(); } catch (_) {}
       }
       return ioFactory(base, {
-        auth: { token, ...authPayload },
+        auth: { ...(token ? { token } : {}), ...authPayload },
+        withCredentials: true,
         transports,
         reconnection,
         reconnectionAttempts,
@@ -463,6 +514,9 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
   core.readServerSessionToken = readServerSessionToken;
   core.writeServerSessionToken = writeServerSessionToken;
   core.clearServerSessionToken = clearServerSessionToken;
+  core.fetchServerSession = (options = {}) => fetchServerSession(core, options);
+  core.syncServerSession = (options = {}) => syncServerSession(core, options);
+  core.clearServerSession = () => clearServerSession(core);
   runtime.auth = auth;
   runtime.signOut = core.signOut;
   runtime.getIdToken = core.getIdToken;
@@ -472,6 +526,12 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
   runtime.firebaseSdkVersion = firebaseSdkVersion;
   window.__PLAYMATRIX_API_URL__ = runtime.apiBase;
   window.__PM_ONLINE_CORE__ = core;
+  try {
+    authModule.onAuthStateChanged(auth, (user) => {
+      if (user) syncServerSession(core).catch(() => null);
+      else fetchServerSession(core, { force:true }).catch(() => null);
+    });
+  } catch (_) {}
   try { window.dispatchEvent(new CustomEvent('pm:online-core-ready', { detail: { degraded: false } })); } catch (_) {}
   return core;
 }

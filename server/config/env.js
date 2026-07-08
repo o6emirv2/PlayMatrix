@@ -102,6 +102,10 @@ const env = {
     url: process.env.REDIS_URL || '',
     requiredInProduction: process.env.REDIS_REQUIRED_IN_PRODUCTION !== '0'
   },
+  session: {
+    secretSource: process.env.SESSION_SECRET || process.env.ADMIN_PANEL_SECOND_FACTOR_HASH_HEX || process.env.FIREBASE_KEY || '',
+    ttlMs: toInt(process.env.SESSION_TTL_MS, 7 * 86400000, { min: 3600000, max: 7 * 86400000 })
+  },
   ttl: {
     matchQueueMs: toInt(process.env.MATCH_QUEUE_TTL_MS, 120000, { min: 30000, max: 900000 }),
     socketConnectionMs: toInt(process.env.SOCKET_CONNECTION_TTL_MS, 180000, { min: 30000, max: 900000 }),
@@ -129,6 +133,7 @@ function safeStartupReport() {
   if (!env.firebase.publicConfig.apiKey) warnings.push('PUBLIC_FIREBASE_API_KEY_MISSING');
   if (env.redis.requiredInProduction && env.nodeEnv === 'production' && !env.redis.url) warnings.push('REDIS_URL_MISSING_CRITICAL_RUNTIME_DISABLED');
   if (!env.adminEmails.length && !env.adminUids.length) warnings.push('ADMIN_ALLOWLIST_MISSING');
+  if (!env.session.secretSource) warnings.push('SESSION_SECRET_MISSING_USER_SESSION_FALLBACK_DISABLED');
   if (!env.allowedOrigins.includes(DEFAULT_PUBLIC_BASE_URL)) missing.push('ALLOWED_ORIGIN_PLAYMATRIX_MISSING');
   if (!env.allowedOrigins.includes(DEFAULT_WWW_BASE_URL)) missing.push('ALLOWED_ORIGIN_WWW_MISSING');
   if (!env.allowedOrigins.includes(DEFAULT_BACKEND_ORIGIN)) missing.push('ALLOWED_ORIGIN_RENDER_MISSING');

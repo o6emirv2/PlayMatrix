@@ -1,11 +1,11 @@
-import './auth-modal.js?v=pm-v11-dob-game-auth-fix';
-import './game-catalog.js?v=pm-v11-dob-game-auth-fix';
-import './leaderboard.js?v=pm-v11-dob-game-auth-fix';
-import './profile-panel.js?v=pm-v11-dob-game-auth-fix';
-import './reward-ui.js?v=pm-v11-dob-game-auth-fix';
-import './market.js?v=pm-v11-dob-game-auth-fix';
-import './wheel.js?v=pm-v11-dob-game-auth-fix';
-import { getHomeRuntime } from './widget-contract.js?v=pm-v11-dob-game-auth-fix';
+import './auth-modal.js?v=pm-v12-production-fix';
+import './game-catalog.js?v=pm-v12-production-fix';
+import './leaderboard.js?v=pm-v12-production-fix';
+import './profile-panel.js?v=pm-v12-production-fix';
+import './reward-ui.js?v=pm-v12-production-fix';
+import './market.js?v=pm-v12-production-fix';
+import './wheel.js?v=pm-v12-production-fix';
+import { getHomeRuntime } from './widget-contract.js?v=pm-v12-production-fix';
 
 let booted = false;
 

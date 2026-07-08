@@ -10,6 +10,8 @@ const { requireAdminReauth, writeAdminAudit } = require('../core/adminReauthServ
 const { getWheelConfig, setWheelConfig } = require('../core/wheelRuntimeService');
 const { grantWheelRights, getWheelRights } = require('../core/wheelRightsService');
 const { recordRecentActivity } = require('../core/recentActivityService');
+const { normalizeMaintenanceGames } = require('../core/maintenanceService');
+const { parseDateOfBirth, calculateAge } = require('../core/ageGateService');
 
 const router = express.Router();
 const now = () => Date.now();
@@ -193,6 +195,9 @@ function publicUser(uid, data = {}) {
     email: data.email || '',
     username: data.username || data.displayName || data.fullName || uid,
     fullName: data.fullName || '',
+    dateOfBirth: data.dateOfBirth || '',
+    age: data.dateOfBirth ? calculateAge(data.dateOfBirth) : 0,
+    ageVerified: !!data.ageVerified,
     balance: Number(data.balance || 0),
     accountXp: progression.currentXp,
     accountLevel: progression.accountLevel,
@@ -575,30 +580,11 @@ async function resolveResetDocs({ scope = 'all', identifiers = [], excludeTestUs
   return { docs: [...docMap.values()], firestore: true };
 }
 
-function normalizeMaintenancePayload(body = {}) {
-  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
-  const out = {};
-  keys.forEach((key) => { out[key] = !!body[key]; });
-  return out;
-}
+function normalizeMaintenancePayload(body = {}) { return normalizeMaintenanceGames(body); }
 
 function currentMaintenance() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
-  const games = stored?.games || stored || {};
-  return {
-    general: !!games.general,
-    system: !!games.system,
-    crash: !!games.crash,
-    chess: !!games.chess,
-    pisti: !!games.pisti,
-    classic: !!games.classic,
-    'pattern-master': !!games['pattern-master'],
-    'space-pro': !!games['space-pro'],
-    'snake-pro': !!games['snake-pro'],
-    market: !!games.market,
-    wheel: !!games.wheel,
-    promo: !!games.promo
-  };
+  return normalizeMaintenanceGames(stored?.games || stored || {});
 }
 
 async function currentMaintenanceAsync({ force = false } = {}) {
@@ -678,6 +664,17 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
   if (body.fullName !== undefined) patch.fullName = safe(body.fullName, 120);
   if (body.firstName !== undefined) patch.firstName = safe(body.firstName, 60);
   if (body.lastName !== undefined) patch.lastName = safe(body.lastName, 60);
+  if (body.dateOfBirth !== undefined) {
+    const dob = parseDateOfBirth(body.dateOfBirth);
+    if (!dob.ok) return res.status(400).json({ ok:false, error:dob.code || 'INVALID_DATE_OF_BIRTH', code:dob.code || 'INVALID_DATE_OF_BIRTH', message:'' });
+    if (!dob.ageVerified) return res.status(400).json({ ok:false, error:'AGE_RESTRICTED', code:'AGE_RESTRICTED', message:'' });
+    patch.dateOfBirth = dob.dateOfBirth;
+    patch.ageVerified = true;
+    patch.ageLocked = false;
+    patch.accountLocked = false;
+    patch.ageVerifiedAt = now();
+    patch.ageLockedReason = '';
+  }
   if (body.balance !== undefined) patch.balance = nonNegativeMoney(body.balance);
   if (body.accountLevel !== undefined) {
     const level = Math.max(1, Math.min(100, Math.trunc(Number(body.accountLevel) || 1)));
@@ -729,15 +726,15 @@ router.get('/admin/matrix/dashboard', async (req, res) => {
     } catch (error) { logAdmin(req, 'admin.matrix.dashboard.users.error', { message: error.message }); }
     try {
       const since = now() - 24 * 3600000;
-      const audit = await db.collection('audit').where('at', '>=', since).limit(800).get();
-      audit.forEach((doc) => {
+      const ledger = await db.collection('ledger').where('at', '>=', since).limit(800).get();
+      ledger.forEach((doc) => {
         const d = doc.data() || {};
         const amount = Number(d.amount || 0) || 0;
         dailyMcSpend += Math.abs(amount);
         if (amount < 0) dailyMcInflow += Math.abs(amount);
         if (amount > 0) dailyMcOutflow += amount;
       });
-    } catch (error) { logAdmin(req, 'admin.matrix.dashboard.audit.error', { message: error.message }); }
+    } catch (error) { logAdmin(req, 'admin.matrix.dashboard.ledger.error', { message: error.message }); }
   }
   try {
     openRoomCount = runtimeStore.rooms.size()

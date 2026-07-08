@@ -9,6 +9,7 @@ const { getProgression } = require('../core/progressionService');
 const { assertDateOfBirthInput, parseDateOfBirth, calculateAge } = require('../core/ageGateService');
 const { normalizeAvatarSelection } = require('../core/avatarCatalogService');
 const { runOnce } = require('../core/idempotencyService');
+const { normalizeMaintenanceGames, areGamesEnabled } = require('../core/maintenanceService');
 const router = express.Router();
 
 const DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20128%20128%27%3E%3Crect%20width%3D%27128%27%20height%3D%27128%27%20rx%3D%2728%27%20fill%3D%27%23111827%27%2F%3E%3Ccircle%20cx%3D%2764%27%20cy%3D%2750%27%20r%3D%2724%27%20fill%3D%27%23f59e0b%27%2F%3E%3Cpath%20d%3D%27M26%20108c8-18%2024-28%2038-28s30%2010%2038%2028%27%20fill%3D%27%23fbbf24%27%2F%3E%3Ctext%20x%3D%2764%27%20y%3D%27118%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23fff%27%3EPM%3C%2Ftext%3E%3C%2Fsvg%3E';
@@ -496,19 +497,12 @@ router.get('/achievements', requireAuth, (_req, res) => res.json({ ok: true, ite
 router.get('/missions', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
 
 function normalizeCompatMaintenanceGames(games = {}) {
-  const raw = games && typeof games === 'object' ? games : {};
+  const normalized = normalizeMaintenanceGames(games);
   return {
-    general: !!(raw.general || raw.system),
-    crash: !!raw.crash,
-    chess: !!raw.chess,
-    pisti: !!raw.pisti,
-    market: !!raw.market,
-    wheel: !!raw.wheel,
-    promo: !!raw.promo,
-    classic: !!raw.classic,
-    'pattern-master': !!raw['pattern-master'],
-    'space-pro': !!raw['space-pro'],
-    'snake-pro': !!raw['snake-pro']
+    general: normalized.general || normalized.system,
+    crash: normalized.crash, chess: normalized.chess, pisti: normalized.pisti,
+    market: normalized.market, wheel: normalized.wheel, promo: normalized.promo, classic: normalized.classic,
+    'pattern-master': normalized['pattern-master'], 'space-pro': normalized['space-pro'], 'snake-pro': normalized['snake-pro']
   };
 }
 async function readCompatMaintenanceControl(source = 'control-public') {
@@ -528,7 +522,7 @@ async function readCompatMaintenanceControl(source = 'control-public') {
     console.warn('[compat:maintenance:read:failed]', error?.message || error);
   }
   const maintenance = normalizeCompatMaintenanceGames(games);
-  return { ok: true, maintenance, gamesEnabled: !Object.values(maintenance).some(Boolean) };
+  return { ok: true, maintenance, gamesEnabled: areGamesEnabled(maintenance) };
 }
 router.get('/platform/control-public', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');

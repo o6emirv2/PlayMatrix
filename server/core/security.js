@@ -3,6 +3,7 @@ const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const env = require('../config/env');
 const { runtimeStore } = require('../core/runtimeStore');
 const { readAgeGate } = require('./ageGateService');
+const { verifyUserSession } = require('./userSessionService');
 const apiLimiter = rateLimit({ windowMs: 60_000, max: 240, standardHeaders: true, legacyHeaders: false });
 const strictLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
 
@@ -61,10 +62,14 @@ async function requireAuth(req, res, next) {
       req.firebaseIdToken = token;
       return finalizeAuth(req, res, next, await auth.verifyIdToken(token));
     }
+    const session = await verifyUserSession(req).catch(() => ({ ok:false }));
+    if (session?.ok && session.uid) {
+      return finalizeAuth(req, res, next, { uid: String(session.uid), email: String(session.email || ''), email_verified: !!session.emailVerified, emailVerified: !!session.emailVerified, sessionId: String(session.sid || '') });
+    }
     const devUid = req.headers['x-playmatrix-user'] || req.body?.uid || req.query?.uid;
     if (process.env.NODE_ENV !== 'production' && devUid) return finalizeAuth(req, res, next, { uid: String(devUid), email: 'local@playmatrix.test' });
-    return res.status(401).json({ ok: false, error: 'AUTH_REQUIRED' });
-  } catch (error) { return res.status(401).json({ ok: false, error: 'AUTH_INVALID' }); }
+    return res.status(401).json({ ok: false, data:null, message:'', code:'AUTH_REQUIRED', error: 'AUTH_REQUIRED' });
+  } catch (error) { return res.status(401).json({ ok: false, data:null, message:'', code:'AUTH_INVALID', error: 'AUTH_INVALID' }); }
 }
 function isEnvBootstrapAdmin(uid = '', email = '') {
   const safeUid = String(uid || '').trim();

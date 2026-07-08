@@ -60,7 +60,7 @@
   }
 })();
 
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v11-dob-game-auth-fix";
+import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v12-production-fix";
 
 const core = await initPlayMatrixOnlineCore();
 const auth = core.auth;
@@ -766,7 +766,11 @@ function translatePistiErrorMessage(error = '') {
   if (code.includes('DAILY_LIMIT')) return 'Bugünkü ücretsiz oyun hakkını kullandın. Yarın tekrar oynayabilirsin.';
   if (code.includes('EMAIL_VERIFICATION_REQUIRED')) return 'Ödüllü işlemler için e-posta adresini doğrulaman gerekiyor.';
   if (code.includes('MAINTENANCE')) return 'Pişti şu anda bakımda. Lütfen daha sonra tekrar dene.';
-  if (code.includes('AUTH') || code.includes('TOKEN') || status === 401 || status === 403) return 'Devam etmek için giriş yapman gerekiyor.';
+  if (code.includes('DATE_OF_BIRTH_REQUIRED') || code.includes('AGE_REQUIRED')) return 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.';
+  if (code.includes('AGE_RESTRICTED')) return 'Bu oyun yalnızca 16 yaş ve üzeri kullanıcılar içindir.';
+  if (code.includes('ACCOUNT_LOCKED')) return 'Hesabın geçici olarak kilitli. Destek ekibiyle iletişime geç.';
+  if (code.includes('AUTH') || code.includes('TOKEN') || status === 401) return 'Devam etmek için giriş yapman gerekiyor.';
+  if (status === 403) return 'Bu işlem için hesabın uygun değil. Hesap bilgilerini kontrol et.';
   if (status === 404) return 'Masa bulunamadı. Yeni masa kurabilir veya lobiyi yenileyebilirsin.';
   if (status === 409) return 'Masa durumu değişti. Lütfen lobiyi yenileyip tekrar dene.';
   if (/TIMEOUT|NETWORK|LOAD FAILED|FAILED TO FETCH/i.test(code)) return 'Bağlantı yenileniyor. Lütfen birkaç saniye sonra tekrar dene.';

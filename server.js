@@ -16,6 +16,8 @@ const { runSafeFirestoreCleanup } = require('./server/core/firestoreCleanupServi
 const { addAdminLog, sanitizeRuntimeLogPayload } = require('./server/admin/adminRuntimeLogStore');
 const createClientErrorsRouter = require('./server/routes/client-errors.routes');
 const { listRecentActivities } = require('./server/core/recentActivityService');
+const { normalizeMaintenanceGames, normalizeGameSlug: normalizeMaintenanceGameSlug, isGameMaintenanceActive } = require('./server/core/maintenanceService');
+const { authenticateSocketRequest } = require('./server/core/userSessionService');
 
 function safeErrorMessage(error, fallback = 'SERVER_ERROR') {
   return String(error?.message || error || fallback)
@@ -108,13 +110,6 @@ app.options('/api/*', cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
-function normalizeMaintenanceGames(data = {}) {
-  const src = data && typeof data === 'object' && data.games && typeof data.games === 'object' ? data.games : data;
-  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
-  const out = {};
-  keys.forEach((key) => { out[key] = !!src?.[key]; });
-  return out;
-}
 function maintenanceGamesRaw() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
   return normalizeMaintenanceGames(stored?.games || stored || {});
@@ -150,21 +145,8 @@ async function getMaintenanceGames({ force = false } = {}) {
     .finally(() => { maintenanceReadPromise = null; });
   return maintenanceReadPromise;
 }
-function normalizeGameSlugForMaintenance(value = '') {
-  const raw = String(value || '').toLowerCase().replace(/\.html(?:$|[?#])/i, '').replace(/\/$/, '');
-  if (/chess|satranc|satranç/.test(raw)) return 'chess';
-  if (/crash/.test(raw)) return 'crash';
-  if (/pisti|pişti/.test(raw)) return 'pisti';
-  if (/snake/.test(raw)) return 'snake-pro';
-  if (/space/.test(raw)) return 'space-pro';
-  if (/pattern/.test(raw)) return 'pattern-master';
-  return '';
-}
-function isMaintenanceBlockedFromGames(games = {}, gameKey = '') {
-  const key = normalizeGameSlugForMaintenance(gameKey) || String(gameKey || '').toLowerCase();
-  const classicKeys = new Set(['pattern-master', 'space-pro', 'snake-pro']);
-  return !!games.general || !!games.system || !!games[key] || (!!games.classic && classicKeys.has(key));
-}
+function normalizeGameSlugForMaintenance(value = '') { return normalizeMaintenanceGameSlug(value); }
+function isMaintenanceBlockedFromGames(games = {}, gameKey = '') { return isGameMaintenanceActive(games, gameKey); }
 function isMaintenanceBlockedRaw(gameKey = '') {
   return isMaintenanceBlockedFromGames(maintenanceGamesRaw(), gameKey);
 }
@@ -762,24 +744,16 @@ for (const [from, to] of Object.entries(legacyGameAliases)) app.get(from, (_req,
 function sanitizeSocketText(value = '', max = 500) { return String(value || '').trim().replace(/[<>]/g, '').slice(0, max); }
 async function authenticateSocket(socket) {
   if (socket.data?.pmUid) return socket.data;
-  const token = String(socket.handshake?.auth?.token || socket.handshake?.headers?.authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) return socket.data || {};
-  try {
-    const latest = firebase.initFirebaseAdmin();
-    if (!latest.auth) return socket.data || {};
-    const decoded = await latest.auth.verifyIdToken(token);
-    const uid = String(decoded.uid || '');
-    if (!uid) {
-      socket.emit('pm:auth_error', { ok:false, error:'AUTH_REQUIRED' });
-      return socket.data || {};
-    }
-    socket.data.pmUid = uid;
-    socket.data.pmEmail = String(decoded.email || '');
-    if (socket.data.pmUid) socket.join(`user:${socket.data.pmUid}`);
-  } catch (_error) {
-    socket.emit('pm:auth_error', { ok:false, error:'BAD_TOKEN' });
+  const session = await authenticateSocketRequest(socket);
+  if (!session?.uid) {
+    socket.emit('pm:auth_error', { ok:false, error: session?.code || 'AUTH_REQUIRED' });
+    return socket.data || {};
   }
-  return socket.data || {};
+  socket.data.pmUid = String(session.uid);
+  socket.data.pmEmail = String(session.email || '');
+  socket.data.pmSessionId = String(session.sid || '');
+  socket.join(`user:${socket.data.pmUid}`);
+  return socket.data;
 }
 
 io.on('connection', socket => {

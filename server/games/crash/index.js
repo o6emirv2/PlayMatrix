@@ -10,6 +10,7 @@ const { initFirebaseAdmin } = require('../../config/firebaseAdmin');
 const { addAdminLog } = require('../../admin/adminRuntimeLogStore');
 const { requireAdminReauth, writeAdminAudit } = require('../../core/adminReauthService');
 const { recordRecentActivity } = require('../../core/recentActivityService');
+const { authenticateSocketRequest } = require('../../core/userSessionService');
 
 const router = express.Router();
 
@@ -234,18 +235,9 @@ async function loadRiskTable() {
         const config = snap.exists ? (snap.data() || {}) : {};
         const parsed = validateRiskTable(config.riskTable || [], { useDefaultOnInvalid: false });
         if (parsed.ok) state.risk = parsed.rows;
-        const pending = parseLooseNumber(config.nextCrashPointOverride || 0);
-        if (Number.isFinite(pending) && pending >= 1.01 && pending <= MAX_MULT) {
-          state.nextCrashPointOverride = round(pending, 2);
-          state.nextCrashPointUpdatedBy = String(config.nextCrashPointUpdatedBy || 'persisted').slice(0, 160);
-          state.nextCrashPointUpdatedAt = Number(config.nextCrashPointUpdatedAt || now()) || now();
-        }
-        const queue = normalizeFutureCrashQueue(config.futureCrashPoints || config.nextCrashPointQueue || []);
-        if (queue.length) {
-          state.nextCrashPointQueue = queue;
-          state.nextCrashPointQueueUpdatedBy = String(config.futureCrashPointsUpdatedBy || config.nextCrashPointQueueUpdatedBy || 'persisted').slice(0, 160);
-          state.nextCrashPointQueueUpdatedAt = Number(config.futureCrashPointsUpdatedAt || config.nextCrashPointQueueUpdatedAt || now()) || now();
-        }
+        // Tekil round çarpanı ve gelecek round listeleri production'da yüklenmez.
+        state.nextCrashPointOverride = 0;
+        state.nextCrashPointQueue = [];
       }
     } catch (error) {
       console.error('[crash:risk-table:load:error]', JSON.stringify({ message: error.message }));
@@ -273,51 +265,6 @@ async function persistRiskTable(rows, actorUid) {
   });
 }
 
-async function persistNextCrashPointOverride(multiplier, actorUid) {
-  return updateCrashConfig({
-    nextCrashPointOverride: Number(multiplier || 0) || 0,
-    nextCrashPointUpdatedAt: now(),
-    nextCrashPointUpdatedBy: actorUid || 'unknown'
-  });
-}
-
-async function clearPersistedNextCrashPointOverride(actorUid) {
-  return updateCrashConfig({
-    nextCrashPointOverride: 0,
-    nextCrashPointUpdatedAt: now(),
-    nextCrashPointUpdatedBy: actorUid || 'system'
-  });
-}
-
-function normalizeFutureCrashQueue(input = []) {
-  const raw = Array.isArray(input) ? input : String(input || '').split(/[\s,;|]+/);
-  const out = [];
-  for (const value of raw) {
-    const n = parseLooseNumber(value);
-    if (!Number.isFinite(n)) continue;
-    const safe = round(Math.min(MAX_MULT, Math.max(1.01, n)), 2);
-    if (safe >= 1.01 && safe <= MAX_MULT) out.push(safe);
-    if (out.length >= 100) break;
-  }
-  return out;
-}
-
-async function persistFutureCrashQueue(queue = [], actorUid = 'admin') {
-  return updateCrashConfig({
-    futureCrashPoints: normalizeFutureCrashQueue(queue),
-    futureCrashPointsUpdatedAt: now(),
-    futureCrashPointsUpdatedBy: actorUid || 'admin'
-  });
-}
-
-async function clearPersistedFutureCrashQueue(actorUid = 'system') {
-  return updateCrashConfig({
-    futureCrashPoints: [],
-    futureCrashPointsUpdatedAt: now(),
-    futureCrashPointsUpdatedBy: actorUid || 'system'
-  });
-}
-
 function pickWeightedRiskPoint() {
   const rows = validateRiskTable(state.risk, { useDefaultOnInvalid: true }).rows;
   const total = rows.reduce((sum, row) => sum + row.weight, 0);
@@ -329,12 +276,6 @@ function pickWeightedRiskPoint() {
   return 1.25;
 }
 
-function clearNextCrashPointOverrideLocal(actorUid = 'system') {
-  state.nextCrashPointOverride = 0;
-  state.nextCrashPointUpdatedBy = actorUid;
-  state.nextCrashPointUpdatedAt = now();
-}
-
 function pickCrashPoint() {
   return pickWeightedRiskPoint();
 }
@@ -344,9 +285,7 @@ function adminCrashPayload(extra = {}) {
     ok: true,
     riskTable: state.risk,
     defaultRisk: DEFAULT_RISK.map((row) => ({ ...row })),
-    nextCrashPointOverride: state.nextCrashPointOverride || 0,
-    futureCrashPoints: Array.isArray(state.nextCrashPointQueue) ? state.nextCrashPointQueue.slice(0, 100) : [],
-    futureCrashPointCount: Array.isArray(state.nextCrashPointQueue) ? state.nextCrashPointQueue.length : 0,
+    manualOverrideAllowed: false,
     adminRiskBetLimit: state.adminRiskBetLimit || DEFAULT_ADMIN_RISK_BET_LIMIT,
     phase: state.phase,
     roundId: state.roundId,
@@ -354,7 +293,6 @@ function adminCrashPayload(extra = {}) {
     crashPoint: state.phase === 'CRASHED' ? state.crashPoint : null,
     currentRoundCrashPoint: state.phase === 'COUNTDOWN' ? state.crashPoint : null,
     activeRoundLocked: state.phase === 'FLYING' || state.phase === 'CRASHED',
-    overrideAppliesTo: state.phase === 'COUNTDOWN' ? 'current_countdown_round' : 'next_created_round',
     ...extra
   };
 }
@@ -986,14 +924,8 @@ router.post('/admin/risk-table', requireAuth, requireAdmin, requireAdminReauth, 
     const parsed = validateRiskTable(sourceRows, { useDefaultOnInvalid: false });
     if (!parsed.ok) return res.status(400).json({ ok: false, error: 'INVALID_RISK_TABLE', details: parsed.errors });
     state.risk = parsed.rows;
-    let overrideCleared = false;
-    if (resetDefault) {
-      clearNextCrashPointOverrideLocal(req.user?.uid || 'admin');
-      if (state.phase === 'COUNTDOWN') state.crashPoint = pickWeightedRiskPoint();
-      overrideCleared = true;
-    }
+    if (resetDefault && state.phase === 'COUNTDOWN') state.crashPoint = pickWeightedRiskPoint();
     const persisted = await persistRiskTable(state.risk, req.user?.uid);
-    if (overrideCleared) await clearPersistedNextCrashPointOverride(req.user?.uid || 'admin').catch(() => false);
     logCrashAdmin('crash.admin.risk_table.update', {
       code: resetDefault ? 'CRASH_RISK_TABLE_RESET' : 'CRASH_RISK_TABLE_UPDATE',
       message: resetDefault ? 'Crash risk tablosu varsayılan ayarlara döndürüldü.' : 'Crash risk tablosu güncellendi.',
@@ -1001,20 +933,12 @@ router.post('/admin/risk-table', requireAuth, requireAdmin, requireAdminReauth, 
       ranges: state.risk.length,
       persisted,
       resetDefault,
-      overrideCleared
     });
-    console.info('[admin:crash-risk-table]', JSON.stringify({ uid: req.user?.uid || '', ranges: state.risk.length, persisted, resetDefault, overrideCleared }));
+    console.info('[admin:crash-risk-table]', JSON.stringify({ uid: req.user?.uid || '', ranges: state.risk.length, persisted, resetDefault }));
     emitState({ force: true });
-    res.json(adminCrashPayload({ persisted, resetDefault, overrideCleared }));
+    res.json(adminCrashPayload({ persisted, resetDefault }));
   } catch (error) { console.error('[crash:risk-table:persist:error]', JSON.stringify({ message: error.message })); next(error); }
 });
-router.post('/admin/next-crash-point', requireAuth, requireAdmin, requireAdminReauth, async (req, res) => {
-  const payload = adminCrashPayload({ ok: false, manualOverrideAllowed: false, code: 'CRASH_MULTIPLIER_MANUAL_OVERRIDE_FORBIDDEN', error: 'CRASH_MULTIPLIER_MANUAL_OVERRIDE_FORBIDDEN', details: ['Production ortamında aktif veya sonraki round çarpanı manuel belirlenemez. Sadece risk tablosu yönetilebilir.'] });
-  logCrashAdmin('crash.admin.next_crash_point.blocked', { level: 'warning', code: 'CRASH_MULTIPLIER_MANUAL_OVERRIDE_FORBIDDEN', message: 'Crash manuel çarpan override isteği protokol gereği engellendi.', uid: req.user?.uid || '' });
-  return res.status(403).json(payload);
-});
-
-
 router.post('/admin/risk-limit', requireAuth, requireAdmin, requireAdminReauth, async (req, res, next) => {
   try {
     await loadRiskTable();
@@ -1030,72 +954,22 @@ router.post('/admin/risk-limit', requireAuth, requireAdmin, requireAdminReauth, 
   } catch (error) { next(error); }
 });
 
-router.get('/admin/future-rounds', requireAuth, requireAdmin, async (_req, res, next) => {
-  try {
-    await loadRiskTable();
-    await ensureRoundStarted();
-    res.json(adminCrashPayload({ futureCrashPoints: state.nextCrashPointQueue.slice(0, 100), futureCrashPointCount: state.nextCrashPointQueue.length }));
-  } catch (error) { next(error); }
-});
-router.post('/admin/future-rounds', requireAuth, requireAdmin, requireAdminReauth, async (req, res) => {
-  const payload = adminCrashPayload({ ok: false, manualOverrideAllowed: false, code: 'CRASH_MULTIPLIER_MANUAL_OVERRIDE_FORBIDDEN', error: 'CRASH_MULTIPLIER_MANUAL_OVERRIDE_FORBIDDEN', details: ['Production ortamında gelecek round çarpan sırası manuel belirlenemez. Sadece risk tablosu yönetilebilir.'] });
-  logCrashAdmin('crash.admin.future_rounds.blocked', { level: 'warning', code: 'CRASH_MULTIPLIER_MANUAL_OVERRIDE_FORBIDDEN', message: 'Crash gelecek round manuel çarpan listesi protokol gereği engellendi.', uid: req.user?.uid || '' });
-  return res.status(403).json(payload);
-});
-router.delete('/admin/future-rounds', requireAuth, requireAdmin, requireAdminReauth, async (req, res, next) => {
-  try {
-    state.nextCrashPointQueue = [];
-    state.nextCrashPointQueueUpdatedBy = req.user?.uid || 'admin';
-    state.nextCrashPointQueueUpdatedAt = now();
-    const persisted = await clearPersistedFutureCrashQueue(req.user?.uid || 'admin').catch(() => false);
-    logCrashAdmin('crash.admin.future_rounds.clear', { code: 'CRASH_FUTURE_ROUNDS_CLEAR', message: 'Crash gelecek el sırası temizlendi.', uid: req.user?.uid || '', persisted });
-    res.json(adminCrashPayload({ persisted, futureCrashPoints: [], futureCrashPointCount: 0 }));
-  } catch (error) { next(error); }
-});
-
-router.delete('/admin/next-crash-point', requireAuth, requireAdmin, requireAdminReauth, async (req, res, next) => {
-  try {
-    await loadRiskTable();
-    await ensureRoundStarted();
-    let clearedActiveCountdown = false;
-    clearNextCrashPointOverrideLocal(req.user?.uid || 'admin');
-    if (state.phase === 'COUNTDOWN') {
-      state.crashPoint = pickWeightedRiskPoint();
-      clearedActiveCountdown = true;
-    }
-    const persisted = await clearPersistedNextCrashPointOverride(req.user?.uid || 'admin').catch(() => false);
-    logCrashAdmin('crash.admin.next_crash_point.clear', {
-      code: 'CRASH_NEXT_POINT_CLEAR',
-      message: clearedActiveCountdown ? 'Aktif geri sayım çarpan override temizlendi ve risk tablosundan yeni çarpan seçildi.' : 'Bekleyen Crash çarpan override temizlendi.',
-      uid: req.user?.uid || '',
-      persisted,
-      clearedActiveCountdown,
-      phase: state.phase,
-      roundId: state.roundId
-    });
-    console.info('[admin:crash-next-point:clear]', JSON.stringify({ uid: req.user?.uid || '', clearedActiveCountdown, persisted }));
-    emitState({ force: true });
-    res.json(adminCrashPayload({ nextCrashPointOverride: 0, persisted, clearedActiveCountdown }));
-  } catch (error) { next(error); }
-});
 
 async function authenticateCrashSocket(socket) {
   try {
-    const token = String(socket.handshake?.auth?.token || '').trim();
-    if (!token) return false;
-    const { auth } = initFirebaseAdmin();
-    if (!auth) return false;
-    const decoded = await auth.verifyIdToken(token);
-    const uid = String(decoded.uid || '');
-    if (!uid) {
-      socket.emit('AUTH_REQUIRED');
+    const session = await authenticateSocketRequest(socket);
+    if (!session?.ok || !session?.uid) {
+      socket.data.crashUid = '';
+      socket.emit('crash:auth_error', { ok: false, error: session?.code || 'AUTH_REQUIRED' });
       return false;
     }
-    socket.data.crashUid = uid;
-    return !!socket.data.crashUid;
+    socket.data.crashUid = String(session.uid);
+    socket.data.crashEmail = String(session.email || '');
+    socket.data.crashSessionId = String(session.sid || '');
+    return true;
   } catch (_) {
     socket.data.crashUid = '';
-    socket.emit('crash:auth_error', { ok: false, error: 'INVALID_AUTH_TOKEN' });
+    socket.emit('crash:auth_error', { ok: false, error: 'AUTH_REQUIRED' });
     return false;
   }
 }
@@ -1109,7 +983,6 @@ function installSocket(io) {
       const authenticated = await authenticateCrashSocket(socket);
       if (!authenticated) {
         socket.data.crashSubscribed = false;
-        socket.emit('crash:auth_error', { ok:false, error:'AUTH_REQUIRED' });
         return;
       }
       socket.data.crashSubscribed = true;
@@ -1117,11 +990,15 @@ function installSocket(io) {
       socket.join?.('crash');
       socket.emit('crash:update', snapshot({ viewerUid: socket.data?.crashUid || '' }));
     });
-    socket.on('crash:unsubscribe', () => { socket.data.crashSubscribed = false; state.subscribers.delete(socket); socket.leave?.('crash'); });
+    socket.on('crash:unsubscribe', () => {
+      socket.data.crashSubscribed = false;
+      state.subscribers.delete(socket);
+      socket.leave?.('crash');
+    });
     socket.on('disconnect', () => { state.subscribers.delete(socket); });
   });
 }
 
-
 ensureRoundStarted().catch((error) => console.error('[crash:boot:error]', JSON.stringify({ message: error.message })));
+
 module.exports = { router, installSocket, _state: state, _validateRiskTable: validateRiskTable };

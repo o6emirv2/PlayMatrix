@@ -8,6 +8,7 @@ const { getProgression, normalizeXpBigInt } = require('../../core/progressionSer
 const { recordRecentActivity } = require('../../core/recentActivityService');
 let addAdminLog = null;
 try { ({ addAdminLog } = require('../../admin/adminRuntimeLogStore')); } catch (_) { addAdminLog = null; }
+const { authenticateSocketRequest } = require('../../core/userSessionService');
 
 const router = express.Router();
 const rooms = new Map();
@@ -1128,22 +1129,18 @@ router.post('/leave', requireAuth, asyncRoute(async (req, res) => {
 async function authenticateChessSocket(socket) {
   try {
     if (socket.data?.chessUid) return true;
-    const token = String(socket.handshake?.auth?.token || '').trim();
-    if (!token) return false;
-    const { auth } = initFirebaseAdmin();
-    if (!auth) return false;
-    const decoded = await auth.verifyIdToken(token);
-    const uid = String(decoded.uid || '');
-    if (!uid) {
-      socket.emit('AUTH_REQUIRED');
+    const session = await authenticateSocketRequest(socket);
+    if (!session?.uid) {
+      socket.emit('chess:auth_error', { ok:false, error: session?.code || 'AUTH_REQUIRED' });
       return false;
     }
-    socket.data.chessUid = uid;
-    socket.data.chessEmail = String(decoded.email || '');
-    return !!socket.data.chessUid;
+    socket.data.chessUid = String(session.uid);
+    socket.data.chessEmail = String(session.email || '');
+    socket.data.pmSessionId = String(session.sid || '');
+    return true;
   } catch (_) {
     socket.data.chessUid = '';
-    socket.emit('chess:auth_error', { ok: false, error: 'INVALID_AUTH_TOKEN' });
+    socket.emit('chess:auth_error', { ok:false, error:'AUTH_INVALID' });
     return false;
   }
 }

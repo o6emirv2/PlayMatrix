@@ -1,5 +1,5 @@
-import { bootHomeApplication } from '/public/js/home/app.js?v=pm-v11-dob-game-auth-fix';
-import { HOME_GAME_ROUTES } from '/public/js/home/game-catalog.js?v=pm-v11-dob-game-auth-fix';
+import { bootHomeApplication } from '/public/js/home/app.js?v=pm-v12-production-fix';
+import { HOME_GAME_ROUTES } from '/public/js/home/game-catalog.js?v=pm-v12-production-fix';
 
 window.__PLAYMATRIX_ROUTES__ = HOME_GAME_ROUTES;
 const PLAYMATRIX_BACKEND_ORIGIN = 'https://emirhan-siye.onrender.com';

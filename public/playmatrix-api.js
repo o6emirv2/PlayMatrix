@@ -66,6 +66,7 @@
       list.push(normalized);
     };
 
+    if (isProductionHost()) push(window.location.origin);
     push(getRuntimeBase());
     push(getStaticRuntimeBase());
     push(getMetaBase());
@@ -85,11 +86,12 @@
   }
 
   function getApiBaseSync() {
-    const preferred = getRuntimeBase()
+    const preferred = (isProductionHost() ? normalizeBase(window.location.origin) : '')
+      || getRuntimeBase()
       || getStaticRuntimeBase()
       || getMetaBase()
       || getStoredBase()
-      || (!isProductionHost() ? normalizeBase(window.location.origin) : '');
+      || normalizeBase(window.location.origin);
     return setApiBase(preferred || (!isProductionHost() ? window.location.origin : ''));
   }
 
@@ -101,7 +103,7 @@
         const response = await fetchWithTimeout(`${normalized}${probePath}`, {
           method: 'GET',
           headers: { Accept: 'application/json' },
-          credentials: 'omit',
+          credentials: 'include',
           cache: 'no-store'
         }, 1800);
         if (!response.ok) continue;
@@ -205,7 +207,7 @@
     const headers = new Headers(options.headers || {});
     if (!headers.has('Accept')) headers.set('Accept', 'application/json');
     if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', requestId('api'));
-    const response = await fetchWithTimeout(buildUrl(path), { ...options, headers }, options.timeoutMs || PM_API_TIMEOUT_MS);
+    const response = await fetchWithTimeout(buildUrl(path), { credentials: 'include', cache: 'no-store', ...options, headers }, options.timeoutMs || PM_API_TIMEOUT_MS);
     const payload = await response.json().catch(() => null);
     if (!response.ok || payload?.ok === false) {
       const wasReplaced = handleSessionProblem(payload, response.status);

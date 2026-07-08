@@ -73,6 +73,21 @@ function openHomeAuthSheet(gameName = 'Online oyun') {
 
 let homeMaintenanceState = null;
 let homeMaintenanceLoadedAt = 0;
+const TRUE_MAINTENANCE_VALUES = new Set(['1', 'true', 'yes', 'on', 'active', 'enabled', 'evet', 'aktif', 'açık', 'acik', 'bakım', 'bakim']);
+const FALSE_MAINTENANCE_VALUES = new Set(['', '0', 'false', 'no', 'off', 'inactive', 'disabled', 'hayır', 'hayir', 'pasif', 'kapalı', 'kapali', 'null', 'undefined']);
+function maintenanceFlag(value) {
+  if (value === true || value === 1) return true;
+  if (value === false || value === 0 || value == null) return false;
+  if (typeof value === 'object') {
+    if (Object.prototype.hasOwnProperty.call(value, 'active')) return maintenanceFlag(value.active);
+    if (Object.prototype.hasOwnProperty.call(value, 'enabled')) return maintenanceFlag(value.enabled);
+    if (Object.prototype.hasOwnProperty.call(value, 'maintenance')) return maintenanceFlag(value.maintenance);
+    return false;
+  }
+  const normalized = String(value).trim().toLocaleLowerCase('tr-TR');
+  if (FALSE_MAINTENANCE_VALUES.has(normalized)) return false;
+  return TRUE_MAINTENANCE_VALUES.has(normalized);
+}
 
 function gameKeyFromRoute(route = '') {
   const lower = String(route || '').toLowerCase();
@@ -103,8 +118,8 @@ export function isGameInMaintenance(route = '') {
   const key = gameKeyFromRoute(route);
   const maintenance = homeMaintenanceState || {};
   if (!key) return false;
-  if (maintenance[key]) return true;
-  return maintenance.classic && ['pattern-master','space-pro','snake-pro'].includes(key);
+  if (maintenanceFlag(maintenance[key])) return true;
+  return maintenanceFlag(maintenance.classic) && ['pattern-master','space-pro','snake-pro'].includes(key);
 }
 
 function showMaintenanceNotice(gameName = 'Oyun') {
