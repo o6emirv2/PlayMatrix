@@ -60,7 +60,7 @@
   }
 })();
 
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v15-matrix-siege";
+import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-20260603-professional-fix2";
 
 const core = await initPlayMatrixOnlineCore();
 const auth = core.auth;
@@ -766,11 +766,7 @@ function translatePistiErrorMessage(error = '') {
   if (code.includes('DAILY_LIMIT')) return 'Bugünkü ücretsiz oyun hakkını kullandın. Yarın tekrar oynayabilirsin.';
   if (code.includes('EMAIL_VERIFICATION_REQUIRED')) return 'Ödüllü işlemler için e-posta adresini doğrulaman gerekiyor.';
   if (code.includes('MAINTENANCE')) return 'Pişti şu anda bakımda. Lütfen daha sonra tekrar dene.';
-  if (code.includes('DATE_OF_BIRTH_REQUIRED') || code.includes('AGE_REQUIRED')) return 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.';
-  if (code.includes('AGE_RESTRICTED')) return 'Bu oyun yalnızca 16 yaş ve üzeri kullanıcılar içindir.';
-  if (code.includes('ACCOUNT_LOCKED')) return 'Hesabın geçici olarak kilitli. Destek ekibiyle iletişime geç.';
-  if (code.includes('AUTH') || code.includes('TOKEN') || status === 401) return 'Devam etmek için giriş yapman gerekiyor.';
-  if (status === 403) return 'Bu işlem için hesabın uygun değil. Hesap bilgilerini kontrol et.';
+  if (code.includes('AUTH') || code.includes('TOKEN') || status === 401 || status === 403) return 'Devam etmek için giriş yapman gerekiyor.';
   if (status === 404) return 'Masa bulunamadı. Yeni masa kurabilir veya lobiyi yenileyebilirsin.';
   if (status === 409) return 'Masa durumu değişti. Lütfen lobiyi yenileyip tekrar dene.';
   if (/TIMEOUT|NETWORK|LOAD FAILED|FAILED TO FETCH/i.test(code)) return 'Bağlantı yenileniyor. Lütfen birkaç saniye sonra tekrar dene.';
@@ -990,62 +986,9 @@ elBtnRetryBoot?.addEventListener('click', () => { bootPistiApp(true).catch(() =>
     }
 
 
-function pistiApiCandidates() {
-  const list = [];
-  const push = (value) => {
-    const base = String(value || '').trim().replace(/\/+$/, '').replace(/\/api$/i, '');
-    if (!base || list.includes(base)) return;
-    list.push(base);
-  };
-  try { window.__PM_API__?.getCandidates?.().forEach(push); } catch (_) {}
-  push(getApiBase());
-  push(window.__PLAYMATRIX_API_URL__);
-  push(window.__PM_STATIC_RUNTIME_CONFIG__?.apiBase);
-  push(location.origin);
-  return list;
-}
-
-async function directFetchAPI(endpoint, method = 'GET', body = null) {
-  let token = '';
-  try { token = await getIdToken(true); } catch (_) { try { token = await getIdToken(false); } catch (_) {} }
-  let lastError = null;
-  for (const base of pistiApiCandidates()) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 9000);
-    try {
-      const headers = { Accept: 'application/json', 'x-playmatrix-client': 'web' };
-      if (token) headers.Authorization = `Bearer ${token}`;
-      if (body != null) headers['Content-Type'] = 'application/json';
-      const response = await fetch(`${base}${endpoint}`, { method, headers, body: body == null ? undefined : JSON.stringify(body), credentials: 'include', cache: 'no-store', signal: controller.signal });
-      const payload = await response.json().catch(() => ({ ok: false, error: `HTTP_${response.status}` }));
-      if (!response.ok || payload?.ok === false) {
-        const err = new Error(payload?.error || payload?.code || `HTTP_${response.status}`);
-        err.status = response.status;
-        err.payload = payload;
-        throw err;
-      }
-      return payload;
-    } catch (error) {
-      lastError = error;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  throw lastError || new Error('Pişti işlemi şu anda yüklenemedi.');
-}
-
-async function fetchAPI(endpoint, method='GET', body=null, attempt = 0) {
-  try {
-    const headers = {};
-    return await core.requestWithAuth(endpoint, { method, body, headers, timeoutMs: 8000, retries: attempt === 0 ? 1 : 0, allowSessionFallback: true });
-  } catch (error) {
-    const message = String(error?.message || error || '');
-    const status = Number(error?.status || 0) || 0;
-    if ((!status || /load failed|failed to fetch|network|timeout|zaman aşımı|request_timeout/i.test(message)) && attempt < 1) {
-      try { return await directFetchAPI(endpoint, method, body); } catch (fallbackError) { error = fallbackError; }
-    }
-    throw error;
-  }
+    async function fetchAPI(endpoint, method='GET', body=null, attempt = 0) {
+      const headers = {};
+      return core.requestWithAuth(endpoint, { method, body, headers, timeoutMs: 8000, retries: attempt === 0 ? 1 : 0, allowSessionFallback: true });
 }
 
 async function initSocket() {

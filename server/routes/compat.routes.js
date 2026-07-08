@@ -6,10 +6,7 @@ const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const { runtimeStore } = require('../core/runtimeStore');
 const { issueAdminAccess, clearAdminAccess, adminAccessCookie, clearAdminAccessCookie, getRequestAdminAccessToken, readAdminAccess } = require('../core/adminAccessService');
 const { getProgression } = require('../core/progressionService');
-const { assertDateOfBirthInput, parseDateOfBirth, calculateAge } = require('../core/ageGateService');
-const { normalizeAvatarSelection } = require('../core/avatarCatalogService');
 const { runOnce } = require('../core/idempotencyService');
-const { normalizeMaintenanceGames, areGamesEnabled } = require('../core/maintenanceService');
 const router = express.Router();
 
 const DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20128%20128%27%3E%3Crect%20width%3D%27128%27%20height%3D%27128%27%20rx%3D%2728%27%20fill%3D%27%23111827%27%2F%3E%3Ccircle%20cx%3D%2764%27%20cy%3D%2750%27%20r%3D%2724%27%20fill%3D%27%23f59e0b%27%2F%3E%3Cpath%20d%3D%27M26%20108c8-18%2024-28%2038-28s30%2010%2038%2028%27%20fill%3D%27%23fbbf24%27%2F%3E%3Ctext%20x%3D%2764%27%20y%3D%27118%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23fff%27%3EPM%3C%2Ftext%3E%3C%2Fsvg%3E';
@@ -101,7 +98,7 @@ function addProgression(profile) {
 function defaultProfile(req, uid, seed = {}) {
   const email = s(req.user?.email || req.user?.firebase?.identities?.email?.[0] || seed.email || '', 160);
   const username = s(seed.username || req.user?.name || req.user?.displayName || `Oyuncu-${String(uid).slice(0,5)}`, 32);
-  return addProgression({ uid, email, username, firstName: seed.firstName || '', lastName: seed.lastName || '', fullName: seed.fullName || joinName(seed.firstName || '', seed.lastName || ''), displayName: username, avatar: seed.avatar || DEFAULT_AVATAR, dateOfBirth: seed.dateOfBirth || '', ageVerified: !!seed.ageVerified, age: seed.dateOfBirth ? calculateAge(seed.dateOfBirth) : 0, selectedFrame: Number(seed.selectedFrame || 0) || 0, balance: Number(seed.balance ?? 50000) || 0, signupBonusClaimed: true, usernameChangeLimit: 3, usernameChangesUsed: 0, xp: 0, accountXp: 0, monthlyActiveScore: 0, totalRounds: 0, createdAt: now(), lastLogin: now(), lastSeen: now(), gameStats: { total: { rounds: 0, wins: 0, losses: 0, winRatePct: 0 }, chess: {}, pisti: {}, crash: {}, classic: {} } });
+  return addProgression({ uid, email, username, firstName: seed.firstName || '', lastName: seed.lastName || '', fullName: seed.fullName || joinName(seed.firstName || '', seed.lastName || ''), displayName: username, avatar: seed.avatar || DEFAULT_AVATAR, selectedFrame: Number(seed.selectedFrame || 0) || 0, balance: Number(seed.balance ?? 50000) || 0, signupBonusClaimed: true, usernameChangeLimit: 3, usernameChangesUsed: 0, xp: 0, accountXp: 0, monthlyActiveScore: 0, totalRounds: 0, createdAt: now(), lastLogin: now(), lastSeen: now(), gameStats: { total: { rounds: 0, wins: 0, losses: 0, winRatePct: 0 }, chess: {}, pisti: {}, crash: {}, classic: {} } });
 }
 async function grantEmailVerifyRewardIfNeeded(req, uid, profile = {}) {
   if (!uid || !emailVerified(req) || profile.emailVerifyRewardClaimed) return profile;
@@ -113,7 +110,7 @@ async function grantEmailVerifyRewardIfNeeded(req, uid, profile = {}) {
     const current = snap.exists ? snap.data() : {};
     if (current.emailVerifyRewardClaimed) return;
     tx.set(ref, { emailVerified: true, emailVerifyRewardClaimed: true, emailVerifyRewardAt: now(), balance: admin.firestore.FieldValue.increment(100000), updatedAt: now() }, { merge: true });
-    tx.set(db.collection('ledger').doc(`email_verify_${uid}`), { uid, operationType: 'email-verified-reward', type: 'email-verified-reward', amount: 100000, idempotencyKey: `email_verify_${uid}`, createdAt: now(), at: now() }, { merge: true });
+    tx.set(db.collection('audit').doc(`email_verify_${uid}`), { uid, amount: 100000, reason: 'email-verified-reward', at: now() }, { merge: true });
   });
   const fresh = await ref.get().catch(() => null);
   return fresh?.exists ? { ...profile, ...fresh.data(), uid } : { ...profile, emailVerified: true, emailVerifyRewardClaimed: true };
@@ -150,8 +147,6 @@ async function readProfile(req, uid = uidOf(req), seed = {}) {
   profile.usernameChangeLimit = Math.max(0, Number(profile.usernameChangeLimit ?? 3) || 3);
   profile.usernameChangesUsed = Math.max(0, Number(profile.usernameChangesUsed ?? profile.usernameChangeCount ?? 0) || 0);
   profile.usernameChangesLeft = Math.max(0, profile.usernameChangeLimit - profile.usernameChangesUsed);
-  profile.age = calculateAge(profile.dateOfBirth || '');
-  profile.ageVerified = !!profile.dateOfBirth && profile.age >= 16 && profile.ageVerified !== false && !profile.ageLocked;
   return addProgression(profile);
 }
 async function writeProfile(uid, patch) { const { db } = fb(); if (db && uid) await db.collection('users').doc(uid).set({ ...patch, updatedAt: now() }, { merge: true }); }
@@ -175,15 +170,14 @@ async function addBalance(uid, amount, reason, key) {
       if (safeAmount < 0 && current + safeAmount < 0) throw Object.assign(new Error('INSUFFICIENT_BALANCE'), { statusCode: 409, current });
       nextBalance = Math.max(0, current + safeAmount);
       tx.set(userRef, { balance: nextBalance, updatedAt: now() }, { merge: true });
-      tx.set(db.collection('ledger').doc(`economy_${crypto.randomUUID()}`), { uid, operationType: reason, type: reason, amount: safeAmount, balanceAfter: nextBalance, idempotencyKey: key, createdAt: now(), at: now() }, { merge: true });
+      tx.set(db.collection('audit').doc(`economy_${crypto.randomUUID()}`), { uid, amount: safeAmount, reason, balanceAfter: nextBalance, at: now() }, { merge: true });
     });
     return { ok: true, amount: safeAmount, reason, balance: nextBalance };
   }});
 }
 function runtimePayload() { return { ok: true, runtime: { version: 8, environment: env.nodeEnv, publicBaseUrl: env.publicBaseUrl, canonicalOrigin: env.canonicalOrigin, apiBase: env.publicApiBase || env.publicBackendOrigin, expectedFirebaseProjectId: env.firebase.publicConfig.projectId, firebase: env.firebase.publicConfig, firebaseReady: true, source: 'render-env-contract' }, apiBase: env.publicApiBase || env.publicBackendOrigin, canonicalOrigin: env.canonicalOrigin, firebase: env.firebase.publicConfig }; }
-const LEADERBOARD_CACHE_KEY = 'home:leaderboard:v15';
-const LEADERBOARD_CACHE_TTL_MS = 14 * 1000;
-let leaderboardRefreshPromise = null;
+const LEADERBOARD_CACHE_KEY = 'home:leaderboard:v8';
+const LEADERBOARD_CACHE_TTL_MS = 45 * 1000;
 const LEADERBOARD_SELECT_FIELDS = ['username','displayName','avatar','selectedFrame','frameUrl','marketFrameUrl','marketFrameId','marketEquipped','equippedMarket','cosmeticSlots','accountXp','xp','accountLevel','level','monthlyActiveScore','balance','mc','stats','statistics','gameStats'];
 async function leaderboardQuery(field = 'accountXp', limit = 10) {
   const { db } = fb();
@@ -202,7 +196,7 @@ async function leaderboardFallbackProfiles(limit = 10) {
   const { db } = fb();
   if (!db) return [];
   try {
-    const safeLimit = Math.max(60, Math.min(250, Math.trunc(Number(limit) || 10) * 12));
+    const safeLimit = Math.max(30, Math.min(120, Math.trunc(Number(limit) || 10) * 6));
     let query = db.collection('users').limit(safeLimit);
     let snap;
     try {
@@ -213,79 +207,37 @@ async function leaderboardFallbackProfiles(limit = 10) {
     return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
   } catch { return []; }
 }
-function profileKey(profile = {}) {
-  return String(profile.uid || profile.id || profile.email || profile.username || '').trim();
-}
-function mergeProfiles(primary = [], fallback = []) {
-  const merged = [];
-  const seen = new Set();
-  for (const row of [...primary, ...fallback]) {
-    const key = profileKey(row);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    merged.push(row);
-  }
-  return merged;
-}
-function activityScoreOf(profile = {}) {
-  return Math.max(0, Number(
-    profile.monthlyActiveScore
-    ?? profile.monthlyActivityScore
-    ?? profile.activityScore
-    ?? profile.monthlyActivity
-    ?? profile.activeScore
-    ?? 0
-  ) || 0);
-}
 async function leaderboardProfiles(limit = 10) {
   const safeLimit = Math.max(1, Math.min(10, Math.trunc(Number(limit) || 10)));
   const cached = runtimeStore.temporary.get(LEADERBOARD_CACHE_KEY);
   if (cached && typeof cached === 'object' && Array.isArray(cached.level) && Array.isArray(cached.activity)) return cached;
-  if (leaderboardRefreshPromise) return leaderboardRefreshPromise;
-  leaderboardRefreshPromise = (async () => {
-    const { db } = fb();
-    if (!db) return { level: [], activity: [], source: 'firebase-unavailable' };
-    let levelRows = [];
-    let activityRows = [];
-    let source = 'indexed';
-    try {
-      [levelRows, activityRows] = await Promise.all([
-        leaderboardQuery('accountXp', safeLimit),
-        leaderboardQuery('monthlyActiveScore', safeLimit)
-      ]);
-    } catch (_) {
-      source = 'fallback';
-    }
-
-    // Eski kullanıcı belgelerinde accountXp/monthlyActiveScore alanları bulunmayabilir.
-    // Firestore orderBy bu belgeleri tamamen dışladığı için eksik/boş sonuçta güvenli
-    // server-side fallback taraması yapılır ve sonuçlar backend üzerinde sıralanır.
-    let fallbackRows = [];
-    if (source === 'fallback' || levelRows.length < safeLimit || activityRows.length < safeLimit) {
-      fallbackRows = await leaderboardFallbackProfiles(safeLimit);
-      if (fallbackRows.length) source = source === 'indexed' ? 'indexed+fallback' : 'fallback';
-    }
-
-    const levelCandidates = mergeProfiles(levelRows, fallbackRows);
-    const activityCandidates = mergeProfiles(activityRows, fallbackRows);
+  try {
+    const [levelRows, activityRows] = await Promise.all([
+      leaderboardQuery('accountXp', safeLimit),
+      leaderboardQuery('monthlyActiveScore', safeLimit)
+    ]);
     const payload = {
-      level: levelCandidates
-        .sort((a,b)=> xpBig(b.accountXp ?? b.xp ?? b.accountLevelScore) > xpBig(a.accountXp ?? a.xp ?? a.accountLevelScore) ? 1 : xpBig(b.accountXp ?? b.xp ?? b.accountLevelScore) < xpBig(a.accountXp ?? a.xp ?? a.accountLevelScore) ? -1 : 0)
-        .slice(0, safeLimit),
-      activity: activityCandidates
-        .sort((a,b)=>activityScoreOf(b)-activityScoreOf(a))
-        .slice(0, safeLimit),
-      source
+      level: [...levelRows].sort((a,b)=> xpBig(b.accountXp ?? b.xp) > xpBig(a.accountXp ?? a.xp) ? 1 : xpBig(b.accountXp ?? b.xp) < xpBig(a.accountXp ?? a.xp) ? -1 : 0).slice(0, safeLimit),
+      activity: [...activityRows].sort((a,b)=>Number(b.monthlyActiveScore||0)-Number(a.monthlyActiveScore||0)).slice(0, safeLimit),
+      source: 'indexed'
     };
     runtimeStore.temporary.set(LEADERBOARD_CACHE_KEY, payload, LEADERBOARD_CACHE_TTL_MS);
     return payload;
-  })().finally(() => { leaderboardRefreshPromise = null; });
-  return leaderboardRefreshPromise;
+  } catch {
+    const rows = await leaderboardFallbackProfiles(safeLimit);
+    const payload = {
+      level: [...rows].sort((a,b)=> xpBig(b.accountXp ?? b.xp) > xpBig(a.accountXp ?? a.xp) ? 1 : xpBig(b.accountXp ?? b.xp) < xpBig(a.accountXp ?? a.xp) ? -1 : 0).slice(0, safeLimit),
+      activity: [...rows].sort((a,b)=>Number(b.monthlyActiveScore||0)-Number(a.monthlyActiveScore||0)).slice(0, safeLimit),
+      source: 'fallback'
+    };
+    runtimeStore.temporary.set(LEADERBOARD_CACHE_KEY, payload, LEADERBOARD_CACHE_TTL_MS);
+    return payload;
+  }
 }
 function xpBig(value = 0) { try { const raw = String(value ?? '0').replace(/[^0-9]/g, ''); return raw ? BigInt(raw) : 0n; } catch { return 0n; } }
 function safeMetricNumber(value = 0) { const big = xpBig(value); return big > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(big); }
 function activeMarketFrameForProfile(p = {}) { const slot = p.cosmeticSlots?.frame || {}; const id = s(p.marketFrameId || p.marketEquipped?.frame || p.marketEquipped?.frames || p.equippedMarket?.frame || p.equippedMarket?.frames || (slot.source === 'market' ? slot.itemId : ''), 140); return id ? resolveMarketFramePath(p.marketFrameUrl || p.frameUrl || '', id) : ''; }
-function lbItems(list, metric) { return list.map((raw, i) => { const p = addProgression(raw); const wins = Number(p?.stats?.totalWins ?? p?.statistics?.totalWins ?? p?.gameStats?.total?.wins ?? p?.totalWins ?? 0) || 0; const balance = Number(p.balance ?? p.mc ?? p?.statistics?.balance ?? 0) || 0; const xpExact = String(p.accountXp || p.xp || '0'); const marketFrameUrl = activeMarketFrameForProfile(p); return { uid: p.uid || `guest_${i}`, username: p.username || p.displayName || 'Oyuncu', avatar: p.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(p.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(p.marketFrameId || p.marketEquipped?.frames || p.cosmeticSlots?.frame?.itemId || '', 140) : '', balance, mc: balance, stats: { ...(p.stats || {}), totalWins: wins }, statistics: { ...(p.statistics || {}), totalWins: wins, balance }, accountXp: safeMetricNumber(xpExact), accountXpExact: xpExact, accountLevel: Number(p.accountLevel || 1), monthlyActiveScore: activityScoreOf(p), leaderboard: { rank: i + 1, metricKey: metric === 'activity' ? 'monthlyActiveScore' : 'accountXp', metricLabel: metric === 'activity' ? 'Aylık Aktiflik' : 'Hesap XP', metricValue: metric === 'activity' ? activityScoreOf(p) : safeMetricNumber(xpExact), metricValueExact: metric === 'activity' ? String(activityScoreOf(p)) : xpExact } }; }); }
+function lbItems(list, metric) { return list.map((raw, i) => { const p = addProgression(raw); const wins = Number(p?.stats?.totalWins ?? p?.statistics?.totalWins ?? p?.gameStats?.total?.wins ?? p?.totalWins ?? 0) || 0; const balance = Number(p.balance ?? p.mc ?? p?.statistics?.balance ?? 0) || 0; const xpExact = String(p.accountXp || p.xp || '0'); const marketFrameUrl = activeMarketFrameForProfile(p); return { uid: p.uid || `guest_${i}`, username: p.username || p.displayName || 'Oyuncu', avatar: p.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(p.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(p.marketFrameId || p.marketEquipped?.frames || p.cosmeticSlots?.frame?.itemId || '', 140) : '', balance, mc: balance, stats: { ...(p.stats || {}), totalWins: wins }, statistics: { ...(p.statistics || {}), totalWins: wins, balance }, accountXp: safeMetricNumber(xpExact), accountXpExact: xpExact, accountLevel: Number(p.accountLevel || 1), monthlyActiveScore: Number(p.monthlyActiveScore || 0), leaderboard: { rank: i + 1, metricKey: metric === 'activity' ? 'monthlyActiveScore' : 'accountXp', metricLabel: metric === 'activity' ? 'Aylık Aktiflik' : 'Hesap XP', metricValue: metric === 'activity' ? Number(p.monthlyActiveScore || 0) : safeMetricNumber(xpExact), metricValueExact: metric === 'activity' ? String(Number(p.monthlyActiveScore || 0)) : xpExact } }; }); }
 function gameProfileFromReq(req, fallbackName = 'Oyuncu') { const u = req.__pmProfile || {}; const marketFrameUrl = activeMarketFrameForProfile(u); return { uid: uidOf(req), username: u.username || u.displayName || fallbackName, avatar: u.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(u.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(u.marketFrameId || u.marketEquipped?.frame || u.marketEquipped?.frames || u.cosmeticSlots?.frame?.itemId || '', 140) : '' }; }
 async function attachProfile(req, _res, next) { try { req.__pmProfile = await readProfile(req, uidOf(req)); } catch (_) { req.__pmProfile = defaultProfile(req, uidOf(req) || 'guest'); } next(); }
 
@@ -347,22 +299,7 @@ router.get('/me', requireAuth, async (req, res) => res.json({ ok: true, user: aw
 router.post('/me/activity/heartbeat', requireAuth, async (req, res) => { const uid = uidOf(req); runtimeStore.presence.set(uid, { uid, status: 'online', activity: s(req.body?.activity, 40), at: now() }, 180000); res.json({ ok: true, at: now() }); });
 router.post('/me/showcase', requireAuth, async (req, res) => { const uid = uidOf(req); const showcase = { title: s(req.body?.title, 60), bio: sanitizeText(req.body?.bio || '', 180), updatedAt: now() }; await writeProfile(uid, { showcase }); res.json({ ok: true, showcase }); });
 router.get('/user-stats/:uid', requireAuth, async (req, res) => res.json({ ok: true, data: await readProfile(req, s(req.params.uid, 128)) }));
-router.get('/leaderboard', async (req, res) => {
-  const limit = Math.min(10, Math.max(1, Number(req.query?.limit || 10) || 10));
-  try {
-    const profiles = await leaderboardProfiles(limit);
-    if (profiles?.source === 'firebase-unavailable') {
-      return res.status(503).json({ ok:false, data:null, message:'', code:'LEADERBOARD_UNAVAILABLE', error:'LEADERBOARD_UNAVAILABLE' });
-    }
-    const byLevel = Array.isArray(profiles?.level) ? profiles.level : [];
-    const byActivity = Array.isArray(profiles?.activity) ? profiles.activity : [];
-    const totalRows = byLevel.length + byActivity.length;
-    res.setHeader('Cache-Control','no-store, max-age=0');
-    return res.json({ ok: true, generatedAt: now(), limit, empty: totalRows < 1, source: profiles?.source || 'indexed', tabs: { level: { label: 'En Yüksek Hesap Seviyesi', metricKey: 'accountXp', items: lbItems(byLevel.slice(0,limit), 'level') }, activity: { label: 'En Çok Aktif Oyuncular', metricKey: 'monthlyActiveScore', items: lbItems(byActivity.slice(0,limit), 'activity') } } });
-  } catch (_) {
-    return res.status(503).json({ ok:false, data:null, message:'', code:'LEADERBOARD_UNAVAILABLE', error:'LEADERBOARD_UNAVAILABLE' });
-  }
-});
+router.get('/leaderboard', async (req, res) => { const limit = Math.min(10, Math.max(1, Number(req.query?.limit || 10) || 10)); const profiles = await leaderboardProfiles(limit); const byLevel = Array.isArray(profiles?.level) ? profiles.level : []; const byActivity = Array.isArray(profiles?.activity) ? profiles.activity : []; const totalRows = byLevel.length + byActivity.length; res.setHeader('Cache-Control','public, max-age=15, stale-while-revalidate=45'); res.json({ ok: true, generatedAt: now(), limit, empty: totalRows < 1, source: profiles?.source || 'indexed', tabs: { level: { label: 'En Yüksek Hesap Seviyesi', metricKey: 'accountXp', items: lbItems(byLevel.slice(0,limit), 'level') }, activity: { label: 'En Çok Aktif Oyuncular', metricKey: 'monthlyActiveScore', items: lbItems(byActivity.slice(0,limit), 'activity') } } }); });
 async function checkUsernameRoute(req, res) {
   const result = await checkUsernameAvailability(req.query.username, req.query.exceptUid || '');
   res.json(result);
@@ -400,33 +337,9 @@ router.post('/profile/update', requireAuth, async (req, res) => {
   const patch = {
     username: requestedUsername,
     usernameLower: requestedUsername.toLowerCase(),
-    avatar: normalizeAvatarSelection(body.avatar || current.avatar || DEFAULT_AVATAR),
+    avatar: s(body.avatar, 1000),
     usernameChangeLimit
   };
-
-  const requestedDob = body.dateOfBirth || (body.birthYear || body.birthMonth || body.birthDay ? { year: body.birthYear, month: body.birthMonth, day: body.birthDay } : null);
-  if (!current.dateOfBirth && requestedDob) {
-    const parsedDob = parseDateOfBirth(requestedDob);
-    if (!parsedDob.ok) return res.status(400).json({ ok:false, error:parsedDob.code, code:parsedDob.code, message:parsedDob.message || '' });
-    if (!parsedDob.ageVerified) {
-      patch.dateOfBirth = parsedDob.dateOfBirth;
-      patch.ageVerified = false;
-      patch.ageLocked = true;
-      patch.accountLocked = true;
-      patch.ageLockedAt = now();
-      patch.ageLockedReason = 'UNDER_16_DATE_OF_BIRTH';
-      await writeProfile(uid, patch);
-      return res.status(423).json({ ok:false, data:null, error:'ACCOUNT_LOCKED', code:'ACCOUNT_LOCKED', message:'Devam edebilmek için 16 yaşından büyük olmalısınız.' });
-    }
-    patch.dateOfBirth = parsedDob.dateOfBirth;
-    patch.ageVerified = true;
-    patch.ageLocked = false;
-    patch.accountLocked = false;
-    patch.ageVerifiedAt = now();
-  } else if (current.dateOfBirth && requestedDob) {
-    const dob = assertDateOfBirthInput(requestedDob);
-    if (dob.ok && dob.dateOfBirth !== current.dateOfBirth) return res.status(409).json({ ok:false, error:'DATE_OF_BIRTH_LOCKED', code:'DATE_OF_BIRTH_LOCKED', message:'' });
-  }
   if (usernameChanged) {
     patch.usernameChangesUsed = usernameChangesUsed + 1;
     patch.lastUsernameChangedAt = now();
@@ -555,12 +468,19 @@ router.get('/achievements', requireAuth, (_req, res) => res.json({ ok: true, ite
 router.get('/missions', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
 
 function normalizeCompatMaintenanceGames(games = {}) {
-  const normalized = normalizeMaintenanceGames(games);
+  const raw = games && typeof games === 'object' ? games : {};
   return {
-    general: normalized.general || normalized.system,
-    crash: normalized.crash, chess: normalized.chess, pisti: normalized.pisti,
-    market: normalized.market, wheel: normalized.wheel, promo: normalized.promo, classic: normalized.classic,
-    'pattern-master': normalized['pattern-master'], 'space-pro': normalized['space-pro'], 'snake-pro': normalized['snake-pro'], 'matrix-siege': normalized['matrix-siege']
+    general: !!(raw.general || raw.system),
+    crash: !!raw.crash,
+    chess: !!raw.chess,
+    pisti: !!raw.pisti,
+    market: !!raw.market,
+    wheel: !!raw.wheel,
+    promo: !!raw.promo,
+    classic: !!raw.classic,
+    'pattern-master': !!raw['pattern-master'],
+    'space-pro': !!raw['space-pro'],
+    'snake-pro': !!raw['snake-pro']
   };
 }
 async function readCompatMaintenanceControl(source = 'control-public') {
@@ -580,7 +500,7 @@ async function readCompatMaintenanceControl(source = 'control-public') {
     console.warn('[compat:maintenance:read:failed]', error?.message || error);
   }
   const maintenance = normalizeCompatMaintenanceGames(games);
-  return { ok: true, maintenance, gamesEnabled: areGamesEnabled(maintenance) };
+  return { ok: true, maintenance, gamesEnabled: !Object.values(maintenance).some(Boolean) };
 }
 router.get('/platform/control-public', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');

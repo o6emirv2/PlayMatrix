@@ -1,4 +1,4 @@
-import './home-core.js?v=pm-v15-matrix-siege';
+import './home-core.js?v=pm-runtime-fix-v30';
 
 export function getHomeRuntime() {
   return window.PlayMatrixHome || null;

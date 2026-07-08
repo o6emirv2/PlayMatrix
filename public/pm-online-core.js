@@ -1,15 +1,10 @@
-import { loadFirebaseWebConfig } from "./firebase-runtime.js?v=pm-v15-matrix-siege";
+import { loadFirebaseWebConfig } from "./firebase-runtime.js";
 
 export const PLAYMATRIX_FIREBASE_CONFIG = null;
 
 const FIREBASE_APP_URL = "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 const FIREBASE_AUTH_URL = "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-const FIREBASE_SDK_TIMEOUT_MS = 9000;
-const FIREBASE_SDK_CANDIDATES = Object.freeze([
-  Object.freeze({ version: '10.12.2', app: 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js', auth: 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js', compatApp: 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js', compatAuth: 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js' }),
-  Object.freeze({ version: '10.12.5', app: 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js', auth: 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js', compatApp: 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js', compatAuth: 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js' }),
-  Object.freeze({ version: '10.13.2', app: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js', auth: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js', compatApp: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js', compatAuth: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js' })
-]);
+const FIREBASE_SDK_TIMEOUT_MS = 7000;
 const PM_AUTH_REQUIRED_UID_KEY = 'pm_auth_required_uid';
 function currentUidFromCore(core) { return String(core?.auth?.currentUser?.uid || '').trim(); }
 function clearAuthRequiredLock() {
@@ -29,45 +24,9 @@ function isAuthRequiredLocked(core) {
   try { if (window.localStorage?.getItem(PM_AUTH_REQUIRED_UID_KEY) === uid) return true; } catch (_) {}
   return false;
 }
-let serverSessionCache = null;
-let serverSessionPromise = null;
-function readServerSessionToken() { return serverSessionCache?.user?.uid ? 'http-only-session' : ''; }
-function writeServerSessionToken() { return readServerSessionToken(); }
-function clearServerSessionToken() { serverSessionCache = null; return ''; }
-async function fetchServerSession(core, { force = false } = {}) {
-  if (!force && serverSessionCache?.user?.uid && Number(serverSessionCache.expiresAt || 0) > Date.now() + 30000) return serverSessionCache;
-  if (!force && serverSessionPromise) return serverSessionPromise;
-  serverSessionPromise = (async () => {
-    const base = await core.ensureApiBaseReady();
-    const response = await fetch(`${base}/api/auth/session`, { method:'GET', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'x-playmatrix-client':'web-session' } });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || payload?.ok === false) { serverSessionCache = null; return null; }
-    const data = payload.data || payload;
-    serverSessionCache = data?.user?.uid ? data : null;
-    return serverSessionCache;
-  })().finally(() => { serverSessionPromise = null; });
-  return serverSessionPromise;
-}
-async function syncServerSession(core, { forceToken = false, remember = rememberLoginEnabled() } = {}) {
-  if (!core?.auth?.currentUser) return fetchServerSession(core).catch(() => null);
-  const base = await core.ensureApiBaseReady();
-  const idToken = await core.getIdToken(!!forceToken);
-  const persistent = !!remember;
-  const response = await fetch(`${base}/api/auth/session`, { method:'POST', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'Content-Type':'application/json', Authorization:`Bearer ${idToken}`, 'x-playmatrix-client':'web-session' }, body:JSON.stringify({ remember:persistent, persistence:persistent ? 'local' : 'session' }) });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload?.ok === false) throw buildError('Oturum doğrulanamadı.', payload?.code || payload?.error || 'SESSION_SYNC_FAILED', { status:response.status, payload });
-  const data = payload.data || payload;
-  serverSessionCache = data?.user?.uid ? data : null;
-  clearAuthRequiredLock();
-  return serverSessionCache;
-}
-async function clearServerSession(core) {
-  try {
-    const base = await core.ensureApiBaseReady();
-    await fetch(`${base}/api/auth/session`, { method:'DELETE', credentials:'include', cache:'no-store', headers:{ Accept:'application/json', 'x-playmatrix-client':'web-session' } });
-  } catch (_) {}
-  serverSessionCache = null;
-}
+function readServerSessionToken() { return ''; }
+function writeServerSessionToken() { return ''; }
+function clearServerSessionToken() { return ''; }
 function isAuthError(payload, status) {
   const code = String(payload?.code || payload?.error || '').toUpperCase();
   return (code === 'AUTH_REQUIRED' || code === 'AUTH_INVALID') ? 'required' : '';
@@ -121,8 +80,6 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
   }
 
   const base = await core.ensureApiBaseReady();
-  if (core?.auth?.currentUser) await syncServerSession(core).catch(() => null);
-  else if (allowSessionFallback) await fetchServerSession(core).catch(() => null);
   let lastAuthError = null;
   const getOptionalToken = async (refresh = false) => {
     try {
@@ -156,10 +113,7 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
       if (authProblem === 'required' && isAuthRequiredLocked(core)) {
         throw buildError('Devam etmek için giriş yapman gerekiyor.', 'AUTH_REQUIRED', { status: response.status, payload });
       }
-      if ((response.status === 401 || response.status === 403) && token && attempt < retries) {
-        await syncServerSession(core, { forceToken: true }).catch(() => null);
-        return attemptRequest(attempt + 1, true);
-      }
+      if ((response.status === 401 || response.status === 403) && token && attempt < retries) return attemptRequest(attempt + 1, true);
       if (!response.ok || payload?.ok === false) {
         const message = sanitizeOnlineUserMessage(payload?.error || (lastAuthError?.message && !token ? lastAuthError.message : 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.'));
         throw buildError(message, payload?.code || `HTTP_${response.status}`, { status: response.status, payload });
@@ -178,107 +132,17 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
   return attemptRequest(0, false);
 }
 
-function loadClassicScriptOnce(src, timeoutMs = FIREBASE_SDK_TIMEOUT_MS) {
-  return new Promise((resolve, reject) => {
-    const normalized = String(src || '').trim();
-    if (!normalized) { reject(buildError('SDK kaynağı eksik.', 'FIREBASE_SCRIPT_SRC_MISSING')); return; }
-    const existing = document.querySelector(`script[data-pm-sdk-src="${normalized}"]`);
-    if (existing?.dataset.loaded === 'true') { resolve(existing); return; }
-    if (existing) {
-      existing.addEventListener('load', () => resolve(existing), { once: true });
-      existing.addEventListener('error', () => reject(buildError('SDK yüklenemedi.', 'FIREBASE_SCRIPT_LOAD_FAILED')), { once: true });
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = normalized;
-    script.async = true;
-    script.defer = true;
-    script.crossOrigin = 'anonymous';
-    script.referrerPolicy = 'no-referrer';
-    script.dataset.pmSdkSrc = normalized;
-    const timer = window.setTimeout(() => {
-      script.remove();
-      reject(buildError('SDK zaman aşımına uğradı.', 'FIREBASE_SCRIPT_TIMEOUT'));
-    }, Math.max(2500, Number(timeoutMs) || FIREBASE_SDK_TIMEOUT_MS));
-    script.addEventListener('load', () => {
-      window.clearTimeout(timer);
-      script.dataset.loaded = 'true';
-      resolve(script);
-    }, { once: true });
-    script.addEventListener('error', () => {
-      window.clearTimeout(timer);
-      script.remove();
-      reject(buildError('SDK yüklenemedi.', 'FIREBASE_SCRIPT_LOAD_FAILED'));
-    }, { once: true });
-    document.head.appendChild(script);
-  });
-}
-
-async function importModuleFirebaseSdk(timeoutMs = FIREBASE_SDK_TIMEOUT_MS) {
-  let lastError = null;
-  for (const candidate of FIREBASE_SDK_CANDIDATES) {
-    try {
-      const [appModule, authModule] = await withTimeout(Promise.all([
-        import(/* @vite-ignore */ candidate.app),
-        import(/* @vite-ignore */ candidate.auth)
-      ]), timeoutMs, `FIREBASE_MODULE_TIMEOUT:${candidate.version}`);
-      if (!appModule?.initializeApp || !authModule?.getAuth) throw buildError('SDK sözleşmesi doğrulanamadı.', 'FIREBASE_MODULE_CONTRACT');
-      return { appModule, authModule, mode: 'module', version: candidate.version };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || buildError('SDK yüklenemedi.', 'FIREBASE_MODULE_IMPORT_FAILED');
-}
-
-async function importCompatFirebaseSdk(timeoutMs = FIREBASE_SDK_TIMEOUT_MS + 1500) {
-  let lastError = null;
-  for (const candidate of FIREBASE_SDK_CANDIDATES) {
-    try {
-      await loadClassicScriptOnce(candidate.compatApp, timeoutMs);
-      await loadClassicScriptOnce(candidate.compatAuth, timeoutMs);
-      const firebase = window.firebase;
-      if (!firebase?.initializeApp || !firebase?.auth) throw buildError('SDK sözleşmesi doğrulanamadı.', 'FIREBASE_COMPAT_CONTRACT');
-      const appModule = {
-        getApps() { return firebase.apps || []; },
-        getApp() { return firebase.apps?.[0] || firebase.app(); },
-        initializeApp(config) { return firebase.apps?.length ? firebase.apps[0] : firebase.initializeApp(config); }
-      };
-      const authModule = {
-        getAuth(app) { return firebase.auth(app); },
-        onAuthStateChanged(authRef, next, error, completed) { return authRef.onAuthStateChanged(next, error, completed); },
-        setPersistence(authRef, persistence) { return authRef.setPersistence(persistence); },
-        browserLocalPersistence: firebase.auth.Auth.Persistence.LOCAL,
-        indexedDBLocalPersistence: firebase.auth.Auth.Persistence.LOCAL,
-        browserSessionPersistence: firebase.auth.Auth.Persistence.SESSION,
-        signOut(authRef) { return authRef.signOut(); },
-        getIdToken(user, force) { return user.getIdToken(!!force); }
-      };
-      return { appModule, authModule, mode: 'compat', version: candidate.version };
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError || buildError('SDK yüklenemedi.', 'FIREBASE_COMPAT_IMPORT_FAILED');
-}
-
 async function loadFirebaseSdk() {
   if (firebaseSdkPromise) return firebaseSdkPromise;
-  firebaseSdkPromise = (async () => {
-    try { return await importModuleFirebaseSdk(FIREBASE_SDK_TIMEOUT_MS); }
-    catch (moduleError) {
-      try { return await importCompatFirebaseSdk(FIREBASE_SDK_TIMEOUT_MS + 1500); }
-      catch (compatError) {
-        compatError.moduleError = moduleError;
-        throw compatError;
-      }
-    }
-  })();
+  firebaseSdkPromise = withTimeout(Promise.all([
+    import(FIREBASE_APP_URL),
+    import(FIREBASE_AUTH_URL)
+  ]), FIREBASE_SDK_TIMEOUT_MS, 'FIREBASE_SDK_TIMEOUT').then(([appModule, authModule]) => ({ appModule, authModule }));
   try {
     return await firebaseSdkPromise;
   } catch (error) {
     firebaseSdkPromise = null;
-    throw buildError(sanitizeOnlineUserMessage(error?.message || 'Hesap erişimi şu anda hazırlanamadı. Lütfen tekrar dene.'), error?.code || 'ONLINE_CORE_IMPORT_FAILED', { cause: error });
+    throw buildError(sanitizeOnlineUserMessage(error?.message || 'Görünüm şu anda hazırlanamadı. Lütfen tekrar dene.'), error?.code || 'ONLINE_CORE_IMPORT_FAILED', { cause: error });
   }
 }
 
@@ -293,11 +157,7 @@ function normalizeAuthListenerArgs(maybeAuthOrHandler, maybeHandler, maybeError,
 function readStoredAuthPersistenceMode() {
   try { if (window.localStorage?.getItem('pm_login_persistence') === 'local') return 'local'; } catch (_) {}
   try { if (window.sessionStorage?.getItem('pm_login_persistence') === 'session') return 'session'; } catch (_) {}
-  return 'session';
-}
-
-function rememberLoginEnabled() {
-  return readStoredAuthPersistenceMode() === 'local';
+  return '';
 }
 
 async function applyStoredAuthPersistence(authModule, auth) {
@@ -366,9 +226,6 @@ function createUnavailableCore(runtime, setupError) {
   core.readServerSessionToken = readServerSessionToken;
   core.writeServerSessionToken = writeServerSessionToken;
   core.clearServerSessionToken = clearServerSessionToken;
-  core.fetchServerSession = (options = {}) => fetchServerSession(core, options);
-  core.syncServerSession = (options = {}) => syncServerSession(core, options);
-  core.clearServerSession = () => clearServerSession(core);
   runtime.auth = auth;
   runtime.signOut = core.signOut;
   runtime.getIdToken = core.getIdToken;
@@ -376,7 +233,6 @@ function createUnavailableCore(runtime, setupError) {
   runtime.firebaseBootError = normalizedError.code || normalizedError.message || 'FIREBASE_UNAVAILABLE';
   window.__PLAYMATRIX_API_URL__ = runtime.apiBase;
   window.__PM_ONLINE_CORE__ = core;
-  try { window.dispatchEvent(new CustomEvent('pm:online-core-ready', { detail: { degraded: true } })); } catch (_) {}
   return core;
 }
 
@@ -394,7 +250,7 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
     return createUnavailableCore(runtime, error);
   }
 
-  const { appModule, authModule, mode: firebaseSdkMode = 'module', version: firebaseSdkVersion = '' } = sdk;
+  const { appModule, authModule } = sdk;
   const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(resolvedFirebaseConfig);
   const auth = authModule.getAuth(app);
   await applyStoredAuthPersistence(authModule, auth).catch(() => false);
@@ -434,9 +290,7 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
       return normalized;
     },
     async waitForAuthReady(timeoutMs = 15000) {
-      if (auth.currentUser) { await syncServerSession(core).catch(() => null); return auth.currentUser; }
-      const existingSession = await fetchServerSession(core).catch(() => null);
-      if (existingSession?.user?.uid) return { ...existingSession.user, sessionFallback: true };
+      if (auth.currentUser) return auth.currentUser;
       return new Promise((resolve, reject) => {
         let settled = false;
         let initialAuthSettled = false;
@@ -451,11 +305,8 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
         const timer = window.setTimeout(() => finish(reject, buildError('Oturum doğrulanamadı.', 'AUTH_TIMEOUT')), Math.max(1500, Number(timeoutMs) || 15000));
         unsub = authModule.onAuthStateChanged(auth, (user) => {
           initialAuthSettled = true;
-          if (user) { syncServerSession(core).catch(() => null); return finish(resolve, user); }
-          fetchServerSession(core).then((session) => {
-            if (session?.user?.uid) finish(resolve, { ...session.user, sessionFallback:true });
-            else finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
-          }).catch(() => finish(reject, buildError('Oturum bulunamadı.', 'NO_USER')));
+          if (user) return finish(resolve, user);
+          return finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
         }, (error) => finish(reject, buildError(error?.message || 'Oturum dinleyicisi başlatılamadı.', error?.code || 'AUTH_LISTENER_FAILED', { cause: error })));
         window.setTimeout(() => {
           if (!settled && initialAuthSettled && !auth.currentUser) finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
@@ -497,16 +348,13 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
     async createAuthedSocket(existingSocket = null, { authPayload = {}, transports = ['websocket', 'polling'], reconnection = true, reconnectionAttempts = 6, timeout = 6000, extraOptions = {} } = {}) {
       const base = await core.ensureApiBaseReady();
       const ioFactory = await core.ensureSocketClientReady();
-      const token = await core.getIdToken(true).catch(() => core.getIdToken(false).catch(() => ''));
-      if (token) await syncServerSession(core).catch(() => null);
-      else await fetchServerSession(core).catch(() => null);
+      const token = await core.getIdToken(true).catch(() => core.getIdToken(false));
       if (existingSocket) {
         try { existingSocket.removeAllListeners?.(); } catch (_) {}
         try { existingSocket.disconnect?.(); } catch (_) {}
       }
       return ioFactory(base, {
-        auth: { ...(token ? { token } : {}), ...authPayload },
-        withCredentials: true,
+        auth: { token, ...authPayload },
         transports,
         reconnection,
         reconnectionAttempts,
@@ -519,24 +367,12 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
   core.readServerSessionToken = readServerSessionToken;
   core.writeServerSessionToken = writeServerSessionToken;
   core.clearServerSessionToken = clearServerSessionToken;
-  core.fetchServerSession = (options = {}) => fetchServerSession(core, options);
-  core.syncServerSession = (options = {}) => syncServerSession(core, options);
-  core.clearServerSession = () => clearServerSession(core);
   runtime.auth = auth;
   runtime.signOut = core.signOut;
   runtime.getIdToken = core.getIdToken;
   runtime.apiBase = core.getApiBaseSync();
   runtime.firebaseBootError = '';
-  runtime.firebaseSdkMode = firebaseSdkMode;
-  runtime.firebaseSdkVersion = firebaseSdkVersion;
   window.__PLAYMATRIX_API_URL__ = runtime.apiBase;
   window.__PM_ONLINE_CORE__ = core;
-  try {
-    authModule.onAuthStateChanged(auth, (user) => {
-      if (user) syncServerSession(core).catch(() => null);
-      else fetchServerSession(core, { force:true }).catch(() => null);
-    });
-  } catch (_) {}
-  try { window.dispatchEvent(new CustomEvent('pm:online-core-ready', { detail: { degraded: false } })); } catch (_) {}
   return core;
 }

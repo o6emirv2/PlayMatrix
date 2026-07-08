@@ -10,8 +10,6 @@ const { requireAdminReauth, writeAdminAudit } = require('../core/adminReauthServ
 const { getWheelConfig, setWheelConfig } = require('../core/wheelRuntimeService');
 const { grantWheelRights, getWheelRights } = require('../core/wheelRightsService');
 const { recordRecentActivity } = require('../core/recentActivityService');
-const { normalizeMaintenanceGames } = require('../core/maintenanceService');
-const { parseDateOfBirth, calculateAge } = require('../core/ageGateService');
 
 const router = express.Router();
 const now = () => Date.now();
@@ -195,9 +193,6 @@ function publicUser(uid, data = {}) {
     email: data.email || '',
     username: data.username || data.displayName || data.fullName || uid,
     fullName: data.fullName || '',
-    dateOfBirth: data.dateOfBirth || '',
-    age: data.dateOfBirth ? calculateAge(data.dateOfBirth) : 0,
-    ageVerified: !!data.ageVerified,
     balance: Number(data.balance || 0),
     accountXp: progression.currentXp,
     accountLevel: progression.accountLevel,
@@ -270,9 +265,9 @@ async function incrementBalance(uid, amount, reason, req) {
     const current = Math.max(0, Number((snap.exists ? snap.data().balance : 0) || 0));
     if (safeAmount < 0 && current + safeAmount < 0) throw Object.assign(new Error('INSUFFICIENT_BALANCE'), { statusCode: 409, current });
     nextBalance = Math.max(0, current + safeAmount);
-    const ledgerRef = db.collection('ledger').doc(key);
+    const auditRef = db.collection('audit').doc(key);
     tx.set(userRef, { balance: nextBalance, updatedAt: now() }, { merge: true });
-    tx.set(ledgerRef, { uid, amount: safeAmount, reason, balanceAfter: nextBalance, actor: adminActor(req), operationType: 'admin-balance', type: 'admin-balance', idempotencyKey: key, createdAt: now(), at: now() }, { merge: true });
+    tx.set(auditRef, { uid, amount: safeAmount, reason, balanceAfter: nextBalance, actor: adminActor(req), type: 'admin-balance', at: now() }, { merge: true });
   });
   logAdmin(req, 'admin.balance.update', { uid, amount: safeAmount, reason, key, balanceAfter: nextBalance });
   return { ok: true, firestore: true, amount: safeAmount, balance: nextBalance };
@@ -391,8 +386,7 @@ router.get('/admin/games', (_req, res) => {
     { slug:'pisti', title:'Pişti', status:'online', backend:'/server/games/pisti/index.js', data:'room-card-validation' },
     { slug:'pattern-master', title:'Pattern Master', status:'online', backend:'/server/games/pattern-master/index.js', data:'score-xp-validation' },
     { slug:'space-pro', title:'Space Pro', status:'online', backend:'/server/games/space-pro/index.js', data:'score-xp-validation' },
-    { slug:'snake-pro', title:'Snake Pro', status:'online', backend:'/server/games/snake-pro/index.js', data:'score-xp-validation' },
-    { slug:'matrix-siege', title:'Matrix Siege: Mini Ordu', status:'online', backend:'/server/games/matrix-siege/index.js', data:'deterministic-replay-xp-validation' }
+    { slug:'snake-pro', title:'Snake Pro', status:'online', backend:'/server/games/snake-pro/index.js', data:'score-xp-validation' }
   ] });
 });
 
@@ -581,11 +575,30 @@ async function resolveResetDocs({ scope = 'all', identifiers = [], excludeTestUs
   return { docs: [...docMap.values()], firestore: true };
 }
 
-function normalizeMaintenancePayload(body = {}) { return normalizeMaintenanceGames(body); }
+function normalizeMaintenancePayload(body = {}) {
+  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
+  const out = {};
+  keys.forEach((key) => { out[key] = !!body[key]; });
+  return out;
+}
 
 function currentMaintenance() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
-  return normalizeMaintenanceGames(stored?.games || stored || {});
+  const games = stored?.games || stored || {};
+  return {
+    general: !!games.general,
+    system: !!games.system,
+    crash: !!games.crash,
+    chess: !!games.chess,
+    pisti: !!games.pisti,
+    classic: !!games.classic,
+    'pattern-master': !!games['pattern-master'],
+    'space-pro': !!games['space-pro'],
+    'snake-pro': !!games['snake-pro'],
+    market: !!games.market,
+    wheel: !!games.wheel,
+    promo: !!games.promo
+  };
 }
 
 async function currentMaintenanceAsync({ force = false } = {}) {
@@ -617,9 +630,9 @@ async function rewardAllUsers({ amount, reason, req, limit = 5000 }) {
   for (let i = 0; i < docs.length; i += 240) {
     const batch = db.batch();
     docs.slice(i, i + 240).forEach((doc) => {
-      const ledgerRef = db.collection('ledger').doc(`admin_reward_all_${doc.id}_${crypto.randomUUID()}`);
+      const auditRef = db.collection('audit').doc(`admin_reward_all_${doc.id}_${crypto.randomUUID()}`);
       batch.set(doc.ref, { balance: admin.firestore.FieldValue.increment(amount), updatedAt: now() }, { merge: true });
-      batch.set(ledgerRef, { uid: doc.id, amount, reason, operationType: 'admin-reward-all', type: 'admin-reward-all', actor: adminActor(req), createdAt: now(), at: now() }, { merge: true });
+      batch.set(auditRef, { uid: doc.id, amount, reason, type: 'admin-reward-all', actor: adminActor(req), at: now() }, { merge: true });
       affected += 1;
     });
     await batch.commit();
@@ -665,17 +678,6 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
   if (body.fullName !== undefined) patch.fullName = safe(body.fullName, 120);
   if (body.firstName !== undefined) patch.firstName = safe(body.firstName, 60);
   if (body.lastName !== undefined) patch.lastName = safe(body.lastName, 60);
-  if (body.dateOfBirth !== undefined) {
-    const dob = parseDateOfBirth(body.dateOfBirth);
-    if (!dob.ok) return res.status(400).json({ ok:false, error:dob.code || 'INVALID_DATE_OF_BIRTH', code:dob.code || 'INVALID_DATE_OF_BIRTH', message:'' });
-    if (!dob.ageVerified) return res.status(400).json({ ok:false, error:'AGE_RESTRICTED', code:'AGE_RESTRICTED', message:'' });
-    patch.dateOfBirth = dob.dateOfBirth;
-    patch.ageVerified = true;
-    patch.ageLocked = false;
-    patch.accountLocked = false;
-    patch.ageVerifiedAt = now();
-    patch.ageLockedReason = '';
-  }
   if (body.balance !== undefined) patch.balance = nonNegativeMoney(body.balance);
   if (body.accountLevel !== undefined) {
     const level = Math.max(1, Math.min(100, Math.trunc(Number(body.accountLevel) || 1)));
@@ -727,15 +729,15 @@ router.get('/admin/matrix/dashboard', async (req, res) => {
     } catch (error) { logAdmin(req, 'admin.matrix.dashboard.users.error', { message: error.message }); }
     try {
       const since = now() - 24 * 3600000;
-      const ledger = await db.collection('ledger').where('at', '>=', since).limit(800).get();
-      ledger.forEach((doc) => {
+      const audit = await db.collection('audit').where('at', '>=', since).limit(800).get();
+      audit.forEach((doc) => {
         const d = doc.data() || {};
         const amount = Number(d.amount || 0) || 0;
         dailyMcSpend += Math.abs(amount);
         if (amount < 0) dailyMcInflow += Math.abs(amount);
         if (amount > 0) dailyMcOutflow += amount;
       });
-    } catch (error) { logAdmin(req, 'admin.matrix.dashboard.ledger.error', { message: error.message }); }
+    } catch (error) { logAdmin(req, 'admin.matrix.dashboard.audit.error', { message: error.message }); }
   }
   try {
     openRoomCount = runtimeStore.rooms.size()
@@ -784,7 +786,7 @@ router.get('/admin/matrix/issues', (_req, res) => {
     if ((status === 401 || status === 403) && text.includes('/api/me')) continue;
     if (/low-value-client-noise|expected-session-check|low-value-ui-noise|expected-game-flow|maintenance-api-noise/.test(text)) continue;
     if (/data-pm-action|home\.promise_rejection|classic\.start|classic\.submit/.test(text) && !/typeerror|referenceerror|syntaxerror|cannot read|is not a function|undefined is not/.test(text)) continue;
-    if (status === 503 && /\/api\/(?:v1\/)?(crash|chess|pisti|games\/)/.test(text) && /maintenance|bakım|game_maintenance/.test(text)) continue;
+    if (status === 503 && /\/api\/(crash|chess|pisti|games\/)/.test(text) && /maintenance|bakım|game_maintenance/.test(text)) continue;
     if (status === 409 && /\/api\/chess\/(draw|create|join|move|resign|leave)/.test(text)) continue;
     const key = [item.game || 'system', item.scope || item.event || '', item.path || item.endpoint || '', status, item.message || item.error || ''].join('|').slice(0, 500);
     if (seenIssueKeys.has(key)) continue;
@@ -792,8 +794,8 @@ router.get('/admin/matrix/issues', (_req, res) => {
     all.push(item);
     if (all.length >= 120) break;
   }
-  const GAME_AREAS = new Set(['home', 'crash', 'chess', 'pisti', 'snake-pro', 'space-pro', 'pattern-master', 'matrix-siege']);
-  const gameTitle = (game) => ({ home: 'AnaSayfa', crash: 'Crash', chess: 'Satranç', pisti: 'Pişti', 'snake-pro': 'Snake Pro', 'space-pro': 'Space Pro', 'pattern-master': 'Pattern Master', 'matrix-siege': 'Matrix Siege' }[String(game || '').toLowerCase()] || 'Sistem');
+  const GAME_AREAS = new Set(['home', 'crash', 'chess', 'pisti', 'snake-pro', 'space-pro', 'pattern-master']);
+  const gameTitle = (game) => ({ home: 'AnaSayfa', crash: 'Crash', chess: 'Satranç', pisti: 'Pişti', 'snake-pro': 'Snake Pro', 'space-pro': 'Space Pro', 'pattern-master': 'Pattern Master' }[String(game || '').toLowerCase()] || 'Sistem');
   const resolveIssueSolution = (x = {}, game = '', message = '', scope = '') => {
     const text = `${message} ${scope} ${x.path || ''} ${x.endpoint || ''} ${x.source || ''}`.toLowerCase();
     if (game === 'home' && text.includes('oturum bulunamadı')) return 'AnaSayfa private widget oturum hazır olmadan çalışmamalı; auth state hazır değilse giriş gerekli görünümü gösterilmeli.';
@@ -803,7 +805,6 @@ router.get('/admin/matrix/issues', (_req, res) => {
     if (game === 'chess') return 'Satranç room stateVersion, socket ACK, hamle payload ve backend oda durumu birlikte kontrol edilmeli.';
     if (game === 'pisti') return 'Pişti lobby/state/socket, masa lifecycle, oyuncu schema ve ekonomi transaction akışı birlikte kontrol edilmeli.';
     if (['snake-pro', 'space-pro', 'pattern-master'].includes(game)) return 'Klasik oyun start/submit runId sözleşmesi, skor sınırı, XP sonucu ve frontend endpoint akışı birlikte kontrol edilmeli.';
-    if (game === 'matrix-siege') return 'Matrix Siege seed, nonce, event timeline, deterministic replay, Redis run state ve XP sonucu birlikte kontrol edilmeli.';
     return 'Sistem kaydı kaynak, endpoint, status ve güvenli stack bilgisiyle ayrıca incelenmeli.';
   };
   const normalizeIssue = (x = {}) => {

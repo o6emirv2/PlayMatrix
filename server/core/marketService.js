@@ -528,9 +528,9 @@ async function purchaseItem({ uid, itemId, idempotencyKey = '' }) {
       tx.set(userRef, { balance, updatedAt: now() }, { merge: true });
       tx.set(ownershipRef, purchase, { merge: true });
       if (liveStock !== null) tx.set(itemRef, { ...liveItem, stock: liveStock - 1, updatedAt: now() }, { merge: true });
-      const ledgerId = `ledger_${crypto.randomUUID()}`;
-      tx.set(db.collection('ledger').doc(ledgerId), { uid, operationType: `market:${liveItem.id}`, type: 'market-purchase', amount: -liveItem.price, balanceAfter: balance, idempotencyKey: key, createdAt: now(), at: now() }, { merge: false });
-      output = { ok: true, item: { ...liveItem, owned: true }, balance, purchase: { itemId: liveItem.id, price: liveItem.price }, ledgerId };
+      const auditId = `market_${crypto.randomUUID()}`;
+      tx.set(db.collection('audit').doc(auditId), { uid, amount: -liveItem.price, reason: `market:${liveItem.id}`, balanceAfter: balance, metadata: { itemId: liveItem.id, category: liveItem.category }, at: now() }, { merge: false });
+      output = { ok: true, item: { ...liveItem, owned: true }, balance, purchase: { itemId: liveItem.id, price: liveItem.price }, auditId };
       tx.set(idemRef, { key, type: 'market-purchase', uid, itemId: liveItem.id, createdAt: now(), result: output }, { merge: false });
     });
     if (!output?.ok) return output || { ok: false, error: 'MARKET_PURCHASE_FAILED' };

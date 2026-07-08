@@ -1,6 +1,5 @@
 const express = require('express');
 const { requireAuth } = require('../core/security');
-const { requireAgeGate } = require('../core/ageGateService');
 const { creditBalance } = require('../core/economyService');
 const { runtimeStore } = require('../core/runtimeStore');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
@@ -234,7 +233,7 @@ router.get('/wheel/recent-winners', (_req, res) => {
   res.json({ ok: true, memoryOnly: true, items: recentPayload(20) });
 });
 
-router.get('/wheel/status', requireAuth, requireAgeGate, async (req, res) => {
+router.get('/wheel/status', requireAuth, async (req, res) => {
   const config = await getWheelConfig();
   const uid = req.user.uid;
   const day = istanbulDayKey();
@@ -246,7 +245,7 @@ router.get('/wheel/status', requireAuth, requireAgeGate, async (req, res) => {
   res.json({ ok: true, memoryOnly: claimState.source !== 'firestore', enabled: active, active, claimed, extraRights, canSpin: active && (!claimed || extraRights > 0), day, reset: '00:00', resetTimezone: 'Europe/Istanbul' });
 });
 
-router.post('/wheel/spin', requireAuth, requireAgeGate, async (req, res) => {
+router.post('/wheel/spin', requireAuth, async (req, res) => {
   const config = await getWheelConfig();
   if (config.active === false) return res.status(503).json({ ok: false, error: 'WHEEL_OFFLINE' });
   if (!isEmailVerified(req.user)) return res.status(403).json({ ok: false, error: 'EMAIL_VERIFICATION_REQUIRED' });

@@ -58,7 +58,7 @@ function panelTemplate() {
           <div class="maintenance-modal-header">
             <div class="maintenance-heading-copy">
               <h2 id="maintenancePanelTitle">BAKIM MODU</h2>
-              <p class="lead">Crash, Satranç, Pişti, Matrix Siege ve tüm servis bakım durumlarını kalıcı config ile yönet. Kaydedilen alan kullanıcı tarafında kesin kapanır; bakım kapatıldığında yeniden erişime açılır.</p>
+              <p class="lead">Crash, Satranç, Pişti ve tüm servis bakım durumlarını kalıcı config ile yönet. Kaydedilen alan kullanıcı tarafında kesin kapanır; bakım kapatıldığında yeniden erişime açılır.</p>
             </div>
             <span class="maintenance-live-badge">CANLI KONTROL</span>
           </div>
@@ -84,11 +84,18 @@ function panelTemplate() {
         </div>
         <div class="crash-control-summary" id="crashRiskSummary">Kontrol bilgileri hazırlanıyor.</div>
         <div class="field-grid">
-          <div class="field pm-admin-grid-span-all"><label for="crashAdminRiskLimitInput">Crash Max / Admin Risk Limit (MC)</label><input id="crashAdminRiskLimitInput" type="number" min="1" step="1" placeholder="100000000" /></div>
+          <div class="field"><label for="nextCrashPointInput">Crash Çarpanı</label><input id="nextCrashPointInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Örn: 2.50 veya 2,50" /></div>
+          <div class="field"><label for="crashAdminRiskLimitInput">Crash Max / Admin Risk Limit (MC)</label><input id="crashAdminRiskLimitInput" type="number" min="1" step="1" placeholder="1000000" /></div>
+          <div class="field pm-admin-grid-span-all"><label for="futureCrashPointsInput">Gelecek 1-100 El Çarpanı</label><textarea id="futureCrashPointsInput" placeholder="Örn: 1.30, 2.50, 10.00 — en fazla 100 değer"></textarea></div>
         </div>
-        <div class="crash-control-hint" id="crashControlHint">Tekil aktif, sonraki veya gelecek round çarpanı manuel belirlenemez. Yalnızca güvenli risk aralıkları ve hard risk limiti yönetilebilir.</div>
+        <div class="crash-control-hint" id="crashControlHint">Aktif geri sayım butonu yalnızca round COUNTDOWN aşamasındayken çalışır. Uçuş başladıysa sonraki round butonunu kullan.</div>
         <div class="action-row">
-          <button id="saveCrashRiskLimitBtn" class="warn" type="button">CRASH MAX LİMİTİ KAYDET</button>
+          <button id="setCurrentCrashPointBtn" type="button" disabled>AKTİF GERİ SAYIM ROUNDUNA UYGULA</button>
+          <button id="setNextCrashPointBtn" type="button" disabled>SONRAKİ ROUND İÇİN KAYDET</button>
+          <button id="clearNextCrashPointBtn" class="ghost" type="button" disabled>ÇARPAN OVERRIDE TEMİZLE</button>
+          <button id="saveFutureCrashPointsBtn" type="button" disabled>GELECEK 1-100 ELİ KAYDET</button>
+          <button id="clearFutureCrashPointsBtn" class="ghost" type="button" disabled>GELECEK EL LİSTESİNİ TEMİZLE</button>
+          <button id="saveCrashRiskLimitBtn" class="warn" type="button" disabled>CRASH MAX LİMİTİ KAYDET</button>
         </div>
         <div class="table-wrap crash-risk-table-wrap"><table class="crash-risk-table"><thead><tr><th>Min</th><th>Max</th><th>Ağırlık</th></tr></thead><tbody id="crashRiskRows"></tbody></table></div>
         <div class="action-row">
@@ -97,39 +104,6 @@ function panelTemplate() {
         </div>
       </section>
 
-
-      <section class="panel stack" id="matrixSiegeAdminPanel">
-        <div>
-          <h2>MATRIX SIEGE KONTROL MERKEZİ</h2>
-          <p class="lead">Enerji, XP ve config sürümünü yönet. Tekil maç sonucu, seed veya düşman davranışı değiştirilemez.</p>
-        </div>
-        <div class="summary-strip" id="matrixSiegeSummary"></div>
-        <div class="field-grid">
-          <div class="field"><label for="matrixSiegeEnergyStart">Başlangıç Enerjisi</label><input id="matrixSiegeEnergyStart" type="number" min="0" max="10" step="0.1" /></div>
-          <div class="field"><label for="matrixSiegeEnergyMax">Maksimum Enerji</label><input id="matrixSiegeEnergyMax" type="number" min="5" max="20" step="0.1" /></div>
-          <div class="field"><label for="matrixSiegeEnergyRegen">Enerji / Saniye</label><input id="matrixSiegeEnergyRegen" type="number" min="0.2" max="5" step="0.1" /></div>
-          <div class="field"><label for="matrixSiegeXpBase">Zafer Baz XP</label><input id="matrixSiegeXpBase" type="number" min="0" max="1000" step="1" /></div>
-          <div class="field"><label for="matrixSiegeXpStar">Yıldız Başına XP</label><input id="matrixSiegeXpStar" type="number" min="0" max="400" step="1" /></div>
-          <div class="field"><label for="matrixSiegeXpBoss">Boss Bonus XP</label><input id="matrixSiegeXpBoss" type="number" min="0" max="500" step="1" /></div>
-          <div class="field"><label for="matrixSiegeMaxUnits">Sahadaki Maksimum Birlik</label><input id="matrixSiegeMaxUnits" type="number" min="20" max="100" step="1" /></div>
-          <div class="field"><label for="matrixSiegeCrystalBase">Zafer Baz Kristal</label><input id="matrixSiegeCrystalBase" type="number" min="0" max="10000" step="1" /></div>
-          <div class="field"><label for="matrixSiegeCrystalStar">Yıldız Başına Kristal</label><input id="matrixSiegeCrystalStar" type="number" min="0" max="5000" step="1" /></div>
-          <div class="field"><label for="matrixSiegeCrystalBoss">Boss Bonus Kristal</label><input id="matrixSiegeCrystalBoss" type="number" min="0" max="10000" step="1" /></div>
-        </div>
-        <details class="stack">
-          <summary>Gelişmiş Savaş Config Alanları</summary>
-          <div class="field-grid">
-            <div class="field pm-admin-grid-span-all"><label for="matrixSiegePlayerUnitsJson">Oyuncu Birlikleri JSON</label><textarea id="matrixSiegePlayerUnitsJson" rows="12" spellcheck="false"></textarea></div>
-            <div class="field pm-admin-grid-span-all"><label for="matrixSiegeEnemyUnitsJson">Düşman Birlikleri JSON</label><textarea id="matrixSiegeEnemyUnitsJson" rows="12" spellcheck="false"></textarea></div>
-            <div class="field pm-admin-grid-span-all"><label for="matrixSiegeBossesJson">Bosslar JSON</label><textarea id="matrixSiegeBossesJson" rows="8" spellcheck="false"></textarea></div>
-            <div class="field pm-admin-grid-span-all"><label for="matrixSiegeMissionsJson">Günlük Görevler JSON</label><textarea id="matrixSiegeMissionsJson" rows="12" spellcheck="false"></textarea></div>
-            <div class="field pm-admin-grid-span-all"><label for="matrixSiegeStagesJson">20 Bölüm / Düşman Dalgaları JSON</label><textarea id="matrixSiegeStagesJson" rows="18" spellcheck="false"></textarea></div>
-          </div>
-        </details>
-        <div class="crash-control-hint">Yayınlanan her ayar yeni config sürümü oluşturur. Aktif maçlar başladıkları sürümle tamamlanır. Birlik kimlikleri, görev türleri, dünya ve boss bölüm kimlikleri backend tarafından korunur.</div>
-        <div class="action-row"><button id="reloadMatrixSiegeConfigBtn" class="ghost" type="button">AYARI YENİLE</button><button id="saveMatrixSiegeConfigBtn" type="button">YENİ SÜRÜM YAYINLA</button></div>
-        <div id="matrixSiegeStatus" class="status" hidden></div>
-      </section>
 
       <section class="panel stack" id="wheelAdminPanel">
         <div>
@@ -389,7 +363,6 @@ const MAINTENANCE_HELP = Object.freeze({
   'pattern-master': 'Pattern Master tekil bakım durumu.',
   'space-pro': 'Space Pro tekil bakım durumu.',
   'snake-pro': 'Snake Pro tekil bakım durumu.',
-  'matrix-siege': 'Matrix Siege: Mini Ordu tekil bakım durumu.',
   market: 'Market modalı ve market API istekleri kapatılır.',
   wheel: 'Günlük Çark modalı ve çark API istekleri kapatılır.',
   promo: 'Promosyon Kodu modalı ve promo API istekleri kapatılır.'
@@ -412,8 +385,7 @@ const MAINTENANCE_ENTRIES = Object.freeze([
   ['classic', 'KLASİK OYUNLAR'],
   ['pattern-master', 'PATTERN MASTER'],
   ['space-pro', 'SPACE PRO'],
-  ['snake-pro', 'SNAKE PRO'],
-  ['matrix-siege', 'MATRIX SIEGE']
+  ['snake-pro', 'SNAKE PRO']
 ]);
 
 function buildMaintenanceButton(key, label, enabled) {
@@ -560,11 +532,27 @@ function crashConfirmIsValid() {
   return true;
 }
 
-function updateCrashControlButtons() {
-  const limitBtn = document.getElementById('saveCrashRiskLimitBtn');
-  if (limitBtn) limitBtn.disabled = false;
+function updateCrashControlButtons(payload = null) {
+  const confirmed = true;
+  const phase = String(payload?.phase || document.getElementById('crashRiskSummary')?.dataset.phase || '').toUpperCase();
+  const currentBtn = document.getElementById('setCurrentCrashPointBtn');
+  const nextBtn = document.getElementById('setNextCrashPointBtn');
+  const clearBtn = document.getElementById('clearNextCrashPointBtn');
   const hint = document.getElementById('crashControlHint');
-  if (hint) hint.textContent = 'Tekil round çarpanı manuel belirlenemez. Risk motoru yalnızca kayıtlı aralık ve ağırlıklardan güvenli seçim yapar.';
+  if (currentBtn) {
+    currentBtn.disabled = !confirmed || phase !== 'COUNTDOWN';
+    currentBtn.title = phase === 'COUNTDOWN' ? 'Aktif geri sayım roundunun crash çarpanını ayarlar.' : 'Aktif round uçuşta/patlamışsa mevcut round değiştirilemez.';
+  }
+  if (nextBtn) nextBtn.disabled = !confirmed;
+  if (clearBtn) clearBtn.disabled = !confirmed;
+  const limitBtn = document.getElementById('saveCrashRiskLimitBtn');
+  if (limitBtn) limitBtn.disabled = !confirmed;
+  if (hint) {
+    const stateText = phase === 'COUNTDOWN'
+      ? 'Aktif round geri sayımda: aktif rounda çarpan uygulanabilir.'
+      : 'Aktif round kilitli veya henüz yok: sonraki round override kullanılmalıdır.';
+    hint.textContent = stateText;
+  }
 }
 
 function formatCrashValidationDetails(error) {
@@ -580,11 +568,18 @@ function renderCrashRiskPanel(payload = {}) {
   const summary = document.getElementById('crashRiskSummary');
   if (summary) {
     const phase = String(payload.phase || '—');
+    const appliesTo = payload.overrideAppliesTo === 'current_countdown_round'
+      ? 'Aktif geri sayım roundu değiştirilebilir'
+      : 'Aktif round kilitli; değişiklik sonraki rounda uygulanır';
     const activePoint = payload.currentRoundCrashPoint ? ` · Aktif crash: ${formatMultiplier(payload.currentRoundCrashPoint)}` : '';
-    const locked = payload.activeRoundLocked ? ' · Round kilitli' : '';
+    const locked = payload.activeRoundLocked ? ' · Kilitli' : '';
     summary.dataset.phase = phase;
-    summary.textContent = `Durum: ${phase} · Round: ${payload.roundId || '—'} · Anlık: ${formatMultiplier(payload.multiplier)}${activePoint}${locked} · Manuel çarpan müdahalesi kapalı`;
+    summary.textContent = `Durum: ${phase} · Round: ${payload.roundId || '—'} · Anlık: ${formatMultiplier(payload.multiplier)}${activePoint} · Bekleyen override: ${formatMultiplier(payload.nextCrashPointOverride)} · Gelecek el: ${Number(payload.futureCrashPointCount || 0)} adet · ${appliesTo}${locked}`;
   }
+  const nextInput = document.getElementById('nextCrashPointInput');
+  if (nextInput && Number(payload.nextCrashPointOverride || 0) > 0 && !nextInput.value) nextInput.value = Number(payload.nextCrashPointOverride).toFixed(2);
+  const futureInput = document.getElementById('futureCrashPointsInput');
+  if (futureInput && Array.isArray(payload.futureCrashPoints) && !futureInput.value) futureInput.value = payload.futureCrashPoints.map((v) => Number(v).toFixed(2)).join(', ');
   const riskLimitInput = document.getElementById('crashAdminRiskLimitInput');
   if (riskLimitInput) riskLimitInput.value = String(payload.adminRiskBetLimit || payload.riskBetLimit || 1000000);
   updateCrashControlButtons(payload);
@@ -1127,7 +1122,6 @@ function buildUserInfoPanel() {
         <div class="field"><label for="userInfoEmailVerified">E-posta Durumu</label><select id="userInfoEmailVerified"><option value="true">Doğrulanmış</option><option value="false">Doğrulanmamış</option></select></div>
         <div class="field"><label for="userInfoUsername">Kullanıcı Adı</label><input id="userInfoUsername" type="text" autocomplete="off" /></div>
         <div class="field"><label for="userInfoFullName">Ad Soyad</label><input id="userInfoFullName" type="text" autocomplete="off" /></div>
-        <div class="field"><label for="userInfoDateOfBirth">Doğum Tarihi</label><input id="userInfoDateOfBirth" type="date" autocomplete="off" /><small>Bu alan yalnızca admin reauth ile değiştirilebilir. 16+ doğrulaması zorunludur.</small></div>
         <div class="field"><label for="userInfoBalance">MC Bakiye</label><input id="userInfoBalance" type="number" step="1" /></div>
         <div class="field"><label for="userInfoLevel">Seviye</label><input id="userInfoLevel" type="number" min="1" max="100" step="1" /></div>
         <div class="field"><label for="userInfoXp">XP</label><input id="userInfoXp" type="number" min="0" step="1" /></div>
@@ -1153,15 +1147,14 @@ function fillUserInfoForm(payload = {}) {
   if (save) save.disabled = false;
   if (current) current.textContent = `UID: ${payload.uid || user.uid || '—'} • ${user.email || 'e-posta yok'} • Seviye ${user.accountLevel || 1}`;
   const set = (id, value) => { const node = document.getElementById(id); if (node) node.value = value ?? ''; };
-  const raw = payload.raw || {};
   set('userInfoEmail', user.email || '');
   set('userInfoEmailVerified', String(!!user.emailVerified));
   set('userInfoUsername', user.username || '');
   set('userInfoFullName', user.fullName || '');
-  set('userInfoDateOfBirth', user.dateOfBirth || raw.dateOfBirth || '');
   set('userInfoBalance', Number(user.balance || 0));
   set('userInfoLevel', Number(user.accountLevel || 1));
   set('userInfoXp', Number(user.accountXp || 0));
+  const raw = payload.raw || {};
   const tickets = raw.gameTickets || {};
   set('userInfoFrame', Number(user.selectedFrame || 0));
   set('userInfoExtraWheelRights', Number(raw.extraWheelRights || raw.wheelExtraRights || raw.wheelRights || raw.wheelBonusRights?.count || 0));
@@ -1179,7 +1172,6 @@ function renderUserInfoDeep(payload = {}) {
   const raw = payload.raw || payload.user || {};
   const pairs = [
     ['UID', payload.uid || raw.uid || '—'],
-    ['Doğum Tarihi / Yaş', raw.dateOfBirth ? `${raw.dateOfBirth} / ${raw.age || '—'}` : 'Kayıtlı değil'],
     ['Market Envanteri', Object.keys(raw.inventory || raw.marketInventory || raw.marketItems || {}).length || 'Yok'],
     ['Aktif Ürünler', [raw.activeFrameId || raw.marketFrameId || raw.selectedFrame, raw.activeBadgeId, raw.nameEffectId].filter(Boolean).join(' / ') || 'Yok'],
     ['Promo Geçmişi', Object.keys(raw.promoClaims || raw.usedPromos || {}).length || 'Yok'],
@@ -1249,7 +1241,6 @@ async function saveUserInfoPanel() {
     emailVerified: document.getElementById('userInfoEmailVerified')?.value === 'true',
     username: document.getElementById('userInfoUsername')?.value.trim(),
     fullName: document.getElementById('userInfoFullName')?.value.trim(),
-    dateOfBirth: document.getElementById('userInfoDateOfBirth')?.value.trim(),
     balance: Number(document.getElementById('userInfoBalance')?.value || 0),
     accountLevel: Number(document.getElementById('userInfoLevel')?.value || 1),
     accountXp: Number(document.getElementById('userInfoXp')?.value || 0),
@@ -1276,7 +1267,6 @@ const ADMIN_MODAL_DEFS = Object.freeze([
   ['reset', 'fa-rotate-left', 'Toplu Durum Sıfırlama'],
   ['maintenance', 'fa-screwdriver-wrench', 'Bakım Modu'],
   ['crash', 'fa-chart-line', 'Crash Kontrolü'],
-  ['matrixSiege', 'fa-shield-halved', 'Matrix Siege Kontrolü'],
   ['wheel', 'fa-dharmachakra', 'Çark Kontrolü'],
   ['market', 'fa-store', 'Market Kontrolü'],
   ['restrict', 'fa-user-lock', 'Kullanıcı Kısıtlama'],
@@ -1334,7 +1324,6 @@ function installAdminModalSystem() {
   const resetPanel = layoutHero?.querySelector('section:nth-child(1)');
   const maintenancePanel = layoutHero?.querySelector('section:nth-child(2)');
   const crashPanel = app.querySelector('.crash-control-panel');
-  const matrixSiegePanel = app.querySelector('#matrixSiegeAdminPanel');
   const wheelPanel = app.querySelector('#wheelAdminPanel');
   const marketPanel = app.querySelector('#marketAdminPanel');
   const grid3 = app.querySelector('.layout-grid-3');
@@ -1345,10 +1334,9 @@ function installAdminModalSystem() {
   const issuesPanel = Array.from(app.querySelectorAll('section.panel')).find((s) => s.querySelector('#gameIssueList') || s.querySelector('#systemIssueList'));
   const userInfoPanel = buildUserInfoPanel();
   app.appendChild(userInfoPanel);
-  const entries = { reset: resetPanel, maintenance: maintenancePanel, crash: crashPanel, matrixSiege: matrixSiegePanel, wheel: wheelPanel, market: marketPanel, restrict: restrictPanel, reward: rewardPanel, rewardAll: rewardAllPanel, promo: promoPanel, userInfo: userInfoPanel, issues: issuesPanel };
+  const entries = { reset: resetPanel, maintenance: maintenancePanel, crash: crashPanel, wheel: wheelPanel, market: marketPanel, restrict: restrictPanel, reward: rewardPanel, rewardAll: rewardAllPanel, promo: promoPanel, userInfo: userInfoPanel, issues: issuesPanel };
   injectNotificationControl(resetPanel, 'reset', false);
   injectNotificationControl(maintenancePanel, 'maintenance', false);
-  injectNotificationControl(matrixSiegePanel, 'matrixSiege', false);
   injectNotificationControl(wheelPanel, 'wheel', false);
   injectNotificationControl(marketPanel, 'market', true);
   injectNotificationControl(restrictPanel, 'restrict', true);
@@ -1385,79 +1373,6 @@ function closeAdminPanelModal() {
   adminModalOverlay.classList.remove('is-open');
   adminModalOverlay.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('admin-modal-lock');
-}
-
-let matrixSiegeAdminConfig = null;
-function renderMatrixSiegeAdminConfig(config = {}) {
-  matrixSiegeAdminConfig = config;
-  const setValue = (id, value) => { const node = document.getElementById(id); if (node) node.value = String(value ?? ''); };
-  setValue('matrixSiegeEnergyStart', config.energy?.start ?? 3);
-  setValue('matrixSiegeEnergyMax', config.energy?.max ?? 10);
-  setValue('matrixSiegeEnergyRegen', config.energy?.regenPerSecond ?? 1);
-  setValue('matrixSiegeXpBase', config.xp?.baseWin ?? 180);
-  setValue('matrixSiegeXpStar', config.xp?.perStar ?? 120);
-  setValue('matrixSiegeXpBoss', config.xp?.bossBonus ?? 160);
-  setValue('matrixSiegeMaxUnits', config.maxUnitsOnField ?? 56);
-  setValue('matrixSiegeCrystalBase', config.crystals?.baseWin ?? 18);
-  setValue('matrixSiegeCrystalStar', config.crystals?.perStar ?? 6);
-  setValue('matrixSiegeCrystalBoss', config.crystals?.bossBonus ?? 15);
-  setValue('matrixSiegePlayerUnitsJson', JSON.stringify(config.playerUnits || [], null, 2));
-  setValue('matrixSiegeEnemyUnitsJson', JSON.stringify(config.enemyUnits || [], null, 2));
-  setValue('matrixSiegeBossesJson', JSON.stringify(config.bosses || [], null, 2));
-  setValue('matrixSiegeMissionsJson', JSON.stringify(config.missions || [], null, 2));
-  setValue('matrixSiegeStagesJson', JSON.stringify(config.stages || [], null, 2));
-  const summary = document.getElementById('matrixSiegeSummary');
-  if (summary) replaceWithChildren(summary, [
-    buildMetricCard('Config Sürümü', String(config.version || 1)),
-    buildMetricCard('Bölüm', String(config.stages?.length || 20)),
-    buildMetricCard('Oyuncu Birliği', String(config.playerUnits?.length || 5)),
-    buildMetricCard('Görev', String(config.missions?.length || 10)),
-    buildMetricCard('Düşman / Boss', `${config.enemyUnits?.length || 5} / ${config.bosses?.length || 2}`)
-  ]);
-}
-async function loadMatrixSiegeAdminConfig() {
-  try { const payload = await adminFetch('/api/v1/games/matrix-siege/admin/config'); renderMatrixSiegeAdminConfig(payload?.data || payload); }
-  catch (error) { setStatus('matrixSiegeStatus', error.message || 'Matrix Siege ayarları yüklenemedi.', 'error'); }
-}
-function parseMatrixSiegeJson(id, label) {
-  const raw = String(document.getElementById(id)?.value || '').trim();
-  try {
-    const parsed = JSON.parse(raw || '[]');
-    if (!Array.isArray(parsed)) throw new Error('ARRAY_REQUIRED');
-    return parsed;
-  } catch (_) {
-    throw new Error(`${label} geçerli bir JSON dizisi olmalı.`);
-  }
-}
-async function saveMatrixSiegeAdminConfig() {
-  const config = {
-    maxUnitsOnField: Number(document.getElementById('matrixSiegeMaxUnits')?.value || 56),
-    energy: {
-      start: Number(document.getElementById('matrixSiegeEnergyStart')?.value || 3),
-      max: Number(document.getElementById('matrixSiegeEnergyMax')?.value || 10),
-      regenPerSecond: Number(document.getElementById('matrixSiegeEnergyRegen')?.value || 1)
-    },
-    xp: {
-      maxPerRun: 1000,
-      baseWin: Number(document.getElementById('matrixSiegeXpBase')?.value || 180),
-      perStar: Number(document.getElementById('matrixSiegeXpStar')?.value || 120),
-      bossBonus: Number(document.getElementById('matrixSiegeXpBoss')?.value || 160)
-    },
-    crystals: {
-      baseWin: Number(document.getElementById('matrixSiegeCrystalBase')?.value || 18),
-      perStar: Number(document.getElementById('matrixSiegeCrystalStar')?.value || 6),
-      bossBonus: Number(document.getElementById('matrixSiegeCrystalBoss')?.value || 15)
-    },
-    playerUnits: parseMatrixSiegeJson('matrixSiegePlayerUnitsJson', 'Oyuncu birlikleri'),
-    enemyUnits: parseMatrixSiegeJson('matrixSiegeEnemyUnitsJson', 'Düşman birlikleri'),
-    bosses: parseMatrixSiegeJson('matrixSiegeBossesJson', 'Bosslar'),
-    missions: parseMatrixSiegeJson('matrixSiegeMissionsJson', 'Görevler'),
-    stages: parseMatrixSiegeJson('matrixSiegeStagesJson', 'Bölümler')
-  };
-  const payload = await adminFetch('/api/v1/games/matrix-siege/admin/config', { method: 'PATCH', body: JSON.stringify({ config }) });
-  const saved = payload?.data || payload;
-  renderMatrixSiegeAdminConfig(saved);
-  setStatus('matrixSiegeStatus', `Matrix Siege config v${saved.version || 1} yayınlandı.`, 'ok');
 }
 
 async function loadDashboard() {
@@ -1528,7 +1443,6 @@ async function loadDashboard() {
     ]);
   }), 'Kritik hata kaydı yok.', 3);
   await loadCrashRiskPanel();
-  await loadMatrixSiegeAdminConfig();
   await loadWheelAdminConfig();
   await loadMarketAdminPanel();
 }
@@ -1712,7 +1626,42 @@ async function handleAction(action) {
       requireCrashRiskConfirm();
       const payload = await adminFetch('/api/crash/admin/risk-table', { method: 'POST', body: JSON.stringify({ resetDefault: true }) });
       renderCrashRiskPanel(payload || {});
-      setStatus('crashRiskStatus', 'Varsayılan Crash risk tablosu yüklendi.', 'ok');
+      setStatus('crashRiskStatus', payload.overrideCleared ? 'Varsayılan Crash risk tablosu yüklendi ve bekleyen override temizlendi.' : 'Varsayılan Crash risk tablosu yüklendi.', 'ok');
+      return;
+    }
+    if (action === 'crash-current-set' || action === 'crash-next-set') {
+      requireCrashRiskConfirm();
+      const multiplier = parseDecimalInput(document.getElementById('nextCrashPointInput')?.value || 0);
+      if (!Number.isFinite(multiplier) || multiplier < 1.01 || multiplier > 10000) throw new Error('Çarpan 1.01 ile 10000 arasında olmalı. Virgül veya nokta kullanabilirsin.');
+      const target = action === 'crash-current-set' ? 'current_countdown_round' : 'next_created_round';
+      try {
+        const payload = await adminFetch('/api/crash/admin/next-crash-point', { method: 'POST', body: JSON.stringify({ multiplier, target }) });
+        setStatus('crashRiskStatus', payload.appliedTo === 'current_countdown_round'
+          ? `Aktif geri sayım roundu ${formatMultiplier(payload.selectedMultiplier)} olarak ayarlandı.`
+          : `Sonraki oluşturulacak round ${formatMultiplier(payload.selectedMultiplier || payload.nextCrashPointOverride)} olarak kaydedildi.`, 'ok');
+      } catch (error) {
+        setStatus('crashRiskStatus', formatCrashValidationDetails(error), 'error');
+      }
+      await loadCrashRiskPanel();
+      return;
+    }
+    if (action === 'crash-next-clear') {
+      requireCrashRiskConfirm();
+      await adminFetch('/api/crash/admin/next-crash-point', { method: 'DELETE' });
+      const nextInput = document.getElementById('nextCrashPointInput');
+      if (nextInput) nextInput.value = '';
+      setStatus('crashRiskStatus', 'Crash çarpan override temizlendi; aktif geri sayım varsa risk tablosundan yeni çarpan seçildi.', 'ok');
+      await loadCrashRiskPanel();
+      return;
+    }
+    if (action === 'crash-future-save') {
+      requireCrashRiskConfirm();
+      const text = document.getElementById('futureCrashPointsInput')?.value || '';
+      const points = String(text).split(/[\s,;|]+/).map(parseDecimalInput).filter((n) => Number.isFinite(n) && n >= 1.01 && n <= 10000).slice(0, 100);
+      if (!points.length) throw new Error('Gelecek el listesi için 1.01-10000 arasında en az 1 çarpan yaz.');
+      const payload = await adminFetch('/api/crash/admin/future-rounds', { method: 'POST', body: JSON.stringify({ points }) });
+      setStatus('crashRiskStatus', `Gelecek ${payload.futureCrashPointCount || points.length} Crash eli kaydedildi.`, 'ok');
+      await loadCrashRiskPanel();
       return;
     }
     if (action === 'crash-risk-limit-save') {
@@ -1722,9 +1671,18 @@ async function handleAction(action) {
       renderCrashRiskPanel(payload);
       return setStatus('crashRiskStatus', `Crash max/risk limit kaydedildi: ${money(payload.adminRiskBetLimit || payload.riskBetLimit || riskBetLimit)} MC`, 'success');
     }
+    if (action === 'crash-future-clear') {
+      requireCrashRiskConfirm();
+      await adminFetch('/api/crash/admin/future-rounds', { method: 'DELETE' });
+      const futureInput = document.getElementById('futureCrashPointsInput');
+      if (futureInput) futureInput.value = '';
+      setStatus('crashRiskStatus', 'Gelecek Crash el listesi temizlendi.', 'ok');
+      await loadCrashRiskPanel();
+      return;
+    }
   } catch (error) {
     const map = {
-      reset: 'resetStatus', 'save-maintenance': 'maintenanceStatus', 'reward-user': 'rewardStatus', 'reward-all': 'rewardAllStatus', 'promo-create': 'promoStatus', 'promo-delete': 'promoStatus', 'crash-risk-save': 'crashRiskStatus', 'crash-risk-reset': 'crashRiskStatus', 'crash-risk-limit-save': 'crashRiskStatus', 'user-info-save': 'userInfoStatus'
+      reset: 'resetStatus', 'save-maintenance': 'maintenanceStatus', 'reward-user': 'rewardStatus', 'reward-all': 'rewardAllStatus', 'promo-create': 'promoStatus', 'promo-delete': 'promoStatus', 'crash-risk-save': 'crashRiskStatus', 'crash-risk-reset': 'crashRiskStatus', 'crash-current-set': 'crashRiskStatus', 'crash-next-set': 'crashRiskStatus', 'crash-next-clear': 'crashRiskStatus', 'crash-future-save': 'crashRiskStatus', 'crash-future-clear': 'crashRiskStatus', 'crash-risk-limit-save': 'crashRiskStatus', 'user-info-save': 'userInfoStatus'
     };
     const statusId = map[action] || (action.startsWith('restrict:') ? 'restrictStatus' : 'maintenanceStatus');
     setStatus(statusId, error.message || 'İşlem başarısız.', 'error');
@@ -1761,9 +1719,12 @@ function handleDashboardClick(event) {
   if (button.dataset.promoDelete) return handleAction('promo-delete', button.dataset.promoDelete);
   if (button.id === 'saveCrashRiskBtn') return handleAction('crash-risk-save');
   if (button.id === 'resetCrashRiskBtn') return handleAction('crash-risk-reset');
+  if (button.id === 'setCurrentCrashPointBtn') return handleAction('crash-current-set');
+  if (button.id === 'setNextCrashPointBtn') return handleAction('crash-next-set');
+  if (button.id === 'clearNextCrashPointBtn') return handleAction('crash-next-clear');
+  if (button.id === 'saveFutureCrashPointsBtn') return handleAction('crash-future-save');
+  if (button.id === 'clearFutureCrashPointsBtn') return handleAction('crash-future-clear');
   if (button.id === 'saveCrashRiskLimitBtn') return handleAction('crash-risk-limit-save');
-  if (button.id === 'reloadMatrixSiegeConfigBtn') return loadMatrixSiegeAdminConfig();
-  if (button.id === 'saveMatrixSiegeConfigBtn') return saveMatrixSiegeAdminConfig().catch((error) => setStatus('matrixSiegeStatus', error.message || 'Matrix Siege config kaydedilemedi.', 'error'));
   if (button.id === 'reloadWheelConfigBtn') return loadWheelAdminConfig();
   if (button.id === 'saveWheelConfigBtn') return saveWheelAdminConfig();
   if (button.id === 'toggleMarketStatusBtn') return toggleMarketGlobalStatus();

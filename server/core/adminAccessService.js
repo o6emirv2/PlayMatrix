@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { runtimeStore } = require('./runtimeStore');
 const COOKIE_NAME = 'pm_admin_access';
-const TTL_MS = 60 * 60 * 1000;
+const TTL_MS = 6 * 60 * 60 * 1000;
 function now(){ return Date.now(); }
 function safe(v='',max=160){ return String(v||'').trim().slice(0,max); }
 function issueAdminAccess({ uid='', email='', scope='admin', source='admin_matrix' } = {}) {

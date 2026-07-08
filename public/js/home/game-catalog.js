@@ -9,8 +9,6 @@ export const HOME_GAME_ROUTES = Object.freeze({
   spacepro: "/games/space-pro",
   snake: "/games/snake-pro",
   snakepro: "/games/snake-pro",
-  matrixsiege: "/games/matrix-siege",
-  "matrix-siege": "/games/matrix-siege",
 });
 
 export const HOME_GAMES = Object.freeze([
@@ -19,8 +17,7 @@ export const HOME_GAMES = Object.freeze([
   { key: "pisti", name: "Pişti", category: "online", access: "auth", url: HOME_GAME_ROUTES.pisti, color: "113,134,255", icon: "fa-clone", image: "/public/assets/home/games/pisti.jpg", provider: "PlayMatrix Cards", badge: "Kart", desc: "Akıcı kart masası görünümü ve kontrollü oyun akışıyla klasik Pişti deneyimi.", tags: ["Kart", "Online", "Klasik"], keywords: "card kart multiplayer online pisti pişti" },
   { key: "patternmaster", name: "Pattern Master", category: "classic", access: "auth", url: HOME_GAME_ROUTES.patternmaster, color: "122,240,184", icon: "fa-shapes", image: "/public/assets/home/games/pattern-master.jpg", provider: "PlayMatrix Mind", badge: "Zeka", desc: "Dikkat ve görsel hafızayı öne çıkaran premium görünümlü pattern oyunu.", tags: ["Zeka", "Refleks", "Desen"], keywords: "arcade pattern master ücretsiz zeka" },
   { key: "spacepro", name: "Space Pro", category: "classic", access: "auth", url: HOME_GAME_ROUTES.spacepro, color: "82,175,255", icon: "fa-user-astronaut", image: "/public/assets/home/games/space-pro.jpg", provider: "PlayMatrix Arcade", badge: "Uzay", desc: "Yüksek enerjili uzay temasıyla klasik arcade aksiyonunu modern kart sunumunda oyna.", tags: ["Arcade", "Uzay", "Klasik"], keywords: "arcade pro space uzay" },
-  { key: "snakepro", name: "Snake Pro", category: "classic", access: "auth", url: HOME_GAME_ROUTES.snakepro, color: "112,227,151", icon: "fa-staff-snake", image: "/public/assets/home/games/snake-pro.jpg", provider: "PlayMatrix Arcade", badge: "Retro", desc: "Yılan temasını profesyonel neon kimlikle sunan modern Snake Pro deneyimi.", tags: ["Retro", "Arcade", "Akıcı"], keywords: "arcade pro retro snake yılan" },
-  { key: "matrixsiege", name: "Matrix Siege: Mini Ordu", category: "classic", access: "auth", url: HOME_GAME_ROUTES.matrixsiege, color: "56,255,139", icon: "fa-shield-halved", image: "/public/assets/home/games/matrix-siege.svg", provider: "PlayMatrix Strategy", badge: "Yeni", desc: "Enerji yönetimi, özgün birlikler ve backend doğrulamalı 20 bölümlük neon strateji savaşı.", tags: ["Strateji", "Ordu", "Bölüm"], keywords: "matrix siege mini ordu strategy lane battler savunma strateji" }
+  { key: "snakepro", name: "Snake Pro", category: "classic", access: "auth", url: HOME_GAME_ROUTES.snakepro, color: "112,227,151", icon: "fa-staff-snake", image: "/public/assets/home/games/snake-pro.jpg", provider: "PlayMatrix Arcade", badge: "Retro", desc: "Yılan temasını profesyonel neon kimlikle sunan modern Snake Pro deneyimi.", tags: ["Retro", "Arcade", "Akıcı"], keywords: "arcade pro retro snake yılan" }
 ]);
 
 export function normalizeGameRoute(rawUrl = "") {
@@ -32,7 +29,6 @@ export function normalizeGameRoute(rawUrl = "") {
   if (lower.includes("patternmaster")) return HOME_GAME_ROUTES.patternmaster;
   if (lower.includes("spacepro")) return HOME_GAME_ROUTES.spacepro;
   if (lower.includes("snakepro")) return HOME_GAME_ROUTES.snakepro;
-  if (lower.includes("matrix-siege") || lower.includes("matrixsiege")) return HOME_GAME_ROUTES.matrixsiege;
   return normalized || "/";
 }
 
@@ -53,7 +49,6 @@ export function getGameAccentClass(game = {}) {
   if (key.includes("pattern")) return "game-card--pattern";
   if (key.includes("space")) return "game-card--space";
   if (key.includes("snake")) return "game-card--snake";
-  if (key.includes("matrix") || key.includes("siege")) return "game-card--matrix-siege";
   return "game-card--default";
 }
 
@@ -78,21 +73,6 @@ function openHomeAuthSheet(gameName = 'Online oyun') {
 
 let homeMaintenanceState = null;
 let homeMaintenanceLoadedAt = 0;
-const TRUE_MAINTENANCE_VALUES = new Set(['1', 'true', 'yes', 'on', 'active', 'enabled', 'evet', 'aktif', 'açık', 'acik', 'bakım', 'bakim']);
-const FALSE_MAINTENANCE_VALUES = new Set(['', '0', 'false', 'no', 'off', 'inactive', 'disabled', 'hayır', 'hayir', 'pasif', 'kapalı', 'kapali', 'null', 'undefined']);
-function maintenanceFlag(value) {
-  if (value === true || value === 1) return true;
-  if (value === false || value === 0 || value == null) return false;
-  if (typeof value === 'object') {
-    if (Object.prototype.hasOwnProperty.call(value, 'active')) return maintenanceFlag(value.active);
-    if (Object.prototype.hasOwnProperty.call(value, 'enabled')) return maintenanceFlag(value.enabled);
-    if (Object.prototype.hasOwnProperty.call(value, 'maintenance')) return maintenanceFlag(value.maintenance);
-    return false;
-  }
-  const normalized = String(value).trim().toLocaleLowerCase('tr-TR');
-  if (FALSE_MAINTENANCE_VALUES.has(normalized)) return false;
-  return TRUE_MAINTENANCE_VALUES.has(normalized);
-}
 
 function gameKeyFromRoute(route = '') {
   const lower = String(route || '').toLowerCase();
@@ -102,7 +82,6 @@ function gameKeyFromRoute(route = '') {
   if (lower.includes('/games/pattern-master')) return 'pattern-master';
   if (lower.includes('/games/space-pro')) return 'space-pro';
   if (lower.includes('/games/snake-pro')) return 'snake-pro';
-  if (lower.includes('/games/matrix-siege')) return 'matrix-siege';
   return '';
 }
 
@@ -124,8 +103,8 @@ export function isGameInMaintenance(route = '') {
   const key = gameKeyFromRoute(route);
   const maintenance = homeMaintenanceState || {};
   if (!key) return false;
-  if (maintenanceFlag(maintenance[key])) return true;
-  return maintenanceFlag(maintenance.classic) && ['pattern-master','space-pro','snake-pro'].includes(key);
+  if (maintenance[key]) return true;
+  return maintenance.classic && ['pattern-master','space-pro','snake-pro'].includes(key);
 }
 
 function showMaintenanceNotice(gameName = 'Oyun') {
@@ -151,7 +130,7 @@ function installOnlineGameAuthGuard(root = document) {
     const href = trigger.getAttribute?.('href') || '';
     if (!href && trigger.dataset.requiresAuth !== 'true') return;
     const normalized = normalizeGameRoute(href || trigger.dataset.href || '');
-    const isProtectedGame = /\/games\/(crash|chess|pisti|pattern-master|space-pro|snake-pro|matrix-siege)$/i.test(normalized);
+    const isProtectedGame = /\/games\/(crash|chess|pisti|pattern-master|space-pro|snake-pro)$/i.test(normalized);
     if (!isProtectedGame && trigger.dataset.requiresAuth !== 'true' && trigger.dataset.access !== 'auth') return;
     const gameName = trigger.dataset.gameName || trigger.closest?.('.game-card')?.querySelector?.('.game-card-title, .game-title')?.textContent || 'Online oyun';
     if (isGameInMaintenance(normalized)) {

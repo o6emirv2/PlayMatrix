@@ -89,7 +89,7 @@
   const AVATAR_FRAME_VARIANTS = Object.freeze([
     'homeTopbar', 'leaderboard', 'accountModal', 'accountProfileCard', 'marketCard',
     'crashTopbar', 'crashLivePanel', 'crashWinNotice', 'chessTopbar', 'chessGameCard',
-    'pistiTopbar', 'pistiScoreCard', 'snakeTopbar', 'spaceTopbar', 'patternTopbar', 'matrixSiegeTopbar'
+    'pistiTopbar', 'pistiScoreCard', 'snakeTopbar', 'spaceTopbar', 'patternTopbar'
   ]);
   function normalizeVariant(value = '') {
     const key = String(value || '').trim();

@@ -297,7 +297,7 @@ export async function adminFetch(path, options = {}) {
       const isMatrixGatePath = /\/api\/auth\/admin\/(matrix\/(identity|status|step-email|step-password|step-name|logout)|bootstrap)(?:[/?#]|$)/i.test(targetPath)
         || /\/auth\/admin\/(matrix\/(identity|status|step-email|step-password|step-name|logout)|bootstrap)(?:[/?#]|$)/i.test(targetPath);
       const looksCritical = !isMatrixGatePath && (/\/(admin|api\/crash\/admin)\/(users|promos|promo|matrix|cleanup|wheel|avatar-frame|market|risk|risk-table|risk-limit|next-crash-point|future-rounds)/i.test(targetPath)
-        || /\/api\/admin\//i.test(targetPath) || /\/matrix-siege\/admin\//i.test(targetPath));
+        || /\/api\/admin\//i.test(targetPath));
       if (looksCritical && !parsedBody.adminPassword && !parsedBody.reauthPassword && !baseHeaders.has('x-admin-reauth')) {
         const reauth = await requestAdminReauth();
         if (reauth) {
