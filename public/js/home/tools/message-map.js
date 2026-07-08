@@ -1,4 +1,4 @@
-// PlayMatrix User Message Map v12
+// PlayMatrix User Message Map v14
 // Teknik hata kodlarını kullanıcı dostu, kısa ve profesyonel Tools metinlerine dönüştürür.
 
 export const USER_MESSAGES = Object.freeze({
@@ -86,6 +86,14 @@ export const USER_MESSAGES = Object.freeze({
   USERNAME_CHECK_FAILED: 'Kullanıcı adı şu anda kontrol edilemedi. Lütfen tekrar dene.',
   USERNAME_CHANGE_LIMIT_REACHED: 'Kullanıcı adı değiştirme hakkın doldu.',
   SOCKET_IO_CLIENT_LOAD_FAILED: 'Bildirimler şu anda yüklenemedi. Lütfen tekrar dene.',
+  PUBLIC_RUNTIME_CONFIG_UNAVAILABLE: 'Bağlantı ayarları yüklenemedi. Lütfen tekrar dene.',
+  PUBLIC_FIREBASE_CONFIG_MISSING: 'Giriş sistemi şu anda hazırlanamadı. Lütfen tekrar dene.',
+  PUBLIC_FIREBASE_CONTRACT_MISMATCH: 'Giriş sistemi doğrulanamadı. Lütfen tekrar dene.',
+  SESSION_SYNC_FAILED: 'Oturum bağlantısı kurulamadı. Lütfen tekrar dene.',
+  AUTH_UNAVAILABLE: 'Giriş sistemi şu anda kullanılamıyor. Lütfen tekrar dene.',
+  SESSION_SECRET_MISSING: 'Oturum güvenliği şu anda hazırlanamadı. Lütfen tekrar dene.',
+  LEADERBOARD_UNAVAILABLE: 'Liderlik verileri şu anda alınamadı. Liste otomatik olarak tekrar denenecek.',
+  RECENT_WINNERS_UNAVAILABLE: 'Son kazanan verileri şu anda alınamadı. Liste otomatik olarak tekrar denenecek.',
   NETWORK_ERROR: 'Bağlantı kurulamadı. Lütfen internet bağlantını kontrol edip tekrar dene.',
   LOAD_FAILED: 'İçerik şu anda yüklenemedi. Lütfen tekrar dene.',
   INTERNAL_ERROR: 'İşlem şu anda tamamlanamadı. Lütfen tekrar deneyin.',

@@ -181,7 +181,7 @@ async function addBalance(uid, amount, reason, key) {
   }});
 }
 function runtimePayload() { return { ok: true, runtime: { version: 8, environment: env.nodeEnv, publicBaseUrl: env.publicBaseUrl, canonicalOrigin: env.canonicalOrigin, apiBase: env.publicApiBase || env.publicBackendOrigin, expectedFirebaseProjectId: env.firebase.publicConfig.projectId, firebase: env.firebase.publicConfig, firebaseReady: true, source: 'render-env-contract' }, apiBase: env.publicApiBase || env.publicBackendOrigin, canonicalOrigin: env.canonicalOrigin, firebase: env.firebase.publicConfig }; }
-const LEADERBOARD_CACHE_KEY = 'home:leaderboard:v13';
+const LEADERBOARD_CACHE_KEY = 'home:leaderboard:v14';
 const LEADERBOARD_CACHE_TTL_MS = 14 * 1000;
 let leaderboardRefreshPromise = null;
 const LEADERBOARD_SELECT_FIELDS = ['username','displayName','avatar','selectedFrame','frameUrl','marketFrameUrl','marketFrameId','marketEquipped','equippedMarket','cosmeticSlots','accountXp','xp','accountLevel','level','monthlyActiveScore','balance','mc','stats','statistics','gameStats'];
@@ -202,7 +202,7 @@ async function leaderboardFallbackProfiles(limit = 10) {
   const { db } = fb();
   if (!db) return [];
   try {
-    const safeLimit = Math.max(30, Math.min(120, Math.trunc(Number(limit) || 10) * 6));
+    const safeLimit = Math.max(60, Math.min(250, Math.trunc(Number(limit) || 10) * 12));
     let query = db.collection('users').limit(safeLimit);
     let snap;
     try {
@@ -213,41 +213,79 @@ async function leaderboardFallbackProfiles(limit = 10) {
     return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
   } catch { return []; }
 }
+function profileKey(profile = {}) {
+  return String(profile.uid || profile.id || profile.email || profile.username || '').trim();
+}
+function mergeProfiles(primary = [], fallback = []) {
+  const merged = [];
+  const seen = new Set();
+  for (const row of [...primary, ...fallback]) {
+    const key = profileKey(row);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(row);
+  }
+  return merged;
+}
+function activityScoreOf(profile = {}) {
+  return Math.max(0, Number(
+    profile.monthlyActiveScore
+    ?? profile.monthlyActivityScore
+    ?? profile.activityScore
+    ?? profile.monthlyActivity
+    ?? profile.activeScore
+    ?? 0
+  ) || 0);
+}
 async function leaderboardProfiles(limit = 10) {
   const safeLimit = Math.max(1, Math.min(10, Math.trunc(Number(limit) || 10)));
   const cached = runtimeStore.temporary.get(LEADERBOARD_CACHE_KEY);
   if (cached && typeof cached === 'object' && Array.isArray(cached.level) && Array.isArray(cached.activity)) return cached;
   if (leaderboardRefreshPromise) return leaderboardRefreshPromise;
   leaderboardRefreshPromise = (async () => {
+    const { db } = fb();
+    if (!db) return { level: [], activity: [], source: 'firebase-unavailable' };
+    let levelRows = [];
+    let activityRows = [];
+    let source = 'indexed';
     try {
-      const [levelRows, activityRows] = await Promise.all([
+      [levelRows, activityRows] = await Promise.all([
         leaderboardQuery('accountXp', safeLimit),
         leaderboardQuery('monthlyActiveScore', safeLimit)
       ]);
-      const payload = {
-        level: [...levelRows].sort((a,b)=> xpBig(b.accountXp ?? b.xp) > xpBig(a.accountXp ?? a.xp) ? 1 : xpBig(b.accountXp ?? b.xp) < xpBig(a.accountXp ?? a.xp) ? -1 : 0).slice(0, safeLimit),
-        activity: [...activityRows].sort((a,b)=>Number(b.monthlyActiveScore||0)-Number(a.monthlyActiveScore||0)).slice(0, safeLimit),
-        source: 'indexed'
-      };
-      runtimeStore.temporary.set(LEADERBOARD_CACHE_KEY, payload, LEADERBOARD_CACHE_TTL_MS);
-      return payload;
-    } catch {
-      const rows = await leaderboardFallbackProfiles(safeLimit);
-      const payload = {
-        level: [...rows].sort((a,b)=> xpBig(b.accountXp ?? b.xp) > xpBig(a.accountXp ?? a.xp) ? 1 : xpBig(b.accountXp ?? b.xp) < xpBig(a.accountXp ?? a.xp) ? -1 : 0).slice(0, safeLimit),
-        activity: [...rows].sort((a,b)=>Number(b.monthlyActiveScore||0)-Number(a.monthlyActiveScore||0)).slice(0, safeLimit),
-        source: 'fallback'
-      };
-      runtimeStore.temporary.set(LEADERBOARD_CACHE_KEY, payload, LEADERBOARD_CACHE_TTL_MS);
-      return payload;
+    } catch (_) {
+      source = 'fallback';
     }
+
+    // Eski kullanıcı belgelerinde accountXp/monthlyActiveScore alanları bulunmayabilir.
+    // Firestore orderBy bu belgeleri tamamen dışladığı için eksik/boş sonuçta güvenli
+    // server-side fallback taraması yapılır ve sonuçlar backend üzerinde sıralanır.
+    let fallbackRows = [];
+    if (source === 'fallback' || levelRows.length < safeLimit || activityRows.length < safeLimit) {
+      fallbackRows = await leaderboardFallbackProfiles(safeLimit);
+      if (fallbackRows.length) source = source === 'indexed' ? 'indexed+fallback' : 'fallback';
+    }
+
+    const levelCandidates = mergeProfiles(levelRows, fallbackRows);
+    const activityCandidates = mergeProfiles(activityRows, fallbackRows);
+    const payload = {
+      level: levelCandidates
+        .sort((a,b)=> xpBig(b.accountXp ?? b.xp ?? b.accountLevelScore) > xpBig(a.accountXp ?? a.xp ?? a.accountLevelScore) ? 1 : xpBig(b.accountXp ?? b.xp ?? b.accountLevelScore) < xpBig(a.accountXp ?? a.xp ?? a.accountLevelScore) ? -1 : 0)
+        .slice(0, safeLimit),
+      activity: activityCandidates
+        .sort((a,b)=>activityScoreOf(b)-activityScoreOf(a))
+        .slice(0, safeLimit),
+      source
+    };
+    runtimeStore.temporary.set(LEADERBOARD_CACHE_KEY, payload, LEADERBOARD_CACHE_TTL_MS);
+    return payload;
   })().finally(() => { leaderboardRefreshPromise = null; });
   return leaderboardRefreshPromise;
 }
 function xpBig(value = 0) { try { const raw = String(value ?? '0').replace(/[^0-9]/g, ''); return raw ? BigInt(raw) : 0n; } catch { return 0n; } }
 function safeMetricNumber(value = 0) { const big = xpBig(value); return big > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(big); }
 function activeMarketFrameForProfile(p = {}) { const slot = p.cosmeticSlots?.frame || {}; const id = s(p.marketFrameId || p.marketEquipped?.frame || p.marketEquipped?.frames || p.equippedMarket?.frame || p.equippedMarket?.frames || (slot.source === 'market' ? slot.itemId : ''), 140); return id ? resolveMarketFramePath(p.marketFrameUrl || p.frameUrl || '', id) : ''; }
-function lbItems(list, metric) { return list.map((raw, i) => { const p = addProgression(raw); const wins = Number(p?.stats?.totalWins ?? p?.statistics?.totalWins ?? p?.gameStats?.total?.wins ?? p?.totalWins ?? 0) || 0; const balance = Number(p.balance ?? p.mc ?? p?.statistics?.balance ?? 0) || 0; const xpExact = String(p.accountXp || p.xp || '0'); const marketFrameUrl = activeMarketFrameForProfile(p); return { uid: p.uid || `guest_${i}`, username: p.username || p.displayName || 'Oyuncu', avatar: p.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(p.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(p.marketFrameId || p.marketEquipped?.frames || p.cosmeticSlots?.frame?.itemId || '', 140) : '', balance, mc: balance, stats: { ...(p.stats || {}), totalWins: wins }, statistics: { ...(p.statistics || {}), totalWins: wins, balance }, accountXp: safeMetricNumber(xpExact), accountXpExact: xpExact, accountLevel: Number(p.accountLevel || 1), monthlyActiveScore: Number(p.monthlyActiveScore || 0), leaderboard: { rank: i + 1, metricKey: metric === 'activity' ? 'monthlyActiveScore' : 'accountXp', metricLabel: metric === 'activity' ? 'Aylık Aktiflik' : 'Hesap XP', metricValue: metric === 'activity' ? Number(p.monthlyActiveScore || 0) : safeMetricNumber(xpExact), metricValueExact: metric === 'activity' ? String(Number(p.monthlyActiveScore || 0)) : xpExact } }; }); }
+function lbItems(list, metric) { return list.map((raw, i) => { const p = addProgression(raw); const wins = Number(p?.stats?.totalWins ?? p?.statistics?.totalWins ?? p?.gameStats?.total?.wins ?? p?.totalWins ?? 0) || 0; const balance = Number(p.balance ?? p.mc ?? p?.statistics?.balance ?? 0) || 0; const xpExact = String(p.accountXp || p.xp || '0'); const marketFrameUrl = activeMarketFrameForProfile(p); return { uid: p.uid || `guest_${i}`, username: p.username || p.displayName || 'Oyuncu', avatar: p.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(p.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(p.marketFrameId || p.marketEquipped?.frames || p.cosmeticSlots?.frame?.itemId || '', 140) : '', balance, mc: balance, stats: { ...(p.stats || {}), totalWins: wins }, statistics: { ...(p.statistics || {}), totalWins: wins, balance }, accountXp: safeMetricNumber(xpExact), accountXpExact: xpExact, accountLevel: Number(p.accountLevel || 1), monthlyActiveScore: activityScoreOf(p), leaderboard: { rank: i + 1, metricKey: metric === 'activity' ? 'monthlyActiveScore' : 'accountXp', metricLabel: metric === 'activity' ? 'Aylık Aktiflik' : 'Hesap XP', metricValue: metric === 'activity' ? activityScoreOf(p) : safeMetricNumber(xpExact), metricValueExact: metric === 'activity' ? String(activityScoreOf(p)) : xpExact } }; }); }
 function gameProfileFromReq(req, fallbackName = 'Oyuncu') { const u = req.__pmProfile || {}; const marketFrameUrl = activeMarketFrameForProfile(u); return { uid: uidOf(req), username: u.username || u.displayName || fallbackName, avatar: u.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(u.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(u.marketFrameId || u.marketEquipped?.frame || u.marketEquipped?.frames || u.cosmeticSlots?.frame?.itemId || '', 140) : '' }; }
 async function attachProfile(req, _res, next) { try { req.__pmProfile = await readProfile(req, uidOf(req)); } catch (_) { req.__pmProfile = defaultProfile(req, uidOf(req) || 'guest'); } next(); }
 
@@ -309,7 +347,22 @@ router.get('/me', requireAuth, async (req, res) => res.json({ ok: true, user: aw
 router.post('/me/activity/heartbeat', requireAuth, async (req, res) => { const uid = uidOf(req); runtimeStore.presence.set(uid, { uid, status: 'online', activity: s(req.body?.activity, 40), at: now() }, 180000); res.json({ ok: true, at: now() }); });
 router.post('/me/showcase', requireAuth, async (req, res) => { const uid = uidOf(req); const showcase = { title: s(req.body?.title, 60), bio: sanitizeText(req.body?.bio || '', 180), updatedAt: now() }; await writeProfile(uid, { showcase }); res.json({ ok: true, showcase }); });
 router.get('/user-stats/:uid', requireAuth, async (req, res) => res.json({ ok: true, data: await readProfile(req, s(req.params.uid, 128)) }));
-router.get('/leaderboard', async (req, res) => { const limit = Math.min(10, Math.max(1, Number(req.query?.limit || 10) || 10)); const profiles = await leaderboardProfiles(limit); const byLevel = Array.isArray(profiles?.level) ? profiles.level : []; const byActivity = Array.isArray(profiles?.activity) ? profiles.activity : []; const totalRows = byLevel.length + byActivity.length; res.setHeader('Cache-Control','no-store, max-age=0'); res.json({ ok: true, generatedAt: now(), limit, empty: totalRows < 1, source: profiles?.source || 'indexed', tabs: { level: { label: 'En Yüksek Hesap Seviyesi', metricKey: 'accountXp', items: lbItems(byLevel.slice(0,limit), 'level') }, activity: { label: 'En Çok Aktif Oyuncular', metricKey: 'monthlyActiveScore', items: lbItems(byActivity.slice(0,limit), 'activity') } } }); });
+router.get('/leaderboard', async (req, res) => {
+  const limit = Math.min(10, Math.max(1, Number(req.query?.limit || 10) || 10));
+  try {
+    const profiles = await leaderboardProfiles(limit);
+    if (profiles?.source === 'firebase-unavailable') {
+      return res.status(503).json({ ok:false, data:null, message:'', code:'LEADERBOARD_UNAVAILABLE', error:'LEADERBOARD_UNAVAILABLE' });
+    }
+    const byLevel = Array.isArray(profiles?.level) ? profiles.level : [];
+    const byActivity = Array.isArray(profiles?.activity) ? profiles.activity : [];
+    const totalRows = byLevel.length + byActivity.length;
+    res.setHeader('Cache-Control','no-store, max-age=0');
+    return res.json({ ok: true, generatedAt: now(), limit, empty: totalRows < 1, source: profiles?.source || 'indexed', tabs: { level: { label: 'En Yüksek Hesap Seviyesi', metricKey: 'accountXp', items: lbItems(byLevel.slice(0,limit), 'level') }, activity: { label: 'En Çok Aktif Oyuncular', metricKey: 'monthlyActiveScore', items: lbItems(byActivity.slice(0,limit), 'activity') } } });
+  } catch (_) {
+    return res.status(503).json({ ok:false, data:null, message:'', code:'LEADERBOARD_UNAVAILABLE', error:'LEADERBOARD_UNAVAILABLE' });
+  }
+});
 async function checkUsernameRoute(req, res) {
   const result = await checkUsernameAvailability(req.query.username, req.query.exceptUid || '');
   res.json(result);

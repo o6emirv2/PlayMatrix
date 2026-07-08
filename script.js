@@ -1,5 +1,5 @@
-import { bootHomeApplication } from '/public/js/home/app.js?v=pm-v13-live-refresh-session-speed';
-import { HOME_GAME_ROUTES } from '/public/js/home/game-catalog.js?v=pm-v13-live-refresh-session-speed';
+import { bootHomeApplication } from '/public/js/home/app.js?v=pm-v14-auth-live-data-fix';
+import { HOME_GAME_ROUTES } from '/public/js/home/game-catalog.js?v=pm-v14-auth-live-data-fix';
 
 window.__PLAYMATRIX_ROUTES__ = HOME_GAME_ROUTES;
 const PLAYMATRIX_BACKEND_ORIGIN = 'https://emirhan-siye.onrender.com';

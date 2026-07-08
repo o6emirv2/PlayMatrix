@@ -10,11 +10,18 @@ router.post('/auth/session', strictLimiter, async (req, res) => {
     const idToken = bearer || String(req.body?.idToken || '').trim();
     const remember = req.body?.remember === true || String(req.body?.persistence || '').toLowerCase() === 'local';
     const created = await createSessionFromIdToken(idToken, { remember });
-    if (!created.ok) return res.status(created.code === 'SESSION_SECRET_MISSING' ? 503 : 401).json({ ok:false, data:null, message:'', code:created.code, error:created.code });
+    if (!created.ok) {
+      const status = ['SESSION_SECRET_MISSING','AUTH_UNAVAILABLE'].includes(created.code) ? 503 : 401;
+      return res.status(status).json({ ok:false, data:null, message:'', code:created.code, error:created.code });
+    }
     res.setHeader('Set-Cookie', sessionCookie(created.token, req, { remember }));
     return res.json({ ok:true, data:{ user:{ uid:created.user.uid, email:created.user.email, emailVerified:created.user.emailVerified }, expiresAt:created.user.exp, remember }, message:'', code:'SUCCESS' });
-  } catch (_) {
-    return res.status(401).json({ ok:false, data:null, message:'', code:'AUTH_INVALID', error:'AUTH_INVALID' });
+  } catch (error) {
+    const rawCode = String(error?.code || '').toLowerCase();
+    const unavailable = /credential|network|unavailable|app\/no-app|project-not-found/.test(rawCode);
+    const code = unavailable ? 'AUTH_UNAVAILABLE' : 'AUTH_INVALID';
+    console.warn('[auth:session:create:failed]', JSON.stringify({ code, requestId: req.requestId || null }));
+    return res.status(unavailable ? 503 : 401).json({ ok:false, data:null, message:'', code, error:code });
   }
 });
 router.get('/auth/session', async (req, res) => {

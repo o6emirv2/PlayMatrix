@@ -61,7 +61,7 @@
   }
 })();
 
-import('/public/js/games/crash/index.js?v=pm-v13-live-refresh-session-speed').catch((error) => {
+import('/public/js/games/crash/index.js?v=pm-v14-auth-live-data-fix').catch((error) => {
   try {
     window.__PM_REPORT_CLIENT_ERROR__?.('crash.module.import', error, { source: 'games/crash/script.js', game: 'crash', severity: 'error' });
   } catch (_) {}

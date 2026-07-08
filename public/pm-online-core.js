@@ -1,4 +1,4 @@
-import { loadFirebaseWebConfig } from "./firebase-runtime.js";
+import { loadFirebaseWebConfig } from "./firebase-runtime.js?v=pm-v14-auth-live-data-fix";
 
 export const PLAYMATRIX_FIREBASE_CONFIG = null;
 

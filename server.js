@@ -732,12 +732,14 @@ function renderMemoryRecentWinners(limit = 5) {
     .slice(0, safeLimit);
 }
 app.get('/api/home/recent-winners', (req, res) => {
+  const items = renderMemoryRecentWinners(req.query.limit || 5);
   res.setHeader('Cache-Control', 'no-store, max-age=0');
-  res.json({ ok: true, memoryOnly: true, items: renderMemoryRecentWinners(req.query.limit || 5) });
+  res.json({ ok: true, memoryOnly: true, generatedAt: Date.now(), items, activities: items });
 });
 app.get('/api/home/recent-activities', (req, res) => {
+  const items = renderMemoryRecentWinners(req.query.limit || 5);
   res.setHeader('Cache-Control', 'no-store, max-age=0');
-  res.json({ ok: true, memoryOnly: true, activities: renderMemoryRecentWinners(req.query.limit || 5) });
+  res.json({ ok: true, memoryOnly: true, generatedAt: Date.now(), items, activities: items });
 });
 
 app.use('/api', createClientErrorsRouter(captureClientError));

@@ -1,4 +1,4 @@
-import './home-core.js?v=pm-v13-live-refresh-session-speed';
+import './home-core.js?v=pm-v14-auth-live-data-fix';
 
 export function getHomeRuntime() {
   return window.PlayMatrixHome || null;

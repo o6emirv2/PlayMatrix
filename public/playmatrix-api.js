@@ -2,7 +2,8 @@
   'use strict';
 
   const PM_API_STORAGE_KEY = 'pm_api_base';
-  const PM_API_TIMEOUT_MS = 2500;
+  const PM_API_TIMEOUT_MS = 8000;
+  const PM_API_PROBE_TIMEOUT_MS = 5000;
   const RUNTIME_ENDPOINT_SUFFIX = '/api/public/runtime-config';
 
   function fetchWithTimeout(resource, options = {}, timeoutMs = PM_API_TIMEOUT_MS) {
@@ -66,12 +67,15 @@
       list.push(normalized);
     };
 
-    if (isProductionHost()) push(window.location.origin);
+    // Runtime/ENV ile gelen backend adresi production custom domain'den önce denenir.
+    // Böylece frontend farklı bir origin üzerinde sunulsa bile API çağrıları yanlışlıkla
+    // HTML sayfasına veya statik hosta gitmez.
+    push(lastResolvedBase);
     push(getRuntimeBase());
     push(getStaticRuntimeBase());
     push(getMetaBase());
     push(getStoredBase());
-    if (!isProductionHost()) push(window.location.origin);
+    push(window.location.origin);
     return list;
   }
 
@@ -85,27 +89,37 @@
     return normalized;
   }
 
-  function getApiBaseSync() {
-    const preferred = (isProductionHost() ? normalizeBase(window.location.origin) : '')
-      || getRuntimeBase()
-      || getStaticRuntimeBase()
-      || getMetaBase()
-      || getStoredBase()
-      || normalizeBase(window.location.origin);
-    return setApiBase(preferred || (!isProductionHost() ? window.location.origin : ''));
+  let ensurePromise = null;
+  let lastResolvedBase = '';
+  let lastResolvedAt = 0;
+  const API_BASE_CACHE_MS = 60_000;
+
+  function preferredExplicitBase() {
+    const candidates = [getRuntimeBase(), getStaticRuntimeBase(), getMetaBase(), getStoredBase()]
+      .map(normalizeBase)
+      .filter(Boolean);
+    const external = candidates.find((base) => !isCurrentOriginOnly(base));
+    return external || candidates[0] || '';
   }
 
-  async function probeBase(base) {
+  function getApiBaseSync() {
+    const preferred = normalizeBase(lastResolvedBase)
+      || preferredExplicitBase()
+      || normalizeBase(window.location.origin);
+    return setApiBase(preferred);
+  }
+
+  async function probeBase(base, timeoutMs = PM_API_PROBE_TIMEOUT_MS) {
     const normalized = normalizeBase(base);
     if (!normalized) return false;
-    for (const probePath of ['/api/healthz', '/healthz']) {
+    for (const probePath of ['/health', '/api/health', '/api/healthz', '/healthz']) {
       try {
         const response = await fetchWithTimeout(`${normalized}${probePath}`, {
           method: 'GET',
           headers: { Accept: 'application/json' },
           credentials: 'include',
           cache: 'no-store'
-        }, 1800);
+        }, timeoutMs);
         if (!response.ok) continue;
         const contentType = String(response.headers.get('content-type') || '').toLowerCase();
         if (!contentType.includes('application/json')) continue;
@@ -116,18 +130,27 @@
     return false;
   }
 
-  let ensurePromise = null;
-  let lastResolvedBase = '';
-  let lastResolvedAt = 0;
-  const API_BASE_CACHE_MS = 60_000;
-  async function ensureApiBase() {
-    const currentBase = getRuntimeBase() || getStaticRuntimeBase() || getMetaBase() || getStoredBase();
+  function invalidateApiBase(base = '') {
+    const normalized = normalizeBase(base);
+    if (!normalized || normalized === normalizeBase(lastResolvedBase)) {
+      lastResolvedBase = '';
+      lastResolvedAt = 0;
+    }
+  }
+
+  async function ensureApiBase(options = {}) {
+    const force = options === true || options?.force === true;
     const now = Date.now();
-    if (lastResolvedBase && (now - lastResolvedAt) < API_BASE_CACHE_MS) return setApiBase(lastResolvedBase);
-    if (currentBase && !isCurrentOriginOnly(currentBase)) {
-      lastResolvedBase = setApiBase(currentBase);
-      lastResolvedAt = now;
-      return lastResolvedBase;
+    if (!force && lastResolvedBase && (now - lastResolvedAt) < API_BASE_CACHE_MS) {
+      return setApiBase(lastResolvedBase);
+    }
+    if (!force) {
+      const explicit = preferredExplicitBase();
+      if (explicit && !isCurrentOriginOnly(explicit)) {
+        lastResolvedBase = setApiBase(explicit);
+        lastResolvedAt = now;
+        return lastResolvedBase;
+      }
     }
     if (ensurePromise) return ensurePromise;
     ensurePromise = (async () => {
@@ -139,19 +162,8 @@
           return lastResolvedBase;
         }
       }
-      const staticBase = getStaticRuntimeBase();
-      if (staticBase && !isCurrentOriginOnly(staticBase)) {
-        lastResolvedBase = setApiBase(staticBase);
-        lastResolvedAt = Date.now();
-        return lastResolvedBase;
-      }
-      const runtimeBase = getRuntimeBase();
-      if (runtimeBase && !isCurrentOriginOnly(runtimeBase)) {
-        lastResolvedBase = setApiBase(runtimeBase);
-        lastResolvedAt = Date.now();
-        return lastResolvedBase;
-      }
-      lastResolvedBase = setApiBase(candidates[0] || (!isProductionHost() ? window.location.origin : ''));
+      const fallback = preferredExplicitBase() || candidates[0] || normalizeBase(window.location.origin);
+      lastResolvedBase = setApiBase(fallback);
       lastResolvedAt = Date.now();
       return lastResolvedBase;
     })();
@@ -203,31 +215,50 @@
   }
 
   async function fetchJson(path, options = {}) {
-    await ensureApiBase();
-    const headers = new Headers(options.headers || {});
-    if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-    if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', requestId('api'));
-    const response = await fetchWithTimeout(buildUrl(path), { credentials: 'include', cache: 'no-store', ...options, headers }, options.timeoutMs || PM_API_TIMEOUT_MS);
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.ok === false) {
-      const wasReplaced = handleSessionProblem(payload, response.status);
-      const message = typeof payload?.error === 'object'
-        ? (payload.error.message || payload.error.code || `HTTP ${response.status}`)
-        : (payload?.error || payload?.message || `HTTP ${response.status}`);
-      const rawCode = typeof payload?.error === 'object'
-        ? (payload.error.code || payload.error.error || payload.code || '')
-        : (payload?.code || payload?.error || '');
-      const friendlyMessage = wasReplaced ? 'Devam etmek için giriş yapman gerekiyor.' : userFacingText(message, 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.');
-      const error = new Error(friendlyMessage);
-      error.code = wasReplaced ? 'AUTH_REQUIRED' : String(rawCode || '').toUpperCase();
-      error.rawCode = String(rawCode || '').toUpperCase();
-      error.userMessage = friendlyMessage;
-      error.status = response.status;
-      error.payload = payload;
-      error.requestId = response.headers.get('X-Request-Id') || payload?.requestId || headers.get('X-Request-Id');
-      throw error;
+    const maxAttempts = Math.max(1, Math.min(2, Number(options.attempts || 2)));
+    let lastError = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await ensureApiBase({ force: attempt > 0 });
+      const headers = new Headers(options.headers || {});
+      if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+      if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', requestId('api'));
+      try {
+        const response = await fetchWithTimeout(buildUrl(path), {
+          credentials: 'include',
+          cache: 'no-store',
+          ...options,
+          headers
+        }, options.timeoutMs || PM_API_TIMEOUT_MS);
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        const payload = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
+        if (!response.ok || payload?.ok === false || !payload) {
+          const wasReplaced = handleSessionProblem(payload || {}, response.status);
+          const message = typeof payload?.error === 'object'
+            ? (payload.error.message || payload.error.code || `HTTP ${response.status}`)
+            : (payload?.error || payload?.message || `HTTP ${response.status}`);
+          const rawCode = typeof payload?.error === 'object'
+            ? (payload.error.code || payload.error.error || payload.code || '')
+            : (payload?.code || payload?.error || '');
+          const friendlyMessage = wasReplaced ? 'Devam etmek için giriş yapman gerekiyor.' : userFacingText(message, 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.');
+          const error = new Error(friendlyMessage);
+          error.code = wasReplaced ? 'AUTH_REQUIRED' : String(rawCode || '').toUpperCase();
+          error.rawCode = String(rawCode || '').toUpperCase();
+          error.userMessage = friendlyMessage;
+          error.status = response.status;
+          error.payload = payload;
+          error.requestId = response.headers.get('X-Request-Id') || payload?.requestId || headers.get('X-Request-Id');
+          throw error;
+        }
+        return payload;
+      } catch (error) {
+        lastError = error;
+        const code = String(error?.name || error?.code || error?.message || '').toLowerCase();
+        const retryable = /abort|timeout|network|failed to fetch|load failed|typeerror/.test(code);
+        if (!retryable || attempt + 1 >= maxAttempts) throw error;
+        invalidateApiBase(getApiBaseSync());
+      }
     }
-    return payload;
+    throw lastError || new Error('İşlem şu anda tamamlanamadı. Lütfen tekrar dene.');
   }
 
   function getSocketClientCandidates() {
@@ -277,6 +308,7 @@
     setApiBase,
     ensureApiBase,
     probeBase,
+    invalidateApiBase,
     buildUrl,
     fetchJson,
     fetchWithTimeout,

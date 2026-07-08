@@ -56,6 +56,14 @@
     INSUFFICIENT_BALANCE: 'Bakiyen bu işlem için yeterli değil.',
     MARKET_ITEM_NOT_OWNED: 'Bu ürün hesabında bulunmuyor.',
     MARKET_STOCK_UNAVAILABLE: 'Bu ürünün stoğu şu anda tükendi.',
+    PUBLIC_RUNTIME_CONFIG_UNAVAILABLE: 'Bağlantı ayarları yüklenemedi. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONFIG_MISSING: 'Giriş sistemi şu anda hazırlanamadı. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONTRACT_MISMATCH: 'Giriş sistemi doğrulanamadı. Lütfen tekrar dene.',
+    SESSION_SYNC_FAILED: 'Oturum bağlantısı kurulamadı. Lütfen tekrar dene.',
+    AUTH_UNAVAILABLE: 'Giriş sistemi şu anda kullanılamıyor. Lütfen tekrar dene.',
+    SESSION_SECRET_MISSING: 'Oturum güvenliği şu anda hazırlanamadı. Lütfen tekrar dene.',
+    LEADERBOARD_UNAVAILABLE: 'Liderlik verileri şu anda alınamadı. Liste otomatik olarak tekrar denenecek.',
+    RECENT_WINNERS_UNAVAILABLE: 'Son kazanan verileri şu anda alınamadı. Liste otomatik olarak tekrar denenecek.',
     NETWORK_ERROR: 'Bağlantı kurulamadı. Lütfen internet bağlantını kontrol edip tekrar dene.',
     REQUEST_TIMEOUT: 'İstek zaman aşımına uğradı. Lütfen tekrar dene.',
     LOAD_FAILED: 'İçerik şu anda yüklenemedi. Lütfen tekrar dene.',
@@ -108,7 +116,7 @@
 
   const apiBase = normalizeBase(PUBLIC_API_BASE);
   const runtime = Object.freeze({
-    version: 12,
+    version: 14,
     environment: 'production',
     publicBaseUrl: normalizeBase(PUBLIC_BASE_URL),
     apiBase,

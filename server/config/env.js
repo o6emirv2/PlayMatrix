@@ -117,11 +117,19 @@ const env = {
 };
 
 function publicRuntimeConfig() {
+  const firebaseReady = !!(
+    env.firebase.publicConfig.apiKey
+    && env.firebase.publicConfig.authDomain
+    && env.firebase.publicConfig.projectId
+    && env.firebase.publicConfig.appId
+  );
   return {
     apiBase: env.publicApiBase,
     canonicalOrigin: env.canonicalOrigin,
     publicBaseUrl: env.publicBaseUrl,
+    expectedFirebaseProjectId: env.firebase.publicConfig.projectId,
     firebase: env.firebase.publicConfig,
+    firebaseReady,
     source: 'render-env'
   };
 }

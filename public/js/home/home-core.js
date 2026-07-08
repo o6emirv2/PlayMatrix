@@ -1,4 +1,4 @@
-import { loadFirebaseWebConfig } from '../../firebase-runtime.js';
+import { loadFirebaseWebConfig } from '../../firebase-runtime.js?v=pm-v14-auth-live-data-fix';
 import { HOME_GAMES, installGameRouteNormalizer, loadHomeMaintenanceState, isGameInMaintenance } from './game-catalog.js';
 import { AVATAR_CATEGORIES, DEFAULT_AVATAR, AVATAR_FALLBACK, normalizeAvatarUrl } from '../../data/avatar-catalog.js';
 import { createAvatarPicker } from '../profile/avatar-picker.js';
@@ -450,7 +450,13 @@ function userErrorText(error, fallback = 'İşlem tamamlanamadı.') {
     'auth/invalid-email': 'E-posta formatı geçersiz.',
     'auth/network-request-failed': 'Ağ bağlantısı kurulamadı.',
     'auth/requires-recent-login': 'Güvenlik için tekrar giriş yapıp işlemi yeniden dene.',
-    'auth/too-many-requests': 'Çok fazla deneme yapıldı. Bir süre sonra tekrar dene.'
+    'auth/too-many-requests': 'Çok fazla deneme yapıldı. Bir süre sonra tekrar dene.',
+    PUBLIC_RUNTIME_CONFIG_UNAVAILABLE: 'Bağlantı ayarları yüklenemedi. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONFIG_MISSING: 'Giriş sistemi şu anda hazırlanamadı. Lütfen tekrar dene.',
+    PUBLIC_FIREBASE_CONTRACT_MISMATCH: 'Giriş sistemi doğrulanamadı. Lütfen tekrar dene.',
+    SESSION_SYNC_FAILED: 'Oturum bağlantısı kurulamadı. Lütfen tekrar dene.',
+    AUTH_UNAVAILABLE: 'Giriş sistemi şu anda kullanılamıyor. Lütfen tekrar dene.',
+    SESSION_SECRET_MISSING: 'Oturum güvenliği şu anda hazırlanamadı. Lütfen tekrar dene.'
   };
   if (map[code]) return map[code];
   const mapped = normalizeUserFacingMessage(code, fallback);
@@ -1181,9 +1187,9 @@ async function bootFirebase(options = {}) {
   const shouldReport = options.reportOnError !== false;
   bootPromise = (async () => {
     try {
-      const config = await loadFirebaseWebConfig({ required: false, scope: 'home', timeoutMs: 4200 });
-      if (!config) return false;
-      const { appModule, authModule, mode, version } = await importHesapSdk(options.timeoutMs || 7500);
+      const config = await loadFirebaseWebConfig({ required: true, scope: 'home', timeoutMs: 10000 });
+      if (!config) throw Object.assign(new Error('PUBLIC_FIREBASE_CONFIG_MISSING'), { code: 'PUBLIC_FIREBASE_CONFIG_MISSING' });
+      const { appModule, authModule, mode, version } = await importHesapSdk(options.timeoutMs || 10000);
       initializeApp = appModule.initializeApp;
       getAuth = authModule.getAuth;
       firebaseSetPersistence = authModule.setPersistence || null;
@@ -1240,22 +1246,50 @@ async function syncBackendSession(forceToken = false, rememberOverride = null) {
   if (!auth?.currentUser) return null;
   if (backendSessionSyncPromise && !forceToken) return backendSessionSyncPromise;
   backendSessionSyncPromise = (async () => {
-    const token = await getToken(!!forceToken);
-    const api = window.__PM_API__;
-    if (api?.ensureApiBase) await api.ensureApiBase();
-    const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
     const remember = typeof rememberOverride === 'boolean' ? rememberOverride : rememberFlagFromStoredPersistence();
-    const response = await fetch(url, {
-      method: 'POST', credentials: 'include', cache: 'no-store',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'X-PlayMatrix-Client': 'home-session' },
-      body: JSON.stringify({ remember, persistence: remember ? 'local' : 'session' })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || payload?.ok === false) throw markApiError(new Error('SESSION_SYNC_FAILED'), { path:'/api/auth/session', status:response.status, payload });
-    return payload.data || payload;
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const api = window.__PM_API__;
+      try {
+        if (api?.ensureApiBase) await api.ensureApiBase({ force: attempt > 0 });
+        const token = await getToken(!!forceToken || attempt > 0);
+        const url = api?.buildUrl ? api.buildUrl('/api/auth/session') : '/api/auth/session';
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), attempt === 0 ? 10000 : 14000);
+        let response;
+        try {
+          response = await fetch(url, {
+            method: 'POST', credentials: 'include', cache: 'no-store', signal: controller.signal,
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'X-PlayMatrix-Client': 'home-session' },
+            body: JSON.stringify({ remember, persistence: remember ? 'local' : 'session' })
+          });
+        } finally {
+          window.clearTimeout(timer);
+        }
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        const payload = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+        if (!response.ok || payload?.ok === false || !payload?.data?.user?.uid) {
+          throw markApiError(new Error(payload?.code || payload?.error || 'SESSION_SYNC_FAILED'), { path:'/api/auth/session', status:response.status, payload });
+        }
+        return payload.data || payload;
+      } catch (error) {
+        lastError = error;
+        try { api?.invalidateApiBase?.(); } catch (_) {}
+        if (attempt === 0) await sleep(180);
+      }
+    }
+    throw lastError || Object.assign(new Error('SESSION_SYNC_FAILED'), { code: 'SESSION_SYNC_FAILED' });
   })().finally(() => { backendSessionSyncPromise = null; });
   return backendSessionSyncPromise;
 }
+
+function scheduleBackendSessionRecovery(remember = rememberFlagFromStoredPersistence()) {
+  window.setTimeout(() => {
+    if (!auth?.currentUser) return;
+    syncBackendSession(true, remember).catch((error) => report('home.auth.session.recovery', error, { severity: 'warning' }));
+  }, 700);
+}
+
 async function clearBackendSession() {
   try {
     const api = window.__PM_API__;
@@ -1267,36 +1301,54 @@ async function clearBackendSession() {
 
 async function apiFetch(path, options = {}, needsAuth = true, sessionRetry = true) {
   const api = window.__PM_API__;
-  if (api?.ensureApiBase) await api.ensureApiBase();
-  const url = api?.buildUrl ? api.buildUrl(path) : `${String(window.__PLAYMATRIX_API_URL__ || '').replace(/\/+$/, '')}${path}`;
-  const { timeoutMs = 9000, signal, headers: optionHeaders, ...fetchOptions } = options || {};
-  const headers = new Headers(optionHeaders || {});
-  if (!headers.has('Accept')) headers.set('Accept', 'application/json');
-  if (options.body !== undefined && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (needsAuth) headers.set('Authorization', `Bearer ${await getToken(!!options.forceAuthToken)}`);
-  if (!headers.has('X-PlayMatrix-Client')) headers.set('X-PlayMatrix-Client', 'home');
-  if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', window.__PM_API__?.requestId?.('home') || `home_${Date.now()}_${Math.random().toString(36).slice(2)}`);
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), Math.max(2500, Number(timeoutMs) || 9000));
-  let response;
-  try {
-    response = await fetch(url, {
-      credentials: 'include',
-      cache: 'no-store',
-      ...fetchOptions,
-      headers,
-      signal: signal || controller.signal,
-      body: options.body instanceof FormData ? options.body : options.body !== undefined ? JSON.stringify(options.body) : undefined
-    });
-  } finally {
-    window.clearTimeout(timer);
+  const { timeoutMs = 12000, signal, headers: optionHeaders, forceAuthToken, ...fetchOptions } = options || {};
+  const maxAttempts = sessionRetry ? 2 : 2;
+  let lastError = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (api?.ensureApiBase) await api.ensureApiBase({ force: attempt > 0 });
+    const url = api?.buildUrl ? api.buildUrl(path) : `${String(window.__PLAYMATRIX_API_URL__ || '').replace(/\/+$/, '')}${path}`;
+    const headers = new Headers(optionHeaders || {});
+    if (!headers.has('Accept')) headers.set('Accept', 'application/json');
+    if (options.body !== undefined && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    if (needsAuth) headers.set('Authorization', `Bearer ${await getToken(!!forceAuthToken || attempt > 0)}`);
+    if (!headers.has('X-PlayMatrix-Client')) headers.set('X-PlayMatrix-Client', 'home');
+    if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', window.__PM_API__?.requestId?.('home') || `home_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), Math.max(4000, Number(timeoutMs) || 12000));
+    try {
+      const response = await fetch(url, {
+        credentials: 'include',
+        cache: 'no-store',
+        ...fetchOptions,
+        headers,
+        signal: signal || controller.signal,
+        body: options.body instanceof FormData ? options.body : options.body !== undefined ? JSON.stringify(options.body) : undefined
+      });
+      const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+      const payload = contentType.includes('application/json') ? await response.json().catch(() => ({})) : {};
+      const authProblem = isAuthProblem(payload, response.status);
+      if (!response.ok || payload?.ok === false || !contentType.includes('application/json')) {
+        const error = markApiError(new Error(payload?.code || payload?.error || `HTTP_${response.status}`), { path, status: response.status, payload, authProblem });
+        if (needsAuth && sessionRetry && authProblem && attempt === 0 && auth?.currentUser) {
+          await syncBackendSession(true).catch(() => null);
+          lastError = error;
+          continue;
+        }
+        throw error;
+      }
+      return payload;
+    } catch (error) {
+      lastError = error;
+      const text = String(error?.name || error?.code || error?.message || '').toLowerCase();
+      const retryable = /abort|timeout|network|failed to fetch|load failed|typeerror/.test(text);
+      if (!retryable || attempt + 1 >= maxAttempts) throw error;
+      try { api?.invalidateApiBase?.(); } catch (_) {}
+      await sleep(160);
+    } finally {
+      window.clearTimeout(timer);
+    }
   }
-  const payload = await response.json().catch(() => ({}));
-  const authProblem = isAuthProblem(payload, response.status);
-  if (!response.ok || payload?.ok === false) {
-    throw markApiError(new Error(payload?.error || `HTTP_${response.status}`), { path, status: response.status, payload, authProblem });
-  }
-  return payload;
+  throw lastError || Object.assign(new Error('REQUEST_FAILED'), { code: 'REQUEST_FAILED' });
 }
 
 async function loadProfile() {
@@ -2929,25 +2981,32 @@ async function loadHomeRecentWinners({ force = false } = {}) {
     return homeWinnersPayload;
   }
   homeWinnersLoading = true;
-  const endpoint = '/api/home/recent-activities?limit=5';
+  const endpoints = ['/api/home/recent-activities?limit=5', '/api/home/recent-winners?limit=5'];
   const softFallbackTimer = window.setTimeout(() => {
     if (!homeWinnersLoading) return;
-    host.innerHTML = '<div class="winners-empty-final"><i class="fa-solid fa-trophy"></i><strong>Kazanan akışı bekleniyor.</strong><span>Yeni oyun kazancı, promo veya çark ödülü geldiğinde burada görünecek.</span></div>';
-  }, 900);
-  host.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Kazanan verileri hazırlanıyor.</div>';
+    host.innerHTML = '<div class="winners-empty-final"><i class="fa-solid fa-trophy"></i><strong>Kazanan verileri hazırlanıyor.</strong><span>Bağlantı kurulduğunda liste otomatik yenilenecek.</span></div>';
+  }, 1600);
+  if (!homeWinnersPayload.length) host.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Kazanan verileri hazırlanıyor.</div>';
   let payload = null;
   let lastError = null;
-  try {
-    payload = await apiFetch(endpoint, { timeoutMs: 1200 }, false, false);
-  } catch (error) {
-    lastError = error;
-    payload = { items: [] };
-  }
-  if (lastError && !/load failed|failed to fetch|network|abort|timeout/i.test(String(lastError?.message || lastError || ''))) {
-    report('home.recentWinners.load', lastError, { endpoint, status: lastError?.status || 0 });
+  for (const endpoint of endpoints) {
+    try {
+      payload = await apiFetch(endpoint, { timeoutMs: 10000 }, false, true);
+      if (payload?.ok !== false) break;
+    } catch (error) {
+      lastError = error;
+    }
   }
   window.clearTimeout(softFallbackTimer);
   homeWinnersLoading = false;
+  if (!payload) {
+    if (lastError && !/load failed|failed to fetch|network|abort|timeout/i.test(String(lastError?.message || lastError || ''))) {
+      report('home.recentWinners.load', lastError, { endpoint: endpoints.join(','), status: lastError?.status || 0 });
+    }
+    if (homeWinnersPayload.length) renderHomeRecentWinners(homeWinnersPayload);
+    else host.innerHTML = '<div class="winners-empty-final"><i class="fa-solid fa-rotate"></i><strong>Kazanan verileri şu anda alınamadı.</strong><span>Liste 15 saniye içinde otomatik olarak tekrar denenecek.</span></div>';
+    return homeWinnersPayload;
+  }
   homeWinnersPayload = Array.isArray(payload?.items) ? payload.items : Array.isArray(payload?.activities) ? payload.activities : Array.isArray(payload?.winners) ? payload.winners : [];
   homeWinnersLoadedAt = Date.now();
   renderHomeRecentWinners(homeWinnersPayload);
@@ -3167,30 +3226,32 @@ async function loadLeaderboard(options = {}) {
     return leaderboardPayload;
   }
   leaderboardLoading = true;
-  let fallbackRendered = false;
   const softFallbackTimer = window.setTimeout(() => {
     if (!leaderboardLoading || !area) return;
-    fallbackRendered = true;
-    area.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik verisi hazırlanıyor.</strong><span>Veri gecikirse Yenile butonuyla tekrar deneyebilirsin.</span></div>';
-  }, 1000);
-  if (area) area.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Liderlik verileri hazırlanıyor.</div>';
+    area.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik verileri hazırlanıyor.</strong><span>Bağlantı kurulduğunda sıralama otomatik yenilenecek.</span></div>';
+  }, 1600);
+  if (area && !leaderboardPayload) area.innerHTML = '<div class="loader-card"><i class="fa-solid fa-spinner fa-spin"></i> Liderlik verileri hazırlanıyor.</div>';
   try {
-    leaderboardPayload = await apiFetch('/api/leaderboard?limit=10', { timeoutMs: 2600 }, false);
+    const nextPayload = await apiFetch('/api/leaderboard?limit=10', { timeoutMs: 12000 }, false, true);
+    if (!nextPayload?.tabs || typeof nextPayload.tabs !== 'object') throw Object.assign(new Error('LEADERBOARD_INVALID_RESPONSE'), { code: 'LEADERBOARD_INVALID_RESPONSE' });
+    leaderboardPayload = nextPayload;
     leaderboardLoadedAt = Date.now();
   } catch (error) {
-    leaderboardPayload = fallbackLeaderboardPayload();
-    leaderboardLoadedAt = Date.now();
+    if (!leaderboardPayload) leaderboardPayload = null;
     if (!/load failed|failed to fetch|network|abort|timeout/i.test(String(error?.message || error || ''))) {
       report('home.leaderboard.load', error, {
         reason: 'Liderlik API cevabı beklenen JSON sözleşmesini döndürmedi.',
-        solution: '/api/leaderboard route çıktısı ve Render API sağlığı kontrol edilmeli.'
+        solution: '/api/leaderboard route çıktısı ve API bağlantısı kontrol edilmeli.'
       });
+    }
+    if (!leaderboardPayload && area) {
+      area.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-rotate"></i><strong>Liderlik verileri şu anda alınamadı.</strong><span>Sıralama 15 saniye içinde otomatik olarak tekrar denenecek.</span></div>';
     }
   } finally {
     window.clearTimeout(softFallbackTimer);
     leaderboardLoading = false;
   }
-  renderLeaderboard();
+  if (leaderboardPayload) renderLeaderboard();
   return leaderboardPayload;
 }
 
@@ -4445,7 +4506,12 @@ async function handleAuthSubmit(mode = currentAuthMode) {
       try { await firebaseUpdateProfile?.(credential.user, { displayName: values.username }); } catch (_) {}
       try { await sendEmailVerification(credential.user); } catch (_) {}
       currentProfile = normalizeProfile({ uid: credential.user.uid, email: credential.user.email, username: values.username, firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), avatar: fallbackAvatar, dateOfBirth: values.dateOfBirth, ageVerified: true });
-      await syncBackendSession(true, rememberLogin);
+      try {
+        await syncBackendSession(true, rememberLogin);
+      } catch (sessionError) {
+        report('home.auth.session.register', sessionError, { severity: 'warning' });
+        scheduleBackendSessionRecovery(rememberLogin);
+      }
       try {
         await apiFetch('/api/profile/update', { method: 'POST', body: { firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), username: values.username, avatar: fallbackAvatar, selectedFrame: 0, dateOfBirth: values.dateOfBirth, birthDay: values.birthDay, birthMonth: values.birthMonth, birthYear: values.birthYear, acceptedTerms: true, acceptedKvkk: true, acceptedMcVirtualPoints: true } }, true);
         showToast('Kayıt tamamlandı', 'Hesabın oluşturuldu. E-posta doğrulama bağlantısını kontrol et.', 'success');
@@ -4460,10 +4526,15 @@ async function handleAuthSubmit(mode = currentAuthMode) {
         email = resolved.email;
       }
       credential = await signInWithEmailAndPassword(auth, email, values.password);
-      await syncBackendSession(true, rememberLogin);
-      showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
+      try {
+        await syncBackendSession(true, rememberLogin);
+      } catch (sessionError) {
+        report('home.auth.session.login', sessionError, { severity: 'warning' });
+        scheduleBackendSessionRecovery(rememberLogin);
+      }
     }
     await loadProfile();
+    if (safeMode === 'login') showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
     closeSheet(true);
   } catch (error) {
     authToastError(safeMode === 'register' ? 'Kayıt Ol' : 'Hesap erişimi', userErrorText(error, safeMode === 'register' ? 'Kayıt işlemi tamamlanamadı. Bilgileri kontrol edip tekrar dene.' : 'Giriş işlemi tamamlanamadı. Bilgileri kontrol edip tekrar dene.'));
