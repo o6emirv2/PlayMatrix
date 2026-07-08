@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="tr" class="pm-admin-guarded">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.90, maximum-scale=0.90, minimum-scale=0.90, user-scalable=no, viewport-fit=cover" />
+  <title>PlayMatrix Admin Kontrol Merkezi</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="./matrix-dashboard.css" />
+  <link rel="stylesheet" href="/public/avatar-frame.css?v=pm-admin-preview-live-render" />
+  <link rel="stylesheet" href="admin.css" />
+  <script src="admin.js"></script>
+</head>
+<body>
+  <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+  <main class="admin-shell">
+    <div id="adminLoader" class="loader loader-visible">
+      <div class="loader-card matrix-loader-card">
+        <div class="loader-key">⌁</div>
+        <div class="loader-lines">
+          <span>YÖNETİCİ OTURUMU DOĞRULANIYOR</span>
+          <strong>Yetki ve oturum bilgileri denetleniyor</strong>
+          <b>PANEL HAZIRLANIYOR</b>
+          <small>Lütfen bekleyin</small>
+        </div>
+        <div class="loader-spinner"></div>
+      </div>
+    </div>
+    <div id="adminRoot"></div>
+  </main>
+  <script src="/public/playmatrix-static-runtime.js?v=pm-user-msg-v2"></script>
+  <script src="/public/playmatrix-api.js?v=pm-v14-render-dob-games-admin"></script>
+  <script src="/public/avatar-registry.js?v=pm-admin-preview-live-render" defer></script>
+  <script src="/public/avatar-frame.js?v=pm-admin-preview-live-render" defer></script>
+  <script src="./admin-auth.js"></script>
+  <script type="module" src="./matrix-dashboard.js?v=admin-modal-loader-auth-market-v2"></script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+/* PlayMatrix Home Redesign - Topbar overrides */
+.topbar .btn,
+.topbar .icon-btn,
+.topbar .user-trigger,
+.topbar .dropdown,
+.topbar .chip-balance {
+  backdrop-filter: blur(12px);
+}
+
+.topbar .btn-primary {
+  background: linear-gradient(135deg, var(--pink), #d61f74 55%, #a51567 100%);
+}
+
+.topbar .btn-dark {
+  background: rgba(255,255,255,.04);
+}
+
+/* Final compact single-row topbar cleanup */
+.pm-topbar-final .btn,
+.pm-topbar-final .icon-btn,
+.pm-topbar-final .user-trigger,
+.pm-topbar-final .dropdown,
+.pm-topbar-final .chip-balance{backdrop-filter:blur(12px)}
+
+/* Final V12 topbar auth-state polish */
+body:not(.is-authenticated) .pm-topbar-final-actions > .topbar-promo-btn,
+body:not(.is-authenticated) .pm-topbar-final-actions > .notification-open-btn,
+body:not(.is-authenticated) .pm-topbar-final-actions > .pm-topbar-balance,
+body:not(.is-authenticated) .pm-topbar-final-actions > .pm-topbar-profile{display:none!important}
+body:not(.is-authenticated) #authButtons.pm-topbar-auth{display:flex!important}
+body.is-authenticated #authButtons.pm-topbar-auth{display:none!important}
+
+/* PlayMatrix final topbar auth/dropdown hardening. */
+body:not(.is-authenticated) .topbar-promo-btn,
+body:not(.is-authenticated) .notification-open-btn,
+body:not(.is-authenticated) .pm-topbar-balance,
+body:not(.is-authenticated) .pm-topbar-profile{display:none!important}
+body:not(.is-authenticated) #authButtons.pm-topbar-auth{display:flex!important}
+.pm-profile-dropdown{z-index:180!important;visibility:hidden!important;display:block!important}
+.top-user.is-open .pm-profile-dropdown{visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:translateY(0) scale(1)!important}
+.pm-topbar-final-shell{min-height:58px!important}
+.pm-brand-glow{text-transform:uppercase!important}
+
+
+/* V17 final topbar no-overflow override */
+.topbar-promo-btn,#topPromoGiftBtn{display:none!important}
+body:not(.is-authenticated) .notification-open-btn,
+body:not(.is-authenticated) .pm-topbar-balance,
+body:not(.is-authenticated) .pm-topbar-profile{display:none!important}
+body:not(.is-authenticated) #authButtons.pm-topbar-auth{display:flex!important}
+body.is-authenticated #authButtons.pm-topbar-auth{display:none!important}
+.pm-topbar-final-shell{width:min(calc(100vw - 14px),var(--container))!important;max-width:min(calc(100vw - 14px),var(--container))!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;overflow:hidden!important;padding:8px 9px!important}
+.pm-brand-final{flex:1 1 auto!important;min-width:0!important;overflow:hidden!important;gap:8px!important}.pm-brand-final-mark{flex:0 0 36px!important;width:36px!important;height:36px!important}.pm-brand-final-copy{min-width:0!important;overflow:hidden!important}.pm-brand-glow{max-width:clamp(116px,34vw,176px)!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:clamp(16px,4.25vw,21px)!important}
+.pm-topbar-final-actions{flex:0 0 auto!important;min-width:0!important;gap:5px!important}.pm-topbar-balance{flex:0 1 auto!important;min-width:72px!important;max-width:122px!important;height:36px!important;min-height:36px!important;padding:0 8px!important;overflow:hidden!important}.pm-topbar-balance .chip-balance-value{max-width:82px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:clamp(11px,3.1vw,13px)!important}.pm-topbar-balance .pm-mc-chip{display:inline-flex!important;font-size:9px!important;padding:1px 4px!important}.pm-profile-trigger{width:38px!important;min-width:38px!important;max-width:38px!important;height:38px!important;padding:3px!important}.pm-profile-trigger .pm-sr-profile-copy,.pm-profile-chevron{display:none!important}#topbarAvatarShell{width:30px!important;height:30px!important;min-width:30px!important}#authButtons.pm-topbar-auth{gap:6px!important}#authButtons.pm-topbar-auth .btn{height:38px!important;min-height:38px!important;padding:0 12px!important;border-radius:14px!important;font-size:12px!important;white-space:nowrap!important}.pm-profile-dropdown{right:0!important;left:auto!important;max-width:min(320px,calc(100vw - 24px))!important;z-index:220!important}
+@media(max-width:390px){.pm-topbar-final-shell{width:calc(100vw - 10px)!important;max-width:calc(100vw - 10px)!important;gap:5px!important;padding-inline:7px!important}.pm-brand-final-mark{flex-basis:33px!important;width:33px!important;height:33px!important}.pm-brand-glow{max-width:clamp(100px,31vw,128px)!important;font-size:clamp(15px,4.1vw,18px)!important}#authButtons.pm-topbar-auth .btn{height:35px!important;min-height:35px!important;padding-inline:9px!important;font-size:11px!important}.notification-open-btn.pm-topbar-round{width:34px!important;min-width:34px!important;height:34px!important}.pm-topbar-balance{min-width:68px!important;max-width:106px!important;height:34px!important;min-height:34px!important;padding-inline:6px!important}.pm-topbar-balance .chip-balance-value{max-width:72px!important;font-size:11px!important}.pm-profile-trigger{width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important}#topbarAvatarShell{width:28px!important;height:28px!important}}
+@media(max-width:340px){.pm-brand-glow{max-width:90px!important}#authButtons.pm-topbar-auth .btn{padding-inline:7px!important;font-size:10.5px!important}.pm-topbar-balance .pm-mc-chip{display:none!important}.pm-topbar-balance{min-width:58px!important;max-width:88px!important}}
+
+
+/* ===============================
+   V18 DROPDOWN + TOPBAR REBUILD
+   Dropdown eski davranışı sıfırlandı; tek kaynak pm-dropdown-open.
+   =============================== */
+.pm-topbar-final{overflow:visible!important;isolation:isolate!important;z-index:120!important}
+.pm-topbar-final-shell{overflow:visible!important;position:relative!important;display:grid!important;grid-template-columns:minmax(142px,1fr) max-content!important;align-items:center!important;gap:8px!important;contain:none!important}
+body.is-authenticated .pm-topbar-final-shell{grid-template-columns:minmax(134px,1fr) max-content!important}
+.pm-brand-final{min-width:0!important;max-width:100%!important;width:100%!important;overflow:hidden!important}.pm-brand-final-copy{min-width:0!important;width:100%!important}.pm-brand-glow{max-width:none!important;width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.pm-topbar-final-actions{min-width:0!important;max-width:100%!important;display:flex!important;align-items:center!important;gap:5px!important;overflow:visible!important}.notification-open-btn.pm-topbar-round{width:35px!important;min-width:35px!important;height:35px!important;flex:0 0 35px!important}
+.pm-topbar-balance{height:36px!important;min-height:36px!important;min-width:132px!important;max-width:172px!important;padding:0 7px!important;gap:3px!important;flex:0 1 172px!important;border-radius:999px!important;overflow:hidden!important;background:linear-gradient(135deg,rgba(79,255,193,.10),rgba(255,255,255,.035))!important;border:1px solid rgba(130,255,217,.16)!important}.pm-topbar-balance .chip-balance-value{max-width:139px!important;font-size:clamp(9px,2.62vw,12px)!important;letter-spacing:-.035em!important;font-weight:950!important;color:#fff!important}.pm-topbar-balance .pm-mc-chip{font-size:8px!important;line-height:1!important;padding:2px 4px!important;background:rgba(141,251,209,.11)!important;color:#9ff8d7!important}.pm-balance-compact .pm-topbar-balance{min-width:88px!important;max-width:112px!important;flex-basis:112px!important}.pm-balance-compact .pm-topbar-balance .chip-balance-value{max-width:72px!important;font-size:12px!important;letter-spacing:0!important}
+.pm-profile-trigger{position:relative!important;z-index:2!important;touch-action:manipulation!important}.pm-profile-dropdown{display:block!important;position:absolute!important;top:calc(100% + 10px)!important;right:0!important;left:auto!important;width:min(326px,calc(100vw - 18px))!important;max-width:min(326px,calc(100vw - 18px))!important;transform:translate3d(var(--pm-dropdown-shift-x,0px),8px,0) scale(.985)!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;border-radius:24px!important;padding:14px!important;background:linear-gradient(180deg,rgba(24,9,33,.985),rgba(8,5,14,.992))!important;border:1px solid rgba(255,90,169,.26)!important;box-shadow:0 26px 64px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.035),0 0 34px rgba(247,37,133,.14)!important;z-index:450!important;will-change:opacity,transform!important;transition:opacity .16s ease,transform .16s ease,visibility .16s ease!important}.top-user.pm-dropdown-open .pm-profile-dropdown,.top-user.is-open .pm-profile-dropdown{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translate3d(var(--pm-dropdown-shift-x,0px),0,0) scale(1)!important}.pm-profile-dropdown::before{content:"";position:absolute;top:-7px;right:18px;width:14px;height:14px;transform:rotate(45deg);background:rgba(24,9,33,.985);border-left:1px solid rgba(255,90,169,.22);border-top:1px solid rgba(255,90,169,.22)}.pm-profile-dropdown .dd-head{border-bottom:1px solid rgba(255,255,255,.075)!important}.pm-profile-dropdown .dd-items{gap:7px!important}.pm-profile-dropdown .drop-item{min-height:45px!important;border-radius:16px!important;background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.022))!important;border:1px solid rgba(255,255,255,.075)!important;color:#fff!important;font-weight:850!important}.pm-profile-dropdown .drop-item:active{transform:scale(.985)!important}.pm-profile-dropdown .drop-item.danger{color:#ffd7e4!important;border-color:rgba(255,96,145,.18)!important}
+body:not(.is-authenticated) .notification-open-btn,body:not(.is-authenticated) .pm-topbar-balance,body:not(.is-authenticated) .pm-topbar-profile{display:none!important}body.is-authenticated #authButtons.pm-topbar-auth{display:none!important}body:not(.is-authenticated) #authButtons.pm-topbar-auth{display:flex!important}
+@media(max-width:430px){.pm-topbar-final-shell{width:calc(100vw - 10px)!important;max-width:calc(100vw - 10px)!important;padding:8px 7px!important;gap:6px!important}.pm-brand-final-mark{width:34px!important;height:34px!important;flex-basis:34px!important}.pm-brand-glow{font-size:clamp(15px,4vw,18px)!important;letter-spacing:.015em!important}body.is-authenticated .pm-brand-glow{font-size:clamp(13px,3.5vw,16px)!important}.pm-topbar-final-actions{gap:4px!important}.notification-open-btn.pm-topbar-round{width:32px!important;min-width:32px!important;height:32px!important;flex-basis:32px!important}.pm-topbar-balance{min-width:125px!important;max-width:158px!important;flex-basis:158px!important;height:33px!important;min-height:33px!important;padding-inline:5px!important}.pm-topbar-balance .chip-balance-value{max-width:126px!important;font-size:clamp(8.4px,2.34vw,10.8px)!important}.pm-profile-trigger{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;padding:2px!important}#topbarAvatarShell{width:27px!important;height:27px!important;min-width:27px!important}.pm-profile-dropdown{right:-2px!important;width:min(318px,calc(100vw - 14px))!important;max-width:min(318px,calc(100vw - 14px))!important}#authButtons.pm-topbar-auth .btn{height:35px!important;min-height:35px!important;padding-inline:10px!important;font-size:11px!important}}
+@media(max-width:360px){body.is-authenticated .pm-brand-final-mark{display:none!important}body.is-authenticated .pm-brand-glow{font-size:14px!important}.pm-topbar-balance{min-width:116px!important;max-width:146px!important;flex-basis:146px!important}.pm-topbar-balance .chip-balance-value{max-width:115px!important;font-size:8.6px!important}.pm-topbar-balance .pm-mc-chip{font-size:7px!important;padding-inline:3px!important}}
+
+/* ===============================
+   PM V19 FINAL HEADER / DROPDOWN / BOTTOM NAV STABILITY
+   =============================== */
+.pm-topbar-final{z-index:520!important;overflow:visible!important;contain:none!important;isolation:isolate!important}
+.pm-topbar-final-shell{
+  width:min(calc(100vw - 12px),var(--container))!important;
+  max-width:min(calc(100vw - 12px),var(--container))!important;
+  min-height:58px!important;
+  padding:8px 8px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:7px!important;
+  overflow:visible!important;
+  contain:none!important;
+  border-radius:24px!important;
+}
+.pm-brand-final{flex:1 1 158px!important;min-width:0!important;max-width:none!important;width:auto!important;overflow:visible!important;gap:7px!important}
+.pm-brand-final-mark{flex:0 0 35px!important;width:35px!important;height:35px!important;border-radius:12px!important}
+.pm-brand-final-mark img{width:26px!important;height:26px!important}
+.pm-brand-final-copy{min-width:0!important;overflow:visible!important;width:auto!important}
+.pm-brand-glow{display:block!important;max-width:none!important;width:auto!important;min-width:0!important;font-size:clamp(15px,3.85vw,20px)!important;line-height:1!important;letter-spacing:.02em!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;text-transform:uppercase!important}
+.pm-topbar-final-actions{flex:0 0 auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;min-width:0!important;overflow:visible!important;contain:none!important}
+body:not(.is-authenticated) #authButtons.pm-topbar-auth{display:flex!important;align-items:center!important;gap:6px!important;flex:0 0 auto!important}
+body:not(.is-authenticated) #authButtons.pm-topbar-auth .btn{height:36px!important;min-height:36px!important;padding:0 11px!important;border-radius:14px!important;font-size:11.5px!important;line-height:1!important;white-space:nowrap!important;letter-spacing:.01em!important}
+body:not(.is-authenticated) .notification-open-btn,
+body:not(.is-authenticated) .pm-topbar-balance,
+body:not(.is-authenticated) .pm-topbar-profile{display:none!important}
+body.is-authenticated #authButtons.pm-topbar-auth{display:none!important}
+body.is-authenticated .pm-brand-final{flex:1 1 120px!important}
+body.is-authenticated .pm-brand-glow{font-size:clamp(13px,3.2vw,18px)!important}
+.notification-open-btn.pm-topbar-round{width:32px!important;min-width:32px!important;height:32px!important;flex:0 0 32px!important;border-radius:12px!important}
+.pm-topbar-balance{height:34px!important;min-height:34px!important;min-width:150px!important;max-width:168px!important;flex:0 1 168px!important;padding:0 6px!important;gap:3px!important;border-radius:999px!important;overflow:hidden!important}
+.pm-topbar-balance .chip-balance-value{display:block!important;min-width:0!important;max-width:132px!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;font-size:clamp(7.8px,2.08vw,10.4px)!important;line-height:1!important;letter-spacing:-.04em!important;font-weight:950!important;font-variant-numeric:tabular-nums!important}
+.pm-topbar-balance .pm-mc-chip{font-size:7px!important;line-height:1!important;padding:2px 3px!important;min-width:auto!important}
+.pm-balance-compact .pm-topbar-balance{min-width:88px!important;max-width:112px!important;flex-basis:112px!important}
+.pm-balance-compact .pm-topbar-balance .chip-balance-value{max-width:74px!important;font-size:12px!important;letter-spacing:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.pm-profile-trigger{width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;min-height:32px!important;padding:2px!important;border-radius:12px!important;flex:0 0 32px!important}
+.pm-profile-trigger .pm-sr-profile-copy,.pm-profile-chevron{display:none!important}
+#topbarAvatarShell{width:27px!important;height:27px!important;min-width:27px!important}
+.pm-profile-dropdown{position:absolute!important;top:calc(100% + 10px)!important;right:0!important;left:auto!important;width:min(328px,calc(100vw - 16px))!important;max-width:min(328px,calc(100vw - 16px))!important;z-index:900!important;display:block!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;transform:translate3d(var(--pm-dropdown-shift-x,0px),10px,0) scale(.985)!important;transition:opacity .16s ease,transform .16s ease,visibility .16s ease!important;will-change:opacity,transform!important}
+.top-user.pm-dropdown-open .pm-profile-dropdown,.top-user.is-open .pm-profile-dropdown{visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:translate3d(var(--pm-dropdown-shift-x,0px),0,0) scale(1)!important}
+@media(max-width:390px){
+  .pm-topbar-final-shell{width:calc(100vw - 10px)!important;max-width:calc(100vw - 10px)!important;gap:5px!important;padding-inline:6px!important;border-radius:22px!important}
+  .pm-brand-final{flex-basis:145px!important;gap:6px!important}.pm-brand-final-mark{flex-basis:31px!important;width:31px!important;height:31px!important}.pm-brand-glow{font-size:clamp(13.5px,3.55vw,17px)!important}
+  body:not(.is-authenticated) #authButtons.pm-topbar-auth .btn{height:34px!important;min-height:34px!important;padding-inline:8px!important;font-size:10.7px!important;border-radius:13px!important}
+  body.is-authenticated .pm-brand-final{flex-basis:103px!important}.notification-open-btn.pm-topbar-round{width:29px!important;min-width:29px!important;height:29px!important;flex-basis:29px!important}.pm-topbar-balance{min-width:134px!important;max-width:148px!important;flex-basis:148px!important;height:31px!important;min-height:31px!important;padding-inline:4px!important}.pm-topbar-balance .chip-balance-value{max-width:118px!important;font-size:clamp(7.1px,1.9vw,9.4px)!important}.pm-profile-trigger{width:29px!important;min-width:29px!important;max-width:29px!important;height:29px!important;min-height:29px!important}#topbarAvatarShell{width:24px!important;height:24px!important;min-width:24px!important}
+}
+@media(max-width:350px){
+  body:not(.is-authenticated) .pm-brand-final{flex-basis:132px!important}.pm-brand-final-mark{display:none!important}.pm-brand-glow{font-size:13px!important}
+  body:not(.is-authenticated) #authButtons.pm-topbar-auth .btn{padding-inline:7px!important;font-size:10px!important}
+  body.is-authenticated .notification-open-btn.pm-topbar-round{display:none!important}.pm-topbar-balance{min-width:132px!important;max-width:142px!important;flex-basis:142px!important}
+}
+.mobile-nav--final{z-index:510!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:end!important;gap:4px!important;width:100%!important;max-width:100vw!important;overflow:visible!important;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))!important}
+.mobile-nav--final .mobile-tab{min-width:0!important;width:100%!important;max-width:100%!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:4px!important;white-space:nowrap!important;overflow:visible!important}
+.mobile-nav--final .mobile-tab i{font-size:clamp(17px,5vw,23px)!important}.mobile-nav--final .mobile-tab span{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:clamp(10px,3vw,13px)!important;line-height:1.08!important}
+.mobile-nav--final .mobile-tab--center{transform:translateY(-12px)!important;min-height:74px!important;border-radius:22px!important}
+/* PM V19 toast final layer after modal CSS */
+.toast-stack{z-index:1200!important;position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 8px)!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translateX(-50%)!important;width:min(calc(100vw - 14px),760px)!important;pointer-events:none!important}.toast{pointer-events:auto!important}
+
+
+/* ===============================
+   PM V20 FINAL HEADER / DROPDOWN / BOTTOM NAV STABILITY
+   - Dropdown çift touch/click kapanma sorunu JS v20 ile kaldırıldı.
+   - Girişsiz üst bar sadece Giriş Yap/Kayıt Ol gösterir.
+   - Girişli üst bar PlayMatrix + uzun bakiye + profil alanını taşırmadan gösterir.
+   =============================== */
+.pm-topbar-final{z-index:1600!important;overflow:visible!important;contain:none!important;isolation:isolate!important;padding-top:max(8px,var(--safe-top))!important}
+.pm-topbar-final-shell{width:min(calc(100vw - 12px),var(--container))!important;max-width:min(calc(100vw - 12px),var(--container))!important;min-height:62px!important;padding:9px 10px!important;border-radius:24px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;overflow:visible!important;contain:none!important}
+.pm-brand-final{flex:1 1 auto!important;min-width:0!important;max-width:none!important;overflow:visible!important;gap:8px!important;touch-action:manipulation!important}.pm-brand-final-mark{flex:0 0 36px!important;width:36px!important;height:36px!important;border-radius:13px!important}.pm-brand-final-copy{min-width:0!important;overflow:visible!important}.pm-brand-glow{display:block!important;width:auto!important;max-width:none!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;font-size:clamp(16px,4vw,21px)!important;line-height:1!important;text-transform:uppercase!important;letter-spacing:.018em!important}
+.pm-topbar-final-actions{flex:0 0 auto!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:6px!important;min-width:0!important;max-width:100%!important;overflow:visible!important;contain:none!important}
+body:not(.is-authenticated) .notification-open-btn,body:not(.is-authenticated) .pm-topbar-balance,body:not(.is-authenticated) .pm-topbar-profile{display:none!important}body:not(.is-authenticated) #authButtons.pm-topbar-auth{display:flex!important;gap:8px!important;align-items:center!important}body.is-authenticated #authButtons.pm-topbar-auth{display:none!important}
+body:not(.is-authenticated) #authButtons.pm-topbar-auth .btn{height:38px!important;min-height:38px!important;padding:0 13px!important;border-radius:15px!important;font-size:12px!important;font-weight:950!important;white-space:nowrap!important}
+.notification-open-btn.pm-topbar-round{width:34px!important;min-width:34px!important;height:34px!important;flex:0 0 34px!important;border-radius:13px!important}.pm-profile-trigger{width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important;min-height:34px!important;padding:2px!important;border-radius:13px!important;touch-action:manipulation!important;cursor:pointer!important}.pm-profile-trigger .pm-sr-profile-copy,.pm-profile-chevron{display:none!important}#topbarAvatarShell{width:29px!important;height:29px!important;min-width:29px!important}
+.pm-topbar-balance{height:36px!important;min-height:36px!important;min-width:176px!important;max-width:196px!important;flex:0 0 196px!important;padding:0 7px!important;gap:4px!important;border-radius:999px!important;overflow:visible!important;background:linear-gradient(135deg,rgba(101,255,205,.12),rgba(255,255,255,.035))!important;border:1px solid rgba(149,255,219,.18)!important}.pm-topbar-balance .chip-balance-value{display:block!important;min-width:0!important;max-width:158px!important;white-space:nowrap!important;overflow:visible!important;text-overflow:clip!important;font-size:clamp(8.4px,2.08vw,11.2px)!important;line-height:1!important;letter-spacing:-.045em!important;font-weight:950!important;font-variant-numeric:tabular-nums!important}.pm-topbar-balance .pm-mc-chip{font-size:8px!important;line-height:1!important;padding:2px 4px!important;flex:0 0 auto!important}.pm-balance-compact .pm-topbar-balance{min-width:96px!important;max-width:126px!important;flex-basis:126px!important}.pm-balance-compact .pm-topbar-balance .chip-balance-value{max-width:82px!important;font-size:12px!important;letter-spacing:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.pm-profile-dropdown{position:absolute!important;top:calc(100% + 10px)!important;right:0!important;left:auto!important;width:min(330px,calc(100vw - 16px))!important;max-width:min(330px,calc(100vw - 16px))!important;display:block!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;transform:translate3d(var(--pm-dropdown-shift-x,0px),10px,0) scale(.985)!important;transition:opacity .16s ease,transform .16s ease,visibility .16s ease!important;will-change:opacity,transform!important;z-index:1700!important}.top-user.pm-dropdown-open .pm-profile-dropdown,.top-user.is-open .pm-profile-dropdown{visibility:visible!important;opacity:1!important;pointer-events:auto!important;transform:translate3d(var(--pm-dropdown-shift-x,0px),0,0) scale(1)!important}.pm-profile-dropdown .drop-item{touch-action:manipulation!important}
+@media(max-width:430px){
+  .pm-topbar-final-shell{width:calc(100vw - 10px)!important;max-width:calc(100vw - 10px)!important;gap:6px!important;padding:8px 7px!important;min-height:66px!important;border-radius:22px!important}
+  .pm-brand-final{flex:1 1 132px!important;gap:6px!important}.pm-brand-final-mark{width:33px!important;height:33px!important;flex-basis:33px!important}.pm-brand-glow{font-size:clamp(15px,3.95vw,18px)!important;letter-spacing:.012em!important}
+  body:not(.is-authenticated) #authButtons.pm-topbar-auth{gap:6px!important}body:not(.is-authenticated) #authButtons.pm-topbar-auth .btn{height:35px!important;min-height:35px!important;padding-inline:10px!important;font-size:11px!important}
+  body.is-authenticated .pm-topbar-final-shell{min-height:82px!important;align-items:center!important}.pm-topbar-final-actions{display:grid!important;grid-template-columns:32px minmax(0,1fr) 32px!important;grid-auto-rows:32px!important;align-items:center!important;gap:4px!important;width:min(196px,54vw)!important;max-width:min(196px,54vw)!important}.notification-open-btn.pm-topbar-round{grid-column:1;width:32px!important;min-width:32px!important;height:32px!important;flex-basis:auto!important}.pm-profile-trigger{grid-column:3;width:32px!important;min-width:32px!important;max-width:32px!important;height:32px!important;min-height:32px!important}.pm-topbar-balance{grid-column:1/4;grid-row:2;width:100%!important;min-width:0!important;max-width:100%!important;flex-basis:auto!important;height:32px!important;min-height:32px!important;padding-inline:6px!important}.pm-topbar-balance .chip-balance-value{max-width:calc(100% - 28px)!important;font-size:clamp(8.4px,2.2vw,10.4px)!important}#topbarAvatarShell{width:27px!important;height:27px!important;min-width:27px!important}.pm-profile-dropdown{right:-2px!important;width:min(328px,calc(100vw - 14px))!important;max-width:min(328px,calc(100vw - 14px))!important}
+}
+@media(max-width:360px){
+  .pm-brand-final{flex-basis:108px!important}.pm-brand-final-mark{width:30px!important;height:30px!important;flex-basis:30px!important}.pm-brand-glow{font-size:13.2px!important}body.is-authenticated .pm-topbar-final-actions{width:190px!important;max-width:55vw!important}.pm-topbar-balance .chip-balance-value{font-size:8px!important;letter-spacing:-.055em!important}.pm-topbar-balance .pm-mc-chip{font-size:7px!important;padding-inline:3px!important}
+}
+.mobile-nav--final{z-index:1500!important;width:100vw!important;max-width:100vw!important;overflow:hidden!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:3px!important;padding-left:max(6px,env(safe-area-inset-left))!important;padding-right:max(6px,env(safe-area-inset-right))!important}.mobile-nav--final .mobile-tab{min-width:0!important;max-width:100%!important;overflow:hidden!important;padding-inline:2px!important}.mobile-nav--final .mobile-tab span{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:clamp(10px,2.9vw,12px)!important}.mobile-nav--final .mobile-tab--center{transform:translateY(-10px)!important;min-height:72px!important}
+.toast-stack{z-index:2600!important}
+
+
+/* PlayMatrix AnaSayfa üst bar avatar/çerçeve merkezi render standardı */
+#topbarAvatarShell.pm-avatar-host,
+#topbarAvatarShell{
+  overflow:visible!important;
+  background:transparent!important;
+  display:grid!important;
+  place-items:center!important;
+}
+#topbarAvatarShell > [data-pm-avatar="true"],
+#topbarAvatarShell > .pm-avatar{
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  overflow:hidden!important;
+  border-radius:999px!important;
+}
+#topbarAvatarShell .pm-frame-image,
+#topbarAvatarShell .pm-avatar-shell__frame{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.notification-row.is-admin-exact .notification-card-cta,
+.notification-row.is-admin-exact .notification-card-more{
+  display:none!important;
+}
