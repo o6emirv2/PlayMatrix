@@ -10,7 +10,6 @@ const { recordRecentActivity } = require('../../core/recentActivityService');
 let addAdminLog = null;
 try {
   ({ addAdminLog } = require('../../admin/adminRuntimeLogStore'));
-const { authenticateSocketRequest } = require('../../core/userSessionService');
 } catch (_) {
   addAdminLog = null;
 }
@@ -1447,18 +1446,22 @@ router.post('/leave', requireAuth, asyncRoute(async (req, res) => {
 async function authenticatePistiSocket(socket) {
   try {
     if (socket.data?.pistiUid) return true;
-    const session = await authenticateSocketRequest(socket);
-    if (!session?.uid) {
-      socket.emit('pisti:auth_error', { ok:false, error: session?.code || 'AUTH_REQUIRED' });
+    const token = String(socket.handshake?.auth?.token || '').trim();
+    if (!token) return false;
+    const { auth } = initFirebaseAdmin();
+    if (!auth) return false;
+    const decoded = await auth.verifyIdToken(token);
+    const uid = String(decoded.uid || '');
+    if (!uid) {
+      socket.emit('AUTH_REQUIRED');
       return false;
     }
-    socket.data.pistiUid = String(session.uid);
-    socket.data.pistiEmail = String(session.email || '');
-    socket.data.pmSessionId = String(session.sid || '');
-    return true;
+    socket.data.pistiUid = uid;
+    if (socket.data.pistiUid) socket.join(`pisti:user:${socket.data.pistiUid}`);
+    return !!socket.data.pistiUid;
   } catch (_) {
     socket.data.pistiUid = '';
-    socket.emit('pisti:auth_error', { ok:false, error:'AUTH_INVALID' });
+    socket.emit('pisti:auth_error', { ok: false, error: 'INVALID_AUTH_TOKEN' });
     return false;
   }
 }

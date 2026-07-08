@@ -84,11 +84,18 @@ function panelTemplate() {
         </div>
         <div class="crash-control-summary" id="crashRiskSummary">Kontrol bilgileri hazırlanıyor.</div>
         <div class="field-grid">
-          <div class="field pm-admin-grid-span-all"><label for="crashAdminRiskLimitInput">Crash Max / Admin Risk Limit (MC)</label><input id="crashAdminRiskLimitInput" type="number" min="1" step="1" placeholder="100000000" /></div>
+          <div class="field"><label for="nextCrashPointInput">Crash Çarpanı</label><input id="nextCrashPointInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Örn: 2.50 veya 2,50" /></div>
+          <div class="field"><label for="crashAdminRiskLimitInput">Crash Max / Admin Risk Limit (MC)</label><input id="crashAdminRiskLimitInput" type="number" min="1" step="1" placeholder="1000000" /></div>
+          <div class="field pm-admin-grid-span-all"><label for="futureCrashPointsInput">Gelecek 1-100 El Çarpanı</label><textarea id="futureCrashPointsInput" placeholder="Örn: 1.30, 2.50, 10.00 — en fazla 100 değer"></textarea></div>
         </div>
-        <div class="crash-control-hint" id="crashControlHint">Tekil aktif, sonraki veya gelecek round çarpanı manuel belirlenemez. Yalnızca güvenli risk aralıkları ve hard risk limiti yönetilebilir.</div>
+        <div class="crash-control-hint" id="crashControlHint">Aktif geri sayım butonu yalnızca round COUNTDOWN aşamasındayken çalışır. Uçuş başladıysa sonraki round butonunu kullan.</div>
         <div class="action-row">
-          <button id="saveCrashRiskLimitBtn" class="warn" type="button">CRASH MAX LİMİTİ KAYDET</button>
+          <button id="setCurrentCrashPointBtn" type="button" disabled>AKTİF GERİ SAYIM ROUNDUNA UYGULA</button>
+          <button id="setNextCrashPointBtn" type="button" disabled>SONRAKİ ROUND İÇİN KAYDET</button>
+          <button id="clearNextCrashPointBtn" class="ghost" type="button" disabled>ÇARPAN OVERRIDE TEMİZLE</button>
+          <button id="saveFutureCrashPointsBtn" type="button" disabled>GELECEK 1-100 ELİ KAYDET</button>
+          <button id="clearFutureCrashPointsBtn" class="ghost" type="button" disabled>GELECEK EL LİSTESİNİ TEMİZLE</button>
+          <button id="saveCrashRiskLimitBtn" class="warn" type="button" disabled>CRASH MAX LİMİTİ KAYDET</button>
         </div>
         <div class="table-wrap crash-risk-table-wrap"><table class="crash-risk-table"><thead><tr><th>Min</th><th>Max</th><th>Ağırlık</th></tr></thead><tbody id="crashRiskRows"></tbody></table></div>
         <div class="action-row">
@@ -525,11 +532,27 @@ function crashConfirmIsValid() {
   return true;
 }
 
-function updateCrashControlButtons() {
-  const limitBtn = document.getElementById('saveCrashRiskLimitBtn');
-  if (limitBtn) limitBtn.disabled = false;
+function updateCrashControlButtons(payload = null) {
+  const confirmed = true;
+  const phase = String(payload?.phase || document.getElementById('crashRiskSummary')?.dataset.phase || '').toUpperCase();
+  const currentBtn = document.getElementById('setCurrentCrashPointBtn');
+  const nextBtn = document.getElementById('setNextCrashPointBtn');
+  const clearBtn = document.getElementById('clearNextCrashPointBtn');
   const hint = document.getElementById('crashControlHint');
-  if (hint) hint.textContent = 'Tekil round çarpanı manuel belirlenemez. Risk motoru yalnızca kayıtlı aralık ve ağırlıklardan güvenli seçim yapar.';
+  if (currentBtn) {
+    currentBtn.disabled = !confirmed || phase !== 'COUNTDOWN';
+    currentBtn.title = phase === 'COUNTDOWN' ? 'Aktif geri sayım roundunun crash çarpanını ayarlar.' : 'Aktif round uçuşta/patlamışsa mevcut round değiştirilemez.';
+  }
+  if (nextBtn) nextBtn.disabled = !confirmed;
+  if (clearBtn) clearBtn.disabled = !confirmed;
+  const limitBtn = document.getElementById('saveCrashRiskLimitBtn');
+  if (limitBtn) limitBtn.disabled = !confirmed;
+  if (hint) {
+    const stateText = phase === 'COUNTDOWN'
+      ? 'Aktif round geri sayımda: aktif rounda çarpan uygulanabilir.'
+      : 'Aktif round kilitli veya henüz yok: sonraki round override kullanılmalıdır.';
+    hint.textContent = stateText;
+  }
 }
 
 function formatCrashValidationDetails(error) {
@@ -545,11 +568,18 @@ function renderCrashRiskPanel(payload = {}) {
   const summary = document.getElementById('crashRiskSummary');
   if (summary) {
     const phase = String(payload.phase || '—');
+    const appliesTo = payload.overrideAppliesTo === 'current_countdown_round'
+      ? 'Aktif geri sayım roundu değiştirilebilir'
+      : 'Aktif round kilitli; değişiklik sonraki rounda uygulanır';
     const activePoint = payload.currentRoundCrashPoint ? ` · Aktif crash: ${formatMultiplier(payload.currentRoundCrashPoint)}` : '';
-    const locked = payload.activeRoundLocked ? ' · Round kilitli' : '';
+    const locked = payload.activeRoundLocked ? ' · Kilitli' : '';
     summary.dataset.phase = phase;
-    summary.textContent = `Durum: ${phase} · Round: ${payload.roundId || '—'} · Anlık: ${formatMultiplier(payload.multiplier)}${activePoint}${locked} · Manuel çarpan müdahalesi kapalı`;
+    summary.textContent = `Durum: ${phase} · Round: ${payload.roundId || '—'} · Anlık: ${formatMultiplier(payload.multiplier)}${activePoint} · Bekleyen override: ${formatMultiplier(payload.nextCrashPointOverride)} · Gelecek el: ${Number(payload.futureCrashPointCount || 0)} adet · ${appliesTo}${locked}`;
   }
+  const nextInput = document.getElementById('nextCrashPointInput');
+  if (nextInput && Number(payload.nextCrashPointOverride || 0) > 0 && !nextInput.value) nextInput.value = Number(payload.nextCrashPointOverride).toFixed(2);
+  const futureInput = document.getElementById('futureCrashPointsInput');
+  if (futureInput && Array.isArray(payload.futureCrashPoints) && !futureInput.value) futureInput.value = payload.futureCrashPoints.map((v) => Number(v).toFixed(2)).join(', ');
   const riskLimitInput = document.getElementById('crashAdminRiskLimitInput');
   if (riskLimitInput) riskLimitInput.value = String(payload.adminRiskBetLimit || payload.riskBetLimit || 1000000);
   updateCrashControlButtons(payload);
@@ -1092,7 +1122,6 @@ function buildUserInfoPanel() {
         <div class="field"><label for="userInfoEmailVerified">E-posta Durumu</label><select id="userInfoEmailVerified"><option value="true">Doğrulanmış</option><option value="false">Doğrulanmamış</option></select></div>
         <div class="field"><label for="userInfoUsername">Kullanıcı Adı</label><input id="userInfoUsername" type="text" autocomplete="off" /></div>
         <div class="field"><label for="userInfoFullName">Ad Soyad</label><input id="userInfoFullName" type="text" autocomplete="off" /></div>
-        <div class="field"><label for="userInfoDateOfBirth">Doğum Tarihi</label><input id="userInfoDateOfBirth" type="date" autocomplete="off" /><small>Bu alan yalnızca admin reauth ile değiştirilebilir. 16+ doğrulaması zorunludur.</small></div>
         <div class="field"><label for="userInfoBalance">MC Bakiye</label><input id="userInfoBalance" type="number" step="1" /></div>
         <div class="field"><label for="userInfoLevel">Seviye</label><input id="userInfoLevel" type="number" min="1" max="100" step="1" /></div>
         <div class="field"><label for="userInfoXp">XP</label><input id="userInfoXp" type="number" min="0" step="1" /></div>
@@ -1118,15 +1147,14 @@ function fillUserInfoForm(payload = {}) {
   if (save) save.disabled = false;
   if (current) current.textContent = `UID: ${payload.uid || user.uid || '—'} • ${user.email || 'e-posta yok'} • Seviye ${user.accountLevel || 1}`;
   const set = (id, value) => { const node = document.getElementById(id); if (node) node.value = value ?? ''; };
-  const raw = payload.raw || {};
   set('userInfoEmail', user.email || '');
   set('userInfoEmailVerified', String(!!user.emailVerified));
   set('userInfoUsername', user.username || '');
   set('userInfoFullName', user.fullName || '');
-  set('userInfoDateOfBirth', user.dateOfBirth || raw.dateOfBirth || '');
   set('userInfoBalance', Number(user.balance || 0));
   set('userInfoLevel', Number(user.accountLevel || 1));
   set('userInfoXp', Number(user.accountXp || 0));
+  const raw = payload.raw || {};
   const tickets = raw.gameTickets || {};
   set('userInfoFrame', Number(user.selectedFrame || 0));
   set('userInfoExtraWheelRights', Number(raw.extraWheelRights || raw.wheelExtraRights || raw.wheelRights || raw.wheelBonusRights?.count || 0));
@@ -1144,7 +1172,6 @@ function renderUserInfoDeep(payload = {}) {
   const raw = payload.raw || payload.user || {};
   const pairs = [
     ['UID', payload.uid || raw.uid || '—'],
-    ['Doğum Tarihi / Yaş', raw.dateOfBirth ? `${raw.dateOfBirth} / ${raw.age || '—'}` : 'Kayıtlı değil'],
     ['Market Envanteri', Object.keys(raw.inventory || raw.marketInventory || raw.marketItems || {}).length || 'Yok'],
     ['Aktif Ürünler', [raw.activeFrameId || raw.marketFrameId || raw.selectedFrame, raw.activeBadgeId, raw.nameEffectId].filter(Boolean).join(' / ') || 'Yok'],
     ['Promo Geçmişi', Object.keys(raw.promoClaims || raw.usedPromos || {}).length || 'Yok'],
@@ -1214,7 +1241,6 @@ async function saveUserInfoPanel() {
     emailVerified: document.getElementById('userInfoEmailVerified')?.value === 'true',
     username: document.getElementById('userInfoUsername')?.value.trim(),
     fullName: document.getElementById('userInfoFullName')?.value.trim(),
-    dateOfBirth: document.getElementById('userInfoDateOfBirth')?.value.trim(),
     balance: Number(document.getElementById('userInfoBalance')?.value || 0),
     accountLevel: Number(document.getElementById('userInfoLevel')?.value || 1),
     accountXp: Number(document.getElementById('userInfoXp')?.value || 0),
@@ -1600,7 +1626,42 @@ async function handleAction(action) {
       requireCrashRiskConfirm();
       const payload = await adminFetch('/api/crash/admin/risk-table', { method: 'POST', body: JSON.stringify({ resetDefault: true }) });
       renderCrashRiskPanel(payload || {});
-      setStatus('crashRiskStatus', 'Varsayılan Crash risk tablosu yüklendi.', 'ok');
+      setStatus('crashRiskStatus', payload.overrideCleared ? 'Varsayılan Crash risk tablosu yüklendi ve bekleyen override temizlendi.' : 'Varsayılan Crash risk tablosu yüklendi.', 'ok');
+      return;
+    }
+    if (action === 'crash-current-set' || action === 'crash-next-set') {
+      requireCrashRiskConfirm();
+      const multiplier = parseDecimalInput(document.getElementById('nextCrashPointInput')?.value || 0);
+      if (!Number.isFinite(multiplier) || multiplier < 1.01 || multiplier > 10000) throw new Error('Çarpan 1.01 ile 10000 arasında olmalı. Virgül veya nokta kullanabilirsin.');
+      const target = action === 'crash-current-set' ? 'current_countdown_round' : 'next_created_round';
+      try {
+        const payload = await adminFetch('/api/crash/admin/next-crash-point', { method: 'POST', body: JSON.stringify({ multiplier, target }) });
+        setStatus('crashRiskStatus', payload.appliedTo === 'current_countdown_round'
+          ? `Aktif geri sayım roundu ${formatMultiplier(payload.selectedMultiplier)} olarak ayarlandı.`
+          : `Sonraki oluşturulacak round ${formatMultiplier(payload.selectedMultiplier || payload.nextCrashPointOverride)} olarak kaydedildi.`, 'ok');
+      } catch (error) {
+        setStatus('crashRiskStatus', formatCrashValidationDetails(error), 'error');
+      }
+      await loadCrashRiskPanel();
+      return;
+    }
+    if (action === 'crash-next-clear') {
+      requireCrashRiskConfirm();
+      await adminFetch('/api/crash/admin/next-crash-point', { method: 'DELETE' });
+      const nextInput = document.getElementById('nextCrashPointInput');
+      if (nextInput) nextInput.value = '';
+      setStatus('crashRiskStatus', 'Crash çarpan override temizlendi; aktif geri sayım varsa risk tablosundan yeni çarpan seçildi.', 'ok');
+      await loadCrashRiskPanel();
+      return;
+    }
+    if (action === 'crash-future-save') {
+      requireCrashRiskConfirm();
+      const text = document.getElementById('futureCrashPointsInput')?.value || '';
+      const points = String(text).split(/[\s,;|]+/).map(parseDecimalInput).filter((n) => Number.isFinite(n) && n >= 1.01 && n <= 10000).slice(0, 100);
+      if (!points.length) throw new Error('Gelecek el listesi için 1.01-10000 arasında en az 1 çarpan yaz.');
+      const payload = await adminFetch('/api/crash/admin/future-rounds', { method: 'POST', body: JSON.stringify({ points }) });
+      setStatus('crashRiskStatus', `Gelecek ${payload.futureCrashPointCount || points.length} Crash eli kaydedildi.`, 'ok');
+      await loadCrashRiskPanel();
       return;
     }
     if (action === 'crash-risk-limit-save') {
@@ -1610,9 +1671,18 @@ async function handleAction(action) {
       renderCrashRiskPanel(payload);
       return setStatus('crashRiskStatus', `Crash max/risk limit kaydedildi: ${money(payload.adminRiskBetLimit || payload.riskBetLimit || riskBetLimit)} MC`, 'success');
     }
+    if (action === 'crash-future-clear') {
+      requireCrashRiskConfirm();
+      await adminFetch('/api/crash/admin/future-rounds', { method: 'DELETE' });
+      const futureInput = document.getElementById('futureCrashPointsInput');
+      if (futureInput) futureInput.value = '';
+      setStatus('crashRiskStatus', 'Gelecek Crash el listesi temizlendi.', 'ok');
+      await loadCrashRiskPanel();
+      return;
+    }
   } catch (error) {
     const map = {
-      reset: 'resetStatus', 'save-maintenance': 'maintenanceStatus', 'reward-user': 'rewardStatus', 'reward-all': 'rewardAllStatus', 'promo-create': 'promoStatus', 'promo-delete': 'promoStatus', 'crash-risk-save': 'crashRiskStatus', 'crash-risk-reset': 'crashRiskStatus', 'crash-risk-limit-save': 'crashRiskStatus', 'user-info-save': 'userInfoStatus'
+      reset: 'resetStatus', 'save-maintenance': 'maintenanceStatus', 'reward-user': 'rewardStatus', 'reward-all': 'rewardAllStatus', 'promo-create': 'promoStatus', 'promo-delete': 'promoStatus', 'crash-risk-save': 'crashRiskStatus', 'crash-risk-reset': 'crashRiskStatus', 'crash-current-set': 'crashRiskStatus', 'crash-next-set': 'crashRiskStatus', 'crash-next-clear': 'crashRiskStatus', 'crash-future-save': 'crashRiskStatus', 'crash-future-clear': 'crashRiskStatus', 'crash-risk-limit-save': 'crashRiskStatus', 'user-info-save': 'userInfoStatus'
     };
     const statusId = map[action] || (action.startsWith('restrict:') ? 'restrictStatus' : 'maintenanceStatus');
     setStatus(statusId, error.message || 'İşlem başarısız.', 'error');
@@ -1649,6 +1719,11 @@ function handleDashboardClick(event) {
   if (button.dataset.promoDelete) return handleAction('promo-delete', button.dataset.promoDelete);
   if (button.id === 'saveCrashRiskBtn') return handleAction('crash-risk-save');
   if (button.id === 'resetCrashRiskBtn') return handleAction('crash-risk-reset');
+  if (button.id === 'setCurrentCrashPointBtn') return handleAction('crash-current-set');
+  if (button.id === 'setNextCrashPointBtn') return handleAction('crash-next-set');
+  if (button.id === 'clearNextCrashPointBtn') return handleAction('crash-next-clear');
+  if (button.id === 'saveFutureCrashPointsBtn') return handleAction('crash-future-save');
+  if (button.id === 'clearFutureCrashPointsBtn') return handleAction('crash-future-clear');
   if (button.id === 'saveCrashRiskLimitBtn') return handleAction('crash-risk-limit-save');
   if (button.id === 'reloadWheelConfigBtn') return loadWheelAdminConfig();
   if (button.id === 'saveWheelConfigBtn') return saveWheelAdminConfig();

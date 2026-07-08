@@ -1,11 +1,11 @@
-import './auth-modal.js?v=pm-v14-auth-live-data-fix';
-import './game-catalog.js?v=pm-v14-auth-live-data-fix';
-import './leaderboard.js?v=pm-v14-auth-live-data-fix';
-import './profile-panel.js?v=pm-v14-auth-live-data-fix';
-import './reward-ui.js?v=pm-v14-auth-live-data-fix';
-import './market.js?v=pm-v14-auth-live-data-fix';
-import './wheel.js?v=pm-v14-auth-live-data-fix';
-import { getHomeRuntime } from './widget-contract.js?v=pm-v14-auth-live-data-fix';
+import './auth-modal.js?v=pm-final-mobile-v21';
+import './game-catalog.js?v=pm-final-mobile-v21';
+import './leaderboard.js?v=pm-final-mobile-v21';
+import './profile-panel.js?v=pm-final-mobile-v21';
+import './reward-ui.js?v=pm-final-mobile-v21';
+import './market.js?v=pm-final-mobile-v21';
+import './wheel.js?v=pm-final-mobile-v21';
+import { getHomeRuntime } from './widget-contract.js?v=pm-final-mobile-v21';
 
 let booted = false;
 

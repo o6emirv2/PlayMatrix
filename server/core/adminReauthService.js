@@ -104,10 +104,9 @@ async function writeAdminAudit(req, action, details = {}) {
       method: String(req?.method || '').slice(0, 10),
       reauth: req?.adminReauth ? { ok: true, method: req.adminReauth.method || 'unknown' } : { ok: false },
       details: sanitizeAuditValue(details),
-      createdAt: Date.now(),
-      expiresAt: Date.now() + (180 * 24 * 60 * 60 * 1000)
+      createdAt: Date.now()
     };
-    await db.collection('auditLogs').doc(id).set(row, { merge: false });
+    await db.collection('adminAudit').doc(id).set(row, { merge: false });
     return { ok: true, firestore: true, id };
   } catch (error) {
     return { ok: false, firestore: false, error: error?.message || 'ADMIN_AUDIT_FAILED' };

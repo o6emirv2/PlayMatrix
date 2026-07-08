@@ -101,12 +101,6 @@ const INLINE_DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3
             BET_AMOUNT_TOO_LOW: 'Minimum bahis 1 MC.',
             INSUFFICIENT_BALANCE: 'Bakiyen bu bahis için yeterli değil.',
             AUTH_REQUIRED: 'Oyun için giriş yapman gerekiyor.',
-            AUTH_INVALID: 'Oturumun yenilenemedi. Lütfen tekrar giriş yap.',
-            DATE_OF_BIRTH_REQUIRED: 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
-            AGE_REQUIRED: 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
-            AGE_RESTRICTED: 'Bu oyun yalnızca 16 yaş ve üzeri kullanıcılar içindir.',
-            ACCOUNT_LOCKED: 'Hesabın geçici olarak kilitli. Destek ekibiyle iletişime geç.',
-            GAME_MAINTENANCE_ACTIVE: 'Crash şu anda bakımda. Lütfen daha sonra tekrar dene.',
             QUEUED_BET_NOT_FOUND: 'Bekleyen katılım bulunamadı veya raund başlamış olabilir.',
             QUEUED_BET_ALREADY_PROMOTED: 'Raund başladı. Katılım artık aktif turda görünüyor.'
         };
