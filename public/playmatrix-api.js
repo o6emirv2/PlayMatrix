@@ -66,14 +66,11 @@
       list.push(normalized);
     };
 
-    // Custom PlayMatrix domain is served by the same production application.
-    // Prefer same-origin so HttpOnly session cookies and Socket.IO work reliably on iOS.
-    push(window.location.origin);
     push(getRuntimeBase());
     push(getStaticRuntimeBase());
     push(getMetaBase());
     push(getStoredBase());
-    try { push(window.__PM_STATIC_RUNTIME_CONFIG__?.apiFallbackBase || ''); } catch (_) {}
+    if (!isProductionHost()) push(window.location.origin);
     return list;
   }
 
@@ -88,12 +85,11 @@
   }
 
   function getApiBaseSync() {
-    const sameOrigin = normalizeBase(window.location.origin);
-    const preferred = sameOrigin
-      || getRuntimeBase()
+    const preferred = getRuntimeBase()
       || getStaticRuntimeBase()
       || getMetaBase()
-      || getStoredBase();
+      || getStoredBase()
+      || (!isProductionHost() ? normalizeBase(window.location.origin) : '');
     return setApiBase(preferred || (!isProductionHost() ? window.location.origin : ''));
   }
 
@@ -123,15 +119,6 @@
   let lastResolvedAt = 0;
   const API_BASE_CACHE_MS = 60_000;
   async function ensureApiBase() {
-    // On the PlayMatrix custom domain, same-origin is authoritative. Using the
-    // raw Render hostname would make the HttpOnly session cookie third-party
-    // on iOS/Safari and games would incorrectly report AUTH_REQUIRED.
-    if (isProductionHost()) {
-      const sameOrigin = setApiBase(window.location.origin);
-      lastResolvedBase = sameOrigin;
-      lastResolvedAt = Date.now();
-      return sameOrigin;
-    }
     const currentBase = getRuntimeBase() || getStaticRuntimeBase() || getMetaBase() || getStoredBase();
     const now = Date.now();
     if (lastResolvedBase && (now - lastResolvedAt) < API_BASE_CACHE_MS) return setApiBase(lastResolvedBase);

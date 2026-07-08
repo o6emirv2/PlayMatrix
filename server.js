@@ -64,13 +64,7 @@ function buildContentSecurityPolicy() {
     backendOrigin,
     apiBase,
     backendOrigin.replace(/^https:/i, 'wss:'),
-    apiBase.replace(/^https:/i, 'wss:'),
-    'https://identitytoolkit.googleapis.com',
-    'https://securetoken.googleapis.com',
-    'https://www.googleapis.com',
-    'https://firebaseinstallations.googleapis.com',
-    'https://firestore.googleapis.com',
-    'https://*.googleapis.com'
+    apiBase.replace(/^https:/i, 'wss:')
   ].filter(Boolean);
   return {
     useDefaults: true,
@@ -81,7 +75,7 @@ function buildContentSecurityPolicy() {
       "object-src": ["'none'"],
       "frame-ancestors": ["'self'"],
       "form-action": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://www.gstatic.com', 'https://www.googleapis.com'],
+      "script-src": ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
       "script-src-attr": ["'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
       "img-src": ["'self'", 'data:', 'blob:', env.publicBaseUrl, env.canonicalOrigin].filter(Boolean),
@@ -114,19 +108,11 @@ app.options('/api/*', cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
-function maintenanceFlag(value) {
-  if (value === true) return true;
-  if (value === false || value == null) return false;
-  if (typeof value === 'number') return Number.isFinite(value) && value > 0;
-  const raw = String(value || '').trim().toLowerCase();
-  if (!raw || raw === '0' || raw === 'false' || raw === 'off' || raw === 'no' || raw === 'hayir' || raw === 'hayır' || raw === 'pasif' || raw === 'inactive') return false;
-  return raw === '1' || raw === 'true' || raw === 'on' || raw === 'yes' || raw === 'evet' || raw === 'aktif' || raw === 'active';
-}
 function normalizeMaintenanceGames(data = {}) {
   const src = data && typeof data === 'object' && data.games && typeof data.games === 'object' ? data.games : data;
   const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
   const out = {};
-  keys.forEach((key) => { out[key] = maintenanceFlag(src?.[key]); });
+  keys.forEach((key) => { out[key] = !!src?.[key]; });
   return out;
 }
 function maintenanceGamesRaw() {

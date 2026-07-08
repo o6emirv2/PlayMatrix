@@ -1,4 +1,4 @@
-import './home-core.js?v=pm-v14-render-dob-games-admin';
+import './home-core.js?v=pm-v11-dob-game-auth-fix';
 
 export function getHomeRuntime() {
   return window.PlayMatrixHome || null;

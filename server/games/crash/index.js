@@ -7,7 +7,6 @@ const { runtimeStore } = require('../../core/runtimeStore');
 const env = require('../../config/env');
 const { requireRedisReady, setJson } = require('../../core/redisClient');
 const { initFirebaseAdmin } = require('../../config/firebaseAdmin');
-const { verifySocketSession } = require('../../core/userSessionService');
 const { addAdminLog } = require('../../admin/adminRuntimeLogStore');
 const { requireAdminReauth, writeAdminAudit } = require('../../core/adminReauthService');
 const { recordRecentActivity } = require('../../core/recentActivityService');
@@ -1082,19 +1081,21 @@ router.delete('/admin/next-crash-point', requireAuth, requireAdmin, requireAdmin
 
 async function authenticateCrashSocket(socket) {
   try {
-    if (socket.data?.crashUid) return true;
-    const decoded = await verifySocketSession(socket, { checkRevoked: true });
-    const uid = String(decoded?.uid || decoded?.sub || '').trim();
+    const token = String(socket.handshake?.auth?.token || '').trim();
+    if (!token) return false;
+    const { auth } = initFirebaseAdmin();
+    if (!auth) return false;
+    const decoded = await auth.verifyIdToken(token);
+    const uid = String(decoded.uid || '');
     if (!uid) {
       socket.emit('AUTH_REQUIRED');
       return false;
     }
     socket.data.crashUid = uid;
-    socket.data.crashEmail = String(decoded?.email || '');
-    return true;
+    return !!socket.data.crashUid;
   } catch (_) {
     socket.data.crashUid = '';
-    socket.emit('crash:auth_error', { ok: false, error: 'AUTH_REQUIRED' });
+    socket.emit('crash:auth_error', { ok: false, error: 'INVALID_AUTH_TOKEN' });
     return false;
   }
 }

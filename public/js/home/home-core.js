@@ -134,71 +134,7 @@ let firebaseUpdatePassword = null;
 let firebaseUpdateProfile = null;
 let firebaseApp = null;
 let auth = { currentUser: null };
-let backendSessionUser = null;
 let firebaseReady = false;
-
-function activeAuthUser() {
-  return auth?.currentUser || backendSessionUser || null;
-}
-
-function setBackendSessionUser(user = null) {
-  const uid = safeText(user?.uid || '');
-  backendSessionUser = uid ? {
-    uid,
-    email: safeText(user?.email || ''),
-    emailVerified: user?.emailVerified === true,
-    displayName: safeText(user?.displayName || user?.username || '')
-  } : null;
-  window.__PM_RUNTIME = window.__PM_RUNTIME || {};
-  window.__PM_RUNTIME.auth = auth;
-  window.__PM_RUNTIME.user = activeAuthUser();
-  window.__PM_RUNTIME.sessionUser = backendSessionUser;
-  return backendSessionUser;
-}
-
-async function backendSessionRequest(path = '/api/auth/session', options = {}) {
-  const api = window.__PM_API__;
-  if (api?.ensureApiBase) await api.ensureApiBase();
-  const url = api?.buildUrl ? api.buildUrl(path) : `${String(window.location.origin || '').replace(/\/+$/, '')}${path}`;
-  const response = await fetch(url, {
-    method: options.method || 'GET',
-    credentials: 'include',
-    cache: 'no-store',
-    headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) },
-    body: options.body ? JSON.stringify(options.body) : undefined
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload?.ok === false) {
-    const error = new Error(payload?.code || payload?.error || 'AUTH_REQUIRED');
-    error.code = String(payload?.code || payload?.error || 'AUTH_REQUIRED').toUpperCase();
-    error.status = response.status;
-    throw error;
-  }
-  return payload;
-}
-
-async function probeBackendSessionHome({ force = false } = {}) {
-  if (!force && backendSessionUser) return backendSessionUser;
-  try {
-    const payload = await backendSessionRequest('/api/auth/session');
-    return setBackendSessionUser(payload?.data?.user || payload?.user || null);
-  } catch (_) {
-    return setBackendSessionUser(null);
-  }
-}
-
-async function exchangeBackendSession(user = auth?.currentUser) {
-  if (!user || typeof firebaseGetIdToken !== 'function') return probeBackendSessionHome({ force: true });
-  const idToken = await firebaseGetIdToken(user, true).catch(() => firebaseGetIdToken(user, false));
-  const payload = await backendSessionRequest('/api/auth/session', { method: 'POST', body: { idToken } });
-  return setBackendSessionUser(payload?.data?.user || payload?.user || { uid: user.uid, email: user.email, emailVerified: user.emailVerified });
-}
-
-async function clearBackendSessionHome() {
-  try { await backendSessionRequest('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-  setBackendSessionUser(null);
-}
-
 let bootPromise = null;
 let uiBooted = false;
 let currentProfile = null;
@@ -880,7 +816,7 @@ function createMobileNavButton(item = {}) {
 function syncMobileNavigation() {
   const nav = $('mobileBottomNav') || document.querySelector('.mobile-nav--final');
   if (!nav) return;
-  const signed = !!activeAuthUser() || document.body.classList.contains('is-authenticated');
+  const signed = !!auth.currentUser || document.body.classList.contains('is-authenticated');
   const nextState = signed ? 'auth' : 'guest';
   if (nav.dataset.mobileNavState === nextState && nav.children.length === 5) return;
   nav.dataset.mobileNavState = nextState;
@@ -1040,8 +976,8 @@ function normalizeProfile(raw = {}) {
   const nameParts = splitFullName(user.fullName || user.name || '');
   const firstName = safeText(user.firstName || user.givenName || nameParts.firstName);
   const lastName = safeText(user.lastName || user.familyName || nameParts.lastName);
-  const email = safeText(user.email || activeAuthUser()?.email || '');
-  const rawUsername = safeText(user.username || user.displayName || activeAuthUser()?.displayName || '');
+  const email = safeText(user.email || auth.currentUser?.email || '');
+  const rawUsername = safeText(user.username || user.displayName || auth.currentUser?.displayName || '');
   const username = rawUsername && !rawUsername.includes('@') ? rawUsername : 'Oyuncu';
   const fullName = safeText(user.fullName || user.name || joinName(firstName, lastName));
   const usernameChangeLimit = Math.max(0, Math.trunc(toNumber(user.usernameChangeLimit ?? 3, 3)));
@@ -1053,7 +989,7 @@ function normalizeProfile(raw = {}) {
   const marketFrameUrl = marketFrameId ? resolveProfileMarketFramePath(user) : '';
   const activeAvatar = avatarSlot?.source === 'market' && marketAvatarUrl ? marketAvatarUrl : (user.avatar || user.photoURL || marketAvatarUrl || fallbackAvatar);
   return {
-    uid: safeText(user.uid || activeAuthUser()?.uid || ''),
+    uid: safeText(user.uid || auth.currentUser?.uid || ''),
     email,
     dateOfBirth: safeText(user.dateOfBirth || ''),
     age: Math.max(0, Math.trunc(toNumber(user.age || ageFromDateOfBirth(user.dateOfBirth || ''), 0))),
@@ -1106,7 +1042,7 @@ function normalizeProfile(raw = {}) {
     leaderboardRank: Math.max(0, Math.trunc(toNumber(user.leaderboardRank ?? user.rank, 0))),
     nextLevelXp: Math.max(0, Math.trunc(toNumber(user.nextLevelXp ?? progression.nextLevelXp, 0))),
     currentLevelStartXp: Math.max(0, Math.trunc(toNumber(user.currentLevelStartXp ?? progression.currentLevelStartXp, 0))),
-    emailVerified: !!(user.emailVerified ?? user.email_verified ?? user.emailVerifiedOverride ?? user.emailVerificationOverride ?? activeAuthUser()?.emailVerified),
+    emailVerified: !!(user.emailVerified ?? user.email_verified ?? user.emailVerifiedOverride ?? user.emailVerificationOverride ?? auth.currentUser?.emailVerified),
     emailVerifiedOverride: !!(user.emailVerifiedOverride || user.emailVerificationOverride || user.emailVerifiedByAdmin),
     usernameChangeLimit,
     usernameChangesUsed,
@@ -1292,9 +1228,9 @@ async function bootFirebase(options = {}) {
 }
 
 async function getToken(force = false) {
-  await bootFirebase({ reportOnError: false }).catch(() => false);
-  if (!auth?.currentUser || !firebaseGetIdToken) return '';
-  return firebaseGetIdToken(auth.currentUser, force).catch(() => '');
+  await bootFirebase({ reportOnError: true });
+  if (!auth.currentUser || !firebaseGetIdToken) throw new Error('AUTH_REQUIRED');
+  return firebaseGetIdToken(auth.currentUser, force);
 }
 
 async function apiFetch(path, options = {}, needsAuth = true, sessionRetry = true) {
@@ -1305,10 +1241,7 @@ async function apiFetch(path, options = {}, needsAuth = true, sessionRetry = tru
   const headers = new Headers(optionHeaders || {});
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
   if (options.body !== undefined && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  if (needsAuth) {
-    const token = await getToken(!!options.forceAuthToken);
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-  }
+  if (needsAuth) headers.set('Authorization', `Bearer ${await getToken(!!options.forceAuthToken)}`);
   if (!headers.has('X-PlayMatrix-Client')) headers.set('X-PlayMatrix-Client', 'home');
   if (!headers.has('X-Request-Id')) headers.set('X-Request-Id', window.__PM_API__?.requestId?.('home') || `home_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   const controller = new AbortController();
@@ -1335,9 +1268,7 @@ async function apiFetch(path, options = {}, needsAuth = true, sessionRetry = tru
 }
 
 async function loadProfile() {
-  let activeUser = activeAuthUser();
-  if (!activeUser) activeUser = await probeBackendSessionHome({ force: true });
-  if (!activeUser) {
+  if (!auth.currentUser) {
     currentProfile = blankProfile();
     renderProfile();
     return currentProfile;
@@ -1347,7 +1278,7 @@ async function loadProfile() {
     currentProfile = normalizeProfile(payload);
   } catch (error) {
     if (!isExpectedSessionError(error)) report('home.profile.load', error, { endpoint: error.endpoint || '/api/me', status: error.status || 0 });
-    currentProfile = normalizeProfile({ uid: activeUser.uid, email: activeUser.email, username: activeUser.displayName || 'Oyuncu', emailVerified: activeUser.emailVerified });
+    currentProfile = normalizeProfile({ uid: auth.currentUser.uid, email: auth.currentUser.email, username: auth.currentUser.displayName || 'Oyuncu', emailVerified: auth.currentUser.emailVerified });
   }
   renderProfile();
   return currentProfile;
@@ -1372,7 +1303,7 @@ function setProfileMetaChips(profile = blankProfile()) {
 
 function renderProfile() {
   const p = currentProfile || blankProfile();
-  const signed = !!activeAuthUser();
+  const signed = !!auth.currentUser;
   document.body.classList.toggle('is-authenticated', signed);
   syncMobileNavigation();
   const notificationOpen = $('notificationOpenBtn');
@@ -1831,7 +1762,7 @@ function renderAccountMemory(payload = accountMemoryPayload) {
 
 async function loadAccountMemory(options = {}) {
   const force = !!options.force;
-  if (!activeAuthUser()) {
+  if (!auth.currentUser) {
     accountMemoryLoaded = false;
     accountMemoryPayload = { transactions: [], games: [] };
     renderAccountMemory(accountMemoryPayload);
@@ -2066,7 +1997,7 @@ function renderNotifications() {
 }
 
 async function markNotificationRead(id, tab = activeNotificationTab) {
-  if (!id || !activeAuthUser()) return;
+  if (!id || !auth.currentUser) return;
   try {
     await apiFetch('/api/notifications/memory/read', { method: 'POST', body: { id, tab } }, true);
     await loadNotifications({ force: true });
@@ -2077,7 +2008,7 @@ async function markNotificationRead(id, tab = activeNotificationTab) {
 }
 
 async function deleteNotification(id, tab = activeNotificationTab) {
-  if (!id || !activeAuthUser()) return;
+  if (!id || !auth.currentUser) return;
   try {
     await apiFetch('/api/notifications/delete', { method: 'POST', body: { id, tab } }, true);
     await loadNotifications({ force: true });
@@ -2089,7 +2020,7 @@ async function deleteNotification(id, tab = activeNotificationTab) {
 }
 
 async function markNotificationsRead(tab = activeNotificationTab) {
-  if (!activeAuthUser()) return;
+  if (!auth.currentUser) return;
   const normalizedTab = tab === 'personal' ? 'personal' : 'system';
   const list = Array.isArray(notificationPayload[normalizedTab]) ? notificationPayload[normalizedTab] : [];
   if (!list.some((item) => !item.read)) { renderNotifications(); return; }
@@ -2107,7 +2038,7 @@ async function markNotificationsRead(tab = activeNotificationTab) {
 }
 
 async function clearNotifications(tab = activeNotificationTab) {
-  if (!activeAuthUser()) return;
+  if (!auth.currentUser) return;
   const normalizedTab = tab === 'personal' ? 'personal' : 'system';
   const list = Array.isArray(notificationPayload[normalizedTab]) ? notificationPayload[normalizedTab] : [];
   if (!list.length) { renderNotifications(); return; }
@@ -2124,7 +2055,7 @@ async function clearNotifications(tab = activeNotificationTab) {
 }
 
 async function clearReadNotifications(tab = activeNotificationTab) {
-  if (!activeAuthUser()) return;
+  if (!auth.currentUser) return;
   const normalizedTab = tab === 'personal' ? 'personal' : 'system';
   const list = Array.isArray(notificationPayload[normalizedTab]) ? notificationPayload[normalizedTab] : [];
   const readItems = list.filter((item) => !!item.read && safeText(item.id || item.key || ''));
@@ -2149,7 +2080,7 @@ async function clearReadNotifications(tab = activeNotificationTab) {
 async function loadNotifications(options = {}) {
   const force = !!options.force;
   try {
-    if (!activeAuthUser()) {
+    if (!auth.currentUser) {
       notificationsLoaded = false;
       notificationPayload = { system: [], personal: [] };
       renderNotifications();
@@ -2187,9 +2118,9 @@ function stopNotificationRealtime() {
 }
 
 function startNotificationFallback() {
-  if (notificationFallbackTimer || !activeAuthUser()) return;
+  if (notificationFallbackTimer || !auth.currentUser) return;
   notificationFallbackTimer = window.setInterval(() => {
-    if (!activeAuthUser() || document.hidden || notificationSocketConnected) return;
+    if (!auth.currentUser || document.hidden || notificationSocketConnected) return;
     loadNotifications({ force: true, source: 'fallback-60s' }).catch((error) => report('home.notifications.fallback', error));
   }, 60000);
 }
@@ -2375,7 +2306,7 @@ function applyNotificationSocketPayload(payload = {}) {
 }
 
 async function ensureNotificationRealtime() {
-  if (!activeAuthUser()) { stopNotificationRealtime(); return; }
+  if (!auth.currentUser) { stopNotificationRealtime(); return; }
   startNotificationFallback();
   if (notificationSocket && notificationSocketConnected) return;
   try {
@@ -2483,6 +2414,44 @@ function authToastError(title = 'Hesap erişimi', message = '') {
 }
 
 
+function populateDateOfBirthSelects(prefix = 'register') {
+  const day = $(`${prefix}BirthDay`);
+  const month = $(`${prefix}BirthMonth`);
+  const year = $(`${prefix}BirthYear`);
+  if (!day || !month || !year) return;
+  const current = {
+    day: String(day.value || ''),
+    month: String(month.value || ''),
+    year: String(year.value || '')
+  };
+  const fill = (select, placeholder, items) => {
+    if (!select) return;
+    select.replaceChildren();
+    const first = document.createElement('option');
+    first.value = '';
+    first.textContent = placeholder;
+    select.appendChild(first);
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => {
+      const opt = document.createElement('option');
+      opt.value = String(item.value);
+      opt.textContent = String(item.label);
+      fragment.appendChild(opt);
+    });
+    select.appendChild(fragment);
+  };
+  fill(day, 'Gün', Array.from({ length: 31 }, (_, index) => ({ value: index + 1, label: String(index + 1).padStart(2, '0') })));
+  fill(month, 'Ay', ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'].map((label, index) => ({ value: index + 1, label })));
+  const currentYear = new Date().getFullYear();
+  const minYear = currentYear - 120;
+  const years = [];
+  for (let y = currentYear; y >= minYear; y -= 1) years.push({ value: y, label: y });
+  fill(year, 'Yıl', years);
+  if (current.day) day.value = current.day;
+  if (current.month) month.value = current.month;
+  if (current.year) year.value = current.year;
+  day.dataset.pmDobReady = month.dataset.pmDobReady = year.dataset.pmDobReady = 'true';
+}
 function pad2(value) { return String(value).padStart(2, '0'); }
 function buildDateOfBirth(day, month, year) {
   const d = Math.trunc(Number(day) || 0);
@@ -2494,67 +2463,58 @@ function buildDateOfBirth(day, month, year) {
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
 function ageFromDateOfBirth(value = '') {
-  const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return 0;
+  const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return 0;
   const now = new Date();
-  let age = now.getFullYear() - Number(match[1]);
-  const monthDelta = (now.getMonth() + 1) - Number(match[2]);
-  if (monthDelta < 0 || (monthDelta === 0 && now.getDate() < Number(match[3]))) age -= 1;
+  let age = now.getUTCFullYear() - Number(m[1]);
+  const monthDelta = (now.getUTCMonth() + 1) - Number(m[2]);
+  if (monthDelta < 0 || (monthDelta === 0 && now.getUTCDate() < Number(m[3]))) age -= 1;
   return Math.max(0, age);
 }
-function normalizeDateOfBirth(value = '') {
-  const match = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return '';
-  return buildDateOfBirth(match[3], match[2], match[1]);
-}
 function readDobFields(prefix = 'register') {
-  const stored = normalizeDateOfBirth($(`${prefix}DateOfBirth`)?.value || '');
-  const match = stored.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const birthDay = match ? String(Number(match[3])) : safeText($(`${prefix}BirthDay`)?.value || '');
-  const birthMonth = match ? String(Number(match[2])) : safeText($(`${prefix}BirthMonth`)?.value || '');
-  const birthYear = match ? String(Number(match[1])) : safeText($(`${prefix}BirthYear`)?.value || '');
-  const dateOfBirth = stored || buildDateOfBirth(birthDay, birthMonth, birthYear);
+  const birthDay = safeText($(`${prefix}BirthDay`)?.value || '');
+  const birthMonth = safeText($(`${prefix}BirthMonth`)?.value || '');
+  const birthYear = safeText($(`${prefix}BirthYear`)?.value || '');
+  const dateOfBirth = buildDateOfBirth(birthDay, birthMonth, birthYear);
   const age = ageFromDateOfBirth(dateOfBirth);
   return { birthDay, birthMonth, birthYear, dateOfBirth, age, ageVerified: !!dateOfBirth && age >= 16 };
 }
 function setDobFields(prefix = 'profile', value = '') {
-  const normalized = normalizeDateOfBirth(value);
-  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  setValue(`${prefix}DateOfBirth`, normalized);
-  setValue(`${prefix}BirthYear`, match ? String(Number(match[1])) : '');
-  setValue(`${prefix}BirthMonth`, match ? String(Number(match[2])) : '');
-  setValue(`${prefix}BirthDay`, match ? String(Number(match[3])) : '');
-  try { window.PMDobPicker?.sync?.(prefix); } catch (_) {}
-  return normalized;
+  populateDateOfBirthSelects(prefix);
+  const m = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  setValue(`${prefix}BirthYear`, m ? String(Number(m[1])) : '');
+  setValue(`${prefix}BirthMonth`, m ? String(Number(m[2])) : '');
+  setValue(`${prefix}BirthDay`, m ? String(Number(m[3])) : '');
 }
 function lockDobFields(prefix = 'profile', locked = false) {
-  [`${prefix}DateOfBirth`, `${prefix}BirthDay`, `${prefix}BirthMonth`, `${prefix}BirthYear`].forEach((id) => {
+  [`${prefix}BirthDay`, `${prefix}BirthMonth`, `${prefix}BirthYear`].forEach((id) => {
     const node = $(id);
     if (!node) return;
     node.disabled = !!locked;
     node.classList.toggle('is-locked', !!locked);
   });
-  const group = $(`${prefix}DobGroup`);
-  if (group) group.classList.toggle('is-dob-locked', !!locked);
   const openBtn = $(`${prefix}DobOpenBtn`);
   if (openBtn) {
     openBtn.disabled = !!locked;
-    openBtn.setAttribute('aria-disabled', locked ? 'true' : 'false');
     openBtn.classList.toggle('is-locked', !!locked);
   }
-  try { window.PMDobPicker?.lock?.(prefix, !!locked); } catch (_) {}
 }
+
 function formatDobDisplay(dateOfBirth = '') {
-  const match = normalizeDateOfBirth(dateOfBirth).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
+  const m = String(dateOfBirth || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  return `${m[3]}.${m[2]}.${m[1]}`;
 }
+
 function syncDobSummary(prefix = 'register') {
-  try { if (window.PMDobPicker?.sync) return window.PMDobPicker.sync(prefix); } catch (_) {}
   const dob = readDobFields(prefix);
   const summary = $(`${prefix}DobSummary`);
   const openBtn = $(`${prefix}DobOpenBtn`);
   const formatted = formatDobDisplay(dob.dateOfBirth);
-  if (summary) summary.textContent = formatted ? `${formatted} · ${dob.age} yaş` : (prefix === 'profile' ? 'Doğum tarihini ekle' : 'Doğum tarihini seç');
+  if (summary) {
+    if (formatted) summary.textContent = `${formatted} · Yaş: ${dob.age}`;
+    else summary.textContent = prefix === 'profile' ? 'Doğum tarihini ekle' : 'Doğum tarihini seç';
+  }
   if (openBtn) {
     openBtn.classList.toggle('is-complete', !!formatted && dob.ageVerified);
     openBtn.classList.toggle('is-warning', !!formatted && !dob.ageVerified);
@@ -2563,183 +2523,70 @@ function syncDobSummary(prefix = 'register') {
 }
 
 let activeDobTarget = 'register';
-let dobPopupSelectedDay = '';
-let dobPopupReturnFocus = null;
-const PM_DOB_MONTHS = Object.freeze(['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']);
-function fillDobPopupSelect(select, items) {
-  if (!select) return;
-  const previous = String(select.value || '');
-  select.replaceChildren();
-  const fragment = document.createDocumentFragment();
-  items.forEach(({ value, label }) => {
-    const option = document.createElement('option');
-    option.value = String(value);
-    option.textContent = String(label);
-    fragment.appendChild(option);
-  });
-  select.appendChild(fragment);
-  if (previous && [...select.options].some((option) => option.value === previous)) select.value = previous;
+function copySelectOptions(fromId, toId) {
+  const from = $(fromId);
+  const to = $(toId);
+  if (!from || !to) return;
+  to.replaceChildren(...Array.from(from.options).map((option) => option.cloneNode(true)));
 }
 function hydrateDobPopupOptions() {
-  const currentYear = new Date().getFullYear();
-  fillDobPopupSelect($('dobPopupBirthMonth'), PM_DOB_MONTHS.map((label, index) => ({ value: index + 1, label })));
-  const years = [];
-  for (let year = currentYear; year >= currentYear - 120; year -= 1) years.push({ value: year, label: year });
-  fillDobPopupSelect($('dobPopupBirthYear'), years);
+  const ensurePopupSource = 'register';
+  populateDateOfBirthSelects(ensurePopupSource);
+  copySelectOptions('registerBirthDay', 'dobPopupBirthDay');
+  copySelectOptions('registerBirthMonth', 'dobPopupBirthMonth');
+  copySelectOptions('registerBirthYear', 'dobPopupBirthYear');
+  ['dobPopupBirthDay', 'dobPopupBirthMonth', 'dobPopupBirthYear'].forEach((id) => {
+    const node = $(id);
+    if (node) node.disabled = false;
+  });
 }
 function setDobPopupInfo(message = '', tone = '') {
   const info = $('dobPopupInfo');
   if (!info) return;
-  info.textContent = message || 'Doğum tarihin yalnızca yaş uygunluğu ve hesap güvenliği için kullanılır.';
+  info.textContent = message || 'Doğum tarihin kullanıcıya açık gösterilmez; güvenlik ve uygunluk kontrolü için kullanılır.';
   info.dataset.tone = tone || '';
-}
-function setDobPopupHiddenDay(value = '') {
-  const numeric = Math.trunc(Number(value) || 0);
-  dobPopupSelectedDay = numeric > 0 ? String(Math.max(1, Math.min(31, numeric))) : '';
-  const input = $('dobPopupBirthDay');
-  if (input) input.value = dobPopupSelectedDay;
-}
-function daysInMonth(year, month) {
-  const safeYear = Math.trunc(Number(year) || 0);
-  const safeMonth = Math.trunc(Number(month) || 0);
-  return safeYear && safeMonth ? new Date(Date.UTC(safeYear, safeMonth, 0)).getUTCDate() : 31;
-}
-function currentDobPopupValue() {
-  const dateOfBirth = buildDateOfBirth($('dobPopupBirthDay')?.value, $('dobPopupBirthMonth')?.value, $('dobPopupBirthYear')?.value);
-  return { dateOfBirth, age: ageFromDateOfBirth(dateOfBirth) };
-}
-function updateDobPopupLiveInfo() {
-  const { dateOfBirth, age } = currentDobPopupValue();
-  const selectedDate = $('dobPopupSelectedDate');
-  const selectedAge = $('dobPopupSelectedAge');
-  const save = $('dobPopupSaveBtn');
-  if (!dateOfBirth) {
-    if (selectedDate) selectedDate.textContent = 'Henüz tarih seçilmedi';
-    if (selectedAge) selectedAge.textContent = 'Takvimden gün, ay ve yıl seç.';
-    if (save) save.disabled = true;
-    setDobPopupInfo('Doğum tarihi alanını eksiksiz seçmelisin.', '');
-    return false;
-  }
-  if (selectedDate) selectedDate.textContent = formatDobDisplay(dateOfBirth);
-  if (selectedAge) selectedAge.textContent = age >= 16 ? `${age} yaş · Uygun` : `${age} yaş · 16+ koşulunu karşılamıyor`;
-  const valid = age >= 16;
-  if (save) save.disabled = !valid;
-  setDobPopupInfo(valid ? 'Tarih uygun. Uygula butonuyla forma aktarabilirsin.' : 'Devam edebilmek için 16 yaşından büyük olmalısın.', valid ? 'success' : 'error');
-  return valid;
-}
-function renderDobPopupCalendar() {
-  const grid = $('dobPopupDayGrid');
-  const month = Math.trunc(Number($('dobPopupBirthMonth')?.value || 0));
-  const year = Math.trunc(Number($('dobPopupBirthYear')?.value || 0));
-  if (!grid) return;
-  grid.replaceChildren();
-  if (!month || !year) { setDobPopupHiddenDay(''); updateDobPopupLiveInfo(); return; }
-  const maxDay = daysInMonth(year, month);
-  if (Number(dobPopupSelectedDay || 0) > maxDay) setDobPopupHiddenDay(String(maxDay));
-  const firstOffset = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
-  const fragment = document.createDocumentFragment();
-  for (let index = 0; index < firstOffset; index += 1) {
-    const spacer = document.createElement('span');
-    spacer.className = 'pm-dob-day-spacer';
-    spacer.setAttribute('aria-hidden', 'true');
-    fragment.appendChild(spacer);
-  }
-  for (let day = 1; day <= maxDay; day += 1) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'pm-dob-day-btn';
-    button.textContent = String(day);
-    button.dataset.day = String(day);
-    button.setAttribute('role', 'gridcell');
-    button.setAttribute('aria-label', `${day} ${PM_DOB_MONTHS[month - 1]} ${year}`);
-    button.setAttribute('aria-selected', String(day) === dobPopupSelectedDay ? 'true' : 'false');
-    if (String(day) === dobPopupSelectedDay) button.classList.add('is-selected');
-    button.addEventListener('click', () => {
-      setDobPopupHiddenDay(String(day));
-      renderDobPopupCalendar();
-      updateDobPopupLiveInfo();
-    });
-    fragment.appendChild(button);
-  }
-  grid.appendChild(fragment);
-  updateDobPopupLiveInfo();
 }
 function openDobPopup(target = 'register') {
   activeDobTarget = target === 'profile' ? 'profile' : 'register';
-  if (activeDobTarget === 'profile' && normalizeDateOfBirth(currentProfile?.dateOfBirth || readDobFields('profile').dateOfBirth)) {
-    const current = normalizeDateOfBirth(currentProfile?.dateOfBirth || readDobFields('profile').dateOfBirth);
-    setHelp('profileDobHelp', `Doğum tarihin ${formatDobDisplay(current)} olarak kayıtlıdır. Yalnızca yönetici değiştirebilir.`, 'success');
-    showToast('Doğum tarihi', 'Kayıtlı doğum tarihi güvenlik nedeniyle kullanıcı tarafından değiştirilemez.', 'info');
-    lockDobFields('profile', true);
+  if (activeDobTarget === 'profile' && safeText(currentProfile?.dateOfBirth || '')) {
+    const formatted = formatDobDisplay(currentProfile.dateOfBirth);
+    setHelp('profileDobHelp', `Doğum tarihin kayıtlıdır: ${formatted}. Bu bilgi yalnızca destek üzerinden değiştirilebilir.`, 'success');
+    showToast('Doğum tarihi', 'Doğum tarihin kayıtlı. Güvenlik nedeniyle tekrar değiştirilemez.', 'info');
     return;
   }
   hydrateDobPopupOptions();
   const current = readDobFields(activeDobTarget);
-  const today = new Date();
-  const initialYear = current.birthYear || String(today.getFullYear() - 18);
-  const initialMonth = current.birthMonth || String(today.getMonth() + 1);
-  setValue('dobPopupBirthYear', initialYear);
-  setValue('dobPopupBirthMonth', initialMonth);
-  setDobPopupHiddenDay(current.birthDay || '');
-  const title = $('dobPopupTitle');
-  const text = $('dobPopupText');
-  if (title) title.textContent = activeDobTarget === 'profile' ? 'Doğum Tarihini Hesabına Ekle' : 'Doğum Tarihini Seç';
-  if (text) text.textContent = activeDobTarget === 'profile'
-    ? 'Bu bilgi kaydedildikten sonra yalnızca yönetici tarafından değiştirilebilir.'
-    : '16+ yaş uygunluğu güvenli biçimde doğrulanır.';
-  renderDobPopupCalendar();
+  setValue('dobPopupBirthDay', current.birthDay || '');
+  setValue('dobPopupBirthMonth', current.birthMonth || '');
+  setValue('dobPopupBirthYear', current.birthYear || '');
+  setDobPopupInfo(activeDobTarget === 'profile' ? 'Doğum tarihi kaydedildikten sonra yalnızca destek üzerinden değiştirilebilir.' : 'Devam edebilmek için 16 yaşından büyük olmalısın.');
   const popup = $('dobPopup');
   if (!popup) return;
-  dobPopupReturnFocus = document.activeElement;
   popup.classList.add('is-open');
   popup.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('pm-dob-popup-open');
-  requestAnimationFrame(() => $('dobPopupBirthMonth')?.focus?.({ preventScroll: true }));
+  try { $('dobPopupBirthDay')?.focus?.({ preventScroll: true }); } catch (_) {}
 }
-function closeDobPopup({ restoreFocus = true } = {}) {
+function closeDobPopup() {
   const popup = $('dobPopup');
   if (!popup) return;
   popup.classList.remove('is-open');
   popup.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('pm-dob-popup-open');
-  if (restoreFocus && dobPopupReturnFocus?.focus) requestAnimationFrame(() => dobPopupReturnFocus.focus({ preventScroll: true }));
 }
 function applyDobPopupSelection() {
-  const { dateOfBirth, age } = currentDobPopupValue();
-  if (!dateOfBirth) { setDobPopupInfo('Doğum tarihi alanını eksiksiz ve geçerli seçmelisin.', 'error'); return; }
-  if (age < 16) { setDobPopupInfo('Devam edebilmek için 16 yaşından büyük olmalısın.', 'error'); return; }
-  setDobFields(activeDobTarget, dateOfBirth);
+  const day = safeText($('dobPopupBirthDay')?.value || '');
+  const month = safeText($('dobPopupBirthMonth')?.value || '');
+  const year = safeText($('dobPopupBirthYear')?.value || '');
+  const dateOfBirth = buildDateOfBirth(day, month, year);
+  const age = ageFromDateOfBirth(dateOfBirth);
+  if (!dateOfBirth) { setDobPopupInfo('Doğum tarihi alanını eksiksiz ve geçerli seçmelisiniz.', 'error'); return; }
+  if (age < 16) { setDobPopupInfo('Devam edebilmek için 16 yaşından büyük olmalısınız.', 'error'); return; }
+  setValue(`${activeDobTarget}BirthDay`, day);
+  setValue(`${activeDobTarget}BirthMonth`, month);
+  setValue(`${activeDobTarget}BirthYear`, year);
   syncDobSummary(activeDobTarget);
-  if (activeDobTarget === 'profile') {
-    setHelp('profileDobHelp', `Seçilen tarih: ${formatDobDisplay(dateOfBirth)}. Profili Kaydet butonuyla hesabına ekleyebilirsin.`, 'success');
-  } else {
-    setHelp('authHelp', '', '');
-  }
+  if (activeDobTarget === 'profile') setHelp('profileDobHelp', `Seçilen doğum tarihi: ${formatDobDisplay(dateOfBirth)} · Yaş: ${age}. Kaydet butonuna basarak hesabına ekleyebilirsin.`, 'success');
+  else setHelp('authHelp', '', '');
   closeDobPopup();
-}
-function moveDobPopupMonth(delta = 0) {
-  const currentYear = new Date().getFullYear();
-  let month = Math.trunc(Number($('dobPopupBirthMonth')?.value || 1));
-  let year = Math.trunc(Number($('dobPopupBirthYear')?.value || currentYear - 18));
-  month += Math.trunc(Number(delta) || 0);
-  if (month < 1) { month = 12; year -= 1; }
-  if (month > 12) { month = 1; year += 1; }
-  year = Math.max(currentYear - 120, Math.min(currentYear, year));
-  setValue('dobPopupBirthMonth', String(month));
-  setValue('dobPopupBirthYear', String(year));
-  renderDobPopupCalendar();
-}
-function trapDobPopupKeyboard(event) {
-  const popup = $('dobPopup');
-  if (!popup?.classList.contains('is-open')) return;
-  if (event.key === 'Escape') { event.preventDefault(); closeDobPopup(); return; }
-  if (event.key !== 'Tab') return;
-  const focusable = [...popup.querySelectorAll('button:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter((node) => node.offsetParent !== null);
-  if (!focusable.length) return;
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }
 function bindDobPopupControls() {
   ['register', 'profile'].forEach((target) => {
@@ -2761,39 +2608,20 @@ function bindDobPopupControls() {
     save.dataset.pmDobPopupBound = 'true';
     save.addEventListener('click', (event) => { event.preventDefault(); applyDobPopupSelection(); });
   }
-  [['dobPopupPrevMonthBtn', -1], ['dobPopupNextMonthBtn', 1]].forEach(([id, delta]) => {
-    const node = $(id);
-    if (node && node.dataset.pmDobPopupBound !== 'true') {
-      node.dataset.pmDobPopupBound = 'true';
-      node.addEventListener('click', (event) => { event.preventDefault(); moveDobPopupMonth(delta); });
-    }
-  });
-  ['dobPopupBirthMonth', 'dobPopupBirthYear'].forEach((id) => {
-    const node = $(id);
-    if (node && node.dataset.pmDobPopupBound !== 'true') {
-      node.dataset.pmDobPopupBound = 'true';
-      node.addEventListener('change', renderDobPopupCalendar);
-    }
-  });
-  if (document.documentElement.dataset.pmDobKeyboardBound !== 'true') {
-    document.documentElement.dataset.pmDobKeyboardBound = 'true';
-    document.addEventListener('keydown', trapDobPopupKeyboard);
-  }
+  ['dobPopupBirthDay', 'dobPopupBirthMonth', 'dobPopupBirthYear'].forEach((id) => $(id)?.addEventListener('change', () => {
+    const dateOfBirth = buildDateOfBirth($('dobPopupBirthDay')?.value, $('dobPopupBirthMonth')?.value, $('dobPopupBirthYear')?.value);
+    const age = ageFromDateOfBirth(dateOfBirth);
+    if (!dateOfBirth) setDobPopupInfo('Doğum tarihi alanını eksiksiz seçmelisiniz.', '');
+    else if (age < 16) setDobPopupInfo('Devam edebilmek için 16 yaşından büyük olmalısınız.', 'error');
+    else setDobPopupInfo(`Seçilen tarih: ${formatDobDisplay(dateOfBirth)} · Yaş: ${age}`, 'success');
+  }));
 }
 function setupDateOfBirthFields() {
-  try {
-    if (window.PMDobPicker?.init) {
-      window.PMDobPicker.init();
-      syncDobSummary('register');
-      syncDobSummary('profile');
-      lockDobFields('profile', !!normalizeDateOfBirth(currentProfile?.dateOfBirth || readDobFields('profile').dateOfBirth));
-      return;
-    }
-  } catch (_) {}
+  populateDateOfBirthSelects('register');
+  populateDateOfBirthSelects('profile');
   bindDobPopupControls();
   syncDobSummary('register');
   syncDobSummary('profile');
-  lockDobFields('profile', !!normalizeDateOfBirth(currentProfile?.dateOfBirth || readDobFields('profile').dateOfBirth));
 }
 
 function readAuthValues(mode = currentAuthMode) {
@@ -2822,7 +2650,7 @@ function readAuthValues(mode = currentAuthMode) {
 }
 
 function ensureAuthThen(label = 'Bu işlem') {
-  if (activeAuthUser()) return true;
+  if (auth.currentUser) return true;
   setAuthMode('login');
   openSheet('auth', 'Giriş Yap', `${label} için önce hesabına giriş yapmalısın.`);
   return false;
@@ -2912,7 +2740,7 @@ function toggleDropdown(force) {
   const trigger = $('profileTrigger');
   const dropdown = $('userDropdown');
   if (!topUser || !trigger || !dropdown) return false;
-  const signed = !!activeAuthUser() || document.body.classList.contains('is-authenticated');
+  const signed = !!auth.currentUser || document.body.classList.contains('is-authenticated');
   if (!signed) {
     topUser.classList.remove('is-open', 'pm-dropdown-open');
     document.body.classList.remove('pm-dropdown-active');
@@ -3522,7 +3350,7 @@ function renderLeaderboard() {
 }
 
 async function showPlayerStats(uid, seed = null) {
-  if (!activeAuthUser()) {
+  if (!auth.currentUser) {
     setAuthMode('login');
     openSheet('auth', 'Giriş gerekli', 'Liderlik oyuncu istatistiklerini görüntülemek için önce hesabına giriş yapmalısın.');
     return;
@@ -3758,7 +3586,7 @@ async function loadWheelConfig() {
     renderWheelRewards(rewards);
     renderRecentWheelWinners(payload.recentWinners || []);
     await loadRecentWheelWinners();
-    if (activeAuthUser()) {
+    if (auth.currentUser) {
       const status = await apiFetch('/api/wheel/status', {}, true).catch(() => null);
       setWheelLockedState(!!status?.claimed, status?.claimed ? (Number(status?.extraRights || 0) > 0 ? `Ek çark hakkın var. +1 hakkını kullanabilirsin.` : dailyWheelLockedMessage()) : '', Number(status?.extraRights || 0));
     } else {
@@ -3784,7 +3612,7 @@ async function spinWheel() {
   if (button) { button.dataset.busy = '1'; setWheelButtonBusy('SONUÇ HAZIRLANIYOR'); }
   primeWheelSpinSound();
   try {
-    const payload = await apiFetch('/api/wheel/spin', { method: 'POST', body: { username: safeText(currentProfile?.username || currentProfile?.displayName || activeAuthUser()?.displayName || '') } }, true);
+    const payload = await apiFetch('/api/wheel/spin', { method: 'POST', body: { username: safeText(currentProfile?.username || currentProfile?.displayName || auth.currentUser?.displayName || '') } }, true);
     const amount = payload.amount || payload.reward?.amount || payload.reward || 0;
     const rewardIndexFromPayload = payload.index ?? payload.reward?.index ?? payload.rewardIndex;
     const segmentCount = Math.max(1, currentWheelPrizes.length || Number(disk?.dataset.segmentCount || 8) || 8);
@@ -4435,7 +4263,7 @@ async function saveProfile() {
       lockDobFields('profile', true);
     }
     renderProfile();
-    if (currentProfile?.dateOfBirth) setHelp('profileDobHelp', `Doğum tarihi kayıtlı: ${formatDobDisplay(currentProfile.dateOfBirth)} · Yaş: ${currentProfile.age || ageFromDateOfBirth(currentProfile.dateOfBirth)}. Bu bilgi yalnızca yönetici tarafından değiştirilebilir.`, 'success');
+    if (currentProfile?.dateOfBirth) setHelp('profileDobHelp', `Doğum tarihi kayıtlı: ${formatDobDisplay(currentProfile.dateOfBirth)} · Yaş: ${currentProfile.age || ageFromDateOfBirth(currentProfile.dateOfBirth)}. Bu bilgi yalnızca destek üzerinden değiştirilebilir.`, 'success');
     setHelp('usernameHelp', 'Profil kaydedildi.', 'success');
     showToast('Hesabım', 'Profil güncellendi.', 'success');
   } catch (error) {
@@ -4505,7 +4333,7 @@ async function handlePasswordChange() {
 
 function syncEmailModalMode() {
   const verified = isEmailVerifiedProfile();
-  const current = currentProfile?.email || activeAuthUser()?.email || '';
+  const current = currentProfile?.email || auth.currentUser?.email || '';
   setValue('emailCurrentValue', current);
   const shell = document.querySelector('.email-change-shell');
   const newEmailGroup = document.getElementById('newEmailInput')?.closest('.field-group');
@@ -4550,7 +4378,7 @@ async function requestEmailChangeLink() {
     return;
   }
   const email = safeText($('newEmailInput')?.value || '').toLowerCase();
-  const current = safeText(currentProfile?.email || activeAuthUser()?.email || '').toLowerCase();
+  const current = safeText(currentProfile?.email || auth.currentUser?.email || '').toLowerCase();
   if (!email || !email.includes('@')) { setHelp('emailChangeHelp', ''); showToast('E-posta', 'Geçerli yeni e-posta adresi gir.', 'error'); return; }
   if (email === current) { setHelp('emailChangeHelp', ''); showToast('E-posta', 'Yeni e-posta mevcut e-posta adresinle aynı olamaz.', 'error'); return; }
   const button = $('requestEmailLinkBtn');
@@ -4637,8 +4465,9 @@ async function handleAuthSubmit(mode = currentAuthMode) {
   setHelp('authHelp', '');
   try {
     clearAuthRequiredLock();
-    const ready = await bootFirebase({ reportOnError: false });
-    if (ready) await applyFirebaseAuthPersistence(true);
+    const ready = await bootFirebase({ reportOnError: true });
+    if (!ready) throw new Error('hazır değil.');
+    await applyFirebaseAuthPersistence(true);
     let credential;
     if (safeMode === 'register') {
       const registerUsernameState = usernameValidationState(values.username);
@@ -4649,28 +4478,9 @@ async function handleAuthSubmit(mode = currentAuthMode) {
       if (!usernameCheck || usernameCheck.ok === false) usernameCheck = await apiFetch(`/api/check-username?username=${encodeURIComponent(values.username)}`, {}, false).catch(() => null);
       if (!usernameCheck || usernameCheck.ok === false) throw new Error('USERNAME_CHECK_FAILED');
       if (usernameCheck?.available === false) throw new Error(usernameCheck?.message || 'Bu kullanıcı adı kullanılıyor veya geçersiz.');
-      const fallback = await backendSessionRequest('/api/auth/register', {
-        method: 'POST',
-        body: {
-          email: values.email,
-          password: values.password,
-          username: values.username,
-          displayName: values.username,
-          firstName: values.firstName,
-          lastName: values.lastName,
-          dateOfBirth: values.dateOfBirth,
-          birthDay: values.birthDay,
-          birthMonth: values.birthMonth,
-          birthYear: values.birthYear,
-          acceptedTerms: values.termsAccepted,
-          acceptedKvkk: values.kvkkAccepted,
-          acceptedMcVirtualPoints: values.mcNoticeAccepted
-        }
-      });
-      const user = fallback?.data?.user || fallback?.user || null;
-      if (!user?.uid) throw new Error('AUTH_SERVICE_UNAVAILABLE');
-      setBackendSessionUser({ ...user, displayName: values.username });
-      credential = { user: activeAuthUser() };
+      credential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      try { await firebaseUpdateProfile?.(credential.user, { displayName: values.username }); } catch (_) {}
+      try { await sendEmailVerification(credential.user); } catch (_) {}
       currentProfile = normalizeProfile({ uid: credential.user.uid, email: credential.user.email, username: values.username, firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), avatar: fallbackAvatar, dateOfBirth: values.dateOfBirth, ageVerified: true });
       try {
         await apiFetch('/api/profile/update', { method: 'POST', body: { firstName: values.firstName, lastName: values.lastName, fullName: joinName(values.firstName, values.lastName), username: values.username, avatar: fallbackAvatar, selectedFrame: 0, dateOfBirth: values.dateOfBirth, birthDay: values.birthDay, birthMonth: values.birthMonth, birthYear: values.birthYear, acceptedTerms: true, acceptedKvkk: true, acceptedMcVirtualPoints: true } }, true);
@@ -4685,14 +4495,7 @@ async function handleAuthSubmit(mode = currentAuthMode) {
         const resolved = await apiFetch('/api/auth/resolve-login', { method: 'POST', body: { identifier: values.identifier } }, false);
         email = resolved.email;
       }
-      if (ready && typeof signInWithEmailAndPassword === 'function') {
-        credential = await signInWithEmailAndPassword(auth, email, values.password);
-        await exchangeBackendSession(credential.user);
-      } else {
-        const fallback = await backendSessionRequest('/api/auth/login', { method: 'POST', body: { email, password: values.password } });
-        setBackendSessionUser(fallback?.data?.user || fallback?.user || null);
-        credential = { user: activeAuthUser() };
-      }
+      credential = await signInWithEmailAndPassword(auth, email, values.password);
       showToast('Hesap erişimi', 'Giriş yapıldı. Hoş geldin.', 'success');
     }
     await loadProfile();
@@ -4729,7 +4532,6 @@ async function logout() {
   toggleDropdown(false);
   clearAuthRequiredLock();
   try { if (firebaseReady && signOutFirebase) await signOutFirebase(auth); } catch (error) { report('home.logout.firebase', error); }
-  await clearBackendSessionHome();
   currentProfile = blankProfile();
   renderProfile();
   renderNotifications();
@@ -4812,15 +4614,13 @@ function setupPasswordVisibilityToggles() {
 }
 
 function setupRegisterTermsVisualState() {
-  ['registerTermsAccepted', 'registerKvkkAccepted', 'registerMcNoticeAccepted'].forEach((id) => {
-    const input = $(id);
-    if (!input || input.dataset.pmTermsBound === 'true') return;
-    input.dataset.pmTermsBound = 'true';
-    const label = input.closest('.pm-check-line');
-    const sync = () => label?.classList.toggle('is-checked', !!input.checked);
-    input.addEventListener('change', sync);
-    sync();
-  });
+  const input = $('registerTermsAccepted');
+  if (!input || input.dataset.pmTermsBound === 'true') return;
+  input.dataset.pmTermsBound = 'true';
+  const label = input.closest('.pm-check-line');
+  const sync = () => label?.classList.toggle('is-checked', !!input.checked);
+  input.addEventListener('change', sync);
+  sync();
 }
 
 function bindEvents() {
@@ -4857,7 +4657,7 @@ function bindEvents() {
   $('notificationOpenBtn')?.addEventListener('click', () => { ensureAuthThen('Bildirimler') && openSheet('notifications'); });
   const openEmailDrawer = (returnToSecurity = false) => {
     if (returnToSecurity) requestProfileSecurityReturn();
-    setValue('emailCurrentValue', currentProfile?.email || activeAuthUser()?.email || '');
+    setValue('emailCurrentValue', currentProfile?.email || auth.currentUser?.email || '');
     setValue('newEmailInput', '');
     setValue('emailLinkStateInput', '');
     syncEmailModalMode();
@@ -5041,10 +4841,7 @@ function setupPickers() {
 }
 
 async function handleHomeAuthStateChange(user) {
-  if (user) await exchangeBackendSession(user).catch((error) => report('home.auth.session.exchange', error, { severity: 'warning' }));
-  else await probeBackendSessionHome({ force: true });
-  const resolvedUser = user || activeAuthUser();
-  window.__PM_RUNTIME = { ...(window.__PM_RUNTIME || {}), auth, user: resolvedUser, sessionUser: backendSessionUser };
+  window.__PM_RUNTIME = { auth, user };
   notificationsLoaded = false;
   accountMemoryLoaded = false;
   notificationPayload = { system: [], personal: [] };
@@ -5053,7 +4850,7 @@ async function handleHomeAuthStateChange(user) {
   await loadProfile();
   renderNotifications();
   renderAccountMemory();
-  if (resolvedUser) {
+  if (user) {
     Promise.resolve(ensureNotificationRealtime()).catch((error) => report('home.notifications.realtime', error));
   } else {
     stopNotificationRealtime();
@@ -5063,8 +4860,8 @@ async function handleHomeAuthStateChange(user) {
 async function watchAuth() {
   const ready = await bootFirebase({ reportOnError: false, timeoutMs: 6500 });
   if (!ready || !onAuthStateChanged) {
-    const sessionUser = await probeBackendSessionHome({ force: true });
-    await handleHomeAuthStateChange(sessionUser).catch((error) => report('home.auth.session.handler', error));
+    currentProfile = blankProfile();
+    renderProfile();
     return;
   }
   onAuthStateChanged(auth, (user) => {
@@ -5073,10 +4870,10 @@ async function watchAuth() {
       currentProfile = blankProfile();
       renderProfile();
     });
-  }, async (error) => {
+  }, (error) => {
     report('home.auth.state', error);
-    const sessionUser = await probeBackendSessionHome({ force: true });
-    await handleHomeAuthStateChange(sessionUser).catch(() => null);
+    currentProfile = blankProfile();
+    renderProfile();
   });
 }
 
@@ -5114,7 +4911,7 @@ async function boot() {
   loadLeaderboard({ force: true, reason: 'boot' }).catch((error) => report('home.leaderboard.boot', error));
   const leaderboardArea = $('leaderboardListArea');
   if (leaderboardArea && !leaderboardLoading && !leaderboardPayload) leaderboardArea.innerHTML = '<div class="pm-leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Liderlik tablosu hazır.</strong><span>Sıralama düzenli olarak güncellenir. En güncel sonuçları görmek için Yenile butonunu kullanabilirsin.</span></div>';
-  window.__PM_RUNTIME = { ...(window.__PM_RUNTIME || {}), auth, user: activeAuthUser(), sessionUser: backendSessionUser };
+  window.__PM_RUNTIME = { auth, user: auth.currentUser };
   watchAuth().catch((error) => report('home.auth.boot', error));
   return true;
 }

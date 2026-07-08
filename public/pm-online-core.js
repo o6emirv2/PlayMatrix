@@ -11,7 +11,7 @@ const FIREBASE_SDK_CANDIDATES = Object.freeze([
   Object.freeze({ version: '10.13.2', app: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js', auth: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js', compatApp: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js', compatAuth: 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js' })
 ]);
 const PM_AUTH_REQUIRED_UID_KEY = 'pm_auth_required_uid';
-function currentUidFromCore(core) { return String(core?.auth?.currentUser?.uid || core?.sessionUser?.uid || '').trim(); }
+function currentUidFromCore(core) { return String(core?.auth?.currentUser?.uid || '').trim(); }
 function clearAuthRequiredLock() {
   try { window.sessionStorage?.removeItem(PM_AUTH_REQUIRED_UID_KEY); } catch (_) {}
   try { window.localStorage?.removeItem(PM_AUTH_REQUIRED_UID_KEY); } catch (_) {}
@@ -29,117 +29,9 @@ function isAuthRequiredLocked(core) {
   try { if (window.localStorage?.getItem(PM_AUTH_REQUIRED_UID_KEY) === uid) return true; } catch (_) {}
   return false;
 }
-let backendSessionCache = null;
-let backendSessionCheckedAt = 0;
-let backendSessionPromise = null;
-const BACKEND_SESSION_CACHE_MS = 15000;
-
 function readServerSessionToken() { return ''; }
 function writeServerSessionToken() { return ''; }
-function clearServerSessionToken() {
-  backendSessionCache = null;
-  backendSessionCheckedAt = 0;
-  return '';
-}
-
-function sessionUserFromPayload(payload = null) {
-  const source = payload?.data?.user || payload?.user || null;
-  const uid = String(source?.uid || '').trim();
-  if (!uid) return null;
-  return {
-    uid,
-    email: String(source?.email || '').trim(),
-    emailVerified: source?.emailVerified === true,
-    isAnonymous: false,
-    providerId: 'playmatrix-session',
-    getIdToken: async () => ''
-  };
-}
-
-async function probeBackendSession(core = null, { force = false, timeoutMs = 3500 } = {}) {
-  const now = Date.now();
-  if (!force && backendSessionCache && now - backendSessionCheckedAt < BACKEND_SESSION_CACHE_MS) return backendSessionCache;
-  if (!force && backendSessionPromise) return backendSessionPromise;
-  backendSessionPromise = (async () => {
-    let base = '';
-    try {
-      base = core?.getApiBaseSync?.() || window.__PM_API__?.getApiBaseSync?.() || window.location.origin;
-      if (core?.ensureApiBaseReady) base = await core.ensureApiBaseReady().catch(() => base);
-      else if (window.__PM_API__?.ensureApiBase) base = await window.__PM_API__.ensureApiBase().catch(() => base);
-    } catch (_) {}
-    base = normalizeBase(base || window.location.origin);
-    if (!base) return null;
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), Math.max(1200, Number(timeoutMs) || 3500));
-    try {
-      const response = await fetch(`${base}/api/auth/session`, {
-        method: 'GET',
-        credentials: 'include',
-        cache: 'no-store',
-        headers: { Accept: 'application/json', 'x-playmatrix-client': 'web' },
-        signal: controller.signal
-      });
-      const payload = await response.json().catch(() => ({}));
-      const user = response.ok && payload?.ok !== false ? sessionUserFromPayload(payload) : null;
-      backendSessionCache = user;
-      backendSessionCheckedAt = Date.now();
-      if (core) core.sessionUser = user;
-      return user;
-    } catch (_) {
-      backendSessionCheckedAt = Date.now();
-      if (force) backendSessionCache = null;
-      return backendSessionCache;
-    } finally {
-      window.clearTimeout(timer);
-    }
-  })();
-  try { return await backendSessionPromise; }
-  finally { backendSessionPromise = null; }
-}
-async function exchangeBackendSessionFromFirebase(core = null, { forceRefresh = false, timeoutMs = 6000 } = {}) {
-  const user = core?.auth?.currentUser || null;
-  if (!user || typeof core?.getIdToken !== 'function') return probeBackendSession(core, { force: true, timeoutMs });
-  const token = await core.getIdToken(!!forceRefresh).catch(() => forceRefresh ? core.getIdToken(false) : '');
-  if (!token) return probeBackendSession(core, { force: true, timeoutMs });
-  const base = await core.ensureApiBaseReady();
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), Math.max(1800, Number(timeoutMs) || 6000));
-  try {
-    const response = await fetch(`${base}/api/auth/session`, {
-      method: 'POST',
-      credentials: 'include',
-      cache: 'no-store',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        'x-playmatrix-client': 'web'
-      },
-      body: JSON.stringify({ idToken: token }),
-      signal: controller.signal
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || payload?.ok === false) {
-      const error = buildError('Hesap oturumu doğrulanamadı.', String(payload?.code || payload?.error || `HTTP_${response.status}`).toUpperCase(), { status: response.status, payload });
-      throw error;
-    }
-    const sessionUser = sessionUserFromPayload(payload) || {
-      uid: String(user.uid || '').trim(),
-      email: String(user.email || '').trim(),
-      emailVerified: user.emailVerified === true,
-      providerId: 'firebase',
-      getIdToken: (...args) => core.getIdToken(...args)
-    };
-    backendSessionCache = sessionUser;
-    backendSessionCheckedAt = Date.now();
-    core.sessionUser = sessionUser;
-    clearAuthRequiredLock();
-    return sessionUser;
-  } finally {
-    window.clearTimeout(timer);
-  }
-}
-
+function clearServerSessionToken() { return ''; }
 function isAuthError(payload, status) {
   const code = String(payload?.code || payload?.error || '').toUpperCase();
   return (code === 'AUTH_REQUIRED' || code === 'AUTH_INVALID') ? 'required' : '';
@@ -193,11 +85,6 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
   }
 
   const base = await core.ensureApiBaseReady();
-  if (core?.auth?.currentUser) {
-    await exchangeBackendSessionFromFirebase(core, { forceRefresh: false, timeoutMs: Math.min(6500, Math.max(2500, Number(timeoutMs) || 6500)) }).catch(() => null);
-  } else if (!core?.sessionUser) {
-    await probeBackendSession(core, { force: true, timeoutMs: Math.min(4500, Math.max(1800, Number(timeoutMs) || 4500)) }).catch(() => null);
-  }
   let lastAuthError = null;
   const getOptionalToken = async (refresh = false) => {
     try {
@@ -231,14 +118,10 @@ async function requestWithSessionFallback(core, endpoint, { method = 'GET', body
       if (authProblem === 'required' && isAuthRequiredLocked(core)) {
         throw buildError('Devam etmek için giriş yapman gerekiyor.', 'AUTH_REQUIRED', { status: response.status, payload });
       }
-      if ((response.status === 401 || response.status === 403) && token && attempt < retries) {
-        await exchangeBackendSessionFromFirebase(core, { forceRefresh: true, timeoutMs: Math.min(6500, Math.max(2500, Number(timeoutMs) || 6500)) }).catch(() => null);
-        return attemptRequest(attempt + 1, true);
-      }
+      if ((response.status === 401 || response.status === 403) && token && attempt < retries) return attemptRequest(attempt + 1, true);
       if (!response.ok || payload?.ok === false) {
-        const responseCode = String(payload?.code || payload?.error || `HTTP_${response.status}`).trim().toUpperCase();
-        const message = sanitizeOnlineUserMessage(payload?.message || (lastAuthError?.message && !token ? lastAuthError.message : 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.'));
-        throw buildError(message, responseCode || `HTTP_${response.status}`, { status: response.status, payload });
+        const message = sanitizeOnlineUserMessage(payload?.error || (lastAuthError?.message && !token ? lastAuthError.message : 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.'));
+        throw buildError(message, payload?.code || `HTTP_${response.status}`, { status: response.status, payload });
       }
       return payload;
     } catch (error) {
@@ -384,7 +267,7 @@ async function applyStoredAuthPersistence(authModule, auth) {
 }
 
 function createUnavailableCore(runtime, setupError) {
-  const auth = { currentUser: null, app: null, name: 'playmatrix-session-auth' };
+  const auth = { currentUser: null, app: null, name: 'playmatrix-unavailable-auth' };
   const normalizedError = setupError?.code
     ? setupError
     : buildError(sanitizeOnlineUserMessage(setupError?.message || 'Hesap erişimi şu anda hazırlanamadı. Lütfen tekrar dene.'), 'FIREBASE_UNAVAILABLE', { cause: setupError });
@@ -392,108 +275,47 @@ function createUnavailableCore(runtime, setupError) {
   const core = {
     app: null,
     auth,
-    sessionUser: null,
     degraded: true,
     setupError: normalizedError,
     onAuthStateChanged: (maybeAuthOrHandler, maybeHandler, maybeError, maybeCompleted) => {
-      const { handler, errorHandler, completedHandler } = normalizeAuthListenerArgs(maybeAuthOrHandler, maybeHandler, maybeError, maybeCompleted);
+      const { handler, completedHandler } = normalizeAuthListenerArgs(maybeAuthOrHandler, maybeHandler, maybeError, maybeCompleted);
       let active = true;
-      Promise.resolve(probeBackendSession(core, { force: true, timeoutMs: 5000 }))
-        .then((user) => {
-          if (!active) return;
-          auth.currentUser = user || null;
-          core.sessionUser = user || null;
-          if (typeof handler === 'function') handler(user || null);
-          if (typeof completedHandler === 'function') completedHandler();
-        })
-        .catch((error) => {
-          if (!active) return;
-          if (typeof errorHandler === 'function') errorHandler(error);
-          else if (typeof handler === 'function') handler(null);
-          if (typeof completedHandler === 'function') completedHandler();
-        });
+      window.setTimeout(() => {
+        if (!active) return;
+        try { if (typeof handler === 'function') handler(null); }
+        finally { if (typeof completedHandler === 'function') completedHandler(); }
+      }, 0);
       return () => { active = false; };
     },
-    getIdToken: async () => '',
-    async signOut() {
-      try {
-        const base = await core.ensureApiBaseReady();
-        await fetch(`${base}/api/auth/logout`, { method: 'POST', credentials: 'include', cache: 'no-store' });
-      } catch (_) {}
-      auth.currentUser = null;
-      core.sessionUser = null;
-      clearServerSessionToken();
-    },
+    getIdToken: async () => { throw normalizedError; },
+    signOut: async () => {},
     getApiBaseSync() {
       const base = window.__PM_API__?.getApiBaseSync
         ? window.__PM_API__.getApiBaseSync()
-        : normalizeBase(runtime.apiBase || window.__PLAYMATRIX_API_URL__ || document.querySelector('meta[name="playmatrix-api-url"]')?.content || window.location.origin);
-      runtime.apiBase = base || normalizeBase(window.location.origin);
-      window.__PLAYMATRIX_API_URL__ = runtime.apiBase;
-      return runtime.apiBase;
+        : normalizeBase(runtime.apiBase || window.__PLAYMATRIX_API_URL__ || document.querySelector('meta[name="playmatrix-api-url"]')?.content || (!isProductionHost() ? window.location.origin : ''));
+      runtime.apiBase = base;
+      window.__PLAYMATRIX_API_URL__ = base;
+      return base;
     },
     async ensureApiBaseReady() {
       const base = window.__PM_API__?.ensureApiBase
         ? await window.__PM_API__.ensureApiBase().catch(() => core.getApiBaseSync())
         : core.getApiBaseSync();
-      const normalized = normalizeBase(base || core.getApiBaseSync() || window.location.origin);
+      const normalized = normalizeBase(base || core.getApiBaseSync());
       runtime.apiBase = normalized;
       window.__PLAYMATRIX_API_URL__ = normalized;
       return normalized;
     },
-    async waitForAuthReady(timeoutMs = 15000) {
-      const user = auth.currentUser || core.sessionUser || await probeBackendSession(core, { force: true, timeoutMs: Math.min(6000, timeoutMs) });
-      if (!user) throw buildError('Oturum bulunamadı.', 'NO_USER');
-      auth.currentUser = user;
-      core.sessionUser = user;
-      return user;
-    },
+    async waitForAuthReady() { throw normalizedError; },
     async ensureSocketClientReady() {
       if (typeof window.io === 'function') return window.io;
       if (window.__PM_API__?.loadSocketClientScript) await window.__PM_API__.loadSocketClientScript();
       if (typeof window.io === 'function') return window.io;
-      throw buildError('Gerçek zamanlı bağlantı başlatılamadı.', 'SOCKET_SCRIPT_ERROR');
+      throw buildError('Socket istemcisi yüklenemedi.', 'SOCKET_SCRIPT_ERROR');
     },
-    async waitForSocketReady(sock, timeoutMs = 5000) {
-      if (!sock) throw buildError('Gerçek zamanlı bağlantı başlatılamadı.', 'SOCKET_INIT_FAILED');
-      if (sock.connected) return sock;
-      return new Promise((resolve, reject) => {
-        let settled = false;
-        const cleanup = () => { sock.off('connect', onConnect); sock.off('connect_error', onError); };
-        const finish = (handler, payload) => {
-          if (settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          handler(payload);
-        };
-        const onConnect = () => finish(resolve, sock);
-        const onError = (error) => finish(reject, error instanceof Error ? error : buildError('Gerçek zamanlı bağlantı kurulamadı.', 'SOCKET_CONNECT_ERROR'));
-        const timer = window.setTimeout(() => finish(reject, buildError('Gerçek zamanlı bağlantı zaman aşımına uğradı.', 'SOCKET_TIMEOUT')), Math.max(1200, Number(timeoutMs) || 5000));
-        sock.on('connect', onConnect);
-        sock.on('connect_error', onError);
-      });
-    },
-    async requestWithAuth(endpoint, options = {}) { return requestWithSessionFallback(core, endpoint, { allowSessionFallback: true, ...options }); },
-    async createAuthedSocket(existingSocket = null, { authPayload = {}, transports = ['websocket', 'polling'], reconnection = true, reconnectionAttempts = 6, timeout = 6000, extraOptions = {} } = {}) {
-      await core.waitForAuthReady(Math.max(4000, timeout)).catch(() => null);
-      const base = await core.ensureApiBaseReady();
-      const ioFactory = await core.ensureSocketClientReady();
-      if (existingSocket) {
-        try { existingSocket.removeAllListeners?.(); } catch (_) {}
-        try { existingSocket.disconnect?.(); } catch (_) {}
-      }
-      const token = typeof core.getIdToken === 'function' ? await core.getIdToken(false).catch(() => '') : '';
-      return ioFactory(base, {
-        auth: { ...(token ? { token } : {}), ...authPayload },
-        withCredentials: true,
-        transports,
-        reconnection,
-        reconnectionAttempts,
-        timeout,
-        ...extraOptions
-      });
-    }
+    async waitForSocketReady() { throw normalizedError; },
+    async requestWithAuth(endpoint, options = {}) { return requestWithSessionFallback(core, endpoint, options); },
+    async createAuthedSocket() { throw normalizedError; }
   };
 
   core.readServerSessionToken = readServerSessionToken;
@@ -506,11 +328,7 @@ function createUnavailableCore(runtime, setupError) {
   runtime.firebaseBootError = normalizedError.code || normalizedError.message || 'FIREBASE_UNAVAILABLE';
   window.__PLAYMATRIX_API_URL__ = runtime.apiBase;
   window.__PM_ONLINE_CORE__ = core;
-  probeBackendSession(core, { force: true, timeoutMs: 5000 }).then((user) => {
-    auth.currentUser = user || null;
-    core.sessionUser = user || null;
-  }).catch(() => null);
-  try { window.dispatchEvent(new CustomEvent('pm:online-core-ready', { detail: { degraded: true, sessionFallback: true } })); } catch (_) {}
+  try { window.dispatchEvent(new CustomEvent('pm:online-core-ready', { detail: { degraded: true } })); } catch (_) {}
   return core;
 }
 
@@ -536,7 +354,6 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
   const core = {
     app,
     auth,
-    sessionUser: null,
     degraded: false,
     onAuthStateChanged: (maybeAuthOrHandler, maybeHandler, maybeError, maybeCompleted) => {
       const { handler, errorHandler, completedHandler } = normalizeAuthListenerArgs(maybeAuthOrHandler, maybeHandler, maybeError, maybeCompleted);
@@ -544,36 +361,13 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
         console.warn('[PlayMatrix] onAuthStateChanged handler missing; listener skipped.');
         return () => {};
       }
-      let active = true;
-      const unsubscribe = authModule.onAuthStateChanged(auth, (user) => {
-        if (!active) return;
-        if (user) {
-          core.sessionUser = null;
-          backendSessionCache = null;
-          Promise.resolve(exchangeBackendSessionFromFirebase(core, { forceRefresh: false, timeoutMs: 6500 }))
-            .catch(() => null)
-            .finally(() => { if (active) handler(user); });
-          return;
-        }
-        probeBackendSession(core, { force: true, timeoutMs: 5000 })
-          .then((sessionUser) => { if (active) handler(sessionUser || null); })
-          .catch((error) => { if (active && typeof errorHandler === 'function') errorHandler(error); else if (active) handler(null); });
-      }, errorHandler, completedHandler);
-      return () => { active = false; try { unsubscribe(); } catch (_) {} };
+      return authModule.onAuthStateChanged(auth, handler, errorHandler, completedHandler);
     },
     getIdToken: async (forceRefresh = false) => {
-      if (!auth.currentUser) return '';
+      if (!auth.currentUser) throw buildError('Oturum bulunamadı.', 'NO_USER');
       return authModule.getIdToken(auth.currentUser, forceRefresh);
     },
-    async signOut() {
-      try { await authModule.signOut(auth); } catch (_) {}
-      try {
-        const base = await core.ensureApiBaseReady();
-        await fetch(`${base}/api/auth/logout`, { method: 'POST', credentials: 'include', cache: 'no-store' });
-      } catch (_) {}
-      core.sessionUser = null;
-      clearServerSessionToken();
-    },
+    signOut: () => authModule.signOut(auth),
     getApiBaseSync() {
       const base = window.__PM_API__?.getApiBaseSync
         ? window.__PM_API__.getApiBaseSync()
@@ -592,13 +386,10 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
       return normalized;
     },
     async waitForAuthReady(timeoutMs = 15000) {
-      if (auth.currentUser) {
-        await exchangeBackendSessionFromFirebase(core, { forceRefresh: false, timeoutMs: Math.min(6500, timeoutMs) }).catch(() => null);
-        return auth.currentUser;
-      }
-      if (core.sessionUser) return core.sessionUser;
+      if (auth.currentUser) return auth.currentUser;
       return new Promise((resolve, reject) => {
         let settled = false;
+        let initialAuthSettled = false;
         let unsub = () => {};
         const finish = (fn, payload) => {
           if (settled) return;
@@ -607,21 +398,15 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
           try { unsub(); } catch (_) {}
           fn(payload);
         };
-        const sessionFallback = () => {
-          probeBackendSession(core, { force: true, timeoutMs: Math.min(6000, timeoutMs) })
-            .then((user) => user ? finish(resolve, user) : finish(reject, buildError('Oturum bulunamadı.', 'NO_USER')))
-            .catch(() => finish(reject, buildError('Oturum bulunamadı.', 'NO_USER')));
-        };
-        const timer = window.setTimeout(sessionFallback, Math.max(1800, Number(timeoutMs) || 15000));
+        const timer = window.setTimeout(() => finish(reject, buildError('Oturum doğrulanamadı.', 'AUTH_TIMEOUT')), Math.max(1500, Number(timeoutMs) || 15000));
         unsub = authModule.onAuthStateChanged(auth, (user) => {
-          if (user) {
-            exchangeBackendSessionFromFirebase(core, { forceRefresh: false, timeoutMs: Math.min(6500, timeoutMs) })
-              .catch(() => null)
-              .finally(() => finish(resolve, user));
-            return;
-          }
-          sessionFallback();
-        }, () => sessionFallback());
+          initialAuthSettled = true;
+          if (user) return finish(resolve, user);
+          return finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
+        }, (error) => finish(reject, buildError(error?.message || 'Oturum dinleyicisi başlatılamadı.', error?.code || 'AUTH_LISTENER_FAILED', { cause: error })));
+        window.setTimeout(() => {
+          if (!settled && initialAuthSettled && !auth.currentUser) finish(reject, buildError('Oturum bulunamadı.', 'NO_USER'));
+        }, 900);
       });
     },
     async ensureSocketClientReady() {
@@ -657,17 +442,15 @@ export async function initPlayMatrixOnlineCore(firebaseConfig = PLAYMATRIX_FIREB
       return requestWithSessionFallback(core, endpoint, options);
     },
     async createAuthedSocket(existingSocket = null, { authPayload = {}, transports = ['websocket', 'polling'], reconnection = true, reconnectionAttempts = 6, timeout = 6000, extraOptions = {} } = {}) {
-      await core.waitForAuthReady(Math.max(4000, timeout)).catch(() => null);
       const base = await core.ensureApiBaseReady();
       const ioFactory = await core.ensureSocketClientReady();
-      const token = await core.getIdToken(true).catch(() => core.getIdToken(false).catch(() => ''));
+      const token = await core.getIdToken(true).catch(() => core.getIdToken(false));
       if (existingSocket) {
         try { existingSocket.removeAllListeners?.(); } catch (_) {}
         try { existingSocket.disconnect?.(); } catch (_) {}
       }
       return ioFactory(base, {
-        auth: { ...(token ? { token } : {}), ...authPayload },
-        withCredentials: true,
+        auth: { token, ...authPayload },
         transports,
         reconnection,
         reconnectionAttempts,

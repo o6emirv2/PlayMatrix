@@ -2,7 +2,6 @@ const express = require('express');
 const crypto = require('crypto');
 const { requireAuth } = require('../../core/security');
 const { initFirebaseAdmin } = require('../../config/firebaseAdmin');
-const { verifySocketSession } = require('../../core/userSessionService');
 const { debitBalance, creditBalance, readBalance } = require('../../core/economyService');
 const { getProgression, normalizeXpBigInt } = require('../../core/progressionService');
 const { runtimeStore } = require('../../core/runtimeStore');
@@ -1447,19 +1446,22 @@ router.post('/leave', requireAuth, asyncRoute(async (req, res) => {
 async function authenticatePistiSocket(socket) {
   try {
     if (socket.data?.pistiUid) return true;
-    const decoded = await verifySocketSession(socket, { checkRevoked: true });
-    const uid = String(decoded?.uid || decoded?.sub || '').trim();
+    const token = String(socket.handshake?.auth?.token || '').trim();
+    if (!token) return false;
+    const { auth } = initFirebaseAdmin();
+    if (!auth) return false;
+    const decoded = await auth.verifyIdToken(token);
+    const uid = String(decoded.uid || '');
     if (!uid) {
       socket.emit('AUTH_REQUIRED');
       return false;
     }
     socket.data.pistiUid = uid;
-    socket.data.pistiEmail = String(decoded?.email || '');
-    socket.join(`pisti:user:${uid}`);
-    return true;
+    if (socket.data.pistiUid) socket.join(`pisti:user:${socket.data.pistiUid}`);
+    return !!socket.data.pistiUid;
   } catch (_) {
     socket.data.pistiUid = '';
-    socket.emit('pisti:auth_error', { ok: false, error: 'AUTH_REQUIRED' });
+    socket.emit('pisti:auth_error', { ok: false, error: 'INVALID_AUTH_TOKEN' });
     return false;
   }
 }

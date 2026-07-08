@@ -4,7 +4,6 @@ const { requireAuth } = require('../../core/security');
 const { debitBalance, creditBalance, readBalance } = require('../../core/economyService');
 const { runtimeStore } = require('../../core/runtimeStore');
 const { initFirebaseAdmin } = require('../../config/firebaseAdmin');
-const { verifySocketSession } = require('../../core/userSessionService');
 const { getProgression, normalizeXpBigInt } = require('../../core/progressionService');
 const { recordRecentActivity } = require('../../core/recentActivityService');
 let addAdminLog = null;
@@ -1129,18 +1128,22 @@ router.post('/leave', requireAuth, asyncRoute(async (req, res) => {
 async function authenticateChessSocket(socket) {
   try {
     if (socket.data?.chessUid) return true;
-    const decoded = await verifySocketSession(socket, { checkRevoked: true });
-    const uid = String(decoded?.uid || decoded?.sub || '').trim();
+    const token = String(socket.handshake?.auth?.token || '').trim();
+    if (!token) return false;
+    const { auth } = initFirebaseAdmin();
+    if (!auth) return false;
+    const decoded = await auth.verifyIdToken(token);
+    const uid = String(decoded.uid || '');
     if (!uid) {
       socket.emit('AUTH_REQUIRED');
       return false;
     }
     socket.data.chessUid = uid;
-    socket.data.chessEmail = String(decoded?.email || '');
-    return true;
+    socket.data.chessEmail = String(decoded.email || '');
+    return !!socket.data.chessUid;
   } catch (_) {
     socket.data.chessUid = '';
-    socket.emit('chess:auth_error', { ok: false, error: 'AUTH_REQUIRED' });
+    socket.emit('chess:auth_error', { ok: false, error: 'INVALID_AUTH_TOKEN' });
     return false;
   }
 }

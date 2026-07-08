@@ -1569,104 +1569,142 @@ body[data-pm-page="home"].pm-body-scroll-locked{
   .pm-dob-selects .field-input { padding-left: 9px; padding-right: 9px; }
 }
 
-/* PlayMatrix V14 — professional, standalone date-of-birth calendar */
-body.pm-dob-popup-open { overflow: hidden !important; overscroll-behavior: none; }
-.pm-dob-popup { position: fixed; inset: 0; z-index: 2147483400; display: none; align-items: center; justify-content: center; padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); }
-.pm-dob-popup.is-open { display: flex; }
-.pm-dob-popup-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 12, .82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-.pm-dob-popup-card { position: relative; width: min(100%, 520px); max-height: min(92dvh, 760px); overflow: hidden auto; border: 1px solid rgba(245, 197, 76, .32); border-radius: 28px; background: linear-gradient(155deg, rgba(26, 29, 35, .99), rgba(8, 10, 14, .995)); box-shadow: 0 32px 90px rgba(0,0,0,.62), 0 0 0 1px rgba(255,255,255,.035) inset; color: #f8fafc; }
-.pm-dob-popup-head { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 52px minmax(0,1fr) 42px; gap: 12px; align-items: center; padding: 20px 20px 16px; background: linear-gradient(180deg, rgba(28,31,38,.99), rgba(17,19,24,.96)); border-bottom: 1px solid rgba(255,255,255,.08); }
-.pm-dob-popup-icon { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 17px; color: #111827; font-size: 1.2rem; background: linear-gradient(145deg,#fff4bd,#d8a72e); box-shadow: 0 10px 28px rgba(216,167,46,.2); }
-.pm-dob-popup-head h3 { margin: 0 0 4px; font-size: clamp(1.08rem,4vw,1.28rem); font-weight: 950; }
-.pm-dob-popup-head p { margin: 0; color: rgba(226,232,240,.73); line-height: 1.42; font-size: .9rem; }
-.pm-dob-popup-close { width: 42px; height: 42px; border-radius: 14px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.055); color: #f8fafc; cursor: pointer; }
-.pm-dob-popup-body { display: grid; gap: 14px; padding: 18px 20px; }
-.pm-dob-selected-preview { display: grid; grid-template-columns: 46px minmax(0,1fr); gap: 12px; align-items: center; padding: 13px 14px; border: 1px solid rgba(245,197,76,.22); border-radius: 18px; background: linear-gradient(135deg, rgba(245,197,76,.12), rgba(255,255,255,.035)); }
-.pm-dob-selected-icon { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; color: #f7d76a; background: rgba(245,197,76,.1); }
-.pm-dob-selected-preview div { display: grid; gap: 2px; min-width: 0; }
-.pm-dob-selected-preview small { color: rgba(226,232,240,.62); font-size: .76rem; text-transform: uppercase; letter-spacing: .07em; }
-.pm-dob-selected-preview strong { font-size: 1.04rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pm-dob-selected-preview span { color: rgba(226,232,240,.75); font-size: .82rem; }
-.pm-dob-calendar-shell { padding: 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 22px; background: rgba(3,6,11,.52); }
-.pm-dob-calendar-toolbar { display: grid; grid-template-columns: 42px minmax(0,1fr) minmax(90px,.75fr) 42px; gap: 8px; align-items: end; margin-bottom: 14px; }
-.pm-dob-calendar-select { display: grid; gap: 5px; min-width: 0; }
-.pm-dob-calendar-select > span { padding-left: 3px; color: rgba(226,232,240,.58); font-size: .69rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
-.pm-dob-calendar-select .field-input { width: 100%; min-width: 0; height: 46px; padding: 0 10px; border-radius: 13px; border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.07); color: #f8fafc; }
-.pm-dob-calendar-nav { width: 42px; height: 46px; border-radius: 13px; border: 1px solid rgba(255,255,255,.11); color: #f8fafc; background: rgba(255,255,255,.055); cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
-.pm-dob-calendar-nav:hover { border-color: rgba(245,197,76,.45); background: rgba(245,197,76,.1); }
-.pm-dob-calendar-nav:active { transform: scale(.96); }
-.pm-dob-weekdays,.pm-dob-day-grid { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 6px; }
-.pm-dob-weekdays { margin-bottom: 7px; }
-.pm-dob-weekdays span { color: rgba(226,232,240,.53); text-align: center; font-size: .7rem; font-weight: 900; text-transform: uppercase; }
-.pm-dob-day-spacer { min-height: 38px; }
-.pm-dob-day-btn { min-width: 0; min-height: 38px; border: 1px solid transparent; border-radius: 12px; color: rgba(248,250,252,.9); background: transparent; font: inherit; font-weight: 760; cursor: pointer; transition: transform .14s ease, background .14s ease, border-color .14s ease, color .14s ease; }
-.pm-dob-day-btn:hover { background: rgba(255,255,255,.065); border-color: rgba(255,255,255,.09); }
-.pm-dob-day-btn:focus-visible { outline: 2px solid #f5c54c; outline-offset: 2px; }
-.pm-dob-day-btn.is-selected { color: #111827; border-color: rgba(255,236,157,.88); background: linear-gradient(145deg,#ffeaa0,#c89625); box-shadow: 0 8px 22px rgba(200,150,37,.25); transform: translateY(-1px); }
-.pm-dob-popup-info { padding: 12px 14px; border: 1px solid rgba(148,163,184,.18); border-radius: 15px; background: rgba(148,163,184,.065); color: rgba(226,232,240,.79); font-size: .86rem; line-height: 1.42; }
-.pm-dob-popup-info[data-tone="error"] { color: #fecaca; border-color: rgba(239,68,68,.4); background: rgba(239,68,68,.1); }
-.pm-dob-popup-info[data-tone="success"] { color: #bbf7d0; border-color: rgba(34,197,94,.36); background: rgba(34,197,94,.1); }
-.pm-dob-popup-actions { position: sticky; bottom: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1.25fr; gap: 10px; padding: 0 20px calc(20px + env(safe-area-inset-bottom)); background: linear-gradient(0deg, rgba(8,10,14,.995) 70%, transparent); }
-.pm-dob-popup-actions button { min-height: 48px; }
-.pm-dob-popup-actions button:disabled { opacity: .42; cursor: not-allowed; filter: grayscale(.35); }
-.pm-dob-open-card { width: 100%; display: grid; grid-template-columns: 48px minmax(0,1fr) 22px; gap: 12px; align-items: center; min-height: 76px; padding: 12px 15px; border-radius: 19px; border: 1px solid rgba(255,255,255,.12); background: linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.025)); color: #f8fafc; text-align: left; cursor: pointer; }
-.pm-dob-open-card.is-complete { border-color: rgba(34,197,94,.38); background: linear-gradient(135deg,rgba(34,197,94,.11),rgba(255,255,255,.025)); }
-.pm-dob-open-card.is-locked,.is-dob-locked .pm-dob-open-card { cursor: not-allowed; opacity: .82; border-color: rgba(148,163,184,.22); }
-.is-dob-locked .pm-dob-open-card .fa-chevron-right::before { content: "\f023"; }
-@media (max-width: 560px) {
-  .pm-dob-popup { align-items: flex-end; padding: 8px 8px max(8px,env(safe-area-inset-bottom)); }
-  .pm-dob-popup-card { width: 100%; max-height: min(94dvh,760px); border-radius: 25px 25px 18px 18px; }
-  .pm-dob-popup-head { grid-template-columns: 46px minmax(0,1fr) 40px; padding: 16px 15px 13px; }
-  .pm-dob-popup-icon { width: 46px; height: 46px; border-radius: 15px; }
-  .pm-dob-popup-body { padding: 14px 14px 16px; }
-  .pm-dob-calendar-shell { padding: 11px; }
-  .pm-dob-calendar-toolbar { grid-template-columns: 38px minmax(0,1fr) minmax(80px,.7fr) 38px; gap: 5px; }
-  .pm-dob-calendar-nav { width: 38px; }
-  .pm-dob-weekdays,.pm-dob-day-grid { gap: 4px; }
-  .pm-dob-day-btn,.pm-dob-day-spacer { min-height: 34px; }
-  .pm-dob-popup-actions { padding: 0 14px calc(14px + env(safe-area-inset-bottom)); }
-}
-
-/* PlayMatrix V14 — deterministic date picker field states */
+/* PlayMatrix V10 - Profesyonel Doğum Tarihi Popup */
 .pm-dob-open-card {
-  -webkit-tap-highlight-color: transparent;
-  appearance: none;
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.075), 0 14px 34px rgba(0,0,0,.22);
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(245, 158, 11, .34);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(250, 204, 21, .14), rgba(15, 23, 42, .72));
+  color: #f8fafc;
+  text-align: left;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 12px 32px rgba(0,0,0,.26);
+  cursor: pointer;
 }
-.pm-dob-open-card::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(245,197,76,.8), transparent);
-  opacity: .7;
+.pm-dob-open-card:disabled,
+.pm-dob-open-card.is-locked {
+  opacity: .72;
+  cursor: not-allowed;
+}
+.pm-dob-open-card.is-complete {
+  border-color: rgba(52, 211, 153, .44);
+  background: linear-gradient(135deg, rgba(16, 185, 129, .16), rgba(15, 23, 42, .74));
+}
+.pm-dob-open-card.is-warning {
+  border-color: rgba(239, 68, 68, .52);
 }
 .pm-dob-open-icon {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  border-radius: 15px;
+  border-radius: 16px;
   color: #111827;
-  background: linear-gradient(145deg,#fff4bd,#d8a72e);
-  box-shadow: 0 10px 26px rgba(216,167,46,.2);
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  box-shadow: 0 10px 24px rgba(245, 158, 11, .23);
 }
 .pm-dob-open-copy { min-width: 0; display: grid; gap: 4px; }
-.pm-dob-open-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .98rem; font-weight: 900; color: #f8fafc; }
-.pm-dob-open-copy small { color: rgba(226,232,240,.7); font-size: .82rem; line-height: 1.35; }
-.pm-dob-open-card.is-complete .pm-dob-open-icon { color: #052e22; background: linear-gradient(145deg,#bbf7d0,#34d399); }
-.pm-dob-open-card.is-warning .pm-dob-open-icon { color: #450a0a; background: linear-gradient(145deg,#fecaca,#f87171); }
-.pm-dob-open-card:focus-visible { outline: 2px solid #f5c54c; outline-offset: 3px; }
-.pm-dob-open-card:disabled { pointer-events: none; }
-.pm-dob-calendar-select .field-input option { color: #f8fafc; background: #17191f; }
-.pm-dob-weekdays span { white-space: nowrap; overflow: hidden; text-overflow: clip; }
-@media (max-width: 380px) {
-  .pm-dob-popup-head p { font-size: .82rem; }
-  .pm-dob-calendar-toolbar { grid-template-columns: 34px minmax(0,1fr) minmax(76px,.72fr) 34px; }
-  .pm-dob-calendar-nav { width: 34px; height: 42px; }
-  .pm-dob-calendar-select .field-input { height: 42px; font-size: .86rem; padding-inline: 7px; }
-  .pm-dob-weekdays span { font-size: .62rem; }
-  .pm-dob-day-btn,.pm-dob-day-spacer { min-height: 32px; }
+.pm-dob-open-copy strong { font-size: .98rem; font-weight: 900; letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-dob-open-copy small { color: rgba(226,232,240,.72); line-height: 1.35; }
+.pm-dob-selects--fallback {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-dob-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 99980;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 18px;
+}
+.pm-dob-popup.is-open { display: flex; }
+.pm-dob-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 23, .74);
+  backdrop-filter: blur(10px);
+}
+.pm-dob-popup-card {
+  position: relative;
+  width: min(520px, 100%);
+  border-radius: 30px;
+  overflow: hidden;
+  border: 1px solid rgba(250, 204, 21, .26);
+  background: radial-gradient(circle at top left, rgba(250, 204, 21, .16), transparent 36%), linear-gradient(180deg, #151a27, #070b13);
+  color: #f8fafc;
+  box-shadow: 0 -20px 70px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.08);
+  transform: translateY(0);
+}
+.pm-dob-popup-head {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 42px;
+  gap: 12px;
+  align-items: center;
+  padding: 20px 20px 14px;
+}
+.pm-dob-popup-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  color: #111827;
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
+}
+.pm-dob-popup-head h3 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 950; letter-spacing: -.01em; }
+.pm-dob-popup-head p { margin: 0; color: rgba(226,232,240,.72); font-size: .92rem; line-height: 1.35; }
+.pm-dob-popup-close {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 15px;
+  background: rgba(255,255,255,.08);
+  color: #f8fafc;
+}
+.pm-dob-popup-body { padding: 4px 20px 18px; }
+.pm-dob-popup-selects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.pm-dob-popup-selects label { display: grid; gap: 7px; font-weight: 800; color: rgba(226,232,240,.78); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+.pm-dob-popup-selects select { min-height: 52px; border-radius: 16px; }
+.pm-dob-popup-info {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: rgba(226,232,240,.82);
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  line-height: 1.42;
+}
+.pm-dob-popup-info[data-tone="error"] { color: #fecaca; border-color: rgba(239,68,68,.38); background: rgba(239,68,68,.10); }
+.pm-dob-popup-info[data-tone="success"] { color: #bbf7d0; border-color: rgba(34,197,94,.34); background: rgba(34,197,94,.10); }
+.pm-dob-popup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 10px;
+  padding: 0 20px calc(20px + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .pm-dob-popup { align-items: center; }
+}
+@media (max-width: 420px) {
+  .pm-dob-popup { padding: 10px; }
+  .pm-dob-popup-card { border-radius: 26px; }
+  .pm-dob-popup-head { grid-template-columns: 46px minmax(0, 1fr) 38px; padding: 16px 16px 12px; }
+  .pm-dob-popup-icon { width: 46px; height: 46px; border-radius: 16px; }
+  .pm-dob-popup-body { padding: 2px 16px 16px; }
+  .pm-dob-popup-actions { padding: 0 16px calc(16px + env(safe-area-inset-bottom)); }
+  .pm-dob-selects--fallback,
+  .pm-dob-popup-selects { gap: 7px; }
 }

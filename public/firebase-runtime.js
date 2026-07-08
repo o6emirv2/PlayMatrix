@@ -1,6 +1,6 @@
 import { PM_CURRENT_FIREBASE_PROJECT_ID, cloneCurrentFirebasePublicConfig, matchesCurrentFirebasePublicConfig } from './firebase-public-contract.js';
 const PM_PUBLIC_RUNTIME_ENDPOINT = '/api/public/runtime-config';
-const PM_PUBLIC_RUNTIME_CACHE_KEY = 'pm_public_runtime_cache_v14';
+const PM_PUBLIC_RUNTIME_CACHE_KEY = 'pm_public_runtime_cache_v4';
 
 let runtimeCache = null;
 let runtimePromise = null;
@@ -106,10 +106,8 @@ function readStaticRuntimeConfig() {
 
 function getEndpointCandidates() {
   const list = [];
-  pushUnique(list, window.location.origin);
   pushUnique(list, window.__PM_RUNTIME?.apiBase);
   pushUnique(list, readStaticRuntimeConfig()?.apiBase);
-  pushUnique(list, readStaticRuntimeConfig()?.apiFallbackBase);
   pushUnique(list, window.__PLAYMATRIX_API_URL__);
   pushUnique(list, readMetaContent('playmatrix-api-url'));
 
@@ -129,13 +127,7 @@ function normalizeRuntime(payload = {}) {
   const staticRuntime = readStaticRuntimeConfig();
   const expectedFirebaseProjectId = String(PM_CURRENT_FIREBASE_PROJECT_ID || runtime?.expectedFirebaseProjectId || staticRuntime?.expectedFirebaseProjectId || readExpectedFirebaseProjectId(staticRuntime) || '').trim();
   const firebase = sanitizeFirebaseConfig(runtime?.firebase || null, expectedFirebaseProjectId) || sanitizeFirebaseConfig(staticRuntime?.firebase || null, expectedFirebaseProjectId) || fallbackFirebaseConfig();
-  // The custom production domain serves the same application. Keep API calls
-  // same-origin so HttpOnly session cookies and Socket.IO survive iOS/Safari
-  // privacy restrictions. The Render origin remains a fallback outside the
-  // production custom domain.
-  const apiBase = isProductionHost()
-    ? normalizeBase(window.location.origin)
-    : normalizeBase(runtime?.apiBase || window.__PM_RUNTIME?.apiBase || staticRuntime?.apiBase || window.__PLAYMATRIX_API_URL__ || readMetaContent('playmatrix-api-url') || window.location.origin);
+  const apiBase = normalizeBase(runtime?.apiBase || window.__PM_RUNTIME?.apiBase || staticRuntime?.apiBase || window.__PLAYMATRIX_API_URL__ || readMetaContent('playmatrix-api-url') || (!isProductionHost() ? window.location.origin : ''));
   return {
     ...cloneObject(staticRuntime || {}),
     ...cloneObject(runtime || {}),

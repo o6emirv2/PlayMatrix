@@ -54,14 +54,7 @@ export function getGameAccentClass(game = {}) {
 
 
 function getCurrentHomeUser() {
-  try {
-    return window.__PM_RUNTIME?.auth?.currentUser
-      || window.__PM_RUNTIME?.sessionUser
-      || window.__PM_RUNTIME?.user
-      || window.__PM_ONLINE_CORE__?.sessionUser
-      || window.__PM_ONLINE_CORE__?.auth?.currentUser
-      || null;
-  } catch (_) { return null; }
+  try { return window.__PM_RUNTIME?.auth?.currentUser || null; } catch (_) { return null; }
 }
 
 function openHomeAuthSheet(gameName = 'Online oyun') {
@@ -77,24 +70,6 @@ function openHomeAuthSheet(gameName = 'Online oyun') {
   if (loginButton && typeof loginButton.click === 'function') loginButton.click();
 }
 
-
-
-function normalizeMaintenanceFlag(value) {
-  if (value === true) return true;
-  if (value === false || value == null) return false;
-  if (typeof value === 'number') return Number.isFinite(value) && value > 0;
-  const raw = String(value || '').trim().toLowerCase();
-  if (!raw || raw === '0' || raw === 'false' || raw === 'off' || raw === 'no' || raw === 'hayir' || raw === 'hayır' || raw === 'pasif' || raw === 'inactive') return false;
-  return raw === '1' || raw === 'true' || raw === 'on' || raw === 'yes' || raw === 'evet' || raw === 'aktif' || raw === 'active';
-}
-
-function normalizeMaintenanceState(value = {}) {
-  const src = value && typeof value === 'object' && value.games && typeof value.games === 'object' ? value.games : value;
-  const keys = ['general','system','crash','chess','pisti','classic','pattern-master','space-pro','snake-pro','market','wheel','promo'];
-  const out = {};
-  keys.forEach((key) => { out[key] = normalizeMaintenanceFlag(src?.[key]); });
-  return out;
-}
 
 let homeMaintenanceState = null;
 let homeMaintenanceLoadedAt = 0;
@@ -116,7 +91,7 @@ export async function loadHomeMaintenanceState(options = {}) {
   try {
     const res = await fetch('/api/platform/control-public', { credentials: 'same-origin', cache: 'no-store' });
     const data = await res.json().catch(() => ({}));
-    homeMaintenanceState = normalizeMaintenanceState(data?.maintenance || data?.games || {});
+    homeMaintenanceState = data?.maintenance || {};
   } catch (_) {
     homeMaintenanceState = {};
   }
@@ -126,11 +101,10 @@ export async function loadHomeMaintenanceState(options = {}) {
 
 export function isGameInMaintenance(route = '') {
   const key = gameKeyFromRoute(route);
-  const maintenance = normalizeMaintenanceState(homeMaintenanceState || {});
+  const maintenance = homeMaintenanceState || {};
   if (!key) return false;
-  if (maintenance.general || maintenance.system) return true;
-  if (maintenance[key] === true) return true;
-  return maintenance.classic === true && ['pattern-master','space-pro','snake-pro'].includes(key);
+  if (maintenance[key]) return true;
+  return maintenance.classic && ['pattern-master','space-pro','snake-pro'].includes(key);
 }
 
 function showMaintenanceNotice(gameName = 'Oyun') {
@@ -150,36 +124,25 @@ function showMaintenanceNotice(gameName = 'Oyun') {
 function installOnlineGameAuthGuard(root = document) {
   if (document.body?.dataset.onlineGameAuthGuardBound === '1') return;
   if (document.body) document.body.dataset.onlineGameAuthGuardBound = '1';
-  root.addEventListener('click', async (event) => {
+  root.addEventListener('click', (event) => {
     const trigger = event.target?.closest?.('[data-access="auth"], [data-requires-auth="true"]');
     if (!trigger) return;
-    const href = trigger.getAttribute?.('href') || trigger.dataset.href || '';
+    const href = trigger.getAttribute?.('href') || '';
     if (!href && trigger.dataset.requiresAuth !== 'true') return;
-    const normalized = normalizeGameRoute(href);
+    const normalized = normalizeGameRoute(href || trigger.dataset.href || '');
     const isProtectedGame = /\/games\/(crash|chess|pisti|pattern-master|space-pro|snake-pro)$/i.test(normalized);
     if (!isProtectedGame && trigger.dataset.requiresAuth !== 'true' && trigger.dataset.access !== 'auth') return;
-    const gameName = trigger.dataset.gameName || trigger.closest?.('.game-card')?.querySelector?.('.game-card-title, .game-title')?.textContent || 'Oyun';
-
-    // Bakım kararını tıklama anında serverdan yenile. Ağ hatası bakım olarak yorumlanmaz.
+    const gameName = trigger.dataset.gameName || trigger.closest?.('.game-card')?.querySelector?.('.game-card-title, .game-title')?.textContent || 'Online oyun';
+    if (isGameInMaintenance(normalized)) {
+      event.preventDefault();
+      event.stopPropagation();
+      showMaintenanceNotice(gameName);
+      loadHomeMaintenanceState({ force: true }).catch(() => null);
+      return;
+    }
+    if (getCurrentHomeUser()) return;
     event.preventDefault();
     event.stopPropagation();
-    if (trigger.dataset.pmNavigationPending === '1') return;
-    trigger.dataset.pmNavigationPending = '1';
-    trigger.setAttribute('aria-busy', 'true');
-    try {
-      if (isProtectedGame) await loadHomeMaintenanceState({ force: true });
-      if (isProtectedGame && isGameInMaintenance(normalized)) {
-        showMaintenanceNotice(gameName);
-        return;
-      }
-      if (!getCurrentHomeUser()) {
-        openHomeAuthSheet(gameName);
-        return;
-      }
-      if (normalized) window.location.assign(normalized);
-    } finally {
-      delete trigger.dataset.pmNavigationPending;
-      trigger.removeAttribute('aria-busy');
-    }
+    openHomeAuthSheet(gameName);
   }, true);
 }

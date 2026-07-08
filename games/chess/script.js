@@ -61,7 +61,7 @@
 })();
 
 window.__PLAYMATRIX_ROUTE_NORMALIZER_DISABLED__ = true;
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v14-render-dob-games-admin";
+import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v11-dob-game-auth-fix";
 
     const core = await initPlayMatrixOnlineCore();
     const auth = core.auth;
@@ -717,8 +717,8 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
         if (/load failed|failed to fetch|network|timeout|zaman aşımı|request_timeout/i.test(message) || !error?.status) {
           try { return await directFetchAPI(endpoint, method, body); } catch (fallbackError) { error = fallbackError; }
         }
-        const code = String(error?.payload?.code || error?.payload?.error || error?.code || error?.error || '').toUpperCase();
-        if (['GAME_MAINTENANCE', 'GAME_MAINTENANCE_ACTIVE', 'SYSTEM_MAINTENANCE', 'MAINTENANCE_ACTIVE'].includes(code)) {
+        const code = String(error?.payload?.error || error?.error || error?.message || '').toUpperCase();
+        if (Number(error?.status || 0) === 503 || code === 'GAME_MAINTENANCE' || code === 'SYSTEM_MAINTENANCE') {
           window.location.replace('/?pm_maintenance=chess');
           return new Promise(() => {});
         }
@@ -761,7 +761,7 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
     }
 
     async function initApp() {
-      userUid = auth.currentUser?.uid || core.sessionUser?.uid || userUid;
+      userUid = auth.currentUser?.uid || userUid;
       if (!userUid) { const user = await resolveBootUser(6500); userUid = user.uid; }
       fetchBalance();
       wireLobbySearchUI();
@@ -1039,10 +1039,6 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
         EXTENSION_REJECTED: 'Süre uzatma reddedildi. Oda sonucu işleniyor.',
         STATE_VERSION_MISMATCH:'Oyun verisi yenilendi. Lütfen hamleni tekrar seç.',
         AUTH_REQUIRED:'Devam etmek için giriş yapman gerekiyor.',
-        AGE_REQUIRED:'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
-        DATE_OF_BIRTH_REQUIRED:'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
-        AGE_RESTRICTED:'Devam edebilmek için 16 yaşından büyük olmalısınız.',
-        ACCOUNT_LOCKED:'Hesabın yaş uygunluğu nedeniyle kilitli. Destek ile iletişime geçebilirsin.',
         SOCKET_TIMEOUT:'Bağlantı gecikti. Hamle tekrar deneniyor.',
         SOCKET_OFFLINE:'Canlı bağlantı yenileniyor. Lütfen birkaç saniye bekle.',
         BOT_ROOM_NOT_JOINABLE:'Bot odasına başka oyuncu katılamaz.',
@@ -1053,11 +1049,7 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
         DAILY_LIMIT_REACHED:'Bugünkü ücretsiz oyun hakkını kullandın. Yarın tekrar oynayabilirsin.'
       };
       for (const [key, message] of Object.entries(map)) if (raw.includes(key)) return message;
-      if (raw.includes('AGE_REQUIRED') || raw.includes('DATE_OF_BIRTH_REQUIRED')) return 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.';
-      if (raw.includes('AGE_RESTRICTED')) return 'Devam edebilmek için 16 yaşından büyük olmalısınız.';
-      if (raw.includes('ACCOUNT_LOCKED')) return 'Hesabın yaş uygunluğu nedeniyle kilitli. Destek ile iletişime geçebilirsin.';
-      if (status === 401) return 'Devam etmek için giriş yapman gerekiyor.';
-      if (status === 403) return 'Bu işlem için hesap uygunluğunu tamamlaman gerekiyor.';
+      if (status === 401 || status === 403) return 'Devam etmek için giriş yapman gerekiyor.';
       if (status === 404) return 'Oda bulunamadı. Yeni oda kurabilir veya lobiyi yenileyebilirsin.';
       if (status === 409) return 'Oda durumu değişti. Lütfen lobiyi yenileyip tekrar dene.';
       if (/TIMEOUT|NETWORK|LOAD FAILED|FAILED TO FETCH/i.test(raw)) return 'Bağlantı yenileniyor. Lütfen birkaç saniye sonra tekrar dene.';

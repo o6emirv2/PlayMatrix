@@ -1,7 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const env = require('../config/env');
-const { requireAuth, strictLimiter, isAdminPrincipal } = require('../core/security');
+const { requireAuth, strictLimiter } = require('../core/security');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const { runtimeStore } = require('../core/runtimeStore');
 const { issueAdminAccess, clearAdminAccess, adminAccessCookie, clearAdminAccessCookie, getRequestAdminAccessToken, readAdminAccess } = require('../core/adminAccessService');
@@ -154,31 +154,6 @@ async function readProfile(req, uid = uidOf(req), seed = {}) {
   return addProgression(profile);
 }
 async function writeProfile(uid, patch) { const { db } = fb(); if (db && uid) await db.collection('users').doc(uid).set({ ...patch, updatedAt: now() }, { merge: true }); }
-async function writeProfileWithUsernameRegistry(uid, patch = {}, previousUsername = '') {
-  const { db } = fb();
-  if (!db || !uid) return;
-  const nextUsername = usernameState(patch.username || '').username;
-  const nextLower = String(patch.usernameLower || nextUsername || '').toLocaleLowerCase('tr-TR');
-  const previousLower = normalizeUsername(previousUsername).toLocaleLowerCase('tr-TR');
-  if (!nextLower) return writeProfile(uid, patch);
-  const userRef = db.collection('users').doc(uid);
-  const nextRef = db.collection('usernames').doc(nextLower);
-  const previousRef = previousLower && previousLower !== nextLower ? db.collection('usernames').doc(previousLower) : null;
-  await db.runTransaction(async (tx) => {
-    const [nextSnap, previousSnap] = await Promise.all([
-      tx.get(nextRef),
-      previousRef ? tx.get(previousRef) : Promise.resolve(null)
-    ]);
-    if (nextSnap.exists && String(nextSnap.data()?.uid || '') !== uid) {
-      const error = new Error('USERNAME_TAKEN');
-      error.code = 'USERNAME_TAKEN';
-      throw error;
-    }
-    tx.set(userRef, { ...patch, updatedAt: now() }, { merge: true });
-    tx.set(nextRef, { uid, username: nextUsername, usernameLower: nextLower, updatedAt: now() }, { merge: true });
-    if (previousRef && previousSnap?.exists && String(previousSnap.data()?.uid || '') === uid) tx.delete(previousRef);
-  });
-}
 async function addBalance(uid, amount, reason, key) {
   const { db, admin } = fb();
   const safeAmount = Math.floor(Number(amount) || 0);
@@ -278,23 +253,24 @@ function unb64(v=''){ try { return Buffer.from(String(v),'base64url').toString('
 function signMatrix(payload={}){ const body=b64(JSON.stringify(payload)); const sig=crypto.createHmac('sha256', matrixSecret()).update(body).digest('base64url'); return `${body}.${sig}`; }
 function verifyMatrixToken(token='') { const raw=String(token||'').trim(); const i=raw.lastIndexOf('.'); if(i<=0)return null; const body=raw.slice(0,i), sig=raw.slice(i+1); const expected=crypto.createHmac('sha256', matrixSecret()).update(body).digest('base64url'); const a=Buffer.from(sig), b=Buffer.from(expected); if(a.length!==b.length || !crypto.timingSafeEqual(a,b))return null; try{return JSON.parse(unb64(body));}catch{return null;} }
 function primaryAdmin(){ return { uid: env.adminUids[0] || '', email: env.adminEmails[0] || '' }; }
+function isConfiguredAdmin(email='', uid=''){ const e=String(email||'').trim().toLowerCase(); const u=String(uid||'').trim(); return (!!e && env.adminEmails.includes(e)) || (!!u && env.adminUids.includes(u)); }
 function compareHex(a='',b=''){ const x=String(a||'').toLowerCase(), y=String(b||'').toLowerCase(); if(!x||!y||x.length!==y.length)return false; return crypto.timingSafeEqual(Buffer.from(x),Buffer.from(y)); }
 function verifySecondFactor(password=''){ const raw=String(process.env.ADMIN_PANEL_SECOND_FACTOR||''); if(raw && String(password||'')===raw)return true; const stored=String(process.env.ADMIN_PANEL_SECOND_FACTOR_HASH_HEX||'').toLowerCase(); const saltHex=String(process.env.ADMIN_PANEL_SECOND_FACTOR_SALT_HEX||''); if(!stored)return false; const pwd=Buffer.from(String(password||''),'utf8'); const salt=/^[0-9a-f]+$/i.test(saltHex)&&saltHex.length%2===0?Buffer.from(saltHex,'hex'):Buffer.from(saltHex,'utf8'); const candidates=Array.from(new Set([crypto.createHash('sha256').update(Buffer.concat([salt,pwd])).digest('hex'),crypto.createHash('sha256').update(Buffer.concat([pwd,salt])).digest('hex'),crypto.createHash('sha256').update(`${saltHex}${String(password||'')}`).digest('hex'),crypto.createHash('sha256').update(`${String(password||'')}${saltHex}`).digest('hex'),crypto.createHmac('sha256',salt).update(pwd).digest('hex')])); return candidates.some(x=>compareHex(x,stored)); }
 function verifyThirdFactor(name=''){ const expected=String(process.env.ADMIN_PANEL_THIRD_FACTOR_NAME||'').trim(); const value=String(name||'').trim(); if(!expected||!value)return false; const a=Buffer.from(value.normalize('NFKC')); const b=Buffer.from(expected.normalize('NFKC')); return a.length===b.length && crypto.timingSafeEqual(a,b); }
-function issueClientKey(payload={}){ return signMatrix({ typ:'pm_admin_client_key', ...payload, issuedAt:now(), expiresAt:now()+60*60*1000, nonce:crypto.randomBytes(10).toString('hex') }); }
+function issueClientKey(payload={}){ return signMatrix({ typ:'pm_admin_client_key', ...payload, issuedAt:now(), expiresAt:now()+12*3600000, nonce:crypto.randomBytes(10).toString('hex') }); }
 function verifyClientKey(key=''){ const payload=verifyMatrixToken(key); if(!payload||payload.typ!=='pm_admin_client_key')return {ok:false,code:'INVALID_CLIENT_KEY'}; if(Number(payload.expiresAt||0)<now())return {ok:false,code:'CLIENT_KEY_EXPIRED'}; return {ok:true,payload}; }
-function adminContext(uid='',email=''){ return { isAdmin:true, uid, email, role:'owner', roles:['owner'], permissions:['admin.read','users.read','users.write','rewards.write','rewards.read','system.read','moderation.write'], source:'hybrid-allowlist', resolutionChain:['firestore:adminAllowlist','firestore:adminUsers','env:bootstrap-if-empty'] }; }
+function adminContext(uid='',email=''){ return { isAdmin:true, uid, email, role:'owner', roles:['owner'], permissions:['admin.read','users.read','users.write','rewards.write','rewards.read','system.read','moderation.write'], source:'env', resolutionChain:['env:ADMIN_EMAILS','env:ADMIN_UIDS'] }; }
 function adminAccessFromReq(req){ const token=getRequestAdminAccessToken(req); if(!token)return null; const access=readAdminAccess(token); return access?.uid?{token,...access}:null; }
-router.get('/auth/admin/matrix/identity', requireAuth, async (req,res)=>{ const uid=String(req.user?.uid||''); const email=String(req.user?.email||'').trim().toLowerCase(); if(!(await isAdminPrincipal(uid,email)))return res.status(403).json({ok:false,authenticated:true,admin:false,user:{uid,email},error:'ADMIN_REQUIRED'}); return res.json({ok:true,authenticated:true,admin:true,user:{uid,email},adminContext:adminContext(uid,email)}); });
-router.post('/auth/admin/matrix/step-email', requireAuth, strictLimiter, async (req,res)=>{ const email=String(req.user?.email||'').trim().toLowerCase(); const uid=String(req.user?.uid||'').trim(); if(!email||!(await isAdminPrincipal(uid,email)))return res.status(403).json({ok:false,error:'ADMIN_REQUIRED'}); res.json({ok:true,boundToSession:true,manualFallback:false,email,ticket:signMatrix({typ:'pm_admin_step',uid,email,stage:2,issuedAt:now(),expiresAt:now()+7*60000,nonce:crypto.randomBytes(12).toString('hex')}),admin:adminContext(uid,email)}); });
+router.get('/auth/admin/matrix/identity', requireAuth, (req,res)=>{ const uid=String(req.user?.uid||''); const email=String(req.user?.email||'').trim().toLowerCase(); if(!isConfiguredAdmin(email,uid))return res.status(403).json({ok:false,authenticated:true,admin:false,user:{uid,email},error:'ADMIN_REQUIRED'}); return res.json({ok:true,authenticated:true,admin:true,user:{uid,email},adminContext:adminContext(uid,email)}); });
+router.post('/auth/admin/matrix/step-email', requireAuth, strictLimiter, (req,res)=>{ const email=String(req.user?.email||'').trim().toLowerCase(); const uid=String(req.user?.uid||'').trim(); if(!email||!isConfiguredAdmin(email,uid))return res.status(403).json({ok:false,error:'ADMIN_REQUIRED'}); res.json({ok:true,boundToSession:true,manualFallback:false,email,ticket:signMatrix({typ:'pm_admin_step',uid,email,stage:2,issuedAt:now(),expiresAt:now()+7*60000,nonce:crypto.randomBytes(12).toString('hex')}),admin:adminContext(uid,email)}); });
 router.post('/auth/admin/matrix/step-password',strictLimiter,(req,res)=>{ const payload=verifyMatrixToken(req.body?.ticket||''); if(!payload||payload.typ!=='pm_admin_step'||Number(payload.stage)!==2||Number(payload.expiresAt||0)<now())return res.status(401).json({ok:false,error:'Güvenlik oturumu geçersiz.'}); if(!verifySecondFactor(req.body?.password||''))return res.status(403).json({ok:false,error:'Güvenlik şifresi doğrulanamadı.'}); res.json({ok:true,ticket:signMatrix({...payload,stage:3,prev:'identity+password',issuedAt:now(),expiresAt:now()+7*60000})}); });
-router.post('/auth/admin/matrix/step-name',strictLimiter,async (req,res)=>{ const payload=verifyMatrixToken(req.body?.ticket||''); if(!payload||payload.typ!=='pm_admin_step'||Number(payload.stage)!==3||Number(payload.expiresAt||0)<now())return res.status(401).json({ok:false,error:'Güvenlik oturumu geçersiz.'}); if(!verifyThirdFactor(req.body?.adminName||req.body?.name||''))return res.status(403).json({ok:false,error:'Son güvenlik doğrulaması başarısız oldu.'}); if(!(await isAdminPrincipal(payload.uid,payload.email)))return res.status(403).json({ok:false,error:'Yönetici yetkisi doğrulanamadı.'}); const access=issueAdminAccess({ uid:payload.uid, email:payload.email, scope:'admin', source:'admin_matrix', req }); const clientKey=issueClientKey({uid:payload.uid,email:payload.email,sessionId:access.accessId}); res.setHeader('Set-Cookie',adminAccessCookie(access.accessToken)); res.json({ok:true,redirectTo:'/admin/admin.html',clientKey,admin:adminContext(payload.uid,payload.email)}); });
+router.post('/auth/admin/matrix/step-name',strictLimiter,(req,res)=>{ const payload=verifyMatrixToken(req.body?.ticket||''); if(!payload||payload.typ!=='pm_admin_step'||Number(payload.stage)!==3||Number(payload.expiresAt||0)<now())return res.status(401).json({ok:false,error:'Güvenlik oturumu geçersiz.'}); if(!verifyThirdFactor(req.body?.adminName||req.body?.name||''))return res.status(403).json({ok:false,error:'Son güvenlik doğrulaması başarısız oldu.'}); if(!isConfiguredAdmin(payload.email,payload.uid))return res.status(403).json({ok:false,error:'Yönetici yetkisi doğrulanamadı.'}); const access=issueAdminAccess({ uid:payload.uid, email:payload.email, scope:'admin', source:'admin_matrix', req }); const clientKey=issueClientKey({uid:payload.uid,email:payload.email,sessionId:access.accessId}); res.setHeader('Set-Cookie',adminAccessCookie(access.accessToken)); res.json({ok:true,redirectTo:'/admin/admin.html',clientKey,admin:adminContext(payload.uid,payload.email)}); });
 router.get('/auth/admin/matrix/status', async (req,res)=>{
   const presentedKey = String(req.headers['x-admin-client-key'] || '').trim();
   const keyState = verifyClientKey(presentedKey);
   let access = adminAccessFromReq(req);
 
-  if (!access && keyState.ok && await isAdminPrincipal(keyState.payload?.uid, keyState.payload?.email)) {
+  if (!access && keyState.ok && isConfiguredAdmin(keyState.payload?.email, keyState.payload?.uid)) {
     const uid = String(keyState.payload.uid || '').trim();
     const email = String(keyState.payload.email || '').trim().toLowerCase();
     const refreshedAccess = issueAdminAccess({ uid, email, scope:'admin', source:'client_key_resume', req });
@@ -306,17 +282,17 @@ router.get('/auth/admin/matrix/status', async (req,res)=>{
   // Dashboard access is issued only after the full matrix gate completes.
   // Firebase admin allowlist alone must never bootstrap dashboard access.
 
-  if(!access || !(await isAdminPrincipal(access.uid,access.email))) return res.status(401).json({ok:false,authenticated:false,redirectTo:'/admin/index.html',error:'Yönetici erişimi bulunamadı.'});
+  if(!access || !isConfiguredAdmin(access.email,access.uid)) return res.status(401).json({ok:false,authenticated:false,redirectTo:'/admin/index.html',error:'Yönetici erişimi bulunamadı.'});
   if(!keyState.ok) {
     const clientKey = issueClientKey({ uid:access.uid, email:access.email, sessionId:access.accessId || '' });
     return res.json({ok:true,authenticated:true,user:{uid:access.uid,email:access.email},admin:adminContext(access.uid,access.email),clientKey});
   }
   res.json({ok:true,authenticated:true,user:{uid:access.uid,email:access.email},admin:adminContext(access.uid,access.email),clientKey:issueClientKey({uid:access.uid,email:access.email,sessionId:access.accessId||''})});
 });
-router.post('/auth/admin/bootstrap', requireAuth, strictLimiter, async (req,res)=>{
+router.post('/auth/admin/bootstrap', requireAuth, strictLimiter, (req,res)=>{
   const uid=String(req.user?.uid||'');
   const email=String(req.user?.email||'').trim().toLowerCase();
-  if(!(await isAdminPrincipal(uid,email)))return res.status(403).json({ok:false,error:'ADMIN_REQUIRED'});
+  if(!isConfiguredAdmin(email,uid))return res.status(403).json({ok:false,error:'ADMIN_REQUIRED'});
   return res.status(403).json({ ok:false, error:'ADMIN_MATRIX_GATE_REQUIRED', redirectTo:'/admin/index.html', message:'Yönetici paneli için güvenlik adımlarını tamamlaman gerekiyor.' });
 });
 router.post('/auth/admin/matrix/logout',(req,res)=>{ const token=getRequestAdminAccessToken(req); if(token)clearAdminAccess(token); res.setHeader('Set-Cookie',clearAdminAccessCookie()); res.json({ok:true}); });
@@ -409,14 +385,7 @@ router.post('/profile/update', requireAuth, async (req, res) => {
     patch.cosmeticSlots = { ...(current.cosmeticSlots || {}), frame: { source: 'normal', itemId: String(patch.selectedFrame || ''), updatedAt: Date.now() } };
   }
   Object.keys(patch).forEach(k => { if (patch[k] === undefined) delete patch[k]; });
-  try {
-    await writeProfileWithUsernameRegistry(uid, patch, currentUsername);
-  } catch (error) {
-    if (String(error?.code || error?.message || '').toUpperCase().includes('USERNAME_TAKEN')) {
-      return res.status(409).json({ ok:false, data:null, error:'USERNAME_TAKEN', code:'USERNAME_TAKEN', message:'' });
-    }
-    throw error;
-  }
+  await writeProfile(uid, patch);
   memoryTransaction(uid, { title: 'Profil Güncellendi', message: 'Hesap bilgileri güvenli şekilde güncellendi.', icon: 'fa-user-gear' });
   const fresh = await readProfile(req, uid);
   res.json({ ok: true, user: fresh });
@@ -526,28 +495,20 @@ router.get('/matches/history', requireAuth, (_req, res) => res.json({ ok: true, 
 router.get('/achievements', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
 router.get('/missions', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
 
-function compatMaintenanceFlag(value) {
-  if (value === true || value === 1) return true;
-  if (value === false || value === 0 || value === null || value === undefined || value === '') return false;
-  const normalized = String(value).trim().toLocaleLowerCase('tr-TR');
-  if (['true', '1', 'on', 'yes', 'evet', 'aktif', 'active', 'enabled'].includes(normalized)) return true;
-  if (['false', '0', 'off', 'no', 'hayır', 'hayir', 'pasif', 'inactive', 'disabled'].includes(normalized)) return false;
-  return false;
-}
 function normalizeCompatMaintenanceGames(games = {}) {
   const raw = games && typeof games === 'object' ? games : {};
   return {
-    general: compatMaintenanceFlag(raw.general) || compatMaintenanceFlag(raw.system),
-    crash: compatMaintenanceFlag(raw.crash),
-    chess: compatMaintenanceFlag(raw.chess),
-    pisti: compatMaintenanceFlag(raw.pisti),
-    market: compatMaintenanceFlag(raw.market),
-    wheel: compatMaintenanceFlag(raw.wheel),
-    promo: compatMaintenanceFlag(raw.promo),
-    classic: compatMaintenanceFlag(raw.classic),
-    'pattern-master': compatMaintenanceFlag(raw['pattern-master']),
-    'space-pro': compatMaintenanceFlag(raw['space-pro']),
-    'snake-pro': compatMaintenanceFlag(raw['snake-pro'])
+    general: !!(raw.general || raw.system),
+    crash: !!raw.crash,
+    chess: !!raw.chess,
+    pisti: !!raw.pisti,
+    market: !!raw.market,
+    wheel: !!raw.wheel,
+    promo: !!raw.promo,
+    classic: !!raw.classic,
+    'pattern-master': !!raw['pattern-master'],
+    'space-pro': !!raw['space-pro'],
+    'snake-pro': !!raw['snake-pro']
   };
 }
 async function readCompatMaintenanceControl(source = 'control-public') {
@@ -567,8 +528,7 @@ async function readCompatMaintenanceControl(source = 'control-public') {
     console.warn('[compat:maintenance:read:failed]', error?.message || error);
   }
   const maintenance = normalizeCompatMaintenanceGames(games);
-  const gameScopes = ['general', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro'];
-  return { ok: true, maintenance, gamesEnabled: !gameScopes.some((key) => maintenance[key] === true) };
+  return { ok: true, maintenance, gamesEnabled: !Object.values(maintenance).some(Boolean) };
 }
 router.get('/platform/control-public', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
@@ -604,14 +564,7 @@ router.post('/update', requireAuth, async (req, res) => {
   }
   if (patch.username) patch.usernameLower = patch.username.toLowerCase();
   Object.keys(patch).forEach(k => { if (patch[k] === undefined) delete patch[k]; });
-  try {
-    await writeProfileWithUsernameRegistry(uid, patch, currentUsername);
-  } catch (error) {
-    if (String(error?.code || error?.message || '').toUpperCase().includes('USERNAME_TAKEN')) {
-      return res.status(409).json({ ok:false, data:null, error:'USERNAME_TAKEN', code:'USERNAME_TAKEN', message:'' });
-    }
-    throw error;
-  }
+  await writeProfile(uid, patch);
   memoryTransaction(uid, { title: 'Profil Güncellendi', message: 'Hesap bilgileri güvenli şekilde güncellendi.', icon: 'fa-user-gear' });
   res.json({ ok: true, user: await readProfile(req, uid) });
 });

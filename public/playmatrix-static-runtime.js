@@ -2,8 +2,7 @@
   'use strict';
 
   
-  const PUBLIC_API_FALLBACK = 'https://emirhan-siye.onrender.com';
-  const PUBLIC_API_BASE = /(^|\.)playmatrix\.com\.tr$/i.test(String(window.location.hostname || '')) ? window.location.origin : PUBLIC_API_FALLBACK;
+  const PUBLIC_API_BASE = 'https://emirhan-siye.onrender.com';
   const PUBLIC_BASE_URL = 'https://playmatrix.com.tr';
   const EXPECTED_FIREBASE_PROJECT_ID = 'playmatrixpro-b18b7';
   const PUBLIC_FIREBASE_CONFIG = null;
@@ -22,10 +21,6 @@
     AGE_REQUIRED: 'Devam etmek için doğum tarihini eklemen gerekiyor.',
     AGE_RESTRICTED: 'Devam edebilmek için 16 yaşından büyük olmalısınız.',
     DATE_OF_BIRTH_REQUIRED: 'Doğum tarihi alanını eksiksiz seçmelisiniz.',
-    DATE_OF_BIRTH_LOCKED: 'Doğum tarihin kayıtlıdır. Bu bilgi yalnızca yönetici tarafından değiştirilebilir.',
-    CONSENT_REQUIRED: 'Devam etmek için Kullanım Şartları, KVKK/Gizlilik ve MC sanal puan bilgilendirmesini kabul etmelisin.',
-    INVALID_CREDENTIALS: 'E-posta veya şifre hatalı.',
-    AUTH_SERVICE_UNAVAILABLE: 'Hesap işlemleri şu anda kullanılamıyor. Lütfen biraz sonra tekrar dene.',
     ACCOUNT_LOCKED: 'Hesabın şu anda kilitli. Destek ile iletişime geçebilirsin.',
     ACCOUNT_BANNED: 'Hesabınla oyunlara erişim kısıtlandı.',
     ACCOUNT_DELETION_PENDING: 'Hesap silme talebin aktif. Devam etmek için talebi iptal edebilirsin.',
@@ -90,15 +85,14 @@
 
   const apiBase = normalizeBase(PUBLIC_API_BASE);
   const runtime = Object.freeze({
-    version: 13,
+    version: 11,
     environment: 'production',
     publicBaseUrl: normalizeBase(PUBLIC_BASE_URL),
     apiBase,
     expectedFirebaseProjectId: EXPECTED_FIREBASE_PROJECT_ID,
     firebase: PUBLIC_FIREBASE_CONFIG,
     firebaseReady: !!PUBLIC_FIREBASE_CONFIG,
-    apiFallbackBase: normalizeBase(PUBLIC_API_FALLBACK),
-    source: 'same-origin-first-public-runtime-contract'
+    source: 'static-public-firebase-render-contract'
   });
 
   window.__PM_STATIC_RUNTIME_CONFIG__ = runtime;

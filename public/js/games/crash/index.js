@@ -1,5 +1,5 @@
 window.__PLAYMATRIX_ROUTE_NORMALIZER_DISABLED__ = true;
-    import { initPlayMatrixOnlineCore } from "../../../pm-online-core.js?v=pm-v14-render-dob-games-admin";
+    import { initPlayMatrixOnlineCore } from "../../../pm-online-core.js?v=playmatrix-v13-849";
 
 const __PM_CRASH_CLIENT_REPORTER__ = (() => {
   const EXPECTED_FLOW = new Set(['CASHOUT_NOT_AVAILABLE','CASHOUT_TOO_LATE','BET_ALREADY_LOST','BET_REFUNDED','REFUND_IN_PROGRESS','AUTO_CASHOUT_MISSED']);
@@ -50,7 +50,6 @@ const __PM_CRASH_CLIENT_REPORTER__ = (() => {
     window.__PM_RUNTIME.apiBase = API_URL;
     window.__PLAYMATRIX_API_URL__ = API_URL;
     const getApiBase = () => core.getApiBaseSync();
-    const currentGameUser = () => auth.currentUser || core.sessionUser || null;
     async function ensureApiBaseReady() { return core.ensureApiBaseReady(); }
     async function ensureSocketClientReady() { return core.ensureSocketClientReady(); }
     
@@ -102,10 +101,6 @@ const INLINE_DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3
             BET_AMOUNT_TOO_LOW: 'Minimum bahis 1 MC.',
             INSUFFICIENT_BALANCE: 'Bakiyen bu bahis için yeterli değil.',
             AUTH_REQUIRED: 'Oyun için giriş yapman gerekiyor.',
-            AGE_REQUIRED: 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
-            DATE_OF_BIRTH_REQUIRED: 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.',
-            AGE_RESTRICTED: 'Devam edebilmek için 16 yaşından büyük olmalısınız.',
-            ACCOUNT_LOCKED: 'Hesabın yaş uygunluğu nedeniyle kilitli. Destek ile iletişime geçebilirsin.',
             QUEUED_BET_NOT_FOUND: 'Bekleyen katılım bulunamadı veya raund başlamış olabilir.',
             QUEUED_BET_ALREADY_PROMOTED: 'Raund başladı. Katılım artık aktif turda görünüyor.'
         };
@@ -1894,7 +1889,7 @@ function setBootActions({ showEnter = false, showRetry = false, enterLabel = 'CR
     function startBalanceRefreshLoop() {
         if (balanceRefreshTimer) return;
         balanceRefreshTimer = setInterval(() => {
-            if (document.visibilityState === 'visible' && currentGameUser()) updateBal();
+            if (document.visibilityState === 'visible' && auth.currentUser) updateBal();
         }, 12000);
     }
 
@@ -1970,9 +1965,8 @@ async function connectStream() {
 let crashUiStarted = false;
 
 async function startApp(skipConnect = false) {
-    const activeUser = currentGameUser();
-    if (!activeUser?.uid) throw new Error('NO_USER');
-    uid = activeUser.uid;
+    if (!auth.currentUser) throw new Error('NO_USER');
+    uid = auth.currentUser.uid;
     startBalanceRefreshLoop();
     updateBal();
     if (!crashUiStarted) {
@@ -1993,8 +1987,8 @@ async function api(endpoint, method='GET', body=null, attempt = 0) {
     try {
         return await core.requestWithAuth(endpoint, { method, body, timeoutMs: 8000, retries: attempt === 0 ? 1 : 0 });
     } catch (error) {
-        const code = String(error?.payload?.code || error?.payload?.error || error?.code || error?.error || '').toUpperCase();
-        if (['GAME_MAINTENANCE', 'GAME_MAINTENANCE_ACTIVE', 'SYSTEM_MAINTENANCE', 'MAINTENANCE_ACTIVE'].includes(code)) {
+        const code = String(error?.payload?.error || error?.error || error?.message || '').toUpperCase();
+        if (Number(error?.status || 0) === 503 || code === 'GAME_MAINTENANCE' || code === 'SYSTEM_MAINTENANCE') {
             window.location.replace('/?pm_maintenance=crash');
             return new Promise(() => {});
         }
@@ -2028,7 +2022,7 @@ async function pmRtBindSocketEvents(sock) {
 }
 
 async function initPlayMatrixRealtime() {
-    if (!currentGameUser()) {
+    if (!auth.currentUser) {
         disposePlayMatrixRealtime();
         return null;
     }

@@ -10,7 +10,6 @@ const { requireAdminReauth, writeAdminAudit } = require('../core/adminReauthServ
 const { getWheelConfig, setWheelConfig } = require('../core/wheelRuntimeService');
 const { grantWheelRights, getWheelRights } = require('../core/wheelRightsService');
 const { recordRecentActivity } = require('../core/recentActivityService');
-const { assertDateOfBirthInput, calculateAge } = require('../core/ageGateService');
 
 const router = express.Router();
 const now = () => Date.now();
@@ -194,9 +193,6 @@ function publicUser(uid, data = {}) {
     email: data.email || '',
     username: data.username || data.displayName || data.fullName || uid,
     fullName: data.fullName || '',
-    dateOfBirth: data.dateOfBirth || '',
-    age: data.dateOfBirth ? calculateAge(data.dateOfBirth) : 0,
-    ageVerified: !!data.dateOfBirth && calculateAge(data.dateOfBirth) >= 16 && data.ageVerified !== false,
     balance: Number(data.balance || 0),
     accountXp: progression.currentXp,
     accountLevel: progression.accountLevel,
@@ -579,25 +575,30 @@ async function resolveResetDocs({ scope = 'all', identifiers = [], excludeTestUs
   return { docs: [...docMap.values()], firestore: true };
 }
 
-function maintenanceFlag(value) {
-  if (value === true || value === 1) return true;
-  if (value === false || value === 0 || value === null || value === undefined || value === '') return false;
-  const normalized = String(value).trim().toLocaleLowerCase('tr-TR');
-  if (['true', '1', 'on', 'yes', 'evet', 'aktif', 'active', 'enabled'].includes(normalized)) return true;
-  if (['false', '0', 'off', 'no', 'hayır', 'hayir', 'pasif', 'inactive', 'disabled'].includes(normalized)) return false;
-  return false;
-}
 function normalizeMaintenancePayload(body = {}) {
-  const source = body && typeof body === 'object' ? body : {};
   const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
   const out = {};
-  keys.forEach((key) => { out[key] = maintenanceFlag(source[key]); });
+  keys.forEach((key) => { out[key] = !!body[key]; });
   return out;
 }
 
 function currentMaintenance() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
-  return normalizeMaintenancePayload(stored?.games || stored || {});
+  const games = stored?.games || stored || {};
+  return {
+    general: !!games.general,
+    system: !!games.system,
+    crash: !!games.crash,
+    chess: !!games.chess,
+    pisti: !!games.pisti,
+    classic: !!games.classic,
+    'pattern-master': !!games['pattern-master'],
+    'space-pro': !!games['space-pro'],
+    'snake-pro': !!games['snake-pro'],
+    market: !!games.market,
+    wheel: !!games.wheel,
+    promo: !!games.promo
+  };
 }
 
 async function currentMaintenanceAsync({ force = false } = {}) {
@@ -675,17 +676,6 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
   }
   if (body.username !== undefined) { patch.username = safe(body.username, 32); patch.usernameLower = safe(body.username, 32).toLowerCase(); }
   if (body.fullName !== undefined) patch.fullName = safe(body.fullName, 120);
-  if (body.dateOfBirth !== undefined) {
-    const dob = assertDateOfBirthInput(body.dateOfBirth);
-    if (!dob.ok) return res.status(dob.code === 'AGE_RESTRICTED' ? 403 : 400).json({ ok:false, data:null, message:'', code:dob.code || 'INVALID_DATE_OF_BIRTH', error:dob.code || 'INVALID_DATE_OF_BIRTH' });
-    patch.dateOfBirth = dob.dateOfBirth;
-    patch.ageVerified = true;
-    patch.ageLocked = false;
-    patch.accountLocked = false;
-    patch.age = dob.age;
-    patch.ageVerifiedAt = now();
-    patch.ageAdminUpdatedAt = now();
-  }
   if (body.firstName !== undefined) patch.firstName = safe(body.firstName, 60);
   if (body.lastName !== undefined) patch.lastName = safe(body.lastName, 60);
   if (body.balance !== undefined) patch.balance = nonNegativeMoney(body.balance);
@@ -709,7 +699,7 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
   const { db, auth } = fb();
   if (auth && Object.keys(authPatch).length) await auth.updateUser(uid, authPatch);
   if (db && Object.keys(patch).length) await db.collection('users').doc(uid).set({ ...patch, updatedAt: now(), adminUpdatedBy: adminActor(req) }, { merge: true });
-  logAdmin(req, 'admin.matrix.user-info.update', { uid, fields: Object.keys(patch).map((field) => field === 'dateOfBirth' ? 'dateOfBirthChanged' : field), authFields: Object.keys(authPatch) });
+  logAdmin(req, 'admin.matrix.user-info.update', { uid, fields: Object.keys(patch), authFields: Object.keys(authPatch) });
   const sent = dispatchAdminNotification(req, {
     mode: notificationMode(req, 'none'),
     uid,

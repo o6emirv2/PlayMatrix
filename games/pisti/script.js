@@ -60,7 +60,7 @@
   }
 })();
 
-import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v14-render-dob-games-admin";
+import { initPlayMatrixOnlineCore } from "/public/pm-online-core.js?v=pm-v11-dob-game-auth-fix";
 
 const core = await initPlayMatrixOnlineCore();
 const auth = core.auth;
@@ -765,12 +765,8 @@ function translatePistiErrorMessage(error = '') {
   if (code.includes('EXTENSION_PENDING')) return 'Masa süresi doldu. Devam etmek için uzatma kararını vermen gerekiyor.';
   if (code.includes('DAILY_LIMIT')) return 'Bugünkü ücretsiz oyun hakkını kullandın. Yarın tekrar oynayabilirsin.';
   if (code.includes('EMAIL_VERIFICATION_REQUIRED')) return 'Ödüllü işlemler için e-posta adresini doğrulaman gerekiyor.';
-  if (code.includes('AGE_REQUIRED') || code.includes('DATE_OF_BIRTH_REQUIRED')) return 'Devam etmek için Hesabım bölümünden doğum tarihini eklemen gerekiyor.';
-  if (code.includes('AGE_RESTRICTED')) return 'Devam edebilmek için 16 yaşından büyük olmalısınız.';
-  if (code.includes('ACCOUNT_LOCKED')) return 'Hesabın yaş uygunluğu nedeniyle kilitli. Destek ile iletişime geçebilirsin.';
   if (code.includes('MAINTENANCE')) return 'Pişti şu anda bakımda. Lütfen daha sonra tekrar dene.';
-  if (code.includes('AUTH') || code.includes('TOKEN') || status === 401) return 'Devam etmek için giriş yapman gerekiyor.';
-  if (status === 403) return 'Bu işlem için hesap uygunluğunu tamamlaman gerekiyor.';
+  if (code.includes('AUTH') || code.includes('TOKEN') || status === 401 || status === 403) return 'Devam etmek için giriş yapman gerekiyor.';
   if (status === 404) return 'Masa bulunamadı. Yeni masa kurabilir veya lobiyi yenileyebilirsin.';
   if (status === 409) return 'Masa durumu değişti. Lütfen lobiyi yenileyip tekrar dene.';
   if (/TIMEOUT|NETWORK|LOAD FAILED|FAILED TO FETCH/i.test(code)) return 'Bağlantı yenileniyor. Lütfen birkaç saniye sonra tekrar dene.';
@@ -1044,11 +1040,6 @@ async function fetchAPI(endpoint, method='GET', body=null, attempt = 0) {
     if ((!status || /load failed|failed to fetch|network|timeout|zaman aşımı|request_timeout/i.test(message)) && attempt < 1) {
       try { return await directFetchAPI(endpoint, method, body); } catch (fallbackError) { error = fallbackError; }
     }
-    const code = String(error?.payload?.code || error?.payload?.error || error?.code || error?.error || '').toUpperCase();
-    if (['GAME_MAINTENANCE', 'GAME_MAINTENANCE_ACTIVE', 'SYSTEM_MAINTENANCE', 'MAINTENANCE_ACTIVE'].includes(code)) {
-      window.location.replace('/?pm_maintenance=pisti');
-      return new Promise(() => {});
-    }
     throw error;
   }
 }
@@ -1145,7 +1136,7 @@ async function restorePistiSession(roomId, suppressError = false) {
 }
 
 async function initApp(){ 
-    userUid = auth.currentUser?.uid || core.sessionUser?.uid || userUid;
+    userUid = auth.currentUser?.uid || userUid;
     if (!userUid) { const user = await resolveBootUser(6500); userUid = user.uid; }
     fetchProfile(); 
     ensureRealtimeShell();
