@@ -12,11 +12,10 @@ const DONE_TTL_MS = 30 * 86400000;
 
 function gameConfig(game) {
   const map = {
-    'pattern-master': { maxScore: 1000000, xpPerPoint: 1, maxXpPerRun: 1000, minDurationMs: 3000, maxScorePerMinute: 25000 },
     'space-pro': { maxScore: 1000000, xpPerPoint: 1, maxXpPerRun: 1000, minDurationMs: 3000, maxScorePerMinute: 120000 },
     'snake-pro': { maxScore: 1000000, xpPerPoint: 1, maxXpPerRun: 1000, minDurationMs: 3000, maxScorePerMinute: 60000 }
   };
-  return map[game] || map['pattern-master'];
+  return map[game] || null;
 }
 
 function istanbulDateKey(date = new Date()) {
@@ -106,6 +105,8 @@ function applyDailyCapRuntime(uid, requestedXp) {
 }
 
 function createClassicRouter(game) {
+  const config = gameConfig(game);
+  if (!config) throw Object.assign(new Error('UNSUPPORTED_GAME'), { code: 'UNSUPPORTED_GAME' });
   const router = express.Router();
 
   function startRun(req, res) {
@@ -114,7 +115,7 @@ function createClassicRouter(game) {
     const uid = String(req.user?.uid || '');
     const startedAt = Date.now();
     runtimeStore.temporary.set(`classic:${runId}`, { game, uid, runToken, startedAt, finished: false }, RUN_TTL_MS);
-    res.json({ ok: true, game, runId, runToken, startedAt, authenticated: true, dailyClassicXpCap: DAILY_CLASSIC_XP_CAP, maxXpPerRun: gameConfig(game).maxXpPerRun });
+    res.json({ ok: true, game, runId, runToken, startedAt, authenticated: true, dailyClassicXpCap: DAILY_CLASSIC_XP_CAP, maxXpPerRun: config.maxXpPerRun });
   }
 
   router.get('/start', requireAuth, startRun);

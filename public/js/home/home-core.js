@@ -12,6 +12,16 @@ const $ = (id) => document.getElementById(id);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const toNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+function timestampToMs(value) {
+  if (!value) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;
+  if (value instanceof Date) return Math.max(0, value.getTime());
+  if (typeof value?.toMillis === 'function') { try { return Math.max(0, Math.trunc(value.toMillis())); } catch (_) { return 0; } }
+  if (typeof value === 'object' && Number.isFinite(Number(value.seconds))) return Math.max(0, Math.trunc(Number(value.seconds) * 1000 + Number(value.nanoseconds || 0) / 1e6));
+  const parsed = Date.parse(String(value));
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
 const safeText = (value = '') => String(value ?? '').replace(/[\u0000-\u001F\u007F]/g, '').trim();
 const safeMultilineText = (value = '') => String(value ?? '')
   .replace(/\r\n/g, '\n')
@@ -48,7 +58,7 @@ function versionedPublicAsset(path = '') {
 }
 function gameImageUrl(game = {}) {
   const key = safeText(game.key || game.name).toLowerCase();
-  const fixed = { crash:'/public/assets/home/games/crash.jpg', satranc:'/public/assets/home/games/chess.jpg', chess:'/public/assets/home/games/chess.jpg', pisti:'/public/assets/home/games/pisti.jpg', patternmaster:'/public/assets/home/games/pattern-master.jpg', pattern:'/public/assets/home/games/pattern-master.jpg', spacepro:'/public/assets/home/games/space-pro.jpg', space:'/public/assets/home/games/space-pro.jpg', snakepro:'/public/assets/home/games/snake-pro.jpg', snake:'/public/assets/home/games/snake-pro.jpg' };
+  const fixed = { crash:'/public/assets/home/games/crash.jpg', satranc:'/public/assets/home/games/chess.jpg', chess:'/public/assets/home/games/chess.jpg', pisti:'/public/assets/home/games/pisti.jpg', spacepro:'/public/assets/home/games/space-pro.jpg', space:'/public/assets/home/games/space-pro.jpg', snakepro:'/public/assets/home/games/snake-pro.jpg', snake:'/public/assets/home/games/snake-pro.jpg' };
   return versionedPublicAsset(fixed[key] || game.image || '');
 }
 function splitFullName(value = '') {
@@ -197,6 +207,7 @@ const SHEET_COPY = Object.freeze({
   promo: [modalTitle('promo'), modalDescription('promo')],
   market: [modalTitle('market'), modalDescription('market')],
   notifications: [modalTitle('notifications'), modalDescription('notifications')],
+  'notification-settings': ['Bildirim Ayarları', 'Bildirim seslerinin hangi durumlarda çalacağını seç.'],
   stats: [modalTitle('stats'), modalDescription('stats')]
 });
 
@@ -212,6 +223,7 @@ const SHEET_ICON = Object.freeze({
   promo: modalIcon('promo'),
   market: modalIcon('market'),
   notifications: modalIcon('notifications'),
+  'notification-settings': 'fa-solid fa-volume-high',
   stats: modalIcon('stats')
 });
 
@@ -547,12 +559,10 @@ function unlockToolNotificationSound() {
 }
 
 function shouldPlayToolNotificationSound(tone = 'info', context = {}) {
-  const normalized = String(tone || 'info').toLowerCase();
-  const text = `${context.title || ''} ${context.message || ''}`.toLocaleLowerCase('tr-TR');
+  const settings = window.PMNotificationSoundSettings;
+  if (settings?.shouldPlay) return settings.shouldPlay(tone, context);
   if (context.silent === true) return false;
-  if (SOUND_ALLOWED_TYPES.has(normalized)) return true;
-  if (normalized === 'security') return /güvenlik|guvenlik|şifre|sifre|e-posta|eposta|doğrulama|dogrulama|kritik/.test(text) && !/giriş yapıldı|oturum açıldı|hos geldin|hoş geldin/.test(text);
-  return !!context.important;
+  return SOUND_ALLOWED_TYPES.has(String(tone || 'info').toLowerCase());
 }
 
 function playToolNotificationSound(tone = 'info', context = {}) {
@@ -578,7 +588,7 @@ function installToolNotificationSoundUnlock() {
   });
 }
 
-function showToast(title, message = '', tone = 'info') {
+function showToast(title, message = '', tone = 'info', options = {}) {
   const stack = $('toastStack');
   if (!stack) return;
   const normalized = normalizeToastPayload(title, message, tone);
@@ -642,7 +652,7 @@ function showToast(title, message = '', tone = 'info') {
 
   toast.append(icon, copy, close);
   stack.appendChild(toast);
-  playToolNotificationSound(safeTone, { title: cleanTitle, message: mainMessage });
+  playToolNotificationSound(safeTone, { title: cleanTitle, message: mainMessage, silent: options?.silent === true, gift: options?.gift === true, reward: options?.reward === true });
   window.requestAnimationFrame(() => toast.classList.add('is-visible'));
   window.setTimeout(removeToast, safeTone === 'error' ? 5600 : 4200);
 }
@@ -980,8 +990,15 @@ function applyProfileMarketVisuals(profile = currentProfile || blankProfile()) {
 function normalizeProfile(raw = {}) {
   const user = raw.user || raw.profile || raw.data || raw || {};
   const progression = user.progression || {};
-  const accountLevel = Math.max(1, Math.trunc(toNumber(user.accountLevel ?? user.level ?? progression.level, 1)));
-  const progressPercent = clamp(toNumber(user.progressPercent ?? user.accountLevelProgressPct ?? progression.progressPercent, 0), 0, 100);
+  const gameStats = user.gameStats && typeof user.gameStats === 'object' ? user.gameStats : {};
+  const totalStats = gameStats.total && typeof gameStats.total === 'object' ? gameStats.total : {};
+  const crashStats = gameStats.crash && typeof gameStats.crash === 'object' ? gameStats.crash : {};
+  const chessStats = gameStats.chess && typeof gameStats.chess === 'object' ? gameStats.chess : {};
+  const pistiStats = gameStats.pisti && typeof gameStats.pisti === 'object' ? gameStats.pisti : {};
+  const snakeStats = gameStats['snake-pro'] && typeof gameStats['snake-pro'] === 'object' ? gameStats['snake-pro'] : {};
+  const spaceStats = gameStats['space-pro'] && typeof gameStats['space-pro'] === 'object' ? gameStats['space-pro'] : {};
+  const accountLevel = Math.max(1, Math.trunc(toNumber(progression.level ?? user.accountLevel ?? user.level, 1)));
+  const progressPercent = clamp(toNumber(progression.progressPercent ?? user.progressPercent ?? user.accountLevelProgressPct, 0), 0, 100);
   const nameParts = splitFullName(user.fullName || user.name || '');
   const firstName = safeText(user.firstName || user.givenName || nameParts.firstName);
   const lastName = safeText(user.lastName || user.familyName || nameParts.lastName);
@@ -1024,30 +1041,27 @@ function normalizeProfile(raw = {}) {
     marketEquipped: user.marketEquipped && typeof user.marketEquipped === 'object' ? { ...user.marketEquipped } : {},
     equippedMarket: user.equippedMarket && typeof user.equippedMarket === 'object' ? { ...user.equippedMarket } : {},
     balance: resolveProfileBalance(user, raw),
-    accountXp: Math.max(0, Math.trunc(toNumber(user.accountXp ?? user.xp ?? progression.xp, 0))),
+    accountXp: Math.max(0, Math.trunc(toNumber(progression.xp ?? user.accountXp ?? user.xp, 0))),
     accountLevel,
     progressPercent,
-    xpToNextLevel: Math.max(0, Math.trunc(toNumber(user.xpToNextLevel ?? progression.xpToNextLevel, 0))),
+    xpToNextLevel: Math.max(0, Math.trunc(toNumber(progression.xpToNextLevel ?? user.xpToNextLevel, 0))),
     monthlyActiveScore: Math.max(0, Math.trunc(toNumber(user.monthlyActiveScore ?? user.monthlyActivity ?? 0, 0))),
-    totalGames: Math.max(0, Math.trunc(toNumber(user.totalGames ?? user.gamesPlayed ?? 0, 0))),
-    wins: Math.max(0, Math.trunc(toNumber(user.wins ?? user.winCount ?? 0, 0))),
-    losses: Math.max(0, Math.trunc(toNumber(user.losses ?? user.lossCount ?? 0, 0))),
-    draws: Math.max(0, Math.trunc(toNumber(user.draws ?? user.drawCount ?? 0, 0))),
-    createdAt: toNumber(user.createdAt ?? user.registeredAt ?? user.signupAt ?? 0, 0),
-    lastActiveAt: toNumber(user.lastActiveAt ?? user.lastSeen ?? user.lastLogin ?? user.updatedAt ?? 0, 0),
+    totalGames: Math.max(0, Math.trunc(toNumber(user.totalGames ?? user.gamesPlayed ?? totalStats.rounds ?? totalStats.games ?? 0, 0))),
+    wins: Math.max(0, Math.trunc(toNumber(user.wins ?? user.winCount ?? totalStats.wins ?? 0, 0))),
+    losses: Math.max(0, Math.trunc(toNumber(user.losses ?? user.lossCount ?? totalStats.losses ?? 0, 0))),
+    draws: Math.max(0, Math.trunc(toNumber(user.draws ?? user.drawCount ?? totalStats.draws ?? 0, 0))),
+    createdAt: timestampToMs(user.createdAt ?? user.registeredAt ?? user.signupAt ?? 0),
+    lastActiveAt: timestampToMs(user.lastActiveAt ?? user.lastSeen ?? user.lastLogin ?? user.updatedAt ?? 0),
     lifetimeMcUsed: Math.max(0, Math.trunc(toNumber(user.lifetimeMcUsed ?? user.totalMcUsed ?? user.totalMcSpent ?? user.mcUsed ?? user.mcSpent ?? 0, 0))),
-    winRate: Math.max(0, Math.min(100, toNumber(user.winRate ?? user.winRatePct ?? 0, 0))),
-    crashWinRate: Math.max(0, Math.min(100, toNumber(user.crashWinRate ?? user.crashWinRatePct ?? 0, 0))),
-    chessWinRate: Math.max(0, Math.min(100, toNumber(user.chessWinRate ?? user.chessWinRatePct ?? 0, 0))),
-    pistiWinRate: Math.max(0, Math.min(100, toNumber(user.pistiWinRate ?? user.pistiWinRatePct ?? 0, 0))),
-    snakeBestScore: Math.max(0, Math.trunc(toNumber(user.snakeBestScore ?? user.snakeHighScore ?? 0, 0))),
-    spaceBestScore: Math.max(0, Math.trunc(toNumber(user.spaceBestScore ?? user.spaceHighScore ?? 0, 0))),
-    patternBestScore: Math.max(0, Math.trunc(toNumber(user.patternBestScore ?? user.patternHighScore ?? 0, 0))),
-    patternBestLevel: Math.max(0, Math.trunc(toNumber(user.patternBestLevel ?? user.patternHighestLevel ?? 0, 0))),
-    patternBestCombo: Math.max(0, Math.trunc(toNumber(user.patternBestCombo ?? user.patternMaxCombo ?? 0, 0))),
+    winRate: Math.max(0, Math.min(100, toNumber(user.winRate ?? user.winRatePct ?? totalStats.winRatePct ?? 0, 0))),
+    crashWinRate: Math.max(0, Math.min(100, toNumber(user.crashWinRate ?? user.crashWinRatePct ?? crashStats.winRatePct ?? 0, 0))),
+    chessWinRate: Math.max(0, Math.min(100, toNumber(user.chessWinRate ?? user.chessWinRatePct ?? chessStats.winRatePct ?? 0, 0))),
+    pistiWinRate: Math.max(0, Math.min(100, toNumber(user.pistiWinRate ?? user.pistiWinRatePct ?? pistiStats.winRatePct ?? 0, 0))),
+    snakeBestScore: Math.max(0, Math.trunc(toNumber(user.snakeBestScore ?? user.snakeHighScore ?? snakeStats.highScore ?? 0, 0))),
+    spaceBestScore: Math.max(0, Math.trunc(toNumber(user.spaceBestScore ?? user.spaceHighScore ?? spaceStats.highScore ?? 0, 0))),
     leaderboardRank: Math.max(0, Math.trunc(toNumber(user.leaderboardRank ?? user.rank, 0))),
-    nextLevelXp: Math.max(0, Math.trunc(toNumber(user.nextLevelXp ?? progression.nextLevelXp, 0))),
-    currentLevelStartXp: Math.max(0, Math.trunc(toNumber(user.currentLevelStartXp ?? progression.currentLevelStartXp, 0))),
+    nextLevelXp: Math.max(0, Math.trunc(toNumber(progression.nextLevelXp ?? user.nextLevelXp, 0))),
+    currentLevelStartXp: Math.max(0, Math.trunc(toNumber(progression.currentLevelStartXp ?? user.currentLevelStartXp, 0))),
     emailVerified: !!(user.emailVerified ?? user.email_verified ?? user.emailVerifiedOverride ?? user.emailVerificationOverride ?? auth.currentUser?.emailVerified),
     emailVerifiedOverride: !!(user.emailVerifiedOverride || user.emailVerificationOverride || user.emailVerifiedByAdmin),
     usernameChangeLimit,
@@ -1498,7 +1512,7 @@ function renderProfile() {
 }
 
 function displayDateTime(value) {
-  const n = Number(value || 0);
+  const n = timestampToMs(value);
   if (!n) return 'Kayıt yok';
   try { return new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(n)); } catch (_) { return new Date(n).toLocaleString('tr-TR'); }
 }
@@ -1514,7 +1528,7 @@ function statItems(profile = currentProfile || blankProfile()) {
     account: [
       { label: 'Seviye + İlerleme', value: `Seviye ${profile.accountLevel || 1} · ${percent(profile.progressPercent)}`, hint: 'Animasyonlu hesap ilerleme oranı', icon: 'fa-layer-group', tone: 'blue' },
       { label: 'XP', value: money(profile.accountXp), hint: 'Toplam deneyim puanı', icon: 'fa-star', tone: 'gold' },
-      { label: 'Sonraki Seviye', value: profile.xpToNextLevel ? `${money(profile.xpToNextLevel)} XP` : 'Maksimum', hint: 'Bir sonraki seviyeye kalan XP', icon: 'fa-arrow-trend-up', tone: 'violet' },
+      { label: 'Sonraki Seviye', value: Number(profile.accountLevel || 1) >= 100 ? 'Maksimum' : `${money(profile.xpToNextLevel)} XP`, hint: 'Bir sonraki seviyeye kalan XP', icon: 'fa-arrow-trend-up', tone: 'violet' },
       { label: 'Aylık Aktiflik', value: money(profile.monthlyActiveScore), hint: 'Aylık ödül sıralaması puanı', icon: 'fa-bolt', tone: 'orange' },
       { label: 'Kullanılan Toplam MC', value: `${money(profile.lifetimeMcUsed)} MC`, hint: 'Kayıttan beri kullanılan toplam MC', icon: 'fa-coins', tone: 'cyan' },
       { label: 'Hesap Açılma Tarihi', value: displayDateTime(profile.createdAt), hint: 'Profilin oluşturulduğu tarih', icon: 'fa-calendar-plus', tone: 'blue' },
@@ -1532,7 +1546,6 @@ function statItems(profile = currentProfile || blankProfile()) {
       { label: 'Pişti Kazanç Oranı', value: `%${toNumber(profile.pistiWinRate, 0).toFixed(1).replace('.0','')}`, hint: 'Pişti maç başarısı', icon: 'fa-diamond', tone: 'cyan' },
       { label: 'Snake Pro En Yüksek Skor', value: money(profile.snakeBestScore), hint: 'Güvenli kayıtlı rekor', icon: 'fa-worm', tone: 'green' },
       { label: 'Space Pro En Yüksek Skor', value: money(profile.spaceBestScore), hint: 'Güvenli kayıtlı rekor', icon: 'fa-rocket', tone: 'blue' },
-      { label: 'Pattern Master En Yüksek Skor', value: money(profile.patternBestScore), hint: `Level ${money(profile.patternBestLevel)} · Kombo ${money(profile.patternBestCombo)}`, icon: 'fa-grip', tone: 'gold' }
     ]
   };
 }
@@ -1826,7 +1839,7 @@ function renderAccountHistoryList(hostId, items = [], emptyText = 'Sonuç buluna
   }));
 }
 
-const ACCOUNT_GAME_HISTORY_KEYS = Object.freeze(['crash', 'chess', 'satranc', 'satranç', 'pisti', 'pişti', 'pattern', 'pattern-master', 'snake', 'snake-pro', 'space', 'space-pro']);
+const ACCOUNT_GAME_HISTORY_KEYS = Object.freeze(['crash', 'chess', 'satranc', 'satranç', 'pisti', 'pişti', 'snake', 'snake-pro', 'space', 'space-pro']);
 const ACCOUNT_NON_GAME_HISTORY_RE = /çark|wheel|promo|promosyon|market|profil|avatar|çerçeve|frame|bakiye|ödül|odul|email|e-posta|şifre|sifre/i;
 const ACCOUNT_TRANSACTION_HISTORY_RE = /çark|wheel|promo|promosyon|market|satın alma|satin alma|iade|profil|avatar|çerçeve|frame|rozet|istatistik|tema|isim efekti|bakiye|ödül|odul|email|e-posta|şifre|sifre|hesap/i;
 
@@ -2588,8 +2601,9 @@ function openSheet(name, title = '', subtitle = '', options = {}) {
   setText('sheetSubtitle', subtitle || copy[1]);
   setSheetIcon(modalKey);
   if (name === 'auth') syncAuthHeader();
+  if (name === 'notification-settings') syncNotificationSoundSettingsUI();
   $$('.sheet-section').forEach((section) => section.classList.toggle('is-active', section.dataset.sheet === name));
-  const sheetClassMap = { auth: 'is-auth-sheet', forgot: 'is-auth-sheet', profile: 'is-profile-sheet', email: 'is-security-sheet', password: 'is-security-sheet', wheel: 'is-wheel-sheet', market: 'is-market-sheet', notifications: 'is-notification-sheet', promo: 'is-promo-sheet' };
+  const sheetClassMap = { auth: 'is-auth-sheet', forgot: 'is-auth-sheet', profile: 'is-profile-sheet', email: 'is-security-sheet', password: 'is-security-sheet', wheel: 'is-wheel-sheet', market: 'is-market-sheet', notifications: 'is-notification-sheet', 'notification-settings': 'is-notification-sheet', promo: 'is-promo-sheet' };
   ['is-auth-sheet','is-profile-sheet','is-security-sheet','is-wheel-sheet','is-market-sheet','is-notification-sheet','is-promo-sheet','is-picker-sheet'].forEach((className) => shell.classList.remove(className));
   if (sheetClassMap[name]) shell.classList.add(sheetClassMap[name]);
   shell.classList.toggle('is-bottom-email', name === 'email');
@@ -2743,7 +2757,7 @@ function winnerTypeMeta(source = '') {
   if (/wheel|çark|cark|spin/.test(key)) return { type: 'wheel', badge: 'Çark', icon: 'fa-dharmachakra', title: 'Günlük Çark' };
   if (/market|store|mağaza|magaza|purchase|satın|satin/.test(key)) return { type: 'market', badge: 'Market', icon: 'fa-store', title: 'Market İşlemi' };
   if (/level|seviye|xp/.test(key)) return { type: 'level', badge: 'Seviye', icon: 'fa-star', title: 'Seviye Gelişimi' };
-  if (/crash|chess|satranç|satranc|pisti|pişti|pattern|space|snake|game|oyun|win|kazanç|kazanc/.test(key)) return { type: 'game', badge: 'Oyun', icon: 'fa-trophy', title: 'Oyun Kazancı' };
+  if (/crash|chess|satranç|satranc|pisti|pişti|space|snake|game|oyun|win|kazanç|kazanc/.test(key)) return { type: 'game', badge: 'Oyun', icon: 'fa-trophy', title: 'Oyun Kazancı' };
   return { type: 'activity', badge: 'Canlı', icon: 'fa-bolt', title: 'Canlı Akış' };
 }
 
@@ -2762,7 +2776,7 @@ function isProfileOnlyActivity(item = {}) {
   ].filter(Boolean).join(' ')).toLocaleLowerCase('tr-TR');
   if (!key) return false;
   const isProfileChange = /(profile|profil|avatar|frame|çerçeve|cerceve|account|hesap|appearance|settings|ayar)/.test(key);
-  const isRewardOrGame = /(promo|promosyon|wheel|çark|cark|market|store|purchase|satın|satin|crash|chess|satranç|satranc|pisti|pişti|pattern|space|snake|game|oyun|win|winner|kazanç|kazanc|reward|ödül|odul|xp|level|seviye|mc)/.test(key);
+  const isRewardOrGame = /(promo|promosyon|wheel|çark|cark|market|store|purchase|satın|satin|crash|chess|satranç|satranc|pisti|pişti|space|snake|game|oyun|win|winner|kazanç|kazanc|reward|ödül|odul|xp|level|seviye|mc)/.test(key);
   return isProfileChange && !isRewardOrGame;
 }
 
@@ -4568,6 +4582,15 @@ function setupRegisterTermsVisualState() {
   sync();
 }
 
+function syncNotificationSoundSettingsUI(mode = window.PMNotificationSoundSettings?.getMode?.() || 'all') {
+  const normalized = window.PMNotificationSoundSettings?.normalizeMode?.(mode) || 'all';
+  $$('input[name="notificationSoundMode"]').forEach((input) => {
+    input.checked = input.value === normalized;
+    input.closest('.notification-sound-option')?.classList.toggle('is-selected', input.checked);
+  });
+  setText('notificationSoundModeLabel', window.PMNotificationSoundSettings?.labelFor?.(normalized) || 'Tüm bildirim sesleri açık');
+}
+
 function bindEvents() {
   setupPasswordVisibilityToggles();
   setupRegisterTermsVisualState();
@@ -4626,8 +4649,16 @@ function bindEvents() {
   $('notificationSettingsBtn')?.addEventListener('click', () => {
     $('notificationMenu')?.closest('.notification-menu-shell')?.classList.remove('is-open');
     $('notificationMenuBtn')?.setAttribute('aria-expanded', 'false');
-    showToast('Bildirim Ayarları', 'Sistem ve kişisel bildirimlerin burada yönetilir. Ayrıntılı ayarlar yakında aktif olacak.', 'info');
+    syncNotificationSoundSettingsUI();
+    openSheet('notification-settings');
   });
+  $$('input[name="notificationSoundMode"]').forEach((input) => input.addEventListener('change', () => {
+    if (!input.checked) return;
+    const mode = window.PMNotificationSoundSettings?.setMode?.(input.value) || input.value;
+    syncNotificationSoundSettingsUI(mode);
+    showToast('Bildirim Ayarları', window.PMNotificationSoundSettings?.labelFor?.(mode) || 'Bildirim sesi tercihin kaydedildi.', 'success', { silent: mode === 'off' });
+  }));
+  $('notificationSettingsBackBtn')?.addEventListener('click', () => openSheet('notifications', '', '', { skipPreload: true }));
   document.addEventListener('click', (event) => {
     const shell = $('notificationMenu')?.closest('.notification-menu-shell');
     if (shell?.classList.contains('is-open') && !shell.contains(event.target)) {
@@ -4687,15 +4718,9 @@ function bindEvents() {
   syncMobileNavigation();
   const soundToggle = $('soundToggle');
   if (soundToggle) {
-    soundToggle.setAttribute('aria-disabled', 'true');
-    soundToggle.title = 'PlayMatrix ödül ve kritik bildirim sesleri güvenlik standardı gereği kapatılamaz.';
-    soundToggle.addEventListener('click', (event) => {
-      event.preventDefault();
-      document.body.classList.remove('pm-muted');
-      $('soundIcon')?.classList.remove('fa-volume-xmark');
-      $('soundIcon')?.classList.add('fa-volume-high');
-      showToast('Bildirim Sesi', 'Ödül, kazanç, promo, çark ve kritik sistem bildirim sesleri kapatılamaz.', 'info');
-    });
+    soundToggle.removeAttribute('aria-disabled');
+    soundToggle.title = 'Bildirim sesi ayarlarını aç';
+    soundToggle.addEventListener('click', (event) => { event.preventDefault(); syncNotificationSoundSettingsUI(); openSheet('notification-settings'); });
   }
   document.addEventListener('dblclick', (event) => {
     if (event.target?.closest?.('input, textarea, select, [contenteditable="true"], .modal-card, .account-sheet')) return;

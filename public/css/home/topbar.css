@@ -190,3 +190,6 @@ body:not(.is-authenticated) #authButtons.pm-topbar-auth .btn{height:38px!importa
 .notification-row.is-admin-exact .notification-card-more{
   display:none!important;
 }
+
+/* Opaque account dropdown to prevent underlying content bleed-through. */
+.pm-profile-dropdown{background:linear-gradient(180deg,#180921 0%,#08050e 100%)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;isolation:isolate!important}.pm-profile-dropdown::after{content:"";position:absolute;inset:0;border-radius:inherit;background:#0c0712;z-index:-1;opacity:1;pointer-events:none}

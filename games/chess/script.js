@@ -288,6 +288,8 @@ const elStudioIntro = document.getElementById('studioIntro');
     }
     const gameLogic = window.Chess ? new Chess() : createMiniChessClient();
     let lobbySearchQuery = '';
+    let lobbyRequestPromise = null;
+    let lobbyRequestSequence = 0;
     let chessSocket = null;
     const avatarRenderCache = new Map();
     let extensionPromptKey = '';
@@ -925,41 +927,56 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
     }
 
     async function fetchLobby(initial = false) {
-      if (currentRoomId) return;
-      try {
-        const res = await fetchAPI('/api/chess/lobby?t=' + Date.now());
-        const list = document.getElementById('roomList');
-        if (!list) return;
-        list.replaceChildren();
-        const rooms = Array.isArray(res?.rooms) ? res.rooms : [];
-        showLobbyNotice('');
-
-        if (!rooms.length) {
-          list.replaceChildren(createLobbyEmpty('Rakip bekleyen açık masa yok. İlk hamleyi sen başlat; oda kur ve yeni rakibini lobide karşıla.'));
-          return;
-        }
-
-        const filtered = rooms.filter(roomMatchesSearch);
-        if (!filtered.length) {
-          list.replaceChildren(createLobbyEmpty('Bu aramaya uygun masa bulunamadı. Aramayı temizleyip yeni bir oda kurarak rekabeti başlatabilirsin.'));
-          return;
-        }
-
-        const fragment = document.createDocumentFragment();
-        filtered.forEach((room) => fragment.appendChild(createRoomCard(room)));
-        list.replaceChildren(fragment);
-      } catch(error) {
-        if (initial) {
+      if (currentRoomId) return null;
+      if (lobbyRequestPromise) return lobbyRequestPromise;
+      const sequence = ++lobbyRequestSequence;
+      const request = (async () => {
+        try {
+          const res = await fetchAPI('/api/chess/lobby?t=' + Date.now());
+          if (sequence !== lobbyRequestSequence || currentRoomId) return res;
           const list = document.getElementById('roomList');
-          if (list) list.replaceChildren(createLobbyEmpty('Satranç lobisi şu anda yenilenemedi. Bağlantını kontrol edip tekrar dene.', 'pm-chess-empty-error'));
+          if (!list) return res;
+          const rooms = Array.isArray(res?.rooms) ? res.rooms : [];
+          showLobbyNotice('');
+
+          if (!rooms.length) {
+            list.replaceChildren(createLobbyEmpty('Rakip bekleyen açık masa yok. İlk hamleyi sen başlat; oda kur ve yeni rakibini lobide karşıla.'));
+            return res;
+          }
+
+          const filtered = rooms.filter(roomMatchesSearch);
+          if (!filtered.length) {
+            list.replaceChildren(createLobbyEmpty('Bu aramaya uygun masa bulunamadı. Aramayı temizleyip yeni bir oda kurarak rekabeti başlatabilirsin.'));
+            return res;
+          }
+
+          const fragment = document.createDocumentFragment();
+          filtered.forEach((room) => fragment.appendChild(createRoomCard(room)));
+          list.replaceChildren(fragment);
+          return res;
+        } catch (error) {
+          if (sequence !== lobbyRequestSequence || currentRoomId) return null;
+          const list = document.getElementById('roomList');
+          const hasUsableLobby = !!list?.querySelector('.room-card');
+          if (hasUsableLobby || chessSocket?.connected) {
+            showLobbyNotice('');
+            return null;
+          }
+          if (initial && list) {
+            list.replaceChildren(createLobbyEmpty('Satranç lobisi şu anda yenilenemedi. Bağlantın yeniden kuruluyor.', 'pm-chess-empty-error'));
+          }
+          const now = Date.now();
+          if (initial || now - lastChessLobbyNoticeAt > 30000) {
+            lastChessLobbyNoticeAt = now;
+            showLobbyNotice('Lobi şu anda yenilenemedi. Bağlantı arka planda tekrar deneniyor.', 'warning', 'Tekrar Dene', () => fetchLobby(true).catch(() => null));
+          }
+          return null;
+        } finally {
+          if (sequence === lobbyRequestSequence) lobbyRequestPromise = null;
         }
-        const now = Date.now();
-        if (initial || now - lastChessLobbyNoticeAt > 30000) {
-          lastChessLobbyNoticeAt = now;
-          showLobbyNotice(translateError(error), 'warning', 'Tekrar Dene', () => fetchLobby(true).catch(() => null));
-        }
-        return;
-      }
+      })();
+      lobbyRequestPromise = request;
+      return request;
     }
 
     function updateRoomModeUI() {

@@ -417,7 +417,6 @@ router.get('/admin/games', (_req, res) => {
     { slug:'crash', title:'Crash', status:'online', backend:'/server/games/crash/index.js', data:'in-memory-rounds-risk-table' },
     { slug:'chess', title:'Satranç', status:'online', backend:'/server/games/chess/index.js', data:'room-state-move-validation' },
     { slug:'pisti', title:'Pişti', status:'online', backend:'/server/games/pisti/index.js', data:'room-card-validation' },
-    { slug:'pattern-master', title:'Pattern Master', status:'online', backend:'/server/games/pattern-master/index.js', data:'score-xp-validation' },
     { slug:'space-pro', title:'Space Pro', status:'online', backend:'/server/games/space-pro/index.js', data:'score-xp-validation' },
     { slug:'snake-pro', title:'Snake Pro', status:'online', backend:'/server/games/snake-pro/index.js', data:'score-xp-validation' }
   ] });
@@ -609,7 +608,7 @@ async function resolveResetDocs({ scope = 'all', identifiers = [], excludeTestUs
 }
 
 function normalizeMaintenancePayload(body = {}) {
-  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
+  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
   return normalizeBooleanMap(body, keys, false);
 }
 
@@ -839,8 +838,8 @@ router.get('/admin/matrix/issues', (_req, res) => {
     all.push(item);
     if (all.length >= 120) break;
   }
-  const GAME_AREAS = new Set(['home', 'crash', 'chess', 'pisti', 'snake-pro', 'space-pro', 'pattern-master']);
-  const gameTitle = (game) => ({ home: 'AnaSayfa', crash: 'Crash', chess: 'Satranç', pisti: 'Pişti', 'snake-pro': 'Snake Pro', 'space-pro': 'Space Pro', 'pattern-master': 'Pattern Master' }[String(game || '').toLowerCase()] || 'Sistem');
+  const GAME_AREAS = new Set(['home', 'crash', 'chess', 'pisti', 'snake-pro', 'space-pro']);
+  const gameTitle = (game) => ({ home: 'AnaSayfa', crash: 'Crash', chess: 'Satranç', pisti: 'Pişti', 'snake-pro': 'Snake Pro', 'space-pro': 'Space Pro' }[String(game || '').toLowerCase()] || 'Sistem');
   const resolveIssueSolution = (x = {}, game = '', message = '', scope = '') => {
     const text = `${message} ${scope} ${x.path || ''} ${x.endpoint || ''} ${x.source || ''}`.toLowerCase();
     if (game === 'home' && text.includes('oturum bulunamadı')) return 'AnaSayfa private widget oturum hazır olmadan çalışmamalı; auth state hazır değilse giriş gerekli görünümü gösterilmeli.';
@@ -849,7 +848,7 @@ router.get('/admin/matrix/issues', (_req, res) => {
     if (game === 'crash') return 'Crash API route, risk/round state, bet/cashout transaction ve client payload birlikte kontrol edilmeli.';
     if (game === 'chess') return 'Satranç room stateVersion, socket ACK, hamle payload ve backend oda durumu birlikte kontrol edilmeli.';
     if (game === 'pisti') return 'Pişti lobby/state/socket, masa lifecycle, oyuncu schema ve ekonomi transaction akışı birlikte kontrol edilmeli.';
-    if (['snake-pro', 'space-pro', 'pattern-master'].includes(game)) return 'Klasik oyun start/submit runId sözleşmesi, skor sınırı, XP sonucu ve frontend endpoint akışı birlikte kontrol edilmeli.';
+    if (['snake-pro', 'space-pro'].includes(game)) return 'Klasik oyun start/submit runId sözleşmesi, skor sınırı, XP sonucu ve frontend endpoint akışı birlikte kontrol edilmeli.';
     return 'Sistem kaydı kaynak, endpoint, status ve güvenli stack bilgisiyle ayrıca incelenmeli.';
   };
   const normalizeIssue = (x = {}) => {

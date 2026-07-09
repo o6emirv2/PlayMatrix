@@ -19,7 +19,6 @@ function displayGameName(game = '') {
   if (key === 'pisti') return 'Pişti';
   if (key === 'snake-pro' || key === 'snake') return 'Snake Pro';
   if (key === 'space-pro' || key === 'space') return 'Space Pro';
-  if (key === 'pattern-master' || key === 'pattern') return 'Pattern Master';
   if (key === 'wheel') return 'Günlük Çark';
   if (key === 'promo') return 'Promo';
   return cleanText(game || 'PlayMatrix', 80) || 'PlayMatrix';

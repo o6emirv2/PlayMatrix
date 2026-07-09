@@ -3,6 +3,7 @@ const { requireAuth } = require('../core/security');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const { migrateUserProfile } = require('../core/legacyMigrationService');
 const { getProgression } = require('../core/progressionService');
+const { ensureProfileDates } = require('../core/profileDateService');
 
 const router = express.Router();
 
@@ -22,13 +23,14 @@ function frameTierFor(level = 0) { const safe = normalizeFrameLevel(level); retu
 function canonicalSelectedFrame(value = 0) { const tier = frameTierFor(value); return tier ? tier.min : 0; }
 function canUseFrame(frameLevel = 0, accountLevel = 1) { const tier = frameTierFor(frameLevel); return !tier || tier.min <= normalizeFrameLevel(accountLevel || 1); }
 async function readProfile(req) {
-  const { db } = initFirebaseAdmin();
+  const { db, auth } = initFirebaseAdmin();
   let profile = { uid: req.user.uid, email: req.user.email || '', balance: 0, xp: 0, selectedFrame: 0 };
   if (db) {
     const snap = await db.collection('users').doc(req.user.uid).get();
     if (snap.exists) profile = { ...profile, ...snap.data() };
   }
   profile = await migrateUserProfile(req.user.uid, profile, db);
+  profile = await ensureProfileDates({ uid: req.user.uid, profile, db, auth, touch: true });
   const progression = getProgression(profile.accountXp ?? profile.xp ?? 0);
   const selectedFrame = canUseFrame(profile.selectedFrame ?? profile.frame ?? 0, progression.level) ? canonicalSelectedFrame(profile.selectedFrame ?? profile.frame ?? 0) : 0;
   return { db, profile: { ...profile, selectedFrame, xp: progression.xp, accountXp: progression.xp, accountLevel: progression.level, level: progression.level, progressPercent: progression.progressPercent, accountLevelProgressPct: progression.progressPercent, progression } };

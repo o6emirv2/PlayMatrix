@@ -408,8 +408,7 @@ const MAINTENANCE_HELP = Object.freeze({
   crash: 'Crash sayfası, API ve canlı round erişimi kapatılır.',
   chess: 'Satranç lobi, oda, hamle ve profil API erişimi kapatılır.',
   pisti: 'Pişti lobi, masa ve oyun API erişimi kapatılır.',
-  classic: 'Snake, Space ve Pattern klasik oyun grubu kapatılır.',
-  'pattern-master': 'Pattern Master tekil bakım durumu.',
+  classic: 'Snake Pro ve Space Pro klasik oyun grubu kapatılır.',
   'space-pro': 'Space Pro tekil bakım durumu.',
   'snake-pro': 'Snake Pro tekil bakım durumu.',
   market: 'Market modalı ve market API istekleri kapatılır.',
@@ -432,7 +431,6 @@ const MAINTENANCE_ENTRIES = Object.freeze([
   ['chess', 'SATRANÇ'],
   ['pisti', 'PİŞTİ'],
   ['classic', 'KLASİK OYUNLAR'],
-  ['pattern-master', 'PATTERN MASTER'],
   ['space-pro', 'SPACE PRO'],
   ['snake-pro', 'SNAKE PRO']
 ]);
@@ -1453,9 +1451,14 @@ function writeAvatarFrameSettingForm(setting = AVATAR_FRAME_DEFAULT) {
   const thickness=document.getElementById('avatarFrameThicknessSelect'); if(thickness) thickness.value=setting.thickness || 'normal';
   const overflow=document.getElementById('avatarFrameOverflowSelect'); if(overflow) overflow.value=setting.overflow || 'visible';
 }
-function variantPreviewSize(variant='leaderboard') {
-  const sizes={ homeTopbar:40, leaderboard:78, accountModal:68, accountProfileCard:88, marketCard:82, crashTopbar:50, crashLivePanel:56, crashWinNotice:72, chessTopbar:50, chessGameCard:68, pistiTopbar:50, pistiScoreCard:68, snakeTopbar:50, spaceTopbar:50, patternTopbar:50 };
-  return sizes[variant] || 64;
+const AVATAR_FRAME_LIVE_SIZES = Object.freeze({
+  homeTopbar:[40], leaderboard:[78,64,46], accountModal:[68], accountProfileCard:[112,78], marketCard:[98],
+  crashTopbar:[50], crashLivePanel:[56], crashWinNotice:[72], chessTopbar:[50], chessGameCard:[68],
+  pistiTopbar:[50], pistiScoreCard:[68], snakeTopbar:[50], spaceTopbar:[50]
+});
+function variantPreviewSizes(variant='leaderboard') {
+  const values=AVATAR_FRAME_LIVE_SIZES[variant] || [64];
+  return [...new Set(values.map((value)=>Math.max(18,Number(value)||64)))];
 }
 function avatarFrameLabel(variant='') { return String(variant || '').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,(c)=>c.toUpperCase()); }
 function refreshAvatarFrameIndexOptions() {
@@ -1482,11 +1485,22 @@ function renderAvatarFramePreview() {
     stage.className=`avatar-frame-preview-stage avatar-frame-preview-stage--${selected.variant}`;
     let context=stage.querySelector('.avatar-frame-preview-context');
     if(!context){ context=document.createElement('div'); context.className='avatar-frame-preview-context'; stage.appendChild(context); }
-    const labels={homeTopbar:'AnaSayfa Üst Bar',leaderboard:'Liderlik Kartı',accountModal:'Hesabım Modalı',accountProfileCard:'Profil Kartı',marketCard:'Market Kartı',crashTopbar:'Crash Üst Bar',crashLivePanel:'Crash Canlı Panel',crashWinNotice:'Crash Kazanç Bildirimi',chessTopbar:'Satranç Üst Bar',chessGameCard:'Satranç Oyun Kartı',pistiTopbar:'Pişti Üst Bar',pistiScoreCard:'Pişti Skor Kartı',snakeTopbar:'Snake Pro Üst Bar',spaceTopbar:'Space Pro Üst Bar',patternTopbar:'Pattern Master Üst Bar'};
-    context.innerHTML=`<strong>${labels[selected.variant] || avatarFrameLabel(selected.variant)}</strong><span>${/Topbar$/.test(selected.variant)?'Oyuncu • Seviye 42':'PlayMatrix canlı bileşen önizlemesi'}</span>`;
+    const labels={homeTopbar:'AnaSayfa Üst Bar',leaderboard:'Liderlik Kartları',accountModal:'Hesabım Modalı',accountProfileCard:'Profil Kartları',marketCard:'Market Kartı',crashTopbar:'Crash Üst Bar',crashLivePanel:'Crash Canlı Panel',crashWinNotice:'Crash Kazanç Bildirimi',chessTopbar:'Satranç Üst Bar',chessGameCard:'Satranç Oyun Kartı',pistiTopbar:'Pişti Üst Bar',pistiScoreCard:'Pişti Skor Kartı',snakeTopbar:'Snake Pro Üst Bar',spaceTopbar:'Space Pro Üst Bar'};
+    const calibration=window.PMAvatar?.FRAME_CALIBRATIONS?.[selected.type]?.[selected.index] || null;
+    const aperture=calibration?.innerApertureRatio ? ` · İç açıklık %${Math.round(calibration.innerApertureRatio*100)}` : '';
+    context.innerHTML=`<strong>${labels[selected.variant] || avatarFrameLabel(selected.variant)}</strong><span>Gerçek canlı slot ölçüleri: ${variantPreviewSizes(selected.variant).join(' / ')} px${aperture}</span>`;
   }
   const label=document.getElementById('avatarFramePreviewLabel'); if(label) label.textContent=avatarFrameLabel(selected.variant);
-  window.PMAvatar.mount(host,{ avatarUrl, level:selected.type==='normal'?selected.index:0, exactFrameIndex:selected.type==='normal'?selected.index:0, frameUrl, frameType:selected.type, frameId:`${selected.type}-${selected.index}`, marketFrameId:selected.type==='market'?`market-${selected.index}`:'', variant:selected.variant, sizePx:variantPreviewSize(selected.variant), variantSetting:setting, extraClass:'pm-avatar--admin-live-preview' });
+  host.classList.remove('pm-avatar-host');
+  host.replaceChildren();
+  const row=document.createElement('span'); row.className='avatar-frame-preview-hosts'; host.appendChild(row);
+  variantPreviewSizes(selected.variant).forEach((sizePx)=>{
+    const unit=document.createElement('span'); unit.className='avatar-frame-preview-unit';
+    const mountHost=document.createElement('span'); mountHost.className='pm-avatar-host avatar-frame-preview-live-host';
+    const caption=document.createElement('small'); caption.textContent=`${sizePx}px`;
+    unit.append(mountHost,caption); row.appendChild(unit);
+    window.PMAvatar.mount(mountHost,{ avatarUrl, level:selected.type==='normal'?selected.index:0, exactFrameIndex:selected.type==='normal'?selected.index:0, frameUrl, frameType:selected.type, frameId:`${selected.type}-${selected.index}`, marketFrameId:selected.type==='market'?`market-${selected.index}`:'', variant:selected.variant, sizePx, variantSetting:setting, extraClass:'pm-avatar--admin-live-preview' });
+  });
 }
 async function loadAvatarFrameAdminSettings() {
   avatarFrameAdminPayload=await adminFetch('/api/admin/avatar-frame/settings');

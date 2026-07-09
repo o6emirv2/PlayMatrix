@@ -6,11 +6,12 @@ const { runtimeStore } = require('./runtimeStore');
 const AVATAR_FRAME_VARIANTS = Object.freeze([
   'homeTopbar', 'leaderboard', 'accountModal', 'accountProfileCard', 'marketCard',
   'crashTopbar', 'crashLivePanel', 'crashWinNotice', 'chessTopbar', 'chessGameCard',
-  'pistiTopbar', 'pistiScoreCard', 'snakeTopbar', 'spaceTopbar', 'patternTopbar'
+  'pistiTopbar', 'pistiScoreCard', 'snakeTopbar', 'spaceTopbar'
 ]);
 const FRAME_TYPES = Object.freeze(['normal', 'market']);
 const THICKNESS_PROFILES = Object.freeze(['thin', 'normal', 'thick', 'ultra']);
-const CACHE_KEY = 'avatar-frame:settings:v1';
+const SETTINGS_VERSION = 2;
+const CACHE_KEY = 'avatar-frame:settings:v2';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const DOC_PATH = Object.freeze({ collection: 'systemConfig', doc: 'avatarFrame' });
 
@@ -62,7 +63,7 @@ function frameSettingKey(type = '', index = 0, variant = '') {
 }
 
 function emptyConfig() {
-  return { version: 1, variants: {}, frames: {}, updatedAt: 0, updatedBy: null };
+  return { version: SETTINGS_VERSION, variants: {}, frames: {}, updatedAt: 0, updatedBy: null };
 }
 
 function normalizeConfig(input = {}) {
@@ -72,13 +73,14 @@ function normalizeConfig(input = {}) {
   for (const variant of AVATAR_FRAME_VARIANTS) {
     if (source.variants?.[variant]) variants[variant] = normalizeSetting(source.variants[variant]);
   }
-  for (const [key, value] of Object.entries(source.frames || {})) {
+  const frameOverrides = Number(source.version || 0) >= SETTINGS_VERSION ? (source.frames || {}) : {};
+  for (const [key, value] of Object.entries(frameOverrides)) {
     const [type, indexRaw, variant] = String(key).split(':');
     const normalizedKey = frameSettingKey(type, indexRaw, variant);
     if (normalizedKey) frames[normalizedKey] = normalizeSetting(value);
   }
   return {
-    version: 1,
+    version: SETTINGS_VERSION,
     variants,
     frames,
     updatedAt: Number(source.updatedAt || 0) || 0,
@@ -123,6 +125,7 @@ async function saveAvatarFrameSetting({ variant, frameType = '', frameIndex = 0,
 }
 
 module.exports = {
+  SETTINGS_VERSION,
   AVATAR_FRAME_VARIANTS,
   FRAME_TYPES,
   THICKNESS_PROFILES,

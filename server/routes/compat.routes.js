@@ -11,6 +11,7 @@ const { normalizeBoolean, normalizeBooleanMap } = require('../core/boolean');
 const { readAvatarFrameSettings } = require('../core/avatarFrameSettingsService');
 const { listUserActivities } = require('../core/recentActivityService');
 const { normalizeBirthDate, validateBirthDate } = require('../core/dateOfBirthService');
+const { ensureProfileDates } = require('../core/profileDateService');
 const router = express.Router();
 
 const DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20128%20128%27%3E%3Crect%20width%3D%27128%27%20height%3D%27128%27%20rx%3D%2728%27%20fill%3D%27%23111827%27%2F%3E%3Ccircle%20cx%3D%2764%27%20cy%3D%2750%27%20r%3D%2724%27%20fill%3D%27%23f59e0b%27%2F%3E%3Cpath%20d%3D%27M26%20108c8-18%2024-28%2038-28s30%2010%2038%2028%27%20fill%3D%27%23fbbf24%27%2F%3E%3Ctext%20x%3D%2764%27%20y%3D%27118%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23fff%27%3EPM%3C%2Ftext%3E%3C%2Fsvg%3E';
@@ -122,7 +123,7 @@ async function grantEmailVerifyRewardIfNeeded(req, uid, profile = {}) {
 async function readProfile(req, uid = uidOf(req), seed = {}) {
   const safeUid = uid || 'guest';
   let profile = defaultProfile(req, safeUid, seed);
-  const { db } = fb();
+  const { db, auth: authAdmin } = fb();
   if (db && uid) {
     const ref = db.collection('users').doc(uid);
     const snap = await ref.get();
@@ -144,6 +145,7 @@ async function readProfile(req, uid = uidOf(req), seed = {}) {
     profile.totalRounds = Number(profile.gameStats.total?.rounds || profile.totalRounds || 0);
   }
   profile = await grantEmailVerifyRewardIfNeeded(req, uid, profile);
+  profile = await ensureProfileDates({ uid, profile, db, auth: authAdmin, touch: true });
   const split = splitFullName(profile.fullName || profile.name || '');
   profile.firstName = s(profile.firstName || split.firstName, 60);
   profile.lastName = s(profile.lastName || split.lastName, 60);
@@ -536,7 +538,7 @@ router.get('/missions', requireAuth, async (req, res) => { const profile = await
 
 function normalizeCompatMaintenanceGames(games = {}) {
   const raw = games && typeof games === 'object' ? games : {};
-  const normalized = normalizeBooleanMap(raw, ['crash', 'chess', 'pisti', 'market', 'wheel', 'promo', 'classic', 'pattern-master', 'space-pro', 'snake-pro'], false);
+  const normalized = normalizeBooleanMap(raw, ['crash', 'chess', 'pisti', 'market', 'wheel', 'promo', 'classic', 'space-pro', 'snake-pro'], false);
   normalized.general = normalizeBoolean(raw.general, false) || normalizeBoolean(raw.system, false);
   return normalized;
 }

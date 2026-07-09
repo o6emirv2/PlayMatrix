@@ -1,3 +1,4 @@
+import './notification-sound-settings.js?v=pm-notification-sound-v1';
 import './auth-modal.js?v=pm-final-mobile-v21';
 import './game-catalog.js?v=pm-final-mobile-v21';
 import './leaderboard.js?v=pm-final-mobile-v21';

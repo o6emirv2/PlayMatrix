@@ -116,7 +116,7 @@ app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
 function normalizeMaintenanceGames(data = {}) {
   const src = data && typeof data === 'object' && data.games && typeof data.games === 'object' ? data.games : data;
-  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
+  const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
   return normalizeBooleanMap(src, keys, false);
 }
 function maintenanceGamesRaw() {
@@ -161,12 +161,11 @@ function normalizeGameSlugForMaintenance(value = '') {
   if (/pisti|pişti/.test(raw)) return 'pisti';
   if (/snake/.test(raw)) return 'snake-pro';
   if (/space/.test(raw)) return 'space-pro';
-  if (/pattern/.test(raw)) return 'pattern-master';
   return '';
 }
 function isMaintenanceBlockedFromGames(games = {}, gameKey = '') {
   const key = normalizeGameSlugForMaintenance(gameKey) || String(gameKey || '').toLowerCase();
-  const classicKeys = new Set(['pattern-master', 'space-pro', 'snake-pro']);
+  const classicKeys = new Set(['space-pro', 'snake-pro']);
   return !!games.general || !!games.system || !!games[key] || (!!games.classic && classicKeys.has(key));
 }
 function isMaintenanceBlockedRaw(gameKey = '') {
@@ -181,7 +180,7 @@ async function maintenanceRedirectMiddleware(req, res, next) {
     const pathValue = String(req.path || req.originalUrl || '').toLowerCase();
     const gameKey = normalizeGameSlugForMaintenance(pathValue);
     if (!gameKey) return next();
-    const isGamePage = /^\/games\//i.test(pathValue) || /^\/(crash|chess|satranc|satranç|pisti|pişti|snake|snake-pro|space|space-pro|pattern-master|patternmaster)(?:\/|\.html|$)/i.test(pathValue) || /online%20oyunlar|online oyunlar/i.test(pathValue);
+    const isGamePage = /^\/games\//i.test(pathValue) || /^\/(crash|chess|satranc|satranç|pisti|pişti|snake|snake-pro|space|space-pro)(?:\/|\.html|$)/i.test(pathValue) || /online%20oyunlar|online oyunlar/i.test(pathValue);
     if (!isGamePage) return next();
     if (await isMaintenanceBlockedAsync(gameKey)) return res.redirect(302, `/?pm_maintenance=${encodeURIComponent(gameKey)}`);
     return next();
@@ -199,7 +198,6 @@ function resolveGameScopeFromPath(value = '') {
   if (pathValue.includes('/pisti') || pathValue.includes('/pişti')) return 'pisti';
   if (pathValue.includes('/snake-pro') || pathValue.includes('/snake')) return 'snake-pro';
   if (pathValue.includes('/space-pro') || pathValue.includes('/space')) return 'space-pro';
-  if (pathValue.includes('/pattern-master') || pathValue.includes('/patternmaster')) return 'pattern-master';
   if (pathValue.includes('/admin')) return 'admin';
   if (pathValue.includes('/market')) return 'market';
   if (pathValue.includes('/wheel') || pathValue.includes('/promo') || pathValue.includes('/bonus') || pathValue.includes('/profile') || pathValue.includes('/leaderboard') || pathValue.includes('/user-stats') || pathValue === '/' || pathValue.includes('/index.html')) return 'home';
@@ -213,7 +211,6 @@ function areaLabel(scope) {
         : scope === 'pisti' ? 'Pişti'
           : scope === 'snake-pro' ? 'Snake Pro'
             : scope === 'space-pro' ? 'Space Pro'
-              : scope === 'pattern-master' ? 'Pattern Master'
                 : scope === 'admin' ? 'Admin Paneli'
                   : scope === 'market' ? 'Market'
                     : 'Sistem';
@@ -231,7 +228,6 @@ function apiGameFromUrl(value = '') {
   if (/\/api\/(?:games\/)?(?:pisti|pisti-online)(?:[/?#]|$)/.test(url)) return 'pisti';
   if (/\/api\/games\/(?:snake|snake-pro)(?:[/?#]|$)/.test(url)) return 'snake-pro';
   if (/\/api\/games\/(?:space|space-pro)(?:[/?#]|$)/.test(url)) return 'space-pro';
-  if (/\/api\/games\/pattern-master(?:[/?#]|$)/.test(url)) return 'pattern-master';
   return '';
 }
 
@@ -516,7 +512,6 @@ app.use(['/api/games/chess','/api/chess'], maintenanceFor('chess'), chessGame.ro
 app.use(['/api/games/pisti','/api/pisti-online'], maintenanceFor('pisti'), pistiGame.router);
 app.use(['/api/games/snake-pro','/api/games/snake'], maintenanceFor('snake-pro'), require('./server/games/snake-pro').router);
 app.use(['/api/games/space-pro','/api/games/space'], maintenanceFor('space-pro'), require('./server/games/space-pro').router);
-app.use('/api/games/pattern-master', maintenanceFor('pattern-master'), require('./server/games/pattern-master').router);
 
 function sanitizeClientStack(value = '') {
   return String(value || '')
@@ -564,9 +559,9 @@ async function captureClientError(req, res) {
   const payload = normalizeClientErrorPayload(req.body || {}, req);
   const game = String(payload.game || resolveGameScopeFromPath(`${payload.path || ''} ${payload.source || ''} ${payload.scope || ''} ${payload.endpoint || ''}`)).toLowerCase();
   const sourceText = `${payload.path || ''} ${payload.source || ''} ${payload.scope || ''} ${payload.endpoint || ''}`.toLowerCase();
-  const isKnownScope = game === 'chess' || game === 'crash' || game === 'home' || game === 'pisti' || game === 'snake-pro' || game === 'space-pro' || game === 'pattern-master' || game === 'admin' || sourceText.includes('/games/chess') || sourceText.includes('/api/chess') || sourceText.includes('/games/crash') || sourceText.includes('/api/crash') || sourceText.includes('/games/pisti') || sourceText.includes('/api/pisti') || sourceText.includes('pisti') || sourceText.includes('/public/js/games/crash/index.js') || sourceText.includes('crash-app') || sourceText.includes('satranc') || sourceText.includes('/api/wheel') || sourceText.includes('/api/promo') || sourceText.includes('/api/market') || sourceText.includes('/api/leaderboard') || sourceText.includes('/api/account') || sourceText.includes('/api/notifications') || sourceText.includes('home-core') || sourceText.includes('script.js') || sourceText.includes('/index.html') || sourceText.includes('anasayfa');
+  const isKnownScope = game === 'chess' || game === 'crash' || game === 'home' || game === 'pisti' || game === 'snake-pro' || game === 'space-pro' || game === 'admin' || sourceText.includes('/games/chess') || sourceText.includes('/api/chess') || sourceText.includes('/games/crash') || sourceText.includes('/api/crash') || sourceText.includes('/games/pisti') || sourceText.includes('/api/pisti') || sourceText.includes('pisti') || sourceText.includes('/public/js/games/crash/index.js') || sourceText.includes('crash-app') || sourceText.includes('satranc') || sourceText.includes('/api/wheel') || sourceText.includes('/api/promo') || sourceText.includes('/api/market') || sourceText.includes('/api/leaderboard') || sourceText.includes('/api/account') || sourceText.includes('/api/notifications') || sourceText.includes('home-core') || sourceText.includes('script.js') || sourceText.includes('/index.html') || sourceText.includes('anasayfa');
   if (!isKnownScope) return res.status(202).json({ ok:true, discarded:'unknown-scope' });
-  const normalizedGame = game === 'crash' || sourceText.includes('crash') ? 'crash' : (game === 'chess' || sourceText.includes('chess') || sourceText.includes('satranc')) ? 'chess' : (game === 'pisti' || sourceText.includes('pisti') || sourceText.includes('pişti')) ? 'pisti' : (game === 'snake-pro' || sourceText.includes('snake')) ? 'snake-pro' : (game === 'space-pro' || sourceText.includes('space')) ? 'space-pro' : (game === 'pattern-master' || sourceText.includes('pattern')) ? 'pattern-master' : game === 'admin' ? 'admin' : 'home';
+  const normalizedGame = game === 'crash' || sourceText.includes('crash') ? 'crash' : (game === 'chess' || sourceText.includes('chess') || sourceText.includes('satranc')) ? 'chess' : (game === 'pisti' || sourceText.includes('pisti') || sourceText.includes('pişti')) ? 'pisti' : (game === 'snake-pro' || sourceText.includes('snake')) ? 'snake-pro' : (game === 'space-pro' || sourceText.includes('space')) ? 'space-pro' : game === 'admin' ? 'admin' : 'home';
   const message = String(payload.message || payload.error || '').trim();
   const code = String(payload.code || message).toUpperCase();
   const scope = String(payload.scope || payload.category || 'client.error');
@@ -621,7 +616,7 @@ async function captureClientError(req, res) {
     status,
     userAgent: payload.userAgent,
     sanitizedStack: payload.sanitizedStack,
-    area: normalizedGame === 'chess' ? 'Satranç Frontend' : normalizedGame === 'crash' ? 'Crash Frontend' : normalizedGame === 'pisti' ? 'Pişti Frontend' : normalizedGame === 'snake-pro' ? 'Snake Pro Frontend' : normalizedGame === 'space-pro' ? 'Space Pro Frontend' : normalizedGame === 'pattern-master' ? 'Pattern Master Frontend' : normalizedGame === 'admin' ? 'Admin Frontend' : 'AnaSayfa Frontend',
+    area: normalizedGame === 'chess' ? 'Satranç Frontend' : normalizedGame === 'crash' ? 'Crash Frontend' : normalizedGame === 'pisti' ? 'Pişti Frontend' : normalizedGame === 'snake-pro' ? 'Snake Pro Frontend' : normalizedGame === 'space-pro' ? 'Space Pro Frontend' : normalizedGame === 'admin' ? 'Admin Frontend' : 'AnaSayfa Frontend',
     error: String(payload.message || payload.error || 'Frontend hata kaydı').slice(0, 400),
     reason: String(payload.reason || `Kaynak: ${String(payload.source || payload.endpoint || 'bilinmiyor').slice(0, 180)}${payload.line ? `:${payload.line}` : ''}`).slice(0, 400),
     solution: String(payload.solution || 'İlgili ekran ve işlem adımları güvenli hata detayıyla kontrol edilmeli.').slice(0, 400),
@@ -639,8 +634,6 @@ async function captureClientError(req, res) {
           ? 'SNAKE_CLIENT_ERROR'
           : normalizedGame === 'space-pro'
             ? 'SPACE_CLIENT_ERROR'
-            : normalizedGame === 'pattern-master'
-              ? 'PATTERN_CLIENT_ERROR'
               : normalizedGame === 'admin'
                 ? 'ADMIN_CLIENT_ERROR'
                 : 'HOME_CLIENT_ERROR';
@@ -723,8 +716,7 @@ app.use('/api', createClientErrorsRouter(captureClientError));
 const gamePages = Object.freeze({
   'crash': 'crash', 'chess': 'chess', 'satranc': 'chess', 'satranç': 'chess',
   'pisti': 'pisti', 'pişti': 'pisti', 'snake': 'snake-pro', 'snakepro': 'snake-pro', 'snake-pro': 'snake-pro',
-  'space': 'space-pro', 'spacepro': 'space-pro', 'space-pro': 'space-pro', 'pattern-master': 'pattern-master',
-  'patternmaster': 'pattern-master'
+  'space': 'space-pro', 'spacepro': 'space-pro', 'space-pro': 'space-pro',
 });
 function sendGamePage(req, res, next) {
   const safeSlug = gamePages[String(req.params.slug || '').toLowerCase()] || '';
@@ -743,7 +735,6 @@ const legacyGameAliases = Object.freeze({
   '/Online Oyunlar/Satranc.html': '/games/chess', '/Online Oyunlar/Satranc': '/games/chess', '/Online%20Oyunlar/Satranc.html': '/games/chess', '/Satranc.html': '/games/chess', '/satranc': '/games/chess',
   '/Klasik Oyunlar/SnakePro.html': '/games/snake-pro', '/Klasik Oyunlar/SnakePro': '/games/snake-pro', '/Klasik%20Oyunlar/SnakePro.html': '/games/snake-pro', '/games/snake': '/games/snake-pro',
   '/Klasik Oyunlar/SpacePro.html': '/games/space-pro', '/Klasik Oyunlar/SpacePro': '/games/space-pro', '/Klasik%20Oyunlar/SpacePro.html': '/games/space-pro', '/games/space': '/games/space-pro',
-  '/Klasik Oyunlar/PatternMaster.html': '/games/pattern-master', '/Klasik Oyunlar/PatternMaster': '/games/pattern-master', '/Klasik%20Oyunlar/PatternMaster.html': '/games/pattern-master'
 });
 for (const [from, to] of Object.entries(legacyGameAliases)) app.get(from, (_req, res) => res.redirect(302, to));
 

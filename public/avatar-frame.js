@@ -24,64 +24,67 @@
     Object.freeze({ min: 100, max: 100, asset: 18 })
   ]);
 
-  const DEFAULT_FRAME_PROFILE = Object.freeze({ scale: 1.18, avatar: 1, shiftX: '0%', shiftY: '0%' });
-  const FRAME_VISUAL_PROFILES = Object.freeze({
-    1: Object.freeze({ scale: 1.27, avatar: 1, shiftX: '-0.6%', shiftY: '3.1%' }),
-    2: Object.freeze({ scale: 1.30, avatar: 1, shiftX: '-0.2%', shiftY: '-1.6%' }),
-    3: Object.freeze({ scale: 1.23, avatar: 1, shiftX: '2.1%', shiftY: '-1.2%' }),
-    4: Object.freeze({ scale: 1.11, avatar: 1, shiftX: '0.6%', shiftY: '1.6%' }),
-    5: Object.freeze({ scale: 1.13, avatar: 1, shiftX: '-0.3%', shiftY: '0.3%' }),
-    6: Object.freeze({ scale: 1.32, avatar: 1, shiftX: '1.1%', shiftY: '-0.7%' }),
-    7: Object.freeze({ scale: 1.18, avatar: 1, shiftX: '-0.6%', shiftY: '1.7%' }),
-    8: Object.freeze({ scale: 1.14, avatar: 1, shiftX: '0.6%', shiftY: '-0.1%' }),
-    9: Object.freeze({ scale: 1.09, avatar: 1, shiftX: '-0.4%', shiftY: '-0.7%' }),
-    10: Object.freeze({ scale: 1.16, avatar: 1, shiftX: '0.1%', shiftY: '-1.7%' }),
-    11: Object.freeze({ scale: 1.41, avatar: 1, shiftX: '0%', shiftY: '0.1%' }),
-    12: Object.freeze({ scale: 1.23, avatar: 1, shiftX: '-0.2%', shiftY: '0.6%' }),
-    13: Object.freeze({ scale: 1.32, avatar: 1, shiftX: '0.2%', shiftY: '-0.7%' }),
-    14: Object.freeze({ scale: 1.22, avatar: 1, shiftX: '-5.6%', shiftY: '-5.6%' }),
-    15: Object.freeze({ scale: 1.17, avatar: 1, shiftX: '-0.5%', shiftY: '-0.6%' }),
-    16: Object.freeze({ scale: 1.20, avatar: 1, shiftX: '0%', shiftY: '-2.6%' }),
-    17: Object.freeze({ scale: 1.22, avatar: 1, shiftX: '-0.1%', shiftY: '0.1%' }),
-    18: Object.freeze({ scale: 1.54, avatar: 1, shiftX: '-0.6%', shiftY: '-0.7%' }),
-    100: Object.freeze({ scale: 1.54, avatar: 1, shiftX: '-0.6%', shiftY: '-0.7%' })
+  const FRAME_CALIBRATION_VERSION = 2;
+  const DEFAULT_FRAME_PROFILE = Object.freeze({ scale: 1.13, avatar: 0.82, shiftX: '0%', shiftY: '0%', avatarShiftX: '0%', avatarShiftY: '0%', profile: 'normal' });
+  const FRAME_CALIBRATIONS = Object.freeze({
+    normal: Object.freeze({
+      1: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 116, opticalCenterY: 97, innerApertureRatio: 0.6749, outerVisibleRatio: 0.8625, scale: 1.3101, avatar: 0.7086, shiftX: '-0.62%', shiftY: '3.12%', avatarShiftX: '-1.46%', avatarShiftY: '-9.38%', profile: 'thick' }),
+      2: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 98, innerApertureRatio: 0.7491, outerVisibleRatio: 0.8875, scale: 1.2732, avatar: 0.7866, shiftX: '-0.21%', shiftY: '-1.67%', avatarShiftX: '0.21%', avatarShiftY: '-8.96%', profile: 'thick' }),
+      3: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 123, opticalCenterY: 127, innerApertureRatio: 0.5201, outerVisibleRatio: 0.9792, scale: 1.154, avatar: 0.64, shiftX: '2.08%', shiftY: '-1.04%', avatarShiftX: '1.46%', avatarShiftY: '3.12%', profile: 'ultra' }),
+      4: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 120, innerApertureRatio: 0.4363, outerVisibleRatio: 0.975, scale: 1.159, avatar: 0.64, shiftX: '1.04%', shiftY: '1.25%', avatarShiftX: '0.21%', avatarShiftY: '0.21%', profile: 'ultra' }),
+      5: Object.freeze({ assetWidth: 160, assetHeight: 160, opticalCenterX: 79, opticalCenterY: 71, innerApertureRatio: 0.7711, outerVisibleRatio: 0.9875, scale: 1.1443, avatar: 0.8096, shiftX: '0.00%', shiftY: '0.62%', avatarShiftX: '-0.31%', avatarShiftY: '-5.31%', profile: 'normal' }),
+      6: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 117, opticalCenterY: 117, innerApertureRatio: 0.6177, outerVisibleRatio: 0.9542, scale: 1.1843, avatar: 0.6485, shiftX: '1.04%', shiftY: '-0.62%', avatarShiftX: '-1.04%', avatarShiftY: '-1.04%', profile: 'ultra' }),
+      7: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 93, innerApertureRatio: 0.7001, outerVisibleRatio: 0.9583, scale: 1.1791, avatar: 0.7351, shiftX: '-0.62%', shiftY: '1.67%', avatarShiftX: '0.21%', avatarShiftY: '-11.04%', profile: 'thick' }),
+      8: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 118, opticalCenterY: 106, innerApertureRatio: 0.4621, outerVisibleRatio: 0.95, scale: 1.1895, avatar: 0.64, shiftX: '0.42%', shiftY: '0.42%', avatarShiftX: '-0.62%', avatarShiftY: '-5.62%', profile: 'ultra' }),
+      9: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 130, opticalCenterY: 123, innerApertureRatio: 0.4568, outerVisibleRatio: 0.9917, scale: 1.1395, avatar: 0.64, shiftX: '-0.42%', shiftY: '-0.62%', avatarShiftX: '4.38%', avatarShiftY: '1.46%', profile: 'ultra' }),
+      10: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 121, opticalCenterY: 118, innerApertureRatio: 0.679, outerVisibleRatio: 0.9708, scale: 1.1639, avatar: 0.7129, shiftX: '0.42%', shiftY: '-1.46%', avatarShiftX: '0.62%', avatarShiftY: '-0.62%', profile: 'thick' }),
+      11: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 116, opticalCenterY: 114, innerApertureRatio: 0.5968, outerVisibleRatio: 0.8333, scale: 1.356, avatar: 0.64, shiftX: '0.42%', shiftY: '0.21%', avatarShiftX: '-1.46%', avatarShiftY: '-2.29%', profile: 'ultra' }),
+      12: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 118, opticalCenterY: 125, innerApertureRatio: 0.6462, outerVisibleRatio: 0.8917, scale: 1.2673, avatar: 0.6785, shiftX: '-0.21%', shiftY: '0.42%', avatarShiftX: '-0.62%', avatarShiftY: '2.29%', profile: 'thick' }),
+      13: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 122, innerApertureRatio: 0.751, outerVisibleRatio: 0.9042, scale: 1.2498, avatar: 0.7886, shiftX: '0.21%', shiftY: '-1.04%', avatarShiftX: '0.21%', avatarShiftY: '1.04%', profile: 'thick' }),
+      14: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 116, opticalCenterY: 129, innerApertureRatio: 0.4583, outerVisibleRatio: 0.8958, scale: 1.2614, avatar: 0.64, shiftX: '-5.62%', shiftY: '-5.21%', avatarShiftX: '-1.46%', avatarShiftY: '3.96%', profile: 'ultra' }),
+      15: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 119, opticalCenterY: 117, innerApertureRatio: 0.6015, outerVisibleRatio: 0.9333, scale: 1.2107, avatar: 0.64, shiftX: '-0.42%', shiftY: '-0.83%', avatarShiftX: '-0.21%', avatarShiftY: '-1.04%', profile: 'ultra' }),
+      16: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 141, innerApertureRatio: 0.484, outerVisibleRatio: 0.925, scale: 1.2216, avatar: 0.64, shiftX: '0.00%', shiftY: '-2.50%', avatarShiftX: '0.21%', avatarShiftY: '8.96%', profile: 'ultra' }),
+      17: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 121, opticalCenterY: 111, innerApertureRatio: 0.4729, outerVisibleRatio: 0.9333, scale: 1.2107, avatar: 0.64, shiftX: '0.00%', shiftY: '-0.21%', avatarShiftX: '0.62%', avatarShiftY: '-3.54%', profile: 'ultra' }),
+      18: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 110, opticalCenterY: 113, innerApertureRatio: 0.3911, outerVisibleRatio: 0.7708, scale: 1.4659, avatar: 0.64, shiftX: '-0.21%', shiftY: '-0.83%', avatarShiftX: '-3.96%', avatarShiftY: '-2.71%', profile: 'ultra' }),
+    }),
+    market: Object.freeze({
+      1: Object.freeze({ assetWidth: 224, assetHeight: 224, opticalCenterX: 112, opticalCenterY: 117, innerApertureRatio: 0.7509, outerVisibleRatio: 0.9955, scale: 1.1351, avatar: 0.7885, shiftX: '-1.12%', shiftY: '0.22%', avatarShiftX: '0.22%', avatarShiftY: '2.46%', profile: 'thick' }),
+      2: Object.freeze({ assetWidth: 230, assetHeight: 240, opticalCenterX: 111, opticalCenterY: 121, innerApertureRatio: 0.8739, outerVisibleRatio: 0.9625, scale: 1.174, avatar: 0.9176, shiftX: '0.00%', shiftY: '1.88%', avatarShiftX: '-1.46%', avatarShiftY: '0.62%', profile: 'normal' }),
+      3: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 115, opticalCenterY: 101, innerApertureRatio: 0.5155, outerVisibleRatio: 0.9792, scale: 1.154, avatar: 0.64, shiftX: '0.62%', shiftY: '0.21%', avatarShiftX: '-1.88%', avatarShiftY: '-7.71%', profile: 'ultra' }),
+      4: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 127, opticalCenterY: 108, innerApertureRatio: 0.589, outerVisibleRatio: 0.9583, scale: 1.1791, avatar: 0.64, shiftX: '-1.88%', shiftY: '-0.42%', avatarShiftX: '3.12%', avatarShiftY: '-4.79%', profile: 'ultra' }),
+      5: Object.freeze({ assetWidth: 240, assetHeight: 238, opticalCenterX: 115, opticalCenterY: 113, innerApertureRatio: 0.7804, outerVisibleRatio: 0.8208, scale: 1.3766, avatar: 0.8195, shiftX: '0.21%', shiftY: '-0.83%', avatarShiftX: '-1.88%', avatarShiftY: '-2.29%', profile: 'normal' }),
+      6: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 108, opticalCenterY: 112, innerApertureRatio: 0.7423, outerVisibleRatio: 0.9542, scale: 1.1843, avatar: 0.7794, shiftX: '1.25%', shiftY: '0.21%', avatarShiftX: '-4.79%', avatarShiftY: '-3.12%', profile: 'thick' }),
+      7: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 119, opticalCenterY: 112, innerApertureRatio: 0.5925, outerVisibleRatio: 0.9667, scale: 1.169, avatar: 0.64, shiftX: '-1.25%', shiftY: '0.83%', avatarShiftX: '-0.21%', avatarShiftY: '-3.12%', profile: 'ultra' }),
+      8: Object.freeze({ assetWidth: 224, assetHeight: 224, opticalCenterX: 111, opticalCenterY: 111, innerApertureRatio: 0.7894, outerVisibleRatio: 0.933, scale: 1.2111, avatar: 0.8288, shiftX: '3.35%', shiftY: '0.00%', avatarShiftX: '-0.22%', avatarShiftY: '-0.22%', profile: 'normal' }),
+      9: Object.freeze({ assetWidth: 224, assetHeight: 224, opticalCenterX: 118, opticalCenterY: 106, innerApertureRatio: 0.5593, outerVisibleRatio: 0.9375, scale: 1.2053, avatar: 0.64, shiftX: '1.12%', shiftY: '-0.45%', avatarShiftX: '2.90%', avatarShiftY: '-2.46%', profile: 'ultra' }),
+      10: Object.freeze({ assetWidth: 224, assetHeight: 224, opticalCenterX: 110, opticalCenterY: 109, innerApertureRatio: 0.7278, outerVisibleRatio: 0.9509, scale: 1.1884, avatar: 0.7642, shiftX: '0.67%', shiftY: '0.45%', avatarShiftX: '-0.67%', avatarShiftY: '-1.12%', profile: 'thick' }),
+      11: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 105, opticalCenterY: 113, innerApertureRatio: 0.5848, outerVisibleRatio: 0.9917, scale: 1.1395, avatar: 0.64, shiftX: '-0.21%', shiftY: '0.42%', avatarShiftX: '-6.04%', avatarShiftY: '-2.71%', profile: 'ultra' }),
+      12: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 137, opticalCenterY: 107, innerApertureRatio: 0.7011, outerVisibleRatio: 0.9417, scale: 1.2, avatar: 0.7362, shiftX: '-0.21%', shiftY: '0.42%', avatarShiftX: '7.29%', avatarShiftY: '-5.21%', profile: 'thick' }),
+      13: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 109, opticalCenterY: 132, innerApertureRatio: 0.6242, outerVisibleRatio: 0.975, scale: 1.159, avatar: 0.6554, shiftX: '0.83%', shiftY: '-1.25%', avatarShiftX: '-4.38%', avatarShiftY: '5.21%', profile: 'thick' }),
+      14: Object.freeze({ assetWidth: 160, assetHeight: 160, opticalCenterX: 72, opticalCenterY: 82, innerApertureRatio: 0.6544, outerVisibleRatio: 0.95, scale: 1.1895, avatar: 0.6871, shiftX: '3.12%', shiftY: '-0.62%', avatarShiftX: '-4.69%', avatarShiftY: '1.56%', profile: 'thick' }),
+      15: Object.freeze({ assetWidth: 239, assetHeight: 239, opticalCenterX: 125, opticalCenterY: 124, innerApertureRatio: 0.6609, outerVisibleRatio: 0.8494, scale: 1.3304, avatar: 0.6939, shiftX: '0.00%', shiftY: '0.00%', avatarShiftX: '2.51%', avatarShiftY: '2.09%', profile: 'thick' }),
+      16: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 117, opticalCenterY: 122, innerApertureRatio: 0.6257, outerVisibleRatio: 0.8583, scale: 1.3165, avatar: 0.657, shiftX: '-0.42%', shiftY: '-0.83%', avatarShiftX: '-1.04%', avatarShiftY: '1.04%', profile: 'thick' }),
+      17: Object.freeze({ assetWidth: 180, assetHeight: 240, opticalCenterX: 75, opticalCenterY: 109, innerApertureRatio: 0.5309, outerVisibleRatio: 0.7792, scale: 1.4503, avatar: 0.64, shiftX: '0.00%', shiftY: '0.62%', avatarShiftX: '-6.04%', avatarShiftY: '-4.38%', profile: 'ultra' }),
+      18: Object.freeze({ assetWidth: 224, assetHeight: 239, opticalCenterX: 114, opticalCenterY: 119, innerApertureRatio: 0.6084, outerVisibleRatio: 0.887, scale: 1.2739, avatar: 0.64, shiftX: '-0.21%', shiftY: '-2.72%', avatarShiftX: '1.05%', avatarShiftY: '0.00%', profile: 'ultra' }),
+      19: Object.freeze({ assetWidth: 240, assetHeight: 187, opticalCenterX: 119, opticalCenterY: 89, innerApertureRatio: 0.4645, outerVisibleRatio: 0.7083, scale: 1.52, avatar: 0.64, shiftX: '-0.42%', shiftY: '0.83%', avatarShiftX: '-0.21%', avatarShiftY: '-1.67%', profile: 'ultra' }),
+      20: Object.freeze({ assetWidth: 227, assetHeight: 240, opticalCenterX: 113, opticalCenterY: 119, innerApertureRatio: 0.5566, outerVisibleRatio: 0.9292, scale: 1.2161, avatar: 0.64, shiftX: '-0.42%', shiftY: '-1.88%', avatarShiftX: '0.00%', avatarShiftY: '-0.21%', profile: 'ultra' }),
+      21: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 121, opticalCenterY: 111, innerApertureRatio: 0.4729, outerVisibleRatio: 0.9333, scale: 1.2107, avatar: 0.64, shiftX: '0.00%', shiftY: '-0.21%', avatarShiftX: '0.62%', avatarShiftY: '-3.54%', profile: 'ultra' }),
+      22: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 122, opticalCenterY: 108, innerApertureRatio: 0.4559, outerVisibleRatio: 0.9917, scale: 1.1395, avatar: 0.64, shiftX: '0.00%', shiftY: '-0.62%', avatarShiftX: '1.04%', avatarShiftY: '-4.79%', profile: 'ultra' }),
+      23: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 114, innerApertureRatio: 0.4896, outerVisibleRatio: 0.925, scale: 1.2216, avatar: 0.64, shiftX: '0.42%', shiftY: '1.46%', avatarShiftX: '0.21%', avatarShiftY: '-2.29%', profile: 'ultra' }),
+      24: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 116, opticalCenterY: 122, innerApertureRatio: 0.5224, outerVisibleRatio: 0.9375, scale: 1.2053, avatar: 0.64, shiftX: '0.21%', shiftY: '0.00%', avatarShiftX: '-1.46%', avatarShiftY: '1.04%', profile: 'ultra' }),
+      25: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 114, opticalCenterY: 116, innerApertureRatio: 0.4345, outerVisibleRatio: 0.9167, scale: 1.2327, avatar: 0.64, shiftX: '0.00%', shiftY: '-1.67%', avatarShiftX: '-2.29%', avatarShiftY: '-1.46%', profile: 'ultra' }),
+      26: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 114, opticalCenterY: 114, innerApertureRatio: 0.3876, outerVisibleRatio: 0.9042, scale: 1.2498, avatar: 0.64, shiftX: '0.21%', shiftY: '-0.42%', avatarShiftX: '-2.29%', avatarShiftY: '-2.29%', profile: 'ultra' }),
+      27: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 120, opticalCenterY: 117, innerApertureRatio: 0.4632, outerVisibleRatio: 0.9417, scale: 1.2, avatar: 0.64, shiftX: '0.00%', shiftY: '2.50%', avatarShiftX: '0.21%', avatarShiftY: '-1.04%', profile: 'ultra' }),
+      28: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 119, opticalCenterY: 118, innerApertureRatio: 0.3672, outerVisibleRatio: 0.9458, scale: 1.1947, avatar: 0.64, shiftX: '0.21%', shiftY: '0.62%', avatarShiftX: '-0.21%', avatarShiftY: '-0.62%', profile: 'ultra' }),
+      29: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 121, opticalCenterY: 115, innerApertureRatio: 0.5706, outerVisibleRatio: 0.9083, scale: 1.244, avatar: 0.64, shiftX: '0.00%', shiftY: '0.42%', avatarShiftX: '0.62%', avatarShiftY: '-1.88%', profile: 'ultra' }),
+      30: Object.freeze({ assetWidth: 240, assetHeight: 240, opticalCenterX: 122, opticalCenterY: 90, innerApertureRatio: 0.4759, outerVisibleRatio: 0.95, scale: 1.1895, avatar: 0.64, shiftX: '0.42%', shiftY: '0.62%', avatarShiftX: '1.04%', avatarShiftY: '-12.29%', profile: 'ultra' }),
+      31: Object.freeze({ assetWidth: 212, assetHeight: 240, opticalCenterX: 97, opticalCenterY: 119, innerApertureRatio: 0.401, outerVisibleRatio: 1.0, scale: 1.13, avatar: 0.64, shiftX: '0.21%', shiftY: '0.00%', avatarShiftX: '-3.54%', avatarShiftY: '-0.21%', profile: 'ultra' }),
+      32: Object.freeze({ assetWidth: 240, assetHeight: 213, opticalCenterX: 119, opticalCenterY: 106, innerApertureRatio: 0.4709, outerVisibleRatio: 1.0, scale: 1.13, avatar: 0.64, shiftX: '0.00%', shiftY: '-0.21%', avatarShiftX: '-0.21%', avatarShiftY: '0.00%', profile: 'ultra' }),
+    })
   });
-
-  const DEFAULT_MARKET_FRAME_PROFILE = Object.freeze({ scale: 1.08, avatar: 1.08, shiftX: '0px', shiftY: '0px', profile: 'market' });
-  const MARKET_FRAME_VISUAL_PROFILES = Object.freeze({
-    1: Object.freeze({ scale: 1.12, avatar: 1.04, shiftX: '0px', shiftY: '0px', profile: 'normal' }),
-    2: Object.freeze({ scale: 1.10, avatar: 1.05, shiftX: '0px', shiftY: '0px', profile: 'normal' }),
-    3: Object.freeze({ scale: 1.10, avatar: 1.06, shiftX: '0px', shiftY: '0px', profile: 'normal' }),
-    4: Object.freeze({ scale: 1.08, avatar: 1.06, shiftX: '0px', shiftY: '0px', profile: 'normal' }),
-    5: Object.freeze({ scale: 1.08, avatar: 1.06, shiftX: '0px', shiftY: '0px', profile: 'normal' }),
-    6: Object.freeze({ scale: 1.06, avatar: 1.08, shiftX: '0px', shiftY: '0px', profile: 'thick' }),
-    7: Object.freeze({ scale: 1.06, avatar: 1.08, shiftX: '0px', shiftY: '0px', profile: 'thick' }),
-    8: Object.freeze({ scale: 1.08, avatar: 1.06, shiftX: '0px', shiftY: '0px', profile: 'normal' }),
-    9: Object.freeze({ scale: 1.08, avatar: 1.07, shiftX: '0px', shiftY: '0px', profile: 'thick' }),
-    10: Object.freeze({ scale: 1.06, avatar: 1.08, shiftX: '0px', shiftY: '0px', profile: 'thick' }),
-    11: Object.freeze({ scale: 1.04, avatar: 1.10, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    12: Object.freeze({ scale: 1.04, avatar: 1.10, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    13: Object.freeze({ scale: 1.02, avatar: 1.11, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    14: Object.freeze({ scale: 1.02, avatar: 1.11, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    15: Object.freeze({ scale: 1.06, avatar: 1.08, shiftX: '0px', shiftY: '0px', profile: 'thick' }),
-    16: Object.freeze({ scale: 1.04, avatar: 1.10, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    17: Object.freeze({ scale: 1.01, avatar: 1.13, shiftX: '0px', shiftY: '-1px', profile: 'ultra' }),
-    18: Object.freeze({ scale: 0.94, avatar: 1.20, shiftX: '0px', shiftY: '-1px', profile: 'ultraMega' }),
-    19: Object.freeze({ scale: 1.03, avatar: 1.13, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    20: Object.freeze({ scale: 0.93, avatar: 1.21, shiftX: '0px', shiftY: '-1px', profile: 'ultraMega' }),
-    21: Object.freeze({ scale: 1.04, avatar: 1.10, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    22: Object.freeze({ scale: 0.93, avatar: 1.22, shiftX: '0px', shiftY: '-2px', profile: 'ultraMega' }),
-    23: Object.freeze({ scale: 1.02, avatar: 1.13, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    24: Object.freeze({ scale: 1.04, avatar: 1.10, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    25: Object.freeze({ scale: 0.93, avatar: 1.22, shiftX: '0px', shiftY: '-1px', profile: 'ultraMega' }),
-    26: Object.freeze({ scale: 0.92, avatar: 1.23, shiftX: '0px', shiftY: '-1px', profile: 'ultraMega' }),
-    27: Object.freeze({ scale: 1.00, avatar: 1.14, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    28: Object.freeze({ scale: 1.04, avatar: 1.11, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    29: Object.freeze({ scale: 1.08, avatar: 1.08, shiftX: '0px', shiftY: '0px', profile: 'ultra' }),
-    30: Object.freeze({ scale: 0.92, avatar: 1.23, shiftX: '0px', shiftY: '-1px', profile: 'ultraMega' }),
-    31: Object.freeze({ scale: 0.89, avatar: 1.26, shiftX: '0px', shiftY: '-2px', profile: 'ultraMega' }),
-    32: Object.freeze({ scale: 0.89, avatar: 1.26, shiftX: '0px', shiftY: '-2px', profile: 'ultraMega' })
-  });
+  const FRAME_VISUAL_PROFILES = FRAME_CALIBRATIONS.normal;
+  const DEFAULT_MARKET_FRAME_PROFILE = Object.freeze({ scale: 1.13, avatar: 0.78, shiftX: '0%', shiftY: '0%', avatarShiftX: '0%', avatarShiftY: '0%', profile: 'normal' });
+  const MARKET_FRAME_VISUAL_PROFILES = FRAME_CALIBRATIONS.market;
 
 
 
@@ -89,7 +92,7 @@
   const AVATAR_FRAME_VARIANTS = Object.freeze([
     'homeTopbar', 'leaderboard', 'accountModal', 'accountProfileCard', 'marketCard',
     'crashTopbar', 'crashLivePanel', 'crashWinNotice', 'chessTopbar', 'chessGameCard',
-    'pistiTopbar', 'pistiScoreCard', 'snakeTopbar', 'spaceTopbar', 'patternTopbar'
+    'pistiTopbar', 'pistiScoreCard', 'snakeTopbar', 'spaceTopbar'
   ]);
   function normalizeVariant(value = '') {
     const key = String(value || '').trim();
@@ -107,7 +110,7 @@
     thickness: 'normal',
     overflow: 'visible'
   });
-  const settingsState = { config: { version: 1, variants: {}, frames: {}, updatedAt: 0 }, promise: null, loaded: false };
+  const settingsState = { config: { version: FRAME_CALIBRATION_VERSION, variants: {}, frames: {}, updatedAt: 0 }, promise: null, loaded: false };
   const mountedHosts = new Set();
 
   function finiteSetting(value, fallback, min, max) {
@@ -142,12 +145,13 @@
     AVATAR_FRAME_VARIANTS.forEach((variant) => {
       if (source.variants?.[variant]) variants[variant] = normalizeVariantSetting(source.variants[variant]);
     });
-    Object.entries(source.frames || {}).forEach(([key, value]) => {
-      if (/^(normal:(?:[1-9]|1[0-8])|market:(?:[1-9]|[12][0-9]|3[0-2])):(?:homeTopbar|leaderboard|accountModal|accountProfileCard|marketCard|crashTopbar|crashLivePanel|crashWinNotice|chessTopbar|chessGameCard|pistiTopbar|pistiScoreCard|snakeTopbar|spaceTopbar|patternTopbar)$/.test(key)) {
+    const frameOverrides = Number(source.version || 0) >= FRAME_CALIBRATION_VERSION ? (source.frames || {}) : {};
+    Object.entries(frameOverrides).forEach(([key, value]) => {
+      if (/^(normal:(?:[1-9]|1[0-8])|market:(?:[1-9]|[12][0-9]|3[0-2])):(?:homeTopbar|leaderboard|accountModal|accountProfileCard|marketCard|crashTopbar|crashLivePanel|crashWinNotice|chessTopbar|chessGameCard|pistiTopbar|pistiScoreCard|snakeTopbar|spaceTopbar)$/.test(key)) {
         frames[key] = normalizeVariantSetting(value);
       }
     });
-    return { version: 1, variants, frames, updatedAt: Number(source.updatedAt || 0) || 0 };
+    return { version: FRAME_CALIBRATION_VERSION, variants, frames, updatedAt: Number(source.updatedAt || 0) || 0 };
   }
 
   function getSpecificSettingKey(variant = '', frameIndex = 0, frameUrl = '') {
@@ -209,13 +213,15 @@
     const baseFrameScale = finiteSetting(node.style.getPropertyValue('--pm-frame-base-scale') || node.style.getPropertyValue('--pm-frame-scale'), 1, 0.2, 3);
     const innerFactor = Math.max(0.55, 1 - ((setting.innerPadding * 2) / size));
     const outerFactor = Math.max(0.55, 1 - ((setting.outerPadding * 2) / size));
+    const baseAvatarX = node.style.getPropertyValue('--pm-avatar-base-shift-x') || '0px';
+    const baseAvatarY = node.style.getPropertyValue('--pm-avatar-base-shift-y') || '0px';
     const baseFrameX = node.style.getPropertyValue('--pm-frame-base-shift-x') || '0px';
     const baseFrameY = node.style.getPropertyValue('--pm-frame-base-shift-y') || '0px';
     node.dataset.pmAvatarVariant = safeVariant;
     node.dataset.pmFrameThickness = setting.thickness;
     node.style.setProperty('--pm-avatar-scale', String(baseAvatarScale * setting.avatarScale * innerFactor));
-    node.style.setProperty('--pm-avatar-shift-x', `${setting.avatarOffsetX}px`);
-    node.style.setProperty('--pm-avatar-shift-y', `${setting.avatarOffsetY}px`);
+    node.style.setProperty('--pm-avatar-shift-x', `calc(${baseAvatarX} + ${setting.avatarOffsetX}px)`);
+    node.style.setProperty('--pm-avatar-shift-y', `calc(${baseAvatarY} + ${setting.avatarOffsetY}px)`);
     node.style.setProperty('--pm-frame-scale', String(baseFrameScale * setting.frameScale * outerFactor));
     node.style.setProperty('--pm-frame-shift-x', `calc(${baseFrameX} + ${setting.frameOffsetX}px)`);
     node.style.setProperty('--pm-frame-shift-y', `calc(${baseFrameY} + ${setting.frameOffsetY}px)`);
@@ -401,7 +407,7 @@
     const outerFactor = Math.max(0.55, 1 - ((setting.outerPadding * 2) / normalizedSize));
     const avatarScale = (Number(profile.avatar || 1) * setting.avatarScale * innerFactor);
     const frameScale = (Number(profile.scale || 1) * setting.frameScale * outerFactor);
-    const styleAttr = ` style="--pm-avatar-base-scale:${escapeAttr(String(profile.avatar || 1))};--pm-avatar-fit:${escapeAttr(String(avatarScale))};--pm-avatar-scale:${escapeAttr(String(avatarScale))};--pm-avatar-shift-x:${escapeAttr(String(setting.avatarOffsetX))}px;--pm-avatar-shift-y:${escapeAttr(String(setting.avatarOffsetY))}px;--pm-frame-base-scale:${escapeAttr(String(profile.scale || 1))};--pm-frame-base-shift-x:${escapeAttr(profile.shiftX || '0px')};--pm-frame-base-shift-y:${escapeAttr(profile.shiftY || '0px')};--pm-frame-scale:${escapeAttr(String(frameScale))};--pm-frame-shift-x:calc(${escapeAttr(profile.shiftX || '0px')} + ${escapeAttr(String(setting.frameOffsetX))}px);--pm-frame-shift-y:calc(${escapeAttr(profile.shiftY || '0px')} + ${escapeAttr(String(setting.frameOffsetY))}px);--pm-avatar-inner-padding:${escapeAttr(String(setting.innerPadding))}px;--pm-avatar-frame-outer-padding:${escapeAttr(String(setting.outerPadding))}px;overflow:${escapeAttr(setting.overflow)};"`;
+    const styleAttr = ` style="--pm-avatar-base-scale:${escapeAttr(String(profile.avatar || 1))};--pm-avatar-base-shift-x:${escapeAttr(profile.avatarShiftX || '0px')};--pm-avatar-base-shift-y:${escapeAttr(profile.avatarShiftY || '0px')};--pm-avatar-fit:${escapeAttr(String(avatarScale))};--pm-avatar-scale:${escapeAttr(String(avatarScale))};--pm-avatar-shift-x:calc(${escapeAttr(profile.avatarShiftX || '0px')} + ${escapeAttr(String(setting.avatarOffsetX))}px);--pm-avatar-shift-y:calc(${escapeAttr(profile.avatarShiftY || '0px')} + ${escapeAttr(String(setting.avatarOffsetY))}px);--pm-frame-base-scale:${escapeAttr(String(profile.scale || 1))};--pm-frame-base-shift-x:${escapeAttr(profile.shiftX || '0px')};--pm-frame-base-shift-y:${escapeAttr(profile.shiftY || '0px')};--pm-frame-scale:${escapeAttr(String(frameScale))};--pm-frame-shift-x:calc(${escapeAttr(profile.shiftX || '0px')} + ${escapeAttr(String(setting.frameOffsetX))}px);--pm-frame-shift-y:calc(${escapeAttr(profile.shiftY || '0px')} + ${escapeAttr(String(setting.frameOffsetY))}px);--pm-avatar-inner-padding:${escapeAttr(String(setting.innerPadding))}px;--pm-avatar-frame-outer-padding:${escapeAttr(String(setting.outerPadding))}px;overflow:${escapeAttr(setting.overflow)};"`;
     const frameHtml = hasFrame
       ? `<img src="${escapeAttr(frameSrc)}" class="pm-frame-image pm-avatar-shell__frame frame-${frameIndex || 'market'}" alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" data-frame-index="${frameIndex}" data-frame-level="${normalizedLevel}" data-market-frame="${customFrameUrl ? 'true' : 'false'}" data-fallback="${escapeAttr(frameSrc)}">`
       : '';
@@ -430,8 +436,12 @@
     node.style.width = `${normalizedSize}px`;
     node.style.height = `${normalizedSize}px`;
     node.style.setProperty('--pm-avatar-base-scale', String(profile.avatar || 1));
+    node.style.setProperty('--pm-avatar-base-shift-x', profile.avatarShiftX || '0px');
+    node.style.setProperty('--pm-avatar-base-shift-y', profile.avatarShiftY || '0px');
     node.style.setProperty('--pm-avatar-fit', String(profile.avatar || 1));
     node.style.setProperty('--pm-avatar-scale', String(profile.avatar || 1));
+    node.style.setProperty('--pm-avatar-shift-x', profile.avatarShiftX || '0px');
+    node.style.setProperty('--pm-avatar-shift-y', profile.avatarShiftY || '0px');
     node.style.setProperty('--pm-frame-base-scale', String(profile.scale));
     node.style.setProperty('--pm-frame-base-shift-x', profile.shiftX || '0px');
     node.style.setProperty('--pm-frame-base-shift-y', profile.shiftY || '0px');
@@ -549,6 +559,8 @@
   window.PMAvatar = Object.freeze({
     FALLBACK_AVATAR,
     FRAME_ASSET_COUNT,
+    FRAME_CALIBRATION_VERSION,
+    FRAME_CALIBRATIONS,
     FRAME_LEVEL_TO_ASSET,
     FRAME_VISUAL_PROFILES,
     MARKET_FRAME_VISUAL_PROFILES,

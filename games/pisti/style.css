@@ -1042,3 +1042,9 @@ body.pm-pisti-mode-no-bet #chipGrid{ display:none !important; }
     padding-left: 8px !important;
   }
 }
+
+/* Professional empty-lobby state: avoids a visually broken blank panel on mobile. */
+#lobbyArea .room-list:has(.pm-pisti-empty){min-height:132px;display:grid;align-items:start}
+#lobbyArea .pm-pisti-empty{display:grid;place-items:center;min-height:112px;padding:20px 18px;border-radius:18px;border:1px solid rgba(214,174,83,.22);background:linear-gradient(145deg,rgba(28,30,40,.96),rgba(16,18,25,.96));box-shadow:0 14px 34px rgba(0,0,0,.22);font-style:normal;line-height:1.55;color:rgba(246,240,224,.78)}
+#lobbyArea .pm-pisti-empty--error{border-color:rgba(239,68,68,.26);color:#fecaca;background:linear-gradient(145deg,rgba(69,10,20,.42),rgba(18,18,25,.96))}
+@media(max-width:560px){#lobbyArea{padding:14px 12px max(48px,env(safe-area-inset-bottom))!important;gap:12px!important}#lobbyArea .pm-pisti-empty{min-height:96px;padding:16px 14px}}
