@@ -13,7 +13,7 @@
   function userClassicMessage(error, fallback = 'Oyun oturumu şu anda başlatılamadı. Lütfen tekrar dene.') {
     const raw = String(error?.payload?.message || error?.payload?.error || error?.message || error || '').trim();
     if (/auth_required|auth_invalid|no_user|401|403|oturum bulunamadı|giriş/i.test(raw)) return 'Devam etmek için giriş yapman gerekiyor.';
-    if (/load failed|failed to fetch|network|timeout|zaman aşımı|request_timeout/i.test(raw)) return 'Bağlantı kurulamadı. Lütfen internet bağlantını kontrol edip tekrar dene.';
+    if (/load failed|failed to fetch|network|timeout|zaman aşımı|request_timeout/i.test(raw)) return 'Oyun bağlantısı yenileniyor. Lütfen birkaç saniye sonra tekrar dene.';
     if (/run_not_found|run_token|classic_run/i.test(raw)) return 'Oyun oturumu doğrulanamadı. Lütfen oyunu yeniden başlat.';
     return fallback;
   }
@@ -94,7 +94,7 @@
       return payload;
     }).catch((error) => {
       try { reportClassicClientError('classic.submit', error); } catch (_) {}
-      return { ok: false, error: error?.message || 'CLASSIC_SUBMIT_FAILED' };
+      return { ok: false, error: 'CLASSIC_SUBMIT_FAILED', message: userClassicMessage(error, 'Skorun şu anda doğrulanamadı. Lütfen oyunu tekrar başlat.') };
     });
   }
   function reportClassicClientError(scope, error) {

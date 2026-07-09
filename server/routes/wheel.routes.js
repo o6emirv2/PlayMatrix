@@ -45,7 +45,7 @@ function safeName(value = '') {
 function rewardDisplay(reward = {}, settlement = {}) {
   const type = String(reward.type || settlement.type || 'mc').toLowerCase();
   if (type === 'xp') return `${Math.max(0, Math.trunc(Number(settlement.xp || reward.amount || 0))).toLocaleString('tr-TR')} XP`;
-  if (type === 'badge') return `${safeName(reward.label || settlement.badgeId || reward.badgeId || 'Rozet')} rozeti`;
+  if (type === 'empty') return 'Boş';
   return `${Math.max(0, Math.trunc(Number(settlement.amount || reward.amount || 0))).toLocaleString('tr-TR')} MC`;
 }
 
@@ -66,7 +66,7 @@ function notifyWheelWin(uid, username, reward = {}, settlement = {}) {
     type: 'personal',
     title: 'Günlük Çark Kazancı',
     message: `${safeName(username) || 'Oyuncu'} ${label} kazandı.`,
-    icon: reward.type === 'xp' ? 'fa-star' : reward.type === 'badge' ? 'fa-medal' : 'fa-dharmachakra',
+    icon: reward.type === 'xp' ? 'fa-star' : reward.type === 'empty' ? 'fa-circle-minus' : 'fa-dharmachakra',
     amount: rewardAmount,
     rewardType: reward.type || 'mc',
     rewardLabel: label,
@@ -148,7 +148,7 @@ async function finalizeWheelDailyClaim({ uid, day, key, reward = {}, settlement 
   const { db } = initFirebaseAdmin();
   if (!db) return;
   const claimRef = db.collection('wheelClaims').doc(wheelClaimDocId(uid, day));
-  await claimRef.set({ uid, day, key, status: settlement?.ok === false ? 'failed' : 'final', reward: { id: reward.id || '', type: reward.type || 'mc', amount: Math.max(0, Math.trunc(Number(reward.amount || 0))), index }, settlement: { amount: settlement.amount || 0, xp: settlement.xp || 0, badgeId: settlement.badgeId || '', balance: settlement.balance ?? null }, finalizedAt: at, updatedAt: at }, { merge: true }).catch(() => null);
+  await claimRef.set({ uid, day, key, status: settlement?.ok === false ? 'failed' : 'final', reward: { id: reward.id || '', type: reward.type || 'mc', amount: Math.max(0, Math.trunc(Number(reward.amount || 0))), index }, settlement: { amount: settlement.amount || 0, xp: settlement.xp || 0, balance: settlement.balance ?? null }, finalizedAt: at, updatedAt: at }, { merge: true }).catch(() => null);
 }
 async function applyWheelReward({ uid, reward, key }) {
   const type = String(reward?.type || 'mc').toLowerCase();
@@ -175,21 +175,7 @@ async function applyWheelReward({ uid, reward, key }) {
     });
     return output;
   }
-  if (type === 'badge') {
-    if (db) {
-      const idemRef = db.collection('idempotency').doc(`${key}:badge`);
-      const userRef = db.collection('users').doc(String(uid));
-      let out = { ok: true, amount: 0, badgeId: String(reward.badgeId || reward.id || '') };
-      await db.runTransaction(async (tx) => {
-        const idem = await tx.get(idemRef);
-        if (idem.exists) { out = idem.data()?.result || out; return; }
-        tx.set(userRef, { wheelBadges: { [String(reward.badgeId || reward.id || 'wheel-badge')]: { grantedAt: Date.now() } }, updatedAt: Date.now() }, { merge: true });
-        tx.set(idemRef, { key: `${key}:badge`, type: 'wheel-badge', uid, createdAt: Date.now(), result: out }, { merge: false });
-      });
-      return out;
-    }
-    return { ok: true, amount: 0, badgeId: String(reward.badgeId || reward.id || '') };
-  }
+  if (type === 'empty') return { ok: true, amount: 0, xp: 0, type: 'empty', balance: null };
   return creditBalance({ uid, amount, reason: 'daily-wheel', idempotencyKey: key });
 }
 
@@ -202,7 +188,7 @@ function recordRecentWinner({ uid, username, amount, reward = {}, settlement = {
     rewardType: reward.type || 'mc',
     rewardLabel: rewardDisplay(reward, settlement),
     xp: settlement.xp || 0,
-    badgeId: settlement.badgeId || '',
+
     at: Date.now()
   };
   const current = runtimeStore.temporary.get('wheel:recentWinners') || [];
@@ -281,7 +267,7 @@ router.post('/wheel/spin', requireAuth, async (req, res) => {
   const winner = recordRecentWinner({ uid, username, amount, reward, settlement });
   recordRecentActivity({ id: `wheel:${uid}:${Date.now()}`, source: 'wheel', game: 'wheel', title: 'Çark Kazancı', username, uid, amount, xp: settlement.xp || 0, rewardType: reward.type || 'mc', rewardLabel: rewardDisplay(reward, settlement), outcome: usedExtraRight ? 'extra-right' : 'daily-right' });
   notifyWheelWin(uid, username, reward, settlement);
-  res.json({ ok: true, memoryOnly: true, day, reward: amount, prize: amount, amount, type: reward.type || 'mc', xp: settlement.xp || 0, badgeId: settlement.badgeId || '', index, winner, recentWinners: recentPayload(5), lastSpin: Date.now(), lastSpinAt: Date.now(), balance: settlement.balance, usedExtraRight, extraRights });
+  res.json({ ok: true, memoryOnly: true, day, reward: amount, prize: amount, amount, type: reward.type || 'mc', xp: settlement.xp || 0, index, winner, recentWinners: recentPayload(5), lastSpin: Date.now(), lastSpinAt: Date.now(), balance: settlement.balance, usedExtraRight, extraRights });
 });
 
 module.exports = router;

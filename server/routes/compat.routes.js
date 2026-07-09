@@ -7,6 +7,10 @@ const { runtimeStore } = require('../core/runtimeStore');
 const { issueAdminAccess, clearAdminAccess, adminAccessCookie, clearAdminAccessCookie, getRequestAdminAccessToken, readAdminAccess } = require('../core/adminAccessService');
 const { getProgression } = require('../core/progressionService');
 const { runOnce } = require('../core/idempotencyService');
+const { normalizeBoolean, normalizeBooleanMap } = require('../core/boolean');
+const { readAvatarFrameSettings } = require('../core/avatarFrameSettingsService');
+const { listUserActivities } = require('../core/recentActivityService');
+const { normalizeBirthDate, validateBirthDate } = require('../core/dateOfBirthService');
 const router = express.Router();
 
 const DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20128%20128%27%3E%3Crect%20width%3D%27128%27%20height%3D%27128%27%20rx%3D%2728%27%20fill%3D%27%23111827%27%2F%3E%3Ccircle%20cx%3D%2764%27%20cy%3D%2750%27%20r%3D%2724%27%20fill%3D%27%23f59e0b%27%2F%3E%3Cpath%20d%3D%27M26%20108c8-18%2024-28%2038-28s30%2010%2038%2028%27%20fill%3D%27%23fbbf24%27%2F%3E%3Ctext%20x%3D%2764%27%20y%3D%27118%27%20text-anchor%3D%27middle%27%20font-family%3D%27Arial%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23fff%27%3EPM%3C%2Ftext%3E%3C%2Fsvg%3E';
@@ -98,7 +102,7 @@ function addProgression(profile) {
 function defaultProfile(req, uid, seed = {}) {
   const email = s(req.user?.email || req.user?.firebase?.identities?.email?.[0] || seed.email || '', 160);
   const username = s(seed.username || req.user?.name || req.user?.displayName || `Oyuncu-${String(uid).slice(0,5)}`, 32);
-  return addProgression({ uid, email, username, firstName: seed.firstName || '', lastName: seed.lastName || '', fullName: seed.fullName || joinName(seed.firstName || '', seed.lastName || ''), displayName: username, avatar: seed.avatar || DEFAULT_AVATAR, selectedFrame: Number(seed.selectedFrame || 0) || 0, balance: Number(seed.balance ?? 50000) || 0, signupBonusClaimed: true, usernameChangeLimit: 3, usernameChangesUsed: 0, xp: 0, accountXp: 0, monthlyActiveScore: 0, totalRounds: 0, createdAt: now(), lastLogin: now(), lastSeen: now(), gameStats: { total: { rounds: 0, wins: 0, losses: 0, winRatePct: 0 }, chess: {}, pisti: {}, crash: {}, classic: {} } });
+  return addProgression({ uid, email, username, firstName: seed.firstName || '', lastName: seed.lastName || '', birthDate: normalizeBirthDate(seed.birthDate || ''), fullName: seed.fullName || joinName(seed.firstName || '', seed.lastName || ''), displayName: username, avatar: seed.avatar || DEFAULT_AVATAR, selectedFrame: Number(seed.selectedFrame || 0) || 0, balance: Number(seed.balance ?? 50000) || 0, signupBonusClaimed: true, usernameChangeLimit: 3, usernameChangesUsed: 0, xp: 0, accountXp: 0, monthlyActiveScore: 0, totalRounds: 0, createdAt: now(), lastLogin: now(), lastSeen: now(), gameStats: { total: { rounds: 0, wins: 0, losses: 0, winRatePct: 0 }, chess: {}, pisti: {}, crash: {}, classic: {} } });
 }
 async function grantEmailVerifyRewardIfNeeded(req, uid, profile = {}) {
   if (!uid || !emailVerified(req) || profile.emailVerifyRewardClaimed) return profile;
@@ -147,6 +151,8 @@ async function readProfile(req, uid = uidOf(req), seed = {}) {
   profile.usernameChangeLimit = Math.max(0, Number(profile.usernameChangeLimit ?? 3) || 3);
   profile.usernameChangesUsed = Math.max(0, Number(profile.usernameChangesUsed ?? profile.usernameChangeCount ?? 0) || 0);
   profile.usernameChangesLeft = Math.max(0, profile.usernameChangeLimit - profile.usernameChangesUsed);
+  profile.birthDate = normalizeBirthDate(profile.birthDate || profile.dateOfBirth || '');
+  delete profile.dateOfBirth;
   return addProgression(profile);
 }
 async function writeProfile(uid, patch) { const { db } = fb(); if (db && uid) await db.collection('users').doc(uid).set({ ...patch, updatedAt: now() }, { merge: true }); }
@@ -177,8 +183,8 @@ async function addBalance(uid, amount, reason, key) {
 }
 function runtimePayload() { return { ok: true, runtime: { version: 8, environment: env.nodeEnv, publicBaseUrl: env.publicBaseUrl, canonicalOrigin: env.canonicalOrigin, apiBase: env.publicApiBase || env.publicBackendOrigin, expectedFirebaseProjectId: env.firebase.publicConfig.projectId, firebase: env.firebase.publicConfig, firebaseReady: true, source: 'render-env-contract' }, apiBase: env.publicApiBase || env.publicBackendOrigin, canonicalOrigin: env.canonicalOrigin, firebase: env.firebase.publicConfig }; }
 const LEADERBOARD_CACHE_KEY = 'home:leaderboard:v8';
-const LEADERBOARD_CACHE_TTL_MS = 45 * 1000;
-const LEADERBOARD_SELECT_FIELDS = ['username','displayName','avatar','selectedFrame','frameUrl','marketFrameUrl','marketFrameId','marketEquipped','equippedMarket','cosmeticSlots','accountXp','xp','accountLevel','level','monthlyActiveScore','balance','mc','stats','statistics','gameStats'];
+const LEADERBOARD_CACHE_TTL_MS = 60 * 1000;
+const LEADERBOARD_SELECT_FIELDS = ['username','displayName','avatar','selectedFrame','frameUrl','marketFrameUrl','marketFrameId','marketEquipped','equippedMarket','cosmeticSlots','accountXp','xp','accountLevel','level','monthlyActiveScore'];
 async function leaderboardQuery(field = 'accountXp', limit = 10) {
   const { db } = fb();
   if (!db) return [];
@@ -237,7 +243,33 @@ async function leaderboardProfiles(limit = 10) {
 function xpBig(value = 0) { try { const raw = String(value ?? '0').replace(/[^0-9]/g, ''); return raw ? BigInt(raw) : 0n; } catch { return 0n; } }
 function safeMetricNumber(value = 0) { const big = xpBig(value); return big > BigInt(Number.MAX_SAFE_INTEGER) ? Number.MAX_SAFE_INTEGER : Number(big); }
 function activeMarketFrameForProfile(p = {}) { const slot = p.cosmeticSlots?.frame || {}; const id = s(p.marketFrameId || p.marketEquipped?.frame || p.marketEquipped?.frames || p.equippedMarket?.frame || p.equippedMarket?.frames || (slot.source === 'market' ? slot.itemId : ''), 140); return id ? resolveMarketFramePath(p.marketFrameUrl || p.frameUrl || '', id) : ''; }
-function lbItems(list, metric) { return list.map((raw, i) => { const p = addProgression(raw); const wins = Number(p?.stats?.totalWins ?? p?.statistics?.totalWins ?? p?.gameStats?.total?.wins ?? p?.totalWins ?? 0) || 0; const balance = Number(p.balance ?? p.mc ?? p?.statistics?.balance ?? 0) || 0; const xpExact = String(p.accountXp || p.xp || '0'); const marketFrameUrl = activeMarketFrameForProfile(p); return { uid: p.uid || `guest_${i}`, username: p.username || p.displayName || 'Oyuncu', avatar: p.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(p.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(p.marketFrameId || p.marketEquipped?.frames || p.cosmeticSlots?.frame?.itemId || '', 140) : '', balance, mc: balance, stats: { ...(p.stats || {}), totalWins: wins }, statistics: { ...(p.statistics || {}), totalWins: wins, balance }, accountXp: safeMetricNumber(xpExact), accountXpExact: xpExact, accountLevel: Number(p.accountLevel || 1), monthlyActiveScore: Number(p.monthlyActiveScore || 0), leaderboard: { rank: i + 1, metricKey: metric === 'activity' ? 'monthlyActiveScore' : 'accountXp', metricLabel: metric === 'activity' ? 'Aylık Aktiflik' : 'Hesap XP', metricValue: metric === 'activity' ? Number(p.monthlyActiveScore || 0) : safeMetricNumber(xpExact), metricValueExact: metric === 'activity' ? String(Number(p.monthlyActiveScore || 0)) : xpExact } }; }); }
+function lbItems(list, metric) {
+  return list.map((raw, i) => {
+    const p = addProgression(raw);
+    const xpExact = String(p.accountXp || p.xp || '0');
+    const marketFrameUrl = activeMarketFrameForProfile(p);
+    return {
+      username: s(p.username || p.displayName || 'Oyuncu', 32),
+      avatar: s(p.avatar || DEFAULT_AVATAR, 500),
+      selectedFrame: marketFrameUrl ? 0 : (Number(p.selectedFrame || 0) || 0),
+      marketFrameUrl,
+      frameUrl: marketFrameUrl,
+      marketFrameId: marketFrameUrl ? s(p.marketFrameId || p.marketEquipped?.frames || p.cosmeticSlots?.frame?.itemId || '', 140) : '',
+      accountXp: safeMetricNumber(xpExact),
+      accountXpExact: xpExact,
+      accountLevel: Math.max(1, Math.min(100, Number(p.accountLevel || 1) || 1)),
+      monthlyActiveScore: Math.max(0, Number(p.monthlyActiveScore || 0) || 0),
+      leaderboard: {
+        rank: i + 1,
+        metricKey: metric === 'activity' ? 'monthlyActiveScore' : 'accountXp',
+        metricLabel: metric === 'activity' ? 'Aylık Aktiflik' : 'Hesap XP',
+        metricValue: metric === 'activity' ? Math.max(0, Number(p.monthlyActiveScore || 0) || 0) : safeMetricNumber(xpExact),
+        metricValueExact: metric === 'activity' ? String(Math.max(0, Number(p.monthlyActiveScore || 0) || 0)) : xpExact
+      }
+    };
+  });
+}
+
 function gameProfileFromReq(req, fallbackName = 'Oyuncu') { const u = req.__pmProfile || {}; const marketFrameUrl = activeMarketFrameForProfile(u); return { uid: uidOf(req), username: u.username || u.displayName || fallbackName, avatar: u.avatar || DEFAULT_AVATAR, selectedFrame: marketFrameUrl ? 0 : (Number(u.selectedFrame || 0) || 0), marketFrameUrl, frameUrl: marketFrameUrl, marketFrameId: marketFrameUrl ? s(u.marketFrameId || u.marketEquipped?.frame || u.marketEquipped?.frames || u.cosmeticSlots?.frame?.itemId || '', 140) : '' }; }
 async function attachProfile(req, _res, next) { try { req.__pmProfile = await readProfile(req, uidOf(req)); } catch (_) { req.__pmProfile = defaultProfile(req, uidOf(req) || 'guest'); } next(); }
 
@@ -298,7 +330,12 @@ router.post('/auth/resolve-login', strictLimiter, async (req, res) => { const id
 router.get('/me', requireAuth, async (req, res) => res.json({ ok: true, user: await readProfile(req) }));
 router.post('/me/activity/heartbeat', requireAuth, async (req, res) => { const uid = uidOf(req); runtimeStore.presence.set(uid, { uid, status: 'online', activity: s(req.body?.activity, 40), at: now() }, 180000); res.json({ ok: true, at: now() }); });
 router.post('/me/showcase', requireAuth, async (req, res) => { const uid = uidOf(req); const showcase = { title: s(req.body?.title, 60), bio: sanitizeText(req.body?.bio || '', 180), updatedAt: now() }; await writeProfile(uid, { showcase }); res.json({ ok: true, showcase }); });
-router.get('/user-stats/:uid', requireAuth, async (req, res) => res.json({ ok: true, data: await readProfile(req, s(req.params.uid, 128)) }));
+router.get('/user-stats/:uid', requireAuth, async (req, res) => {
+  const requestedUid = s(req.params.uid, 128);
+  const currentUid = uidOf(req);
+  if (!requestedUid || requestedUid !== currentUid) return res.status(403).json({ ok: false, error: 'PROFILE_ACCESS_DENIED' });
+  return res.json({ ok: true, data: await readProfile(req, currentUid) });
+});
 router.get('/leaderboard', async (req, res) => { const limit = Math.min(10, Math.max(1, Number(req.query?.limit || 10) || 10)); const profiles = await leaderboardProfiles(limit); const byLevel = Array.isArray(profiles?.level) ? profiles.level : []; const byActivity = Array.isArray(profiles?.activity) ? profiles.activity : []; const totalRows = byLevel.length + byActivity.length; res.setHeader('Cache-Control','public, max-age=15, stale-while-revalidate=45'); res.json({ ok: true, generatedAt: now(), limit, empty: totalRows < 1, source: profiles?.source || 'indexed', tabs: { level: { label: 'En Yüksek Hesap Seviyesi', metricKey: 'accountXp', items: lbItems(byLevel.slice(0,limit), 'level') }, activity: { label: 'En Çok Aktif Oyuncular', metricKey: 'monthlyActiveScore', items: lbItems(byActivity.slice(0,limit), 'activity') } } }); });
 async function checkUsernameRoute(req, res) {
   const result = await checkUsernameAvailability(req.query.username, req.query.exceptUid || '');
@@ -315,6 +352,11 @@ router.post('/profile/update', requireAuth, async (req, res) => {
   const requestedFirst = s(body.firstName, 60);
   const requestedLast = s(body.lastName, 60);
   const requestedFullName = s(body.fullName, 120);
+  const currentBirthDate = normalizeBirthDate(current.birthDate || current.dateOfBirth || '');
+  const requestedBirthRaw = body.birthDate ?? body.dateOfBirth;
+  const requestedBirth = requestedBirthRaw === undefined ? '' : normalizeBirthDate(requestedBirthRaw);
+  if (requestedBirthRaw !== undefined && !requestedBirth) return res.status(400).json({ ok:false, error:'BIRTH_DATE_INVALID', message:'Geçerli bir doğum tarihi seçmelisin.' });
+  if (currentBirthDate && requestedBirth && requestedBirth !== currentBirthDate) return res.status(409).json({ ok:false, error:'BIRTH_DATE_LOCKED', message:'Doğum tarihi kullanıcı tarafından tekrar değiştirilemez.' });
   const split = splitFullName(requestedFullName);
   const finalFirst = currentFirst || requestedFirst || split.firstName;
   const finalLast = currentLast || requestedLast || split.lastName;
@@ -348,6 +390,7 @@ router.post('/profile/update', requireAuth, async (req, res) => {
   }
   if (!currentFirst && finalFirst) patch.firstName = finalFirst;
   if (!currentLast && finalLast) patch.lastName = finalLast;
+  if (!currentBirthDate && requestedBirth) { patch.birthDate = requestedBirth; patch.birthDateSetAt = now(); }
   if (!s(current.fullName, 120) && (finalFirst || finalLast)) patch.fullName = joinName(finalFirst, finalLast);
   if (Object.prototype.hasOwnProperty.call(body, 'selectedFrame')) {
     patch.selectedFrame = safeSelectedFrameForLevel(body.selectedFrame, current.accountLevel);
@@ -377,7 +420,13 @@ function personalNotification(uid, title, message, icon = 'fa-gift', extra = {})
 }
 function memoryTransaction(uid, row) {
   if (!uid) return null;
-  return pushMemoryList(`account:tx:${uid}`, { id: `tx_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`, at: now(), icon: 'fa-receipt', ...row }, 30 * 86400000, 60);
+  const normalized = { id: `tx_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`, at: now(), icon: 'fa-receipt', ...row };
+  const result = pushMemoryList(`account:tx:${uid}`, normalized, 30 * 86400000, 60);
+  try {
+    const { db } = fb();
+    if (db) db.collection('users').doc(uid).collection('transactions').doc(normalized.id).set({ ...normalized, updatedAt: now() }, { merge: true }).catch(() => null);
+  } catch (_) {}
+  return result;
 }
 function memoryGame(uid, row) {
   if (!uid) return null;
@@ -385,11 +434,21 @@ function memoryGame(uid, row) {
 }
 
 
-router.get('/account/memory', requireAuth, (req, res) => {
+router.get('/account/memory', requireAuth, async (req, res) => {
   const uid = uidOf(req);
-  const transactions = runtimeStore.temporary.get(`account:tx:${uid}`) || [];
-  const games = runtimeStore.temporary.get(`account:game:${uid}`) || [];
-  res.json({ ok: true, transactions, games, memoryOnly: true });
+  const memoryTransactions = runtimeStore.temporary.get(`account:tx:${uid}`) || [];
+  let persistentTransactions = [];
+  try {
+    const { db } = fb();
+    if (db) {
+      const snap = await db.collection('users').doc(uid).collection('transactions').orderBy('at', 'desc').limit(30).get();
+      persistentTransactions = snap.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}), memoryOnly: false }));
+    }
+  } catch (_) {}
+  const seen = new Set();
+  const transactions = [...persistentTransactions, ...memoryTransactions].sort((a,b) => Number(b.at || 0) - Number(a.at || 0)).filter((item) => { const id = String(item.id || ''); if (seen.has(id)) return false; seen.add(id); return true; }).slice(0, 30);
+  const games = await listUserActivities(uid, 30);
+  res.json({ ok: true, transactions, games, memoryOnly: false });
 });
 
 router.post('/account/memory/transaction', requireAuth, (req, res) => {
@@ -461,27 +520,25 @@ router.post('/notifications/clear', requireAuth, (req, res) => {
   res.json({ ok: true, cleared: true, count, tab });
 });
 
+
+router.get('/avatar-frame/settings', async (_req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  const config = await readAvatarFrameSettings().catch(() => ({ version: 1, variants: {}, frames: {}, updatedAt: 0 }));
+  const publicConfig = { version: Number(config.version || 1), variants: config.variants || {}, frames: config.frames || {}, updatedAt: Number(config.updatedAt || 0) || 0 };
+  res.json({ ok: true, config: publicConfig });
+});
+
 router.get('/rewards/center', requireAuth, (req, res) => res.json({ ok: true, dailyWheel: true, promo: true, emailVerifyReward: 100000, signupReward: 50000, notifications: { receiptDays: 30 }, claimable: [] }));
 router.get('/rewards/catalog', requireAuth, (_req, res) => res.json({ ok: true, items: [{ id: 'signup', title: 'Kayıt Ödülü', amount: 50000 }, { id: 'email-verify', title: 'E-posta Onay Ödülü', amount: 100000 }, { id: 'daily-wheel', title: 'Günlük Çark' }, { id: 'promo', title: 'Promo Kod' }] }));
-router.get('/matches/history', requireAuth, (_req, res) => res.json({ ok: true, items: [], nextCursor: '' }));
-router.get('/achievements', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
-router.get('/missions', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
+router.get('/matches/history', requireAuth, async (req, res) => { const items = await listUserActivities(uidOf(req), Math.min(60, Math.max(1, Number(req.query?.limit || 30) || 30))); res.json({ ok: true, items, nextCursor: '', empty: items.length === 0 }); });
+router.get('/achievements', requireAuth, async (req, res) => { const profile = await readProfile(req); const stats = profile.gameStats?.total || {}; const items = []; if (Number(stats.rounds || 0) >= 1) items.push({ id:'first-game', title:'İlk Oyun', description:'İlk oyununu tamamladın.', earned:true }); if (Number(stats.wins || 0) >= 1) items.push({ id:'first-win', title:'İlk Galibiyet', description:'İlk galibiyetini kazandın.', earned:true }); res.json({ ok:true, items, generatedFrom:'verified-profile-stats', empty:items.length===0 }); });
+router.get('/missions', requireAuth, async (req, res) => { const profile = await readProfile(req); res.json({ ok:true, items:[], available:false, message:'Aktif görev bulunmuyor.', accountLevel:Number(profile.accountLevel || 1) }); });
 
 function normalizeCompatMaintenanceGames(games = {}) {
   const raw = games && typeof games === 'object' ? games : {};
-  return {
-    general: !!(raw.general || raw.system),
-    crash: !!raw.crash,
-    chess: !!raw.chess,
-    pisti: !!raw.pisti,
-    market: !!raw.market,
-    wheel: !!raw.wheel,
-    promo: !!raw.promo,
-    classic: !!raw.classic,
-    'pattern-master': !!raw['pattern-master'],
-    'space-pro': !!raw['space-pro'],
-    'snake-pro': !!raw['snake-pro']
-  };
+  const normalized = normalizeBooleanMap(raw, ['crash', 'chess', 'pisti', 'market', 'wheel', 'promo', 'classic', 'pattern-master', 'space-pro', 'snake-pro'], false);
+  normalized.general = normalizeBoolean(raw.general, false) || normalizeBoolean(raw.system, false);
+  return normalized;
 }
 async function readCompatMaintenanceControl(source = 'control-public') {
   const stored = runtimeStore.temporary.get('admin:maintenance');
@@ -510,7 +567,7 @@ router.get('/platform/control', requireAuth, async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.json(await readCompatMaintenanceControl('control-compat'));
 });
-router.get('/me/match-history', requireAuth, (_req, res) => res.json({ ok: true, items: [] }));
+router.get('/me/match-history', requireAuth, async (req, res) => { const items = await listUserActivities(uidOf(req), Math.min(60, Math.max(1, Number(req.query?.limit || 30) || 30))); res.json({ ok:true, items, empty:items.length===0 }); });
 router.post('/classic/submit', requireAuth, (_req, res) => {
   res.status(410).json({ ok: false, error: 'CLASSIC_LEGACY_ENDPOINT_DISABLED', message: 'Klasik oyun sonucu yalnızca güvenli oyun oturumu üzerinden gönderilebilir.' });
 });

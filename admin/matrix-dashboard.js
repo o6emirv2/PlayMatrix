@@ -112,9 +112,9 @@ function panelTemplate() {
         </div>
         <div class="field-grid">
           <div class="field"><label for="wheelActiveSelect">Çark Durumu</label><select id="wheelActiveSelect"><option value="true">Aktif</option><option value="false">Kapalı</option></select></div>
-          <div class="field pm-admin-grid-span-all"><label for="wheelRewardsText">Ödül Havuzu</label><textarea id="wheelRewardsText" rows="8" placeholder="Her satır: tür|etiket|miktar/id|ağırlık\nmc|10.000 MC|10000|8\nxp|500 XP|500|4\nbadge|Şans Rozeti|lucky-spin|1"></textarea></div>
+          <div class="field pm-admin-grid-span-all"><label for="wheelRewardsText">Ödül Havuzu</label><textarea id="wheelRewardsText" rows="8" placeholder="Her satır: tür|etiket|miktar/id|ağırlık\nmc|10.000 MC|10000|8\nxp|500 XP|500|4\nempty|Boş|0|1"></textarea></div>
         </div>
-        <div class="crash-control-hint">Türler: mc, xp, badge. Ağırlık yükseldikçe çıkma ihtimali artar. Teknik kelimeler kullanıcıya gösterilmez.</div>
+        <div class="crash-control-hint">Türler: mc, xp, empty. Ağırlık yükseldikçe çıkma ihtimali artar. Teknik kelimeler kullanıcıya gösterilmez.</div>
         <div class="action-row">
           <button id="reloadWheelConfigBtn" type="button" class="ghost">ÇARK AYARINI YENİLE</button>
           <button id="saveWheelConfigBtn" type="button">ÇARK AYARINI KAYDET</button>
@@ -148,6 +148,55 @@ function panelTemplate() {
         <div class="market-admin-section-title"><strong>Aktif Ürünler ve Düzenlemeler</strong><span>Aktif / görünür ürünler üstte, pasif veya görünmeyen ürünler en altta listelenir.</span></div>
         <div class="table-wrap market-admin-table-wrap"><table><thead><tr><th>Ürün Adı</th><th>Kategori</th><th>Açıklama</th><th>Fiyat (MC)</th><th>Stok</th><th>Aktif</th><th>Görünür</th><th>İşlem</th></tr></thead><tbody id="marketAdminRows"></tbody></table></div>
         <div class="market-admin-bulk-row"><button id="bulkSaveMarketItemsBtn" type="button" class="table-mini-action">TÜM MARKET DÜZENLEMELERİNİ KAYDET</button></div>
+      </section>
+
+      <section class="panel stack avatar-frame-admin-panel" id="avatarFrameAdminPanel">
+        <div>
+          <h2>AKILLI AVATAR / ÇERÇEVE YÖNETİM MERKEZİ</h2>
+          <p class="lead">Canlı render motoruyla aynı variant ayarlarını kullanarak avatar ve çerçeve hizasını alan ölçüsünü bozmadan yönet.</p>
+        </div>
+        <div class="avatar-frame-admin-layout">
+          <div class="avatar-frame-admin-controls">
+            <div class="field-grid">
+              <div class="field"><label for="avatarFrameTypeSelect">Çerçeve Tipi</label><select id="avatarFrameTypeSelect"><option value="normal">Normal</option><option value="market">Market</option></select></div>
+              <div class="field"><label for="avatarFrameIndexSelect">Çerçeve</label><select id="avatarFrameIndexSelect"></select></div>
+              <div class="field pm-admin-grid-span-all"><label for="avatarFrameVariantSelect">Canlı Alan / Variant</label><select id="avatarFrameVariantSelect"></select></div>
+              <div class="field pm-admin-grid-span-all"><label for="avatarFramePreviewAvatar">Önizleme Avatarı</label><input id="avatarFramePreviewAvatar" type="text" value="/public/assets/avatars/system/fallback.svg" autocomplete="off" /></div>
+              <div class="field"><label for="avatarScaleInput">Avatar Ölçeği</label><input id="avatarScaleInput" type="number" min="0.65" max="1.5" step="0.01" value="1" /></div>
+              <div class="field"><label for="frameScaleInput">Çerçeve Ölçeği</label><input id="frameScaleInput" type="number" min="0.7" max="1.8" step="0.01" value="1" /></div>
+              <div class="field"><label for="avatarOffsetXInput">Avatar X</label><input id="avatarOffsetXInput" type="number" min="-30" max="30" step="0.5" value="0" /></div>
+              <div class="field"><label for="avatarOffsetYInput">Avatar Y</label><input id="avatarOffsetYInput" type="number" min="-30" max="30" step="0.5" value="0" /></div>
+              <div class="field"><label for="frameOffsetXInput">Çerçeve X</label><input id="frameOffsetXInput" type="number" min="-30" max="30" step="0.5" value="0" /></div>
+              <div class="field"><label for="frameOffsetYInput">Çerçeve Y</label><input id="frameOffsetYInput" type="number" min="-30" max="30" step="0.5" value="0" /></div>
+              <div class="field"><label for="innerPaddingInput">İç Boşluk</label><input id="innerPaddingInput" type="number" min="0" max="24" step="0.5" value="0" /></div>
+              <div class="field"><label for="outerPaddingInput">Dış Boşluk</label><input id="outerPaddingInput" type="number" min="0" max="24" step="0.5" value="0" /></div>
+              <div class="field"><label for="avatarFrameThicknessSelect">Kalınlık Profili</label><select id="avatarFrameThicknessSelect"><option value="thin">İnce</option><option value="normal">Normal</option><option value="thick">Kalın</option><option value="ultra">Ultra</option></select></div>
+              <div class="field"><label for="avatarFrameOverflowSelect">Taşma</label><select id="avatarFrameOverflowSelect"><option value="visible">Görünür</option><option value="hidden">Gizli</option></select></div>
+            </div>
+            <div class="avatar-frame-nudge-grid" aria-label="Hızlı hizalama kontrolleri">
+              <button type="button" data-avatar-adjust="avatarScale" data-avatar-delta="0.02">Avatar büyüt</button><button type="button" data-avatar-adjust="avatarScale" data-avatar-delta="-0.02">Avatar küçült</button>
+              <button type="button" data-avatar-adjust="frameScale" data-avatar-delta="0.02">Çerçeve büyüt</button><button type="button" data-avatar-adjust="frameScale" data-avatar-delta="-0.02">Çerçeve küçült</button>
+              <button type="button" data-avatar-adjust="avatarOffsetY" data-avatar-delta="-0.5">Avatar yukarı</button><button type="button" data-avatar-adjust="avatarOffsetY" data-avatar-delta="0.5">Avatar aşağı</button>
+              <button type="button" data-avatar-adjust="avatarOffsetX" data-avatar-delta="-0.5">Avatar sola</button><button type="button" data-avatar-adjust="avatarOffsetX" data-avatar-delta="0.5">Avatar sağa</button>
+              <button type="button" data-avatar-adjust="frameOffsetY" data-avatar-delta="-0.5">Çerçeve yukarı</button><button type="button" data-avatar-adjust="frameOffsetY" data-avatar-delta="0.5">Çerçeve aşağı</button>
+              <button type="button" data-avatar-adjust="frameOffsetX" data-avatar-delta="-0.5">Çerçeve sola</button><button type="button" data-avatar-adjust="frameOffsetX" data-avatar-delta="0.5">Çerçeve sağa</button>
+            </div>
+          </div>
+          <div class="avatar-frame-live-preview">
+            <div class="avatar-frame-preview-stage" id="avatarFramePreviewStage" data-preview-variant="leaderboard">
+              <span class="avatar-frame-preview-label" id="avatarFramePreviewLabel">Liderlik</span>
+              <span class="pm-avatar-host avatar-frame-preview-host" id="avatarFramePreviewHost"></span>
+              <strong>Gerçek merkezi render motoru</strong>
+              <small>Alan boyutu variant tarafından korunur; ayarlar yalnız avatar ve çerçeve katmanına uygulanır.</small>
+            </div>
+            <div class="status" id="avatarFrameAdminStatus" hidden></div>
+            <div class="action-row">
+              <button id="previewAvatarFrameBtn" class="ghost" type="button">ÖNİZLEME YAP</button>
+              <button id="resetAvatarFrameBtn" class="warn" type="button">VARSAYILANA DÖN</button>
+              <button id="saveAvatarFrameBtn" class="danger" type="button">KAYDET</button>
+            </div>
+          </div>
+        </div>
       </section>
       <div class="layout-grid-3">
         <section class="panel stack">
@@ -1024,16 +1073,16 @@ function wheelRewardRowsFromTextarea() {
   const raw = document.getElementById('wheelRewardsText')?.value || '';
   return raw.split(/\n+/).map((line) => line.trim()).filter(Boolean).slice(0, 40).map((line, index) => {
     const [typeRaw, labelRaw, valueRaw, weightRaw] = line.split('|').map((x) => String(x || '').trim());
-    const type = ['mc', 'xp', 'badge'].includes(typeRaw) ? typeRaw : 'mc';
+    const type = ['mc', 'xp', 'empty'].includes(typeRaw) ? typeRaw : 'empty';
     const weight = Math.max(1, Math.trunc(Number(weightRaw || 1) || 1));
     const id = `${type}-${index}-${Date.now()}`;
-    if (type === 'badge') return { id, type, label: labelRaw || valueRaw || 'Rozet', badgeId: valueRaw || labelRaw || 'lucky-spin', weight };
+    if (type === 'empty') return { id, type, label: labelRaw || 'Boş', amount: 0, weight };
     return { id, type, label: labelRaw || valueRaw || 'Ödül', amount: Math.max(1, Math.trunc(Number(valueRaw || 0) || 0)), weight };
-  }).filter((row) => row.type === 'badge' || row.amount > 0);
+  }).filter((row) => row.type === 'empty' || row.amount > 0);
 }
 function wheelRewardsToTextarea(rewards = []) {
   return (Array.isArray(rewards) ? rewards : []).map((reward) => {
-    if (reward.type === 'badge') return `badge|${reward.label || 'Rozet'}|${reward.badgeId || reward.id || 'badge'}|${reward.weight || 1}`;
+    if (reward.type === 'empty') return `empty|${reward.label || 'Boş'}|0|${reward.weight || 1}`;
     return `${reward.type || 'mc'}|${reward.label || 'Ödül'}|${Math.max(1, Math.trunc(Number(reward.amount || 0) || 0))}|${reward.weight || 1}`;
   }).join('\n');
 }
@@ -1122,6 +1171,7 @@ function buildUserInfoPanel() {
         <div class="field"><label for="userInfoEmailVerified">E-posta Durumu</label><select id="userInfoEmailVerified"><option value="true">Doğrulanmış</option><option value="false">Doğrulanmamış</option></select></div>
         <div class="field"><label for="userInfoUsername">Kullanıcı Adı</label><input id="userInfoUsername" type="text" autocomplete="off" /></div>
         <div class="field"><label for="userInfoFullName">Ad Soyad</label><input id="userInfoFullName" type="text" autocomplete="off" /></div>
+        <div class="field"><label for="userInfoBirthDate">Doğum Tarihi</label><input id="userInfoBirthDate" type="text" inputmode="numeric" placeholder="YYYY-MM-DD" maxlength="10" autocomplete="off" /></div>
         <div class="field"><label for="userInfoBalance">MC Bakiye</label><input id="userInfoBalance" type="number" step="1" /></div>
         <div class="field"><label for="userInfoLevel">Seviye</label><input id="userInfoLevel" type="number" min="1" max="100" step="1" /></div>
         <div class="field"><label for="userInfoXp">XP</label><input id="userInfoXp" type="number" min="0" step="1" /></div>
@@ -1147,14 +1197,15 @@ function fillUserInfoForm(payload = {}) {
   if (save) save.disabled = false;
   if (current) current.textContent = `UID: ${payload.uid || user.uid || '—'} • ${user.email || 'e-posta yok'} • Seviye ${user.accountLevel || 1}`;
   const set = (id, value) => { const node = document.getElementById(id); if (node) node.value = value ?? ''; };
+  const raw = payload.raw || {};
   set('userInfoEmail', user.email || '');
   set('userInfoEmailVerified', String(!!user.emailVerified));
   set('userInfoUsername', user.username || '');
   set('userInfoFullName', user.fullName || '');
+  set('userInfoBirthDate', user.birthDate || raw.birthDate || '');
   set('userInfoBalance', Number(user.balance || 0));
   set('userInfoLevel', Number(user.accountLevel || 1));
   set('userInfoXp', Number(user.accountXp || 0));
-  const raw = payload.raw || {};
   const tickets = raw.gameTickets || {};
   set('userInfoFrame', Number(user.selectedFrame || 0));
   set('userInfoExtraWheelRights', Number(raw.extraWheelRights || raw.wheelExtraRights || raw.wheelRights || raw.wheelBonusRights?.count || 0));
@@ -1172,6 +1223,7 @@ function renderUserInfoDeep(payload = {}) {
   const raw = payload.raw || payload.user || {};
   const pairs = [
     ['UID', payload.uid || raw.uid || '—'],
+    ['Doğum Tarihi', raw.birthDate || 'Eklenmemiş'],
     ['Market Envanteri', Object.keys(raw.inventory || raw.marketInventory || raw.marketItems || {}).length || 'Yok'],
     ['Aktif Ürünler', [raw.activeFrameId || raw.marketFrameId || raw.selectedFrame, raw.activeBadgeId, raw.nameEffectId].filter(Boolean).join(' / ') || 'Yok'],
     ['Promo Geçmişi', Object.keys(raw.promoClaims || raw.usedPromos || {}).length || 'Yok'],
@@ -1241,6 +1293,7 @@ async function saveUserInfoPanel() {
     emailVerified: document.getElementById('userInfoEmailVerified')?.value === 'true',
     username: document.getElementById('userInfoUsername')?.value.trim(),
     fullName: document.getElementById('userInfoFullName')?.value.trim(),
+    birthDate: document.getElementById('userInfoBirthDate')?.value.trim(),
     balance: Number(document.getElementById('userInfoBalance')?.value || 0),
     accountLevel: Number(document.getElementById('userInfoLevel')?.value || 1),
     accountXp: Number(document.getElementById('userInfoXp')?.value || 0),
@@ -1375,12 +1428,92 @@ function closeAdminPanelModal() {
   document.body.classList.remove('admin-modal-lock');
 }
 
+const AVATAR_FRAME_INPUTS = Object.freeze({
+  avatarScale:'avatarScaleInput', frameScale:'frameScaleInput', avatarOffsetX:'avatarOffsetXInput', avatarOffsetY:'avatarOffsetYInput',
+  frameOffsetX:'frameOffsetXInput', frameOffsetY:'frameOffsetYInput', innerPadding:'innerPaddingInput', outerPadding:'outerPaddingInput'
+});
+const AVATAR_FRAME_DEFAULT = Object.freeze({ avatarScale:1, frameScale:1, avatarOffsetX:0, avatarOffsetY:0, frameOffsetX:0, frameOffsetY:0, innerPadding:0, outerPadding:0, thickness:'normal', overflow:'visible' });
+let avatarFrameAdminPayload = null;
+
+function avatarFrameSelectionKey() {
+  const type = document.getElementById('avatarFrameTypeSelect')?.value || 'normal';
+  const index = Math.max(1, Number(document.getElementById('avatarFrameIndexSelect')?.value || 1) || 1);
+  const variant = document.getElementById('avatarFrameVariantSelect')?.value || 'leaderboard';
+  return { type, index, variant, key:`${type}:${index}:${variant}` };
+}
+function readAvatarFrameSettingForm() {
+  const setting = {};
+  Object.entries(AVATAR_FRAME_INPUTS).forEach(([key,id]) => { setting[key] = Number(document.getElementById(id)?.value || AVATAR_FRAME_DEFAULT[key]); });
+  setting.thickness = document.getElementById('avatarFrameThicknessSelect')?.value || 'normal';
+  setting.overflow = document.getElementById('avatarFrameOverflowSelect')?.value || 'visible';
+  return setting;
+}
+function writeAvatarFrameSettingForm(setting = AVATAR_FRAME_DEFAULT) {
+  Object.entries(AVATAR_FRAME_INPUTS).forEach(([key,id]) => { const node=document.getElementById(id); if(node) node.value=String(setting[key] ?? AVATAR_FRAME_DEFAULT[key]); });
+  const thickness=document.getElementById('avatarFrameThicknessSelect'); if(thickness) thickness.value=setting.thickness || 'normal';
+  const overflow=document.getElementById('avatarFrameOverflowSelect'); if(overflow) overflow.value=setting.overflow || 'visible';
+}
+function variantPreviewSize(variant='leaderboard') {
+  const sizes={ homeTopbar:40, leaderboard:78, accountModal:68, accountProfileCard:88, marketCard:82, crashTopbar:50, crashLivePanel:56, crashWinNotice:72, chessTopbar:50, chessGameCard:68, pistiTopbar:50, pistiScoreCard:68, snakeTopbar:50, spaceTopbar:50, patternTopbar:50 };
+  return sizes[variant] || 64;
+}
+function avatarFrameLabel(variant='') { return String(variant || '').replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,(c)=>c.toUpperCase()); }
+function refreshAvatarFrameIndexOptions() {
+  const type=document.getElementById('avatarFrameTypeSelect')?.value || 'normal';
+  const select=document.getElementById('avatarFrameIndexSelect'); if(!select) return;
+  const current=Math.max(1,Number(select.value || 1)||1); const max=type==='market'?32:18;
+  select.replaceChildren(...Array.from({length:max},(_,i)=>new Option(`${type==='market'?'Market':'Normal'} ${i+1}`,String(i+1))));
+  select.value=String(Math.min(current,max));
+}
+function selectedAvatarFrameSetting() {
+  const selected=avatarFrameSelectionKey();
+  const config=avatarFrameAdminPayload?.config || {};
+  return config.frames?.[selected.key] || config.variants?.[selected.variant] || AVATAR_FRAME_DEFAULT;
+}
+function hydrateAvatarFrameSetting() { writeAvatarFrameSettingForm(selectedAvatarFrameSetting()); renderAvatarFramePreview(); }
+function renderAvatarFramePreview() {
+  const host=document.getElementById('avatarFramePreviewHost'); if(!host || !window.PMAvatar?.mount) return;
+  const selected=avatarFrameSelectionKey(); const setting=readAvatarFrameSettingForm();
+  const avatarUrl=document.getElementById('avatarFramePreviewAvatar')?.value.trim() || '/public/assets/avatars/system/fallback.svg';
+  const frameUrl=selected.type==='market'?`/public/assets/market/frames/market-${selected.index}.png`:'';
+  const stage=document.getElementById('avatarFramePreviewStage');
+  if(stage) {
+    stage.dataset.previewVariant=selected.variant;
+    stage.className=`avatar-frame-preview-stage avatar-frame-preview-stage--${selected.variant}`;
+    let context=stage.querySelector('.avatar-frame-preview-context');
+    if(!context){ context=document.createElement('div'); context.className='avatar-frame-preview-context'; stage.appendChild(context); }
+    const labels={homeTopbar:'AnaSayfa Üst Bar',leaderboard:'Liderlik Kartı',accountModal:'Hesabım Modalı',accountProfileCard:'Profil Kartı',marketCard:'Market Kartı',crashTopbar:'Crash Üst Bar',crashLivePanel:'Crash Canlı Panel',crashWinNotice:'Crash Kazanç Bildirimi',chessTopbar:'Satranç Üst Bar',chessGameCard:'Satranç Oyun Kartı',pistiTopbar:'Pişti Üst Bar',pistiScoreCard:'Pişti Skor Kartı',snakeTopbar:'Snake Pro Üst Bar',spaceTopbar:'Space Pro Üst Bar',patternTopbar:'Pattern Master Üst Bar'};
+    context.innerHTML=`<strong>${labels[selected.variant] || avatarFrameLabel(selected.variant)}</strong><span>${/Topbar$/.test(selected.variant)?'Oyuncu • Seviye 42':'PlayMatrix canlı bileşen önizlemesi'}</span>`;
+  }
+  const label=document.getElementById('avatarFramePreviewLabel'); if(label) label.textContent=avatarFrameLabel(selected.variant);
+  window.PMAvatar.mount(host,{ avatarUrl, level:selected.type==='normal'?selected.index:0, exactFrameIndex:selected.type==='normal'?selected.index:0, frameUrl, frameType:selected.type, frameId:`${selected.type}-${selected.index}`, marketFrameId:selected.type==='market'?`market-${selected.index}`:'', variant:selected.variant, sizePx:variantPreviewSize(selected.variant), variantSetting:setting, extraClass:'pm-avatar--admin-live-preview' });
+}
+async function loadAvatarFrameAdminSettings() {
+  avatarFrameAdminPayload=await adminFetch('/api/admin/avatar-frame/settings');
+  const variants=document.getElementById('avatarFrameVariantSelect');
+  if(variants && !variants.options.length) variants.replaceChildren(...(avatarFrameAdminPayload.variants || []).map((value)=>new Option(avatarFrameLabel(value),value)));
+  refreshAvatarFrameIndexOptions();
+  try { window.PMAvatar?.setSettings?.(avatarFrameAdminPayload.config || {}); } catch (_) {}
+  hydrateAvatarFrameSetting();
+  setStatus('avatarFrameAdminStatus','Avatar ve çerçeve ayarları yüklendi.','ok');
+}
+async function saveAvatarFrameAdminSetting(reset=false) {
+  const selected=avatarFrameSelectionKey();
+  setStatus('avatarFrameAdminStatus',reset?'Varsayılan ayar geri yükleniyor...':'Ayar kaydediliyor...','info');
+  const payload=await adminFetch('/api/admin/avatar-frame/settings',{method:'PATCH',body:JSON.stringify({variant:selected.variant,frameType:selected.type,frameIndex:selected.index,setting:readAvatarFrameSettingForm(),reset})});
+  avatarFrameAdminPayload={...(avatarFrameAdminPayload || {}),config:payload.config || avatarFrameAdminPayload?.config || {}};
+  try { window.PMAvatar?.setSettings?.(avatarFrameAdminPayload.config || {}); } catch (_) {}
+  writeAvatarFrameSettingForm(payload.setting || AVATAR_FRAME_DEFAULT); renderAvatarFramePreview();
+  setStatus('avatarFrameAdminStatus',reset?'Variant varsayılan ayara döndürüldü.':'Avatar ve çerçeve ayarı kalıcı olarak kaydedildi.','ok');
+}
+
 async function loadDashboard() {
   const [dashboard, promos, issues] = await Promise.all([
     adminFetch('/api/admin/matrix/dashboard'),
     adminFetch('/api/admin/matrix/promos').catch(() => ({ items: [] })),
     adminFetch('/api/admin/matrix/issues').catch(() => ({ games: [], systems: [], recentErrors: [] }))
   ]);
+  loadAvatarFrameAdminSettings().catch((error) => setStatus('avatarFrameAdminStatus', error?.message || 'Avatar/çerçeve ayarları yüklenemedi.', 'error'));
   const metrics = dashboard.metrics || {};
   replaceWithChildren(document.getElementById('metricGrid'), [
     buildMetricCard('Toplam Kullanıcı Sayısı', money(metrics.userCount)),
@@ -1692,10 +1825,14 @@ async function handleAction(action) {
 root.addEventListener('input', (event) => {
   if (event.target?.id === 'promoTypeSelect') updatePromoTypeFields();
   if (event.target?.id === 'rewardTypeSelect') updateRewardTypeFields();
+  if (Object.values(AVATAR_FRAME_INPUTS).includes(event.target?.id) || event.target?.id === 'avatarFramePreviewAvatar') renderAvatarFramePreview();
 });
 root.addEventListener('change', (event) => {
   if (event.target?.id === 'promoTypeSelect') updatePromoTypeFields();
   if (event.target?.id === 'rewardTypeSelect') updateRewardTypeFields();
+  if (event.target?.id === 'avatarFrameTypeSelect') { refreshAvatarFrameIndexOptions(); hydrateAvatarFrameSetting(); }
+  if (event.target?.id === 'avatarFrameIndexSelect' || event.target?.id === 'avatarFrameVariantSelect') hydrateAvatarFrameSetting();
+  if (event.target?.id === 'avatarFrameThicknessSelect' || event.target?.id === 'avatarFrameOverflowSelect') renderAvatarFramePreview();
 });
 
 function handleDashboardClick(event) {
@@ -1731,6 +1868,13 @@ function handleDashboardClick(event) {
   if (button.dataset.marketSave) return saveMarketAdminItem(button.dataset.marketSave);
   if (button.id === 'bulkSaveMarketItemsBtn') return bulkSaveMarketAdminItems();
   if (button.id === 'refundMarketItemBtn') return refundMarketAdminItem();
+  if (button.id === 'previewAvatarFrameBtn') return renderAvatarFramePreview();
+  if (button.id === 'saveAvatarFrameBtn') return saveAvatarFrameAdminSetting(false).catch((error) => setStatus('avatarFrameAdminStatus', error?.message || 'Ayar kaydedilemedi.', 'error'));
+  if (button.id === 'resetAvatarFrameBtn') return saveAvatarFrameAdminSetting(true).catch((error) => setStatus('avatarFrameAdminStatus', error?.message || 'Ayar sıfırlanamadı.', 'error'));
+  if (button.dataset.avatarAdjust) {
+    const id=AVATAR_FRAME_INPUTS[button.dataset.avatarAdjust]; const input=document.getElementById(id); if(!input) return;
+    input.value=String(Math.round((Number(input.value || 0)+Number(button.dataset.avatarDelta || 0))*100)/100); renderAvatarFramePreview(); return;
+  }
   if (button.id === 'userInfoLoadBtn') return loadUserInfoPanel().catch((error) => setStatus('userInfoStatus', error.message || 'Kullanıcı getirilemedi.', 'error'));
   if (button.id === 'userInfoSaveBtn') return saveUserInfoPanel().catch((error) => setStatus('userInfoStatus', error.message || 'Kullanıcı güncellenemedi.', 'error'));
   if (button.id === 'runRestrictBtn') {

@@ -12,6 +12,7 @@ const firebase = require('./server/config/firebaseAdmin');
 const { apiLimiter } = require('./server/core/security');
 const { routeData } = require('./server/core/smartDataRouter');
 const { runtimeStore } = require('./server/core/runtimeStore');
+const { normalizeBoolean, normalizeBooleanMap } = require('./server/core/boolean');
 const { runSafeFirestoreCleanup } = require('./server/core/firestoreCleanupService');
 const { addAdminLog, sanitizeRuntimeLogPayload } = require('./server/admin/adminRuntimeLogStore');
 const createClientErrorsRouter = require('./server/routes/client-errors.routes');
@@ -64,7 +65,12 @@ function buildContentSecurityPolicy() {
     backendOrigin,
     apiBase,
     backendOrigin.replace(/^https:/i, 'wss:'),
-    apiBase.replace(/^https:/i, 'wss:')
+    apiBase.replace(/^https:/i, 'wss:'),
+    'https://www.gstatic.com',
+    'https://identitytoolkit.googleapis.com',
+    'https://securetoken.googleapis.com',
+    'https://www.googleapis.com',
+    'https://*.googleapis.com'
   ].filter(Boolean);
   return {
     useDefaults: true,
@@ -75,10 +81,10 @@ function buildContentSecurityPolicy() {
       "object-src": ["'none'"],
       "frame-ancestors": ["'self'"],
       "form-action": ["'self'"],
-      "script-src": ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
+      "script-src": ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://www.gstatic.com'],
       "script-src-attr": ["'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
-      "img-src": ["'self'", 'data:', 'blob:', env.publicBaseUrl, env.canonicalOrigin].filter(Boolean),
+      "img-src": ["'self'", 'data:', 'blob:', 'https://firebasestorage.googleapis.com', 'https://encrypted-tbn0.gstatic.com', env.publicBaseUrl, env.canonicalOrigin].filter(Boolean),
       "font-src": ["'self'", 'data:', 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
       "connect-src": Array.from(new Set(connectSrc)),
       "media-src": ["'self'"],
@@ -111,9 +117,7 @@ app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 function normalizeMaintenanceGames(data = {}) {
   const src = data && typeof data === 'object' && data.games && typeof data.games === 'object' ? data.games : data;
   const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
-  const out = {};
-  keys.forEach((key) => { out[key] = !!src?.[key]; });
-  return out;
+  return normalizeBooleanMap(src, keys, false);
 }
 function maintenanceGamesRaw() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
@@ -432,6 +436,10 @@ app.get(['/', '/index.html'], sendRootFile('index.html'));
 app.get('/style.css', sendRootFile('style.css'));
 app.get('/script.js', sendRootFile('script.js'));
 app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions));
+app.use(['/admin/health', '/admin/health.html'], (req, res, next) => {
+  if (env.security.adminHealthSurfaceEnabled) return next();
+  return res.status(404).type('text/plain').send('Not Found');
+});
 app.use('/admin', express.static(path.join(__dirname, 'admin'), staticOptions));
 app.use('/games', express.static(path.join(__dirname, 'games'), staticOptions));
 
@@ -683,7 +691,26 @@ function renderMemoryRecentWinners(limit = 5) {
       seen.add(key);
       return true;
     })
-    .slice(0, safeLimit);
+    .slice(0, safeLimit)
+    .map((item) => ({
+      id: crypto.createHash('sha256').update(String(item.id || `${item.source || item.game}:${item.at || item.createdAt || ''}`)).digest('hex').slice(0, 20),
+      type: String(item.type || item.source || 'activity').slice(0, 80),
+      source: String(item.source || item.game || 'system').slice(0, 80),
+      game: String(item.game || item.source || 'system').slice(0, 80),
+      gameName: String(item.gameName || item.game || 'PlayMatrix').slice(0, 80),
+      title: String(item.title || 'PlayMatrix Kazancı').slice(0, 120),
+      username: String(item.username || 'Oyuncu').slice(0, 32),
+      amount: Math.max(0, Math.trunc(Number(item.amount || 0) || 0)),
+      xp: Math.max(0, Math.trunc(Number(item.xp || 0) || 0)),
+      score: Math.max(0, Math.trunc(Number(item.score || 0) || 0)),
+      multiplier: Math.max(0, Number(item.multiplier || 0) || 0),
+      outcome: String(item.outcome || item.result || '').slice(0, 80),
+      rewardType: String(item.rewardType || '').slice(0, 60),
+      rewardLabel: String(item.rewardLabel || '').slice(0, 220),
+      badge: String(item.badge || 'Canlı').slice(0, 80),
+      at: Math.max(0, Number(item.at || item.createdAt || 0) || 0),
+      memoryOnly: true
+    }));
 }
 app.get('/api/home/recent-winners', (req, res) => {
   res.json({ ok: true, memoryOnly: true, items: renderMemoryRecentWinners(req.query.limit || 5) });
@@ -791,16 +818,18 @@ pistiGame.installSocket?.(io);
 
 setInterval(()=>{ Object.values(runtimeStore).forEach(store => store.prune && store.prune()); }, 60_000).unref();
 
-(async () => {
-  try {
-    const latest = firebase.initFirebaseAdmin();
-    const dryRun = process.env.FIRESTORE_CLEANUP_DRY_RUN !== '0' || process.env.FIRESTORE_CLEANUP_ENABLED !== '1';
-    const report = await runSafeFirestoreCleanup({ db: latest.db, dryRun, limit: 100 });
-    if (Number(report?.patched || 0) > 0) console.warn('[firebase:cleanup:patched]', JSON.stringify({ patched: report.patched, legacyFields: Array.isArray(report.legacyFields) ? report.legacyFields.length : 0 }));
-  } catch (error) {
-    console.error('[firebase:cleanup:error]', { message: error.message });
-  }
-})();
+if (normalizeBoolean(process.env.FIRESTORE_CLEANUP_ENABLED, false)) {
+  (async () => {
+    try {
+      const latest = firebase.initFirebaseAdmin();
+      const dryRun = normalizeBoolean(process.env.FIRESTORE_CLEANUP_DRY_RUN, true);
+      const report = await runSafeFirestoreCleanup({ db: latest.db, dryRun, limit: 100 });
+      if (Number(report?.patched || 0) > 0) console.warn('[firebase:cleanup:patched]', JSON.stringify({ patched: report.patched, legacyFields: Array.isArray(report.legacyFields) ? report.legacyFields.length : 0 }));
+    } catch (error) {
+      console.error('[firebase:cleanup:error]', { message: safeErrorMessage(error, 'FIRESTORE_CLEANUP_FAILED') });
+    }
+  })();
+}
 
 function frontendAssetTypeFromPath(pathValue = '') {
   const lower = String(pathValue || '').toLowerCase();

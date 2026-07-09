@@ -44,7 +44,7 @@
     const message = String(status?.textContent || '').trim();
     if (/hazır|açılıyor|lobi|oyun/i.test(message) && !/kurulamadı|yüklenemedi|doğrulanamadı/i.test(message)) return;
     setProgress(34);
-    if (status) status.textContent = `${gameName()} için giriş veya canlı bağlantı doğrulanamadı. Ana sayfadan giriş yapıp tekrar deneyin.`;
+    if (status) status.textContent = `${gameName()} hazırlığı beklenenden uzun sürdü. Sayfayı yenileyebilir veya AnaSayfa'ya dönebilirsin.`;
     showActions();
     try {
       if (typeof window.__PM_REPORT_CLIENT_ERROR__ === 'function') {
@@ -54,9 +54,9 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => window.setTimeout(guardStuckIntro, 9000), { once: true });
+    document.addEventListener('DOMContentLoaded', () => window.setTimeout(guardStuckIntro, 22000), { once: true });
   } else {
-    window.setTimeout(guardStuckIntro, 9000);
+    window.setTimeout(guardStuckIntro, 22000);
   }
 })();
 
@@ -752,7 +752,7 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
           return true;
         }
       } catch (error) {
-        if (!suppressError) showRealtimeToast('Odaya girilemedi', error.message || 'Satranç odasına bağlanılamadı.', 'error');
+        if (!suppressError) showRealtimeToast('Odaya girilemedi', translateError(error), 'error');
       }
 
       clearPendingAutoJoin('chess', safeRoomId);
@@ -818,7 +818,7 @@ Object.assign(window, { closeConfirmModal, showConfirmModal, closeMatrixModal, s
     function startLobbyPolling() {
       clearInterval(pollingInterval);
       fetchLobby(true).catch(() => null);
-      pollingInterval = setInterval(() => { if (!document.hidden && !chessSocket?.connected) fetchLobby(false).catch(() => null); }, 8000);
+      pollingInterval = setInterval(() => { if (!document.hidden && !chessSocket?.connected) fetchLobby(false).catch(() => null); }, 30000);
     }
 
     function roomMatchesSearch(r){

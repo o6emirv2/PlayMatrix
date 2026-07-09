@@ -10,6 +10,10 @@ const { requireAdminReauth, writeAdminAudit } = require('../core/adminReauthServ
 const { getWheelConfig, setWheelConfig } = require('../core/wheelRuntimeService');
 const { grantWheelRights, getWheelRights } = require('../core/wheelRightsService');
 const { recordRecentActivity } = require('../core/recentActivityService');
+const { AVATAR_FRAME_VARIANTS, FRAME_TYPES, THICKNESS_PROFILES, readAvatarFrameSettings, saveAvatarFrameSetting } = require('../core/avatarFrameSettingsService');
+const { normalizeBooleanMap } = require('../core/boolean');
+const { normalizeBirthDate } = require('../core/dateOfBirthService');
+const env = require('../config/env');
 
 const router = express.Router();
 const now = () => Date.now();
@@ -110,6 +114,35 @@ async function applyAdminRewardToUser({ uid, rewardInfo = {}, reason = '', req =
 router.use((req, res, next) => {
   if (!String(req.path || '').startsWith('/admin')) return next('router');
   return requireAuth(req, res, () => requireAdmin(req, res, next));
+});
+
+router.get('/admin/ops/health', (req, res) => {
+  if (!env.security.adminHealthSurfaceEnabled) return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
+  const memory = process.memoryUsage();
+  const deployment = {
+    node: process.version,
+    pid: process.pid,
+    uptimeSec: Math.floor(process.uptime()),
+    memory: {
+      rss: Number(memory.rss || 0),
+      heapUsed: Number(memory.heapUsed || 0),
+      heapTotal: Number(memory.heapTotal || 0),
+      external: Number(memory.external || 0)
+    },
+    roomCount: runtimeStore.rooms.size(),
+    presenceCount: runtimeStore.presence.size(),
+    notificationCount: runtimeStore.notifications.size(),
+    temporaryCount: runtimeStore.temporary.size(),
+    errorCount: runtimeStore.errors.size(),
+    runtimeLogCount: listAdminLogs().length
+  };
+  return res.json({
+    ok: true,
+    deployment,
+    health: { process: deployment, counters: { roomCount: deployment.roomCount, presenceCount: deployment.presenceCount, notificationCount: deployment.notificationCount, errorCount: deployment.errorCount } },
+    at: now(),
+    requestId: req.requestId || null
+  });
 });
 
 function fb() { return initFirebaseAdmin(); }
@@ -577,28 +610,13 @@ async function resolveResetDocs({ scope = 'all', identifiers = [], excludeTestUs
 
 function normalizeMaintenancePayload(body = {}) {
   const keys = ['general', 'system', 'crash', 'chess', 'pisti', 'classic', 'pattern-master', 'space-pro', 'snake-pro', 'market', 'wheel', 'promo'];
-  const out = {};
-  keys.forEach((key) => { out[key] = !!body[key]; });
-  return out;
+  return normalizeBooleanMap(body, keys, false);
 }
 
 function currentMaintenance() {
   const stored = runtimeStore.temporary.get('admin:maintenance');
   const games = stored?.games || stored || {};
-  return {
-    general: !!games.general,
-    system: !!games.system,
-    crash: !!games.crash,
-    chess: !!games.chess,
-    pisti: !!games.pisti,
-    classic: !!games.classic,
-    'pattern-master': !!games['pattern-master'],
-    'space-pro': !!games['space-pro'],
-    'snake-pro': !!games['snake-pro'],
-    market: !!games.market,
-    wheel: !!games.wheel,
-    promo: !!games.promo
-  };
+  return normalizeMaintenancePayload(games);
 }
 
 async function currentMaintenanceAsync({ force = false } = {}) {
@@ -678,6 +696,12 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
   if (body.fullName !== undefined) patch.fullName = safe(body.fullName, 120);
   if (body.firstName !== undefined) patch.firstName = safe(body.firstName, 60);
   if (body.lastName !== undefined) patch.lastName = safe(body.lastName, 60);
+  if (body.birthDate !== undefined) {
+    const birthDate = normalizeBirthDate(body.birthDate);
+    if (!birthDate) return res.status(400).json({ ok:false, error:'BIRTH_DATE_INVALID', message:'Geçerli bir doğum tarihi seçilmelidir.' });
+    patch.birthDate = birthDate;
+    patch.birthDateAdminUpdatedAt = now();
+  }
   if (body.balance !== undefined) patch.balance = nonNegativeMoney(body.balance);
   if (body.accountLevel !== undefined) {
     const level = Math.max(1, Math.min(100, Math.trunc(Number(body.accountLevel) || 1)));
@@ -699,7 +723,9 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
   const { db, auth } = fb();
   if (auth && Object.keys(authPatch).length) await auth.updateUser(uid, authPatch);
   if (db && Object.keys(patch).length) await db.collection('users').doc(uid).set({ ...patch, updatedAt: now(), adminUpdatedBy: adminActor(req) }, { merge: true });
-  logAdmin(req, 'admin.matrix.user-info.update', { uid, fields: Object.keys(patch), authFields: Object.keys(authPatch) });
+  const auditedFields = Object.keys(patch).filter((field) => field !== 'birthDate' && field !== 'birthDateAdminUpdatedAt');
+  if (body.birthDate !== undefined) logAdmin(req, 'admin.user.birth-date.updated', { uid, message: 'Kullanıcının doğum tarihi yönetici tarafından güncellendi.' });
+  if (auditedFields.length || Object.keys(authPatch).length) logAdmin(req, 'admin.matrix.user-info.update', { uid, fields: auditedFields, authFields: Object.keys(authPatch) });
   const sent = dispatchAdminNotification(req, {
     mode: notificationMode(req, 'none'),
     uid,
@@ -708,9 +734,28 @@ router.patch('/admin/matrix/user-info', strictLimiter, requireAdminReauth, async
     personalTitle: 'Hesap Bilgilerin Güncellendi',
     personalMessage: 'Hesap bilgilerinde admin panelinden güncelleme yapıldı.',
     icon: 'fa-user-pen',
-    extra: { targetUid: uid, fields: Object.keys(patch) }
+    extra: { targetUid: uid, fields: Object.keys(patch).filter((field) => field !== 'birthDate' && field !== 'birthDateAdminUpdatedAt') }
   });
   res.json({ ok:true, uid, firestoreUpdated: !!db, authUpdated: !!auth && Object.keys(authPatch).length > 0, patch, notification: sent });
+});
+
+
+router.get('/admin/avatar-frame/settings', async (_req, res) => {
+  const config = await readAvatarFrameSettings({ force: true });
+  res.json({ ok: true, config, variants: AVATAR_FRAME_VARIANTS, frameTypes: FRAME_TYPES, thicknessProfiles: THICKNESS_PROFILES });
+});
+
+router.patch('/admin/avatar-frame/settings', strictLimiter, requireAdminReauth, async (req, res) => {
+  const result = await saveAvatarFrameSetting({
+    variant: req.body?.variant,
+    frameType: req.body?.frameType,
+    frameIndex: req.body?.frameIndex,
+    setting: req.body?.setting,
+    reset: req.body?.reset === true,
+    actor: adminActor(req)
+  });
+  logAdmin(req, 'admin.avatar-frame.setting.updated', { key: result.key, reset: req.body?.reset === true });
+  res.json({ ok: true, ...result });
 });
 
 router.get('/admin/matrix/dashboard', async (req, res) => {

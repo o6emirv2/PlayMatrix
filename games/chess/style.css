@@ -616,7 +616,7 @@
 .pm-game-avatar-shell .pm-frame-image,
 .pm-game-avatar-shell .pm-avatar-shell__frame{position:absolute!important;left:50%!important;top:50%!important;width:calc(100% * var(--pm-frame-scale, 1.08))!important;height:calc(100% * var(--pm-frame-scale, 1.08))!important;max-width:none!important;max-height:none!important;transform:translate(calc(-50% + var(--pm-frame-shift-x, 0px)),calc(-50% + var(--pm-frame-shift-y, 0px)))!important;object-fit:contain!important;pointer-events:none!important;z-index:3!important;display:block!important;filter:drop-shadow(0 6px 12px rgba(0,0,0,.34))!important;}
 .pm-game-avatar-shell[data-frame-index="18"],
-.pm-game-avatar-shell[data-frame-asset-index="18"]{--pm-avatar-fit:.70!important;--pm-frame-scale:1.03!important;--pm-frame-shift-y:0px!important;}
+.pm-game-avatar-shell[data-frame-asset-index="18"]{--pm-avatar-fit:.70;--pm-frame-scale:1.03;--pm-frame-shift-y:0px;}
 .pm-game-topbar-avatar-host img.pm-game-topbar-avatar-fallback,
 .pm-game-topbar-avatar-host .pm-avatar-img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important;}
 @media (max-width:560px){
@@ -633,7 +633,7 @@
 #myAvatarHost > [data-pm-avatar="true"],#oppAvatarHost > [data-pm-avatar="true"],#myAvatarHost > .pm-avatar,#oppAvatarHost > .pm-avatar{inline-size:64px!important;block-size:64px!important;min-inline-size:64px!important;min-block-size:64px!important;max-inline-size:64px!important;max-block-size:64px!important;position:relative!important;overflow:visible!important;display:grid!important;place-items:center!important;contain:none!important;}
 #myAvatarHost .pm-avatar-img,#oppAvatarHost .pm-avatar-img,#myAvatarHost .p-avatar,#oppAvatarHost .p-avatar{position:absolute!important;left:50%!important;top:50%!important;inline-size:100%!important;block-size:100%!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;transform:translate(-50%,-50%) scale(var(--pm-avatar-scale,.86))!important;transform-origin:center!important;object-fit:cover!important;object-position:center!important;border-radius:50%!important;z-index:2!important;box-shadow:0 0 0 1px rgba(255,255,255,.18), inset 0 0 14px rgba(0,0,0,.22)!important;}
 #myAvatarHost .pm-frame-image,#oppAvatarHost .pm-frame-image,#myAvatarHost .pm-avatar-shell__frame,#oppAvatarHost .pm-avatar-shell__frame,#myAvatarHost .pm-game-frame,#oppAvatarHost .pm-game-frame{position:absolute!important;left:50%!important;top:50%!important;inline-size:calc(100% * var(--pm-frame-scale,1.24))!important;block-size:calc(100% * var(--pm-frame-scale,1.24))!important;width:calc(100% * var(--pm-frame-scale,1.24))!important;height:calc(100% * var(--pm-frame-scale,1.24))!important;max-width:none!important;max-height:none!important;transform:translate3d(calc(-50% + var(--pm-frame-shift-x,0px)),calc(-50% + var(--pm-frame-shift-y,0px)),0)!important;object-fit:contain!important;object-position:center!important;z-index:4!important;pointer-events:none!important;display:block!important;filter:drop-shadow(0 8px 14px rgba(0,0,0,.38))!important;}
-#myAvatarHost [data-frame-index="18"],#oppAvatarHost [data-frame-index="18"],#myAvatarHost [data-frame-asset-index="18"],#oppAvatarHost [data-frame-asset-index="18"]{--pm-avatar-scale:.88!important;--pm-frame-scale:1.18!important;--pm-frame-shift-x:0px!important;--pm-frame-shift-y:0px!important;}
+#myAvatarHost [data-frame-index="18"],#oppAvatarHost [data-frame-index="18"],#myAvatarHost [data-frame-asset-index="18"],#oppAvatarHost [data-frame-asset-index="18"]{--pm-avatar-scale:.88;--pm-frame-scale:1.18;--pm-frame-shift-x:0px;--pm-frame-shift-y:0px;}
 @media (max-width:560px){.player-info{grid-template-columns:70px minmax(0,1fr) 26px!important;}#myAvatarHost,#oppAvatarHost,#myAvatarHost > [data-pm-avatar="true"],#oppAvatarHost > [data-pm-avatar="true"],#myAvatarHost > .pm-avatar,#oppAvatarHost > .pm-avatar{inline-size:62px!important;block-size:62px!important;min-inline-size:62px!important;min-block-size:62px!important;max-inline-size:62px!important;max-block-size:62px!important;}}
 
 
@@ -644,7 +644,7 @@
   max-width:100%!important;
   word-break:break-word!important;
 }
-#myAvatarHost [data-frame-index="100"],#oppAvatarHost [data-frame-index="100"],#myAvatarHost [data-frame-asset-index="100"],#oppAvatarHost [data-frame-asset-index="100"]{--pm-avatar-scale:.88!important;--pm-frame-scale:1.18!important;--pm-frame-shift-x:0px!important;--pm-frame-shift-y:0px!important;}
+#myAvatarHost [data-frame-index="100"],#oppAvatarHost [data-frame-index="100"],#myAvatarHost [data-frame-asset-index="100"],#oppAvatarHost [data-frame-asset-index="100"]{--pm-avatar-scale:.88;--pm-frame-scale:1.18;--pm-frame-shift-x:0px;--pm-frame-shift-y:0px;}
 
 .chess-modal-help-icon{color:#f1c40f}
 .chess-room-loading{color:rgba(148,163,184,.95);text-align:center;margin-top:12px;font-size:13px}
@@ -655,7 +655,7 @@
 /* PlayMatrix v2.1 final: Chess topbar avatar + frame is always visible. */
 .pm-game-topbar-avatar-host{width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;border-radius:18px!important;overflow:visible!important;display:grid!important;place-items:center!important;contain:none!important;isolation:isolate!important;}
 .pm-game-topbar-avatar-host > [data-pm-avatar="true"],
-.pm-game-topbar-avatar-host > .pm-avatar{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;max-width:50px!important;max-height:50px!important;position:relative!important;overflow:visible!important;display:grid!important;place-items:center!important;--pm-avatar-scale:.84!important;--pm-frame-scale:1.16!important;}
+.pm-game-topbar-avatar-host > .pm-avatar{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;max-width:50px!important;max-height:50px!important;position:relative!important;overflow:visible!important;display:grid!important;place-items:center!important;--pm-avatar-scale:.84;--pm-frame-scale:1.16;}
 .pm-game-topbar-avatar-host .pm-avatar-img{position:absolute!important;left:50%!important;top:50%!important;width:100%!important;height:100%!important;transform:translate(-50%,-50%) scale(var(--pm-avatar-scale,.84))!important;object-fit:cover!important;border-radius:50%!important;z-index:2!important;display:block!important;visibility:visible!important;opacity:1!important;}
 .pm-game-topbar-avatar-host .pm-frame,
 .pm-game-topbar-avatar-host .pm-frame-image,
@@ -663,45 +663,6 @@
 .pm-game-topbar-avatar-host .pm-avatar-frame,
 .pm-game-topbar-avatar-host .pm-game-frame{position:absolute!important;left:50%!important;top:50%!important;width:calc(100% * var(--pm-frame-scale,1.16))!important;height:calc(100% * var(--pm-frame-scale,1.16))!important;max-width:none!important;max-height:none!important;transform:translate3d(calc(-50% + var(--pm-frame-shift-x,0px)),calc(-50% + var(--pm-frame-shift-y,0px)),0)!important;object-fit:contain!important;z-index:4!important;pointer-events:none!important;display:block!important;visibility:visible!important;opacity:1!important;}
 @media (max-width:560px){.pm-game-topbar-avatar-host{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important}.pm-game-topbar-avatar-host > [data-pm-avatar="true"],.pm-game-topbar-avatar-host > .pm-avatar{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;}}
-
-/* PlayMatrix v2.1 final: authoritative game topbar avatar + frame alignment. */
-.pm-game-topbar-avatar-host{
-  width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;max-width:52px!important;max-height:52px!important;
-  flex:0 0 52px!important;display:grid!important;place-items:center!important;overflow:visible!important;border-radius:18px!important;contain:none!important;isolation:isolate!important;
-}
-.pm-game-topbar-avatar-host > [data-pm-avatar="true"],
-.pm-game-topbar-avatar-host > .pm-avatar,
-.pm-game-topbar-avatar-host > .pm-game-topbar-avatar{
-  width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;max-width:46px!important;max-height:46px!important;
-  position:relative!important;display:grid!important;place-items:center!important;overflow:visible!important;border-radius:50%!important;padding:0!important;margin:0!important;
-  --pm-topbar-avatar-slot-scale:.80;--pm-topbar-frame-slot-scale:1.18;
-}
-.pm-game-topbar-avatar-host [data-pm-avatar="true"] > img:not(.pm-frame-image):not(.pm-avatar-shell__frame):not(.pm-game-frame):not(.t-frame),
-.pm-game-topbar-avatar-host .pm-avatar-img,
-.pm-game-topbar-avatar-host .pm-topbar-avatar-only{
-  position:absolute!important;left:50%!important;top:50%!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;
-  transform:translate3d(calc(-50% + var(--pm-avatar-shift-x,0px)),calc(-50% + var(--pm-avatar-shift-y,0px)),0) scale(calc(var(--pm-avatar-scale,1) * var(--pm-topbar-avatar-slot-scale,.80)))!important;
-  object-fit:cover!important;border-radius:50%!important;z-index:2!important;display:block!important;visibility:visible!important;opacity:1!important;filter:none!important;
-}
-.pm-game-topbar-avatar-host [data-pm-avatar="true"].has-frame .pm-frame-image,
-.pm-game-topbar-avatar-host [data-pm-avatar="true"].has-frame .pm-avatar-shell__frame,
-.pm-game-topbar-avatar-host .pm-frame-image,
-.pm-game-topbar-avatar-host .pm-avatar-shell__frame,
-.pm-game-topbar-avatar-host .pm-game-frame,
-.pm-game-topbar-avatar-host .t-frame{
-  position:absolute!important;left:50%!important;top:50%!important;
-  width:calc(100% * var(--pm-topbar-frame-slot-scale,1.18) * var(--pm-frame-variant-scale,1))!important;
-  height:calc(100% * var(--pm-topbar-frame-slot-scale,1.18) * var(--pm-frame-variant-scale,1))!important;
-  max-width:none!important;max-height:none!important;
-  transform:translate3d(calc(-50% + var(--pm-frame-variant-shift-x,0px)),calc(-50% + var(--pm-frame-variant-shift-y,0px)),0)!important;
-  object-fit:contain!important;z-index:4!important;pointer-events:none!important;display:block!important;visibility:visible!important;opacity:1!important;filter:none!important;
-}
-.pm-game-topbar-avatar-host [data-frame-index="0"]:not(.has-frame):not(.has-market-frame) .pm-frame-image,
-.pm-game-topbar-avatar-host [data-frame-index="0"]:not(.has-frame):not(.has-market-frame) .pm-avatar-shell__frame{display:none!important;visibility:hidden!important;}
-@media(max-width:560px){
-  .pm-game-topbar-avatar-host{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;max-width:48px!important;max-height:48px!important;flex-basis:48px!important;}
-  .pm-game-topbar-avatar-host > [data-pm-avatar="true"],.pm-game-topbar-avatar-host > .pm-avatar,.pm-game-topbar-avatar-host > .pm-game-topbar-avatar{width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;max-width:42px!important;max-height:42px!important;}
-}
 
 /* PlayMatrix V4: professional chess lobby empty state */
 .pm-chess-empty-card{

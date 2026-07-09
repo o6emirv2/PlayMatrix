@@ -2,6 +2,7 @@ const rateLimit = require('express-rate-limit');
 const { initFirebaseAdmin } = require('../config/firebaseAdmin');
 const env = require('../config/env');
 const { runtimeStore } = require('../core/runtimeStore');
+const { verifyUserSession, trustedOrigin } = require('./userSessionService');
 const apiLimiter = rateLimit({ windowMs: 60_000, max: 240, standardHeaders: true, legacyHeaders: false });
 const strictLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
 
@@ -51,7 +52,22 @@ async function requireAuth(req, res, next) {
     const { auth } = initFirebaseAdmin();
     if (auth && token) {
       req.firebaseIdToken = token;
-      return finalizeAuth(req, res, next, await auth.verifyIdToken(token));
+      try {
+        const bearerUser = await auth.verifyIdToken(token);
+        req.authSource = 'bearer';
+        return finalizeAuth(req, res, next, bearerUser);
+      } catch (_) {
+        req.firebaseIdToken = '';
+      }
+    }
+    const sessionUser = await verifyUserSession(req, { checkRevoked: true }).catch(() => null);
+    if (sessionUser?.uid) {
+      const method = String(req.method || 'GET').toUpperCase();
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && !trustedOrigin(req)) {
+        return res.status(403).json({ ok: false, error: 'ORIGIN_NOT_ALLOWED' });
+      }
+      req.authSource = 'session-cookie';
+      return finalizeAuth(req, res, next, sessionUser);
     }
     const devUid = req.headers['x-playmatrix-user'] || req.body?.uid || req.query?.uid;
     if (process.env.NODE_ENV !== 'production' && devUid) return finalizeAuth(req, res, next, { uid: String(devUid), email: 'local@playmatrix.test' });

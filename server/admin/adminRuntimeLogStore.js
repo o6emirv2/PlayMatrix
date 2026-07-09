@@ -8,7 +8,7 @@ const toInt = (value, fallback, min, max) => {
 
 const LOG_MAX = toInt(process.env.RUNTIME_LOG_MAX, 1500, 100, 5000);
 const LOG_RETENTION_HOURS = toInt(process.env.RUNTIME_LOG_RETENTION_HOURS, 168, 1, 168);
-const DUPLICATE_WINDOW_MS = toInt(process.env.RUNTIME_LOG_DUPLICATE_WINDOW_MS, 600000, 5000, 1800000);
+const DUPLICATE_WINDOW_MS = toInt(process.env.RUNTIME_LOG_DUPLICATE_WINDOW_MS, 60000, 5000, 600000);
 const logs = new TtlStore({ ttlMs: LOG_RETENTION_HOURS * 60 * 60 * 1000, max: LOG_MAX });
 const duplicateIndex = new Map();
 const SECRET_KEY_PATTERN = /(token|secret|password|pass|private|key|authorization|cookie|serviceAccount|hash|salt|thirdFactor|firebase_key|admin_panel|session)/i;

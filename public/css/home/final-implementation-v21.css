@@ -1781,3 +1781,47 @@ body[data-pm-page="home"].pm-body-scroll-locked{
   .sheet-panel{width:min(94vw,560px)!important;border-radius:28px 0 0 28px!important;}
   .sheet-content{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))!important;}
 }
+
+/* PlayMatrix production: home topbar avatar uses the central render geometry. */
+body.is-authenticated #topbarAvatarShell{
+  position:relative!important;
+  display:block!important;
+  width:27px!important;
+  height:27px!important;
+  min-width:27px!important;
+  min-height:27px!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+}
+body.is-authenticated #topbarAvatarShell [data-pm-avatar="true"]{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  overflow:hidden!important;
+  border-radius:50%!important;
+}
+body.is-authenticated #topbarAvatarShell .pm-avatar-img{
+  position:absolute!important;
+  inset:var(--pm-avatar-padding,0px)!important;
+  width:calc(100% - (var(--pm-avatar-padding,0px) * 2))!important;
+  height:calc(100% - (var(--pm-avatar-padding,0px) * 2))!important;
+  max-width:none!important;
+  max-height:none!important;
+  display:block!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  border-radius:50%!important;
+  transform:translate3d(var(--pm-avatar-shift-x,0px),var(--pm-avatar-shift-y,0px),0) scale(var(--pm-avatar-scale,1))!important;
+  transform-origin:center!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+body.is-authenticated #topbarAvatarShell .pm-frame-img,
+body.is-authenticated #topbarAvatarShell [data-pm-frame="true"]{
+  display:none!important;
+}

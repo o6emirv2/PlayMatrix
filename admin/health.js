@@ -75,7 +75,7 @@ import { adminFetch, resolveAdminUrl, setSecurityKey } from './matrix-core.js';
         $('rawOutput').textContent = error.message || 'Health yüklenemedi.';
         setBadge('authBadge', 'Yönetici oturumu doğrulanamadı', 'error');
         setBadge('healthBadge', 'Health hatası', 'error');
-        setStatus(`Health isteği başarısız: ${error.message || 'Bilinmeyen hata'}`, 'error');
+        setStatus('Sistem sağlığı şu anda alınamadı. Yönetici oturumunu kontrol edip tekrar deneyin.', 'error');
         if (String(error?.message || '').toLowerCase().includes('oturumu') || Number(error?.status || 0) === 401 || Number(error?.status || 0) === 403) {
           window.setTimeout(() => window.location.replace(resolveAdminUrl('./index.html')), 900);
         }

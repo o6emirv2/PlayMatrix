@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=0.90, maximum-scale=0.90, minimum-scale=0.90, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>PlayMatrix | Online Oyun Merkezi</title>
   <meta name="description" content="PlayMatrix; beceri, strateji ve klasik oyunları tek hesap sistemiyle sunan modern oyun platformudur." />
   <meta name="keywords" content="PlayMatrix, online oyun, ücretsiz oyun, crash, satranç, pişti, pattern master, snake pro, space pro" />
@@ -39,6 +39,7 @@
   <link rel="stylesheet" href="/public/css/home/modal-system.css?v=pm-20260603-professional-fix2" />
   <link rel="stylesheet" href="/public/css/home/topbar.css?v=pm-20260603-professional-fix2" />
   <link rel="stylesheet" href="/public/css/home/final-implementation-v21.css?v=pm-20260603-professional-fix2" />
+  <link rel="stylesheet" href="/public/css/home/birth-date-picker.css?v=pm-dob-v1" />
 </head>
 <body data-pm-page="home">
   <aside class="pm-desktop-blocker" aria-live="polite">
@@ -369,6 +370,12 @@
                     <label class="field-label" for="registerEmail">E-posta</label>
                     <input class="field-input" id="registerEmail" name="registerEmail" type="email" placeholder="ornek@eposta.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" />
                   </div>
+                  <div class="field-group span-2">
+                    <label class="field-label" for="registerBirthDateButton">Doğum Tarihi</label>
+                    <input id="registerBirthDate" name="registerBirthDate" type="hidden" />
+                    <button class="field-input pm-birth-trigger" id="registerBirthDateButton" type="button" aria-haspopup="dialog" aria-controls="birthDatePickerModal"><span id="registerBirthDateText">Gün, ay ve yıl seç</span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
+                    <div class="field-help">Doğum tarihin kayıt sonrası yalnızca yönetici tarafından değiştirilebilir.</div>
+                  </div>
                   <div class="field-group">
                     <label class="field-label" for="registerPassword">Şifre</label>
                     <div class="pm-password-field">
@@ -451,6 +458,12 @@
                     <label class="field-label" for="profileEmail">E-posta</label>
                     <input class="field-input is-locked" id="profileEmail" type="email" disabled readonly />
                     <div class="field-help" id="fullNameLockHelp">İsim ve soyisim ilk kayıt tamamlandıktan sonra değiştirilemez.</div>
+                  </div>
+                  <div class="field-group span-2">
+                    <label class="field-label" for="profileBirthDateButton">Doğum Tarihi</label>
+                    <input id="profileBirthDate" type="hidden" />
+                    <button class="field-input pm-birth-trigger" id="profileBirthDateButton" type="button" aria-haspopup="dialog" aria-controls="birthDatePickerModal"><span id="profileBirthDateText">Doğum tarihi ekle</span><i class="fa-solid fa-calendar-days" aria-hidden="true"></i></button>
+                    <div class="field-help" id="profileBirthDateHelp">Doğum tarihi bir kez eklenebilir.</div>
                   </div>
                 </div>
               </article>
@@ -555,6 +568,7 @@
                 <div class="field-help" id="emailChangeHelp" aria-live="polite"></div>
               </div>
             </div>
+            <div class="pm-inline-helper email-change-guidance"><i class="fa-solid fa-envelope-open-text"></i><span>Doğrulama bağlantısı yeni adresine gönderilecek. Bağlantıyı onayladıktan sonra e-posta adresin otomatik güncellenecek. Spam kutusunu da kontrol etmeyi unutma.</span></div>
             <div class="sheet-actions email-change-actions">
               <button class="ghost-btn" id="confirmEmailChangeBtn" type="button">Doğrulama Bağlantısı Gönder</button>
               <button class="btn btn-primary" id="requestEmailLinkBtn" type="button">Güncelleme Bağlantısı Gönder</button>

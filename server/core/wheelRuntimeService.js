@@ -15,24 +15,32 @@ const DEFAULT_REWARDS = Object.freeze([
   { id: 'mc-1000000', label: '1.000.000 MC', type: 'mc', amount: 1000000, weight: 1 }
 ]);
 
+function normalizeRewardType(value = 'mc') {
+  const raw = String(value || 'mc').trim().toLocaleLowerCase('tr-TR');
+  if (raw === 'xp') return 'xp';
+  if (['empty', 'blank', 'none', 'bos', 'boş'].includes(raw)) return 'empty';
+  return raw === 'mc' ? 'mc' : 'empty';
+}
+
 function sanitizeReward(reward = {}, index = 0) {
-  const type = ['mc', 'xp', 'badge'].includes(String(reward.type || 'mc')) ? String(reward.type || 'mc') : 'mc';
-  const amount = Math.max(0, Math.min(100000000, Math.trunc(Number(reward.amount || reward.prize || 0))));
+  const type = normalizeRewardType(reward.type || 'mc');
+  const rawAmount = Math.max(0, Math.min(100000000, Math.trunc(Number(reward.amount || reward.prize || 0))));
+  const amount = type === 'empty' ? 0 : rawAmount;
   const weight = Math.max(0.01, Math.min(100000, Number(reward.weight || 1)));
   const id = String(reward.id || `${type}-${amount || index}`).replace(/[^a-z0-9_-]/gi, '').slice(0, 80) || `${type}-${index}`;
-  const label = String(reward.label || (type === 'mc' ? `${amount.toLocaleString('tr-TR')} MC` : type === 'xp' ? `${amount.toLocaleString('tr-TR')} XP` : 'Rozet')).replace(/[<>]/g, '').slice(0, 80);
-  return {
-    id,
-    label,
-    type,
-    amount,
-    weight,
-    badgeId: type === 'badge' ? String(reward.badgeId || reward.id || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 80) : undefined
-  };
+  const fallbackLabel = type === 'mc'
+    ? `${amount.toLocaleString('tr-TR')} MC`
+    : type === 'xp'
+      ? `${amount.toLocaleString('tr-TR')} XP`
+      : 'Boş';
+  const label = String(reward.label || fallbackLabel).replace(/[<>]/g, '').slice(0, 80);
+  return { id, label, type, amount, weight };
 }
 
 function normalizeRewards(rewards = []) {
-  const rows = Array.isArray(rewards) ? rewards.map(sanitizeReward).filter((item) => item.weight > 0 && (item.amount > 0 || item.type === 'badge')) : [];
+  const rows = Array.isArray(rewards)
+    ? rewards.map(sanitizeReward).filter((item) => item.weight > 0 && (item.amount > 0 || item.type === 'empty'))
+    : [];
   return rows.length ? rows.slice(0, 50) : DEFAULT_REWARDS.map((item, index) => sanitizeReward(item, index));
 }
 

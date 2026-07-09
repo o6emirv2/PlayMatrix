@@ -44,7 +44,7 @@
     const message = String(status?.textContent || '').trim();
     if (/hazır|açılıyor|lobi|oyun/i.test(message) && !/kurulamadı|yüklenemedi|doğrulanamadı/i.test(message)) return;
     setProgress(34);
-    if (status) status.textContent = `${gameName()} için giriş veya canlı bağlantı doğrulanamadı. Ana sayfadan giriş yapıp tekrar deneyin.`;
+    if (status) status.textContent = `${gameName()} hazırlığı beklenenden uzun sürdü. Sayfayı yenileyebilir veya AnaSayfa'ya dönebilirsin.`;
     showActions();
     try {
       if (typeof window.__PM_REPORT_CLIENT_ERROR__ === 'function') {
@@ -54,9 +54,9 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => window.setTimeout(guardStuckIntro, 9000), { once: true });
+    document.addEventListener('DOMContentLoaded', () => window.setTimeout(guardStuckIntro, 22000), { once: true });
   } else {
-    window.setTimeout(guardStuckIntro, 9000);
+    window.setTimeout(guardStuckIntro, 22000);
   }
 })();
 
@@ -405,6 +405,8 @@ let fetchedRooms = [];
 let lobbyErrorUntil = 0;
 let pistiSocketNoticeTimer = 0;
 let pistiSocketNoticeFailures = 0;
+let lastPistiFallbackSuccessAt = 0;
+let lastPistiFallbackFailureAt = 0;
 
 function setActivePistiRoom(roomId = '') {
   const id = String(roomId || '').trim();
@@ -499,15 +501,30 @@ function clearPistiSocketNotice() {
   pistiSocketNoticeTimer = 0;
 }
 
+function markPistiFallbackHealthy() {
+  lastPistiFallbackSuccessAt = Date.now();
+  lastPistiFallbackFailureAt = 0;
+  clearPistiSocketNotice();
+}
+
+function markPistiFallbackFailed() {
+  lastPistiFallbackFailureAt = Date.now();
+}
+
+function hasRecentPistiFallback() {
+  return lastPistiFallbackSuccessAt > 0 && (Date.now() - lastPistiFallbackSuccessAt) < 15000;
+}
+
 function schedulePistiSocketNotice({ lobbyMessage = '', gameMessage = '', tone = 'warning', actionLabel = 'Tekrar Dene' } = {}) {
   pistiSocketNoticeFailures += 1;
   const failureCount = pistiSocketNoticeFailures;
   clearTimeout(pistiSocketNoticeTimer);
   pistiSocketNoticeTimer = setTimeout(() => {
-    if (socket?.connected || failureCount < 2) return;
+    if (socket?.connected || hasRecentPistiFallback() || failureCount < 3 || document.hidden) return;
+    if (!lastPistiFallbackFailureAt || Date.now() - lastPistiFallbackFailureAt > 15000) return;
     if (lobbyMessage) showLobbyNotice(lobbyMessage, tone, actionLabel, () => ensureGameplaySocket(false).catch(() => null));
     if (currentRoomId && gameMessage) showGameNotice(gameMessage, tone, actionLabel, () => ensureGameplaySocket(true).catch(() => null));
-  }, 4200);
+  }, 12000);
 }
 
 function getApiErrorCode(error = null) {
@@ -539,7 +556,7 @@ function notifyRoomClosedByServer(error = null) {
   roomClosedNoticeShown = true;
   const closedRoomId = currentRoomId || '';
   const fallback = 'Masa süresi dolduğu veya 5 dakika boyunca gerçek oyun hareketi olmadığı için kapatıldı.';
-  const message = String(error?.message || error?.data?.message || error?.body?.message || fallback).trim() || fallback;
+  const message = pistiUserMessage(error?.message || error?.data?.message || error?.body?.message || '', fallback);
   clearActivePistiRoom(closedRoomId);
   currentRoomId = '';
   currentRoomState = null;
@@ -925,7 +942,7 @@ async function bootPistiApp(force = false) {
     setBootStatus('Gerçek zamanlı bağlantı kuruluyor...');
     const socketReady = await ensureGameplaySocket(false);
     setBootProgress(socketReady ? 70 : 62);
-    setBootStatus(socketReady ? 'Lobi verileri senkronize ediliyor...' : 'Bağlantı sınırlı modda açılıyor. Oyun sırasında tekrar denenecek.', socketReady ? 'info' : 'warning');
+    setBootStatus(socketReady ? 'Lobi verileri senkronize ediliyor...' : 'Lobi güvenli yedek bağlantıyla hazırlanıyor.', 'info');
     const preferredRoom = safeGetPendingAutoJoinRoom('pisti', 'activePistiRoom');
     let restored = false;
     if (preferredRoom) {
@@ -936,8 +953,8 @@ async function bootPistiApp(force = false) {
     if (!restored) startLobby();
     bootCompleted = true;
     setBootProgress(100);
-    setBootStatus(socketReady ? 'Bağlantı hazır. Lobi açılıyor...' : 'Lobi hazır. Oyun başlatılırken bağlantı tekrar denenecek.', socketReady ? 'info' : 'warning');
-    setBootActions({ showEnter: true, showRetry: !socketReady, enterLabel: 'LOBİYE GEÇİŞ YAP', actionMode: 'continue' });
+    setBootStatus(socketReady ? 'Bağlantı hazır. Lobi açılıyor...' : 'Lobi hazır. Canlı bağlantı arka planda tamamlanacak.', 'info');
+    setBootActions({ showEnter: true, showRetry: false, enterLabel: 'LOBİYE GEÇİŞ YAP', actionMode: 'continue' });
     setTimeout(dismissIntro, 260);
     return true;
   })().catch((error) => {
@@ -998,8 +1015,8 @@ async function initSocket() {
     socket.__pmPistiSocketBound = true;
 
     socket.on('connect', () => { socketAvailableForGame = true; clearPistiSocketNotice(); showLobbyNotice(''); showGameNotice(''); });
-    socket.on('connect_error', () => { socketAvailableForGame = false; schedulePistiSocketNotice({ lobbyMessage: 'Gerçek zamanlı bağlantı yenileniyor. Lobi HTTP yedeğiyle çalışmaya devam edecek.', gameMessage: 'Canlı bağlantı yenileniyor. Oyun durumu güvenli yedek akışla kontrol ediliyor.', tone: 'warning' }); });
-    socket.on('disconnect', () => { socketAvailableForGame = false; schedulePistiSocketNotice({ lobbyMessage: 'Bağlantı geçici olarak yenileniyor. Oyun başlatılırken yeniden denenecek.', gameMessage: 'Bağlantı yenileniyor. Senkron tamamlanana kadar oyun durumu güvenli şekilde kontrol ediliyor.', tone: 'warning' }); });
+    socket.on('connect_error', () => { socketAvailableForGame = false; });
+    socket.on('disconnect', () => { socketAvailableForGame = false; });
 
     socket.on('pisti:update', async (payload) => {
         const room = payload?.room || payload;
@@ -1074,7 +1091,7 @@ async function restorePistiSession(roomId, suppressError = false) {
             return true;
         }
     } catch (error) {
-        if (!suppressError) showRealtimeToast('Odaya girilemedi', error.message || 'Pişti masasına bağlanılamadı.', 'error');
+        if (!suppressError) showRealtimeToast('Odaya girilemedi', pistiUserMessage(error, 'Pişti masası şu anda açılamadı. Lütfen lobiyi yenileyip tekrar dene.'), 'error');
     }
 
     clearPendingAutoJoin('pisti', safeRoomId);
@@ -1132,15 +1149,18 @@ function startGameSyncPolling(){
     try {
       const res = await fetchAPI(`/api/pisti-online/state/${currentRoomId}`);
       if (res && res.room) {
+        markPistiFallbackHealthy();
         syncUI(res.room);
         return;
       }
-      schedulePistiSocketNotice({ gameMessage: 'Canlı bağlantı arka planda tekrar deneniyor. Oyun durumu güvenli şekilde yenileniyor.', tone: 'warning' });
+      markPistiFallbackFailed();
+      schedulePistiSocketNotice({ gameMessage: 'Oyun durumu şu anda yenilenemedi. Bağlantı arka planda tekrar deneniyor.', tone: 'warning' });
     } catch (error) {
+      markPistiFallbackFailed();
       if (isRoomClosedError(error) || isRoomNotFoundError(error)) { notifyRoomClosedByServer(error); return; }
       schedulePistiSocketNotice({ gameMessage: 'Oyun durumu alınamadı. Yeniden deneniyor.', tone: 'warning', actionLabel: 'Tekrar Dene' });
     }
-  }, 2200);
+  }, 5000);
 }
 
 function resetToLobby(){ 
@@ -1157,7 +1177,14 @@ function resetToLobby(){
   fetchProfile(); startLobby(); 
 }
 
-function startLobby(){ clearInterval(lobbyInterval); fetchLobby(true).catch(() => null); lobbyInterval = setInterval(() => { fetchLobby(false).catch(() => null); }, 3500); }
+function startLobby(){
+  clearInterval(lobbyInterval);
+  fetchLobby(true).catch(() => null);
+  lobbyInterval = setInterval(() => {
+    if (document.hidden || socket?.connected) return;
+    fetchLobby(false).catch(() => null);
+  }, 30000);
+}
 
 async function fetchLobby(initial = false){
   if(currentRoomId || document.hidden) return;
@@ -1166,12 +1193,14 @@ async function fetchLobby(initial = false){
   try {
     const res = await fetchAPI(endpoint);
     fetchedRooms = Array.isArray(res?.rooms) ? res.rooms : [];
+    markPistiFallbackHealthy();
     lobbyErrorUntil = 0;
     showLobbyNotice('');
     renderRoomListLocally();
     return;
   } catch(error) {
     lastError = error;
+    markPistiFallbackFailed();
     reportPistiClientError('pisti.lobby.fetch', error, { endpoint, severity: 'warning', status: error?.status || 0 });
   }
   if (initial || !fetchedRooms.length) {
@@ -1306,7 +1335,7 @@ async function enterGame(id){
     socket.emit('pisti:join', id, (ack) => { if (ack?.room) syncUI(ack.room); });
   }
   fetchAPI(`/api/pisti-online/state/${id}`)
-    .then(res => { if(res&&res.room) syncUI(res.room); })
+    .then(res => { if(res&&res.room) { markPistiFallbackHealthy(); syncUI(res.room); } })
     .catch((error) => {
       if (isRoomClosedError(error) || isRoomNotFoundError(error)) { notifyRoomClosedByServer(error); return; }
       reportPistiClientError('pisti.state.fetch', error, { endpoint: `/api/pisti-online/state/${id}`, severity: 'error' });
@@ -1317,11 +1346,13 @@ async function enterGame(id){
       if (!currentRoomId) return;
       try {
         const pingRes = await fetchAPI('/api/pisti-online/ping', 'POST', { roomId: currentRoomId });
+        markPistiFallbackHealthy();
         if (pingRes && pingRes.room && (pingRes.room.status === 'finished' || pingRes.room.status === 'abandoned')) syncUI(pingRes.room);
         else if (socketAvailableForGame) showGameNotice('');
       } catch (error) {
         if (isRoomClosedError(error) || isRoomNotFoundError(error)) { notifyRoomClosedByServer(error); return; }
-        schedulePistiSocketNotice({ gameMessage: 'Oyun senkronu gecikti. Bağlantı tekrar deneniyor.', tone: 'warning', actionLabel: 'Tekrar Dene' });
+        markPistiFallbackFailed();
+        schedulePistiSocketNotice({ gameMessage: 'Oyun senkronu gecikti. Bağlantı arka planda tekrar deneniyor.', tone: 'warning', actionLabel: 'Tekrar Dene' });
       }
   }, 10000); 
   return true;

@@ -95,16 +95,133 @@
     const key = String(value || '').trim();
     return AVATAR_FRAME_VARIANTS.includes(key) ? key : '';
   }
+  const DEFAULT_VARIANT_SETTING = Object.freeze({
+    avatarScale: 1,
+    frameScale: 1,
+    avatarOffsetX: 0,
+    avatarOffsetY: 0,
+    frameOffsetX: 0,
+    frameOffsetY: 0,
+    innerPadding: 0,
+    outerPadding: 0,
+    thickness: 'normal',
+    overflow: 'visible'
+  });
+  const settingsState = { config: { version: 1, variants: {}, frames: {}, updatedAt: 0 }, promise: null, loaded: false };
+  const mountedHosts = new Set();
+
+  function finiteSetting(value, fallback, min, max) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.max(min, Math.min(max, number));
+  }
+
+  function normalizeVariantSetting(input = {}) {
+    const source = input && typeof input === 'object' ? input : {};
+    const thickness = ['thin', 'normal', 'thick', 'ultra'].includes(String(source.thickness || '').toLowerCase())
+      ? String(source.thickness).toLowerCase()
+      : 'normal';
+    return {
+      avatarScale: finiteSetting(source.avatarScale, 1, 0.65, 1.5),
+      frameScale: finiteSetting(source.frameScale, 1, 0.7, 1.8),
+      avatarOffsetX: finiteSetting(source.avatarOffsetX, 0, -30, 30),
+      avatarOffsetY: finiteSetting(source.avatarOffsetY, 0, -30, 30),
+      frameOffsetX: finiteSetting(source.frameOffsetX, 0, -30, 30),
+      frameOffsetY: finiteSetting(source.frameOffsetY, 0, -30, 30),
+      innerPadding: finiteSetting(source.innerPadding, 0, 0, 24),
+      outerPadding: finiteSetting(source.outerPadding, 0, 0, 24),
+      thickness,
+      overflow: source.overflow === 'hidden' ? 'hidden' : 'visible'
+    };
+  }
+
+  function normalizeSettingsConfig(input = {}) {
+    const source = input && typeof input === 'object' ? input : {};
+    const variants = {};
+    const frames = {};
+    AVATAR_FRAME_VARIANTS.forEach((variant) => {
+      if (source.variants?.[variant]) variants[variant] = normalizeVariantSetting(source.variants[variant]);
+    });
+    Object.entries(source.frames || {}).forEach(([key, value]) => {
+      if (/^(normal:(?:[1-9]|1[0-8])|market:(?:[1-9]|[12][0-9]|3[0-2])):(?:homeTopbar|leaderboard|accountModal|accountProfileCard|marketCard|crashTopbar|crashLivePanel|crashWinNotice|chessTopbar|chessGameCard|pistiTopbar|pistiScoreCard|snakeTopbar|spaceTopbar|patternTopbar)$/.test(key)) {
+        frames[key] = normalizeVariantSetting(value);
+      }
+    });
+    return { version: 1, variants, frames, updatedAt: Number(source.updatedAt || 0) || 0 };
+  }
+
+  function getSpecificSettingKey(variant = '', frameIndex = 0, frameUrl = '') {
+    const safeVariant = normalizeVariant(variant);
+    if (!safeVariant) return '';
+    const marketIndex = frameUrl ? getMarketFrameAssetIndex(frameUrl) : 0;
+    if (marketIndex > 0) return `market:${marketIndex}:${safeVariant}`;
+    const normalIndex = normalizeFrameIndex(frameIndex);
+    return normalIndex > 0 ? `normal:${normalIndex}:${safeVariant}` : '';
+  }
+
+  function mergeVariantSettings(...items) {
+    const merged = { ...DEFAULT_VARIANT_SETTING };
+    items.filter(Boolean).forEach((item) => Object.assign(merged, normalizeVariantSetting(item)));
+    return normalizeVariantSetting(merged);
+  }
+
+  function resolveVariantSetting(variant = '', frameIndex = 0, frameUrl = '', provided = null) {
+    const safeVariant = normalizeVariant(variant);
+    const specificKey = getSpecificSettingKey(safeVariant, frameIndex, frameUrl);
+    return mergeVariantSettings(
+      settingsState.config.variants?.[safeVariant],
+      specificKey ? settingsState.config.frames?.[specificKey] : null,
+      provided
+    );
+  }
+
+  function setSettings(config = {}) {
+    settingsState.config = normalizeSettingsConfig(config);
+    settingsState.loaded = true;
+    refreshAllMounted();
+    return settingsState.config;
+  }
+
+  function settingsUrl() {
+    try { return window.__PM_API__?.buildUrl ? window.__PM_API__.buildUrl('/api/avatar-frame/settings') : `${String(window.__PLAYMATRIX_API_URL__ || location.origin).replace(/\/+$/, '')}/api/avatar-frame/settings`; }
+    catch (_) { return '/api/avatar-frame/settings'; }
+  }
+
+  async function loadSettings({ force = false } = {}) {
+    if (settingsState.loaded && !force) return settingsState.config;
+    if (settingsState.promise) return settingsState.promise;
+    settingsState.promise = fetch(settingsUrl(), { credentials: 'include', cache: force ? 'no-store' : 'default' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => setSettings(payload?.config || {}))
+      .catch(() => settingsState.config)
+      .finally(() => { settingsState.promise = null; });
+    return settingsState.promise;
+  }
   function frameAllowedForVariant(variant = '') {
     return normalizeVariant(variant) !== 'homeTopbar';
   }
-  function applyVariantSetting(node, variant = '') {
+  function applyVariantSetting(node, variant = '', variantSetting = null, frameIndex = 0, frameUrl = '') {
     if (!node) return node;
-    node.dataset.pmAvatarVariant = normalizeVariant(variant) || '';
-    node.style.padding = '';
-    node.style.margin = '';
-    node.style.removeProperty('--pm-avatar-frame-outer-padding');
-    node.style.overflow = 'visible';
+    const safeVariant = normalizeVariant(variant);
+    const setting = resolveVariantSetting(safeVariant, frameIndex, frameUrl, variantSetting);
+    const size = Math.max(18, Number(node.dataset.pmAvatarSizePx || node.style.width?.replace('px', '') || 45) || 45);
+    const baseAvatarScale = finiteSetting(node.style.getPropertyValue('--pm-avatar-base-scale') || node.style.getPropertyValue('--pm-avatar-scale'), 1, 0.2, 3);
+    const baseFrameScale = finiteSetting(node.style.getPropertyValue('--pm-frame-base-scale') || node.style.getPropertyValue('--pm-frame-scale'), 1, 0.2, 3);
+    const innerFactor = Math.max(0.55, 1 - ((setting.innerPadding * 2) / size));
+    const outerFactor = Math.max(0.55, 1 - ((setting.outerPadding * 2) / size));
+    const baseFrameX = node.style.getPropertyValue('--pm-frame-base-shift-x') || '0px';
+    const baseFrameY = node.style.getPropertyValue('--pm-frame-base-shift-y') || '0px';
+    node.dataset.pmAvatarVariant = safeVariant;
+    node.dataset.pmFrameThickness = setting.thickness;
+    node.style.setProperty('--pm-avatar-scale', String(baseAvatarScale * setting.avatarScale * innerFactor));
+    node.style.setProperty('--pm-avatar-shift-x', `${setting.avatarOffsetX}px`);
+    node.style.setProperty('--pm-avatar-shift-y', `${setting.avatarOffsetY}px`);
+    node.style.setProperty('--pm-frame-scale', String(baseFrameScale * setting.frameScale * outerFactor));
+    node.style.setProperty('--pm-frame-shift-x', `calc(${baseFrameX} + ${setting.frameOffsetX}px)`);
+    node.style.setProperty('--pm-frame-shift-y', `calc(${baseFrameY} + ${setting.frameOffsetY}px)`);
+    node.style.setProperty('--pm-avatar-inner-padding', `${setting.innerPadding}px`);
+    node.style.setProperty('--pm-avatar-frame-outer-padding', `${setting.outerPadding}px`);
+    node.style.overflow = setting.overflow;
     return node;
   }
 
@@ -266,7 +383,7 @@
     return img;
   }
 
-  function buildHTML({ avatarUrl = '', level = 0, exactFrameIndex = null, frameUrl = '', sizePx = 45, extraClass = '', imageClass = 'pm-avatar-img', wrapperClass = 'pm-avatar', alt = 'Oyuncu', sizeTag = '', variant = '' } = {}) {
+  function buildHTML({ avatarUrl = '', level = 0, exactFrameIndex = null, frameUrl = '', sizePx = 45, extraClass = '', imageClass = 'pm-avatar-img', wrapperClass = 'pm-avatar', alt = 'Oyuncu', sizeTag = '', variant = '', variantSetting = null } = {}) {
     const normalizedVariant = normalizeVariant(variant);
     const allowFrame = frameAllowedForVariant(normalizedVariant);
     const normalizedLevel = allowFrame ? normalizeLevel(level) : 0;
@@ -279,11 +396,16 @@
     const classes = [wrapperClass, hasFrame ? 'has-frame' : '', customFrameUrl ? 'has-market-frame' : '', extraClass].filter(Boolean).join(' ');
     const normalizedSize = Math.max(18, Number(sizePx) || 45);
     const sizeAttr = sizeTag ? ` data-pm-avatar-size="${escapeAttr(sizeTag)}"` : '';
-    const styleAttr = ` style="--pm-avatar-fit:${escapeAttr(String(profile.avatar || 1))};--pm-avatar-scale:${escapeAttr(String(profile.avatar || 1))};--pm-frame-scale:${escapeAttr(String(profile.scale || 1))};--pm-frame-shift-x:${escapeAttr(profile.shiftX || '0px')};--pm-frame-shift-y:${escapeAttr(profile.shiftY || '0px')};--pm-frame-variant-scale:${customFrameUrl ? escapeAttr(String(profile.scale || 1)) : '1'};--pm-frame-variant-shift-x:${customFrameUrl ? escapeAttr(profile.shiftX || '0px') : '0px'};--pm-frame-variant-shift-y:${customFrameUrl ? escapeAttr(profile.shiftY || '0px') : '0px'};"`;
+    const setting = resolveVariantSetting(normalizedVariant, frameIndex, customFrameUrl, variantSetting);
+    const innerFactor = Math.max(0.55, 1 - ((setting.innerPadding * 2) / normalizedSize));
+    const outerFactor = Math.max(0.55, 1 - ((setting.outerPadding * 2) / normalizedSize));
+    const avatarScale = (Number(profile.avatar || 1) * setting.avatarScale * innerFactor);
+    const frameScale = (Number(profile.scale || 1) * setting.frameScale * outerFactor);
+    const styleAttr = ` style="--pm-avatar-base-scale:${escapeAttr(String(profile.avatar || 1))};--pm-avatar-fit:${escapeAttr(String(avatarScale))};--pm-avatar-scale:${escapeAttr(String(avatarScale))};--pm-avatar-shift-x:${escapeAttr(String(setting.avatarOffsetX))}px;--pm-avatar-shift-y:${escapeAttr(String(setting.avatarOffsetY))}px;--pm-frame-base-scale:${escapeAttr(String(profile.scale || 1))};--pm-frame-base-shift-x:${escapeAttr(profile.shiftX || '0px')};--pm-frame-base-shift-y:${escapeAttr(profile.shiftY || '0px')};--pm-frame-scale:${escapeAttr(String(frameScale))};--pm-frame-shift-x:calc(${escapeAttr(profile.shiftX || '0px')} + ${escapeAttr(String(setting.frameOffsetX))}px);--pm-frame-shift-y:calc(${escapeAttr(profile.shiftY || '0px')} + ${escapeAttr(String(setting.frameOffsetY))}px);--pm-avatar-inner-padding:${escapeAttr(String(setting.innerPadding))}px;--pm-avatar-frame-outer-padding:${escapeAttr(String(setting.outerPadding))}px;overflow:${escapeAttr(setting.overflow)};"`;
     const frameHtml = hasFrame
       ? `<img src="${escapeAttr(frameSrc)}" class="pm-frame-image pm-avatar-shell__frame frame-${frameIndex || 'market'}" alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" data-frame-index="${frameIndex}" data-frame-level="${normalizedLevel}" data-market-frame="${customFrameUrl ? 'true' : 'false'}" data-fallback="${escapeAttr(frameSrc)}">`
       : '';
-    return `<div class="${escapeAttr(classes)}" data-pm-avatar="true" data-avatar-registered="${isRegisteredAvatarUrl(avatarUrl) ? 'true' : 'false'}" data-frame-registered="${customFrameUrl || frameIndex === 0 || isRegisteredFrameAssetIndex(frameIndex) ? 'true' : 'false'}" data-market-frame="${customFrameUrl ? 'true' : 'false'}" data-market-frame-profile="${escapeAttr(customFrameUrl ? (profile.profile || 'market') : '')}" data-frame-index="${frameIndex}" data-frame-level="${normalizedLevel}" data-frame-asset-index="${frameIndex}" data-pm-avatar-size-px="${normalizedSize}" data-pm-avatar-variant="${escapeAttr(normalizedVariant)}"${sizeAttr}${styleAttr}><img src="${escapeAttr(safeAvatar)}" alt="${escapeAttr(alt || 'Oyuncu')}" class="${escapeAttr(imageClass)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" draggable="false" data-fallback="${escapeAttr(FALLBACK_AVATAR)}">${frameHtml}</div>`;
+    return `<div class="${escapeAttr(classes)}" data-pm-avatar="true" data-avatar-registered="${isRegisteredAvatarUrl(avatarUrl) ? 'true' : 'false'}" data-frame-registered="${customFrameUrl || frameIndex === 0 || isRegisteredFrameAssetIndex(frameIndex) ? 'true' : 'false'}" data-market-frame="${customFrameUrl ? 'true' : 'false'}" data-market-frame-profile="${escapeAttr(customFrameUrl ? (profile.profile || 'market') : '')}" data-frame-index="${frameIndex}" data-frame-level="${normalizedLevel}" data-frame-asset-index="${frameIndex}" data-pm-avatar-size-px="${normalizedSize}" data-pm-avatar-variant="${escapeAttr(normalizedVariant)}" data-pm-frame-thickness="${escapeAttr(setting.thickness)}"${sizeAttr}${styleAttr}><img src="${escapeAttr(safeAvatar)}" alt="${escapeAttr(alt || 'Oyuncu')}" class="${escapeAttr(imageClass)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" draggable="false" data-fallback="${escapeAttr(FALLBACK_AVATAR)}">${frameHtml}</div>`;
   }
 
   function applyNodeProfile(node, { avatarUrl = '', level = 0, exactFrameIndex = null, frameUrl = '', sizePx = 45, variant = '', variantSetting = null } = {}) {
@@ -307,6 +429,7 @@
     node.classList.toggle('has-market-frame', !!customFrameUrl);
     node.style.width = `${normalizedSize}px`;
     node.style.height = `${normalizedSize}px`;
+    node.style.setProperty('--pm-avatar-base-scale', String(profile.avatar || 1));
     node.style.setProperty('--pm-avatar-fit', String(profile.avatar || 1));
     node.style.setProperty('--pm-avatar-scale', String(profile.avatar || 1));
     node.style.setProperty('--pm-frame-base-scale', String(profile.scale));
@@ -335,7 +458,7 @@
       frame.style.setProperty('--pm-frame-shift-x', profile.shiftX || '0px');
       frame.style.setProperty('--pm-frame-shift-y', profile.shiftY || '0px');
     }
-    applyVariantSetting(node, normalizedVariant, variantSetting);
+    applyVariantSetting(node, normalizedVariant, variantSetting, frameIndex, customFrameUrl);
     return node;
   }
 
@@ -380,6 +503,8 @@
   function mount(target, options = {}) {
     const host = typeof target === 'string' ? document.getElementById(target) : target;
     if (!host) return null;
+    mountedHosts.add(host);
+    host.__pmAvatarMountOptions = { ...(options || {}) };
     const variant = normalizeVariant(options.variant || '');
     const allowFrame = frameAllowedForVariant(variant);
     const normalizedOptions = {
@@ -402,11 +527,19 @@
       variant,
       variantSetting: normalizedOptions.variantSetting || null
     });
-    if (host.dataset.pmAvatarMountKey === key && host.firstElementChild) return host.firstElementChild;
+    if (!options.force && host.dataset.pmAvatarMountKey === key && host.firstElementChild) return host.firstElementChild;
     const node = createNode(normalizedOptions);
     host.replaceChildren(node);
     host.dataset.pmAvatarMountKey = key;
     return node;
+  }
+
+  function refreshAllMounted() {
+    mountedHosts.forEach((host) => {
+      if (!host?.isConnected) { mountedHosts.delete(host); return; }
+      const options = host.__pmAvatarMountOptions || {};
+      mount(host, { ...options, force: true });
+    });
   }
 
   function getFrameRanges() {
@@ -420,6 +553,13 @@
     FRAME_VISUAL_PROFILES,
     MARKET_FRAME_VISUAL_PROFILES,
     AVATAR_FRAME_VARIANTS,
+    DEFAULT_VARIANT_SETTING,
+    normalizeVariantSetting,
+    resolveVariantSetting,
+    getSettings: () => settingsState.config,
+    setSettings,
+    loadSettings,
+    refreshAllMounted,
     normalizeLevel,
     normalizeFrameIndex,
     normalizeVariant,
@@ -446,4 +586,7 @@
     renderAvatarNode: createNode,
     mount
   });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => loadSettings().catch(() => null), { once: true });
+  else loadSettings().catch(() => null);
 })();

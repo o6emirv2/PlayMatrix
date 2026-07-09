@@ -104,7 +104,7 @@ const INLINE_DEFAULT_AVATAR = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3
             QUEUED_BET_NOT_FOUND: 'Bekleyen katılım bulunamadı veya raund başlamış olabilir.',
             QUEUED_BET_ALREADY_PROMOTED: 'Raund başladı. Katılım artık aktif turda görünüyor.'
         };
-        return map[code] || error?.message || fallback;
+        return map[code] || fallback;
     }
 
     function parseAutoCashoutValue(value) {
@@ -886,20 +886,17 @@ function setBootActions({ showEnter = false, showRetry = false, enterLabel = 'CR
             setBootStatus('Canlı akış bağlanıyor...');
             let streamReady = false;
             try {
-                await withTimeout(connectStream(), 2500, 'SOCKET_INIT_TIMEOUT');
-                await waitForSocketReady(socket, 3500);
+                await withTimeout(connectStream(), 4500, 'SOCKET_INIT_TIMEOUT');
+                await waitForSocketReady(socket, 8500);
                 streamReady = true;
             } catch (_) {
                 streamReady = false;
             }
             bootCompleted = true;
             setBootProgress(100);
-            setBootStatus(streamReady ? 'Canlı akış hazır. Oyun açılıyor...' : 'Ekran hazırlanıyor. Canlı akış arka planda yeniden denenecek.', streamReady ? 'info' : 'warning');
-            setBootActions({ showEnter: true, showRetry: !streamReady, enterLabel: 'CRASH OYNA', actionMode: 'continue' });
-            if (!streamReady) {
-                renderCrashRuntimeNotice('Canlı akış şu an hazır değil. Ekran açılacak; bağlantı arka planda tekrar denenecek.', 'warning', 'Tekrar Dene', () => connectStream().catch(() => null));
-                scheduleCrashReconnect(250);
-            }
+            setBootStatus(streamReady ? 'Canlı akış hazır. Oyun açılıyor...' : 'Oyun açılıyor. Canlı akış arka planda güvenli şekilde hazırlanıyor.', 'info');
+            setBootActions({ showEnter: true, showRetry: false, enterLabel: 'CRASH OYNA', actionMode: 'continue' });
+            if (!streamReady) scheduleCrashReconnect(250);
             await startApp(!streamReady);
             dismissIntro();
             return true;
@@ -1319,7 +1316,7 @@ function setBootActions({ showEnter = false, showRetry = false, enterLabel = 'CR
             else if (activeBet && !activeBet.cashed && sPhase === 'FLYING') await cashOut(box);
             else await placeBet(box);
         } catch (error) {
-            showCrashNotice({ type: 'error', title: 'İşlem başarısız', message: error?.message || 'İşlem tamamlanamadı.', scope: `box${box}` });
+            showCrashNotice({ type: 'error', title: 'İşlem başarısız', message: friendlyCrashError(error, 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.'), scope: `box${box}` });
         } finally {
             isProcessing[boxKey] = false;
             updateButtons();
@@ -1418,7 +1415,7 @@ function setBootActions({ showEnter = false, showRetry = false, enterLabel = 'CR
         } catch (error) {
             bet.cashingOut = false;
             myBets[boxKey] = bet;
-            showCrashNotice({ type: 'error', title: 'Çıkış alınamadı', message: error?.message || 'Çıkış şu anda tamamlanamadı. Lütfen tekrar dene.', scope: `box${box}` });
+            showCrashNotice({ type: 'error', title: 'Çıkış alınamadı', message: friendlyCrashError(error, 'Çıkış şu anda tamamlanamadı. Lütfen tekrar dene.'), scope: `box${box}` });
         } finally {
             updateButtons();
         }
@@ -1435,7 +1432,7 @@ function setBootActions({ showEnter = false, showRetry = false, enterLabel = 'CR
             autoBetPlacedForRound[boxKey] = currentRoundId;
             placeBet(box, true).catch((error) => {
                 autoBetPlacedForRound[boxKey] = null;
-                showCrashNotice({ type: 'error', title: 'Otomatik bahis', message: error?.message || 'Otomatik bahis alınamadı.', scope: `box${box}` });
+                showCrashNotice({ type: 'error', title: 'Otomatik bahis', message: friendlyCrashError(error, 'Otomatik bahis şu anda alınamadı. Lütfen tekrar dene.'), scope: `box${box}` });
             });
         }
     }
@@ -1890,7 +1887,7 @@ function setBootActions({ showEnter = false, showRetry = false, enterLabel = 'CR
         if (balanceRefreshTimer) return;
         balanceRefreshTimer = setInterval(() => {
             if (document.visibilityState === 'visible' && auth.currentUser) updateBal();
-        }, 12000);
+        }, 30000);
     }
 
 
@@ -1912,9 +1909,9 @@ function scheduleCrashConnectionNotice(message = '', tone = 'warning') {
     const failureCount = crashConnectionNoticeFailures;
     clearTimeout(crashConnectionNoticeTimer);
     crashConnectionNoticeTimer = setTimeout(() => {
-        if (crashStreamReady || failureCount < 2) return;
+        if (crashStreamReady || socket?.connected || failureCount < 3 || document.hidden) return;
         renderCrashRuntimeNotice(message, tone, 'Tekrar Dene', () => connectStream().catch(() => null));
-    }, 4200);
+    }, 15000);
 }
 
 async function connectStream() {
@@ -2006,13 +2003,10 @@ async function pmRtBindSocketEvents(sock) {
     if (!sock || sock.__pmRealtimeBound) return sock;
     sock.__pmRealtimeBound = true;
     pmRealtimeSocket = sock;
-    sock.on('connect_error', (error) => {
-        if (error?.message === 'xhr poll error') return;
+    sock.on('connect_error', () => {
+        // Presence bağlantısı yardımcı bir kanaldır. Crash round akışı çalışırken
+        // kullanıcıya oyunun bağlanamadığı izlenimi verilmez.
         clearTimeout(pmRealtimeReconnectNoticeTimer);
-        pmRealtimeReconnectNoticeTimer = setTimeout(() => {
-            if (sock.connected) return;
-            pmRtToast('Canlı bağlantı', 'Oyun bağlantısı geçici olarak yeniden bağlanıyor.', 'info', { iconClass: 'fa-wifi', duration: 2600 });
-        }, 4200);
     });
     sock.on('connect', () => {
         clearTimeout(pmRealtimeReconnectNoticeTimer);

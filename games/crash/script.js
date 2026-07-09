@@ -45,7 +45,7 @@
     const message = String(status?.textContent || '').trim();
     if (/hazır|açılıyor|lobi|oyun/i.test(message) && !/kurulamadı|yüklenemedi|doğrulanamadı/i.test(message)) return;
     setProgress(34);
-    if (status) status.textContent = `${gameName()} için giriş veya canlı bağlantı doğrulanamadı. Ana sayfadan giriş yapıp tekrar deneyin.`;
+    if (status) status.textContent = `${gameName()} hazırlığı beklenenden uzun sürdü. Sayfayı yenileyebilir veya AnaSayfa'ya dönebilirsin.`;
     showActions();
     try {
       if (typeof window.__PM_REPORT_CLIENT_ERROR__ === 'function') {
@@ -55,9 +55,9 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => window.setTimeout(guardStuckIntro, 12000), { once: true });
+    document.addEventListener('DOMContentLoaded', () => window.setTimeout(guardStuckIntro, 22000), { once: true });
   } else {
-    window.setTimeout(guardStuckIntro, 12000);
+    window.setTimeout(guardStuckIntro, 22000);
   }
 })();
 

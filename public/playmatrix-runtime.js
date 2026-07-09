@@ -37,7 +37,11 @@
     heartbeatBackoffMs: 0,
     nextHeartbeatAllowedAt: 0,
     authRecoveryPromise: null,
-    lastAuthIssueAt: 0
+    lastAuthIssueAt: 0,
+    activeUid: '',
+    serverSessionUid: '',
+    lastServerSessionSyncAt: 0,
+    serverSessionPromise: null
   };
 
   window.__PM_RUNTIME_SHARED_HEARTBEAT__ = true;
@@ -209,7 +213,38 @@
     return !!getCurrentUser();
   }
 
-  async function ensureServerSession() { return null; }
+  function storedPersistenceMode() {
+    try { if (window.localStorage?.getItem('pm_login_persistence') === 'local') return 'local'; } catch (_) {}
+    try { if (window.sessionStorage?.getItem('pm_login_persistence') === 'session') return 'session'; } catch (_) {}
+    return 'session';
+  }
+
+  async function ensureServerSession(options = {}) {
+    const user = getCurrentUser();
+    const uid = String(user?.uid || '').trim();
+    if (!uid) return false;
+    const now = Date.now();
+    if (!options.force && bridgeState.serverSessionUid === uid && (now - bridgeState.lastServerSessionSyncAt) < 4 * 60 * 1000) return true;
+    if (bridgeState.serverSessionPromise) return bridgeState.serverSessionPromise;
+    bridgeState.serverSessionPromise = (async () => {
+      const apiBase = getApiBase();
+      if (!apiBase) return false;
+      const idToken = await getToken(options.forceRefresh === true).catch(() => '');
+      if (!idToken) return false;
+      const response = await fetch(`${apiBase}/api/auth/session`, {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', 'X-PlayMatrix-Client': 'runtime-session' },
+        body: JSON.stringify({ idToken, remember: storedPersistenceMode() === 'local' })
+      });
+      if (!response.ok) return false;
+      bridgeState.serverSessionUid = uid;
+      bridgeState.lastServerSessionSyncAt = Date.now();
+      return true;
+    })().finally(() => { bridgeState.serverSessionPromise = null; });
+    return bridgeState.serverSessionPromise;
+  }
 
   async function recoverAuthContext(options = {}) {
     if (bridgeState.authRecoveryPromise) return bridgeState.authRecoveryPromise;
@@ -282,56 +317,60 @@
   }
 
   async function fetchPrivate(path, method = 'GET', body, authRetry = true) {
-    const token = await getToken();
     const apiBase = getApiBase();
     if (!apiBase) throw new Error('API_BASE_MISSING');
-    const options = {
-      method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
+
+    const execute = async (token = '') => {
+      const headers = {
         'Content-Type': 'application/json',
         'X-PlayMatrix-Client': 'runtime'
-      },
-      credentials: 'include',
-      cache: 'no-store'
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const options = {
+        method,
+        headers,
+        credentials: 'include',
+        cache: 'no-store'
+      };
+      if (body !== undefined && body !== null) options.body = JSON.stringify(body);
+      const response = await fetch(`${apiBase}${path}`, options);
+      const payload = await response.json().catch(() => ({}));
+      return { response, payload };
     };
-    if (body !== undefined && body !== null) options.body = JSON.stringify(body);
-    let response = await fetch(`${apiBase}${path}`, options);
-    let payload = await response.json().catch(() => ({}));
-    const authState = authProblem(payload, response.status);
-    if (authRetry && authState === 'required') {
-      if (isAuthRequiredLocked()) {
-        const err = new Error('AUTH_REQUIRED');
-        err.payload = payload;
-        throw err;
-      }
-      const err = new Error('AUTH_REQUIRED');
-      err.payload = payload;
-      throw err;
-    }
-    if (response.status === 401) {
+
+    let token = await getToken(false).catch(() => '');
+    let result = await execute(token);
+
+    if (result.response.status === 401 && authRetry && getCurrentUser()) {
       const refreshed = await getToken(true).catch(() => '');
       if (refreshed) {
-        options.headers.Authorization = `Bearer ${refreshed}`;
-        response = await fetch(`${apiBase}${path}`, options);
-        payload = await response.json().catch(() => ({}));
+        token = refreshed;
+        result = await execute(refreshed);
       }
     }
-    if (response.status === 401) {
-      const recoveredContext = await recoverAuthContext({ allowSessionOnly: true }).catch(() => false);
-      if (recoveredContext) return fetchPrivate(path, method, body, false);
+
+    if (result.response.status === 401 && authRetry && getCurrentUser()) {
+      const sessionReady = await ensureServerSession({ force: true, forceRefresh: true }).catch(() => false);
+      if (sessionReady) result = await execute(token);
     }
+
+    const { response, payload } = result;
     if (response.status === 401) {
       const now = Date.now();
-      if ((now - bridgeState.lastAuthIssueAt) > 5000) {
+      if ((now - bridgeState.lastAuthIssueAt) > 7000) {
         bridgeState.lastAuthIssueAt = now;
-        try { toast('Giriş gerekiyor', 'Devam etmek için tekrar giriş yapman gerekiyor.', 'info'); } catch (_) {}
+        try { toast('Oturum doğrulanıyor', 'Hesap bağlantısı yenileniyor. Lütfen işlemi tekrar dene.', 'info'); } catch (_) {}
       }
-      try { await endServerSession(); } catch (_) {}
-      try { await signOutBridge(); } catch (_) {}
+      try { window.dispatchEvent(new CustomEvent('playmatrix:session-required', { detail: { at: now, source: 'runtime', recoverable: true } })); } catch (_) {}
     }
     if (!response.ok || payload?.ok === false) {
-      const err = new Error(userFacingText(payload?.error || 'REQUEST_FAILED', 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.'));
+      const code = String(payload?.code || payload?.error || '').toUpperCase();
+      const fallback = response.status === 401
+        ? 'Hesap bağlantısı şu anda doğrulanamadı. Lütfen işlemi tekrar dene.'
+        : 'İşlem şu anda tamamlanamadı. Lütfen tekrar dene.';
+      const err = new Error(userFacingText(payload?.error || code || 'REQUEST_FAILED', fallback));
+      err.code = code || `HTTP_${response.status}`;
+      err.status = response.status;
       err.payload = payload;
       throw err;
     }
@@ -393,7 +432,23 @@
     }, 60000);
   }
 
-  async function endServerSession() { clearServerSessionToken(); }
+  async function endServerSession() {
+    clearServerSessionToken();
+    bridgeState.serverSessionUid = '';
+    bridgeState.lastServerSessionSyncAt = 0;
+    const apiBase = getApiBase();
+    if (!apiBase) return false;
+    try {
+      await fetch(`${apiBase}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json', 'X-PlayMatrix-Client': 'runtime-session' },
+        body: '{}'
+      });
+      return true;
+    } catch (_) { return false; }
+  }
 
 
   async function pollNotifications() {
@@ -462,14 +517,22 @@
   }
 
   function syncLoops() {
-    if (getCurrentUser() && isAuthReady()) {
+    const uid = String(getCurrentUser()?.uid || '').trim();
+    if (uid && isAuthReady()) {
+      ensureServerSession().catch(() => false);
+      if (bridgeState.activeUid === uid) return;
+      bridgeState.activeUid = uid;
       markActivity('session-sync', false);
       startHeartbeatLoop();
       startNotificationLoop();
-    } else {
-      stopHeartbeatLoop();
-      stopNotificationLoop();
+      return;
     }
+    if (!bridgeState.activeUid) return;
+    bridgeState.activeUid = '';
+    bridgeState.serverSessionUid = '';
+    bridgeState.lastServerSessionSyncAt = 0;
+    stopHeartbeatLoop();
+    stopNotificationLoop();
   }
 
   function boot() {
@@ -480,7 +543,7 @@
 
     window.setInterval(() => {
       if (getBridge()) syncLoops();
-    }, 3000);
+    }, 10000);
 
     syncLoops();
   }
