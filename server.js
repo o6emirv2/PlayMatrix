@@ -444,8 +444,7 @@ app.use('/admin', express.static(path.join(__dirname, 'admin'), staticOptions));
 app.use('/games', express.static(path.join(__dirname, 'games'), staticOptions));
 
 function healthPayload() { return { ok:true, service:'playmatrix', env:env.nodeEnv, firebaseEnabled: !!fb.enabled, time:Date.now() }; }
-app.get('/healthz', (_req,res)=>res.json(healthPayload()));
-app.get('/api/healthz', (_req,res)=>res.json(healthPayload()));
+app.get(['/health', '/healthz', '/api/healthz'], (_req, res) => res.json(healthPayload()));
 
 app.use('/api', async (req, res, next) => {
   try {
